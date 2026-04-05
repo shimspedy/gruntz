@@ -63,10 +63,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderColor: `${colors.accent}18`,
   },
   blurFill: {
-    flex: 1,
+    // Removed flex: 1 — must wrap content, not expand in ScrollView
   },
   glassOverlay: {
-    flex: 1,
     backgroundColor: `${colors.card}66`, // 40% opacity overlay for depth
   },
   edgeHighlight: {
