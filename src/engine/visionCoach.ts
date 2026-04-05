@@ -160,7 +160,16 @@ export class VisionCoach {
 
   /** Check if it's time for a new analysis */
   shouldAnalyze(): boolean {
-    if (!this._isActive || this.isAnalyzing) return false;
+    if (!this._isActive) return false;
+    // Safety: if isAnalyzing has been true for > 15s, force-clear it (stuck request)
+    if (this.isAnalyzing) {
+      if (Date.now() - this.lastAnalysisTime > 15000) {
+        console.warn('[VisionCoach] Analysis seems stuck — resetting');
+        this.isAnalyzing = false;
+      } else {
+        return false;
+      }
+    }
     const now = Date.now();
     const interval = this.consecutiveFailures > 2
       ? ANALYSIS_INTERVAL_MS * 2  // Back off on repeated failures
@@ -174,6 +183,8 @@ export class VisionCoach {
    */
   async analyzeFrame(imageBase64: string): Promise<VisionResult> {
     if (!openai || !imageBase64) {
+      // No AI or no image — use local fallback (assumes person visible)
+      console.log('[VisionCoach] Using local fallback:', !openai ? 'no API key' : 'no image');
       return this.localAnalysis();
     }
 

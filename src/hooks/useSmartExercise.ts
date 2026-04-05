@@ -118,7 +118,20 @@ export function useSmartExercise(exerciseName: string) {
         skipProcessing: true,
       });
 
-      if (!photo?.base64) return;
+      if (!photo?.base64) {
+        // Camera didn't return a frame (e.g. simulator) — use local fallback
+        console.log('[useSmartExercise] No photo data — using local fallback');
+        const fallback = await vision.analyzeFrame('');
+        engine.updateVisionResult({
+          personVisible: fallback.personVisible,
+          exerciseMatch: fallback.exerciseMatch,
+          lightingOk: fallback.lightingOk,
+          confidence: fallback.confidence,
+          formScore: fallback.formScore,
+          coachTip: fallback.coachTip || undefined,
+        });
+        return;
+      }
 
       // Analyze frame
       const result = await vision.analyzeFrame(photo.base64);
@@ -142,7 +155,17 @@ export function useSmartExercise(exerciseName: string) {
         lastVisionResult: result,
       }));
     } catch (error) {
-      console.warn('[useSmartExercise] Vision analysis error:', error);
+      // Camera threw (e.g. no hardware on simulator) — use local fallback
+      console.warn('[useSmartExercise] Camera error, using fallback:', error);
+      const fallback = await vision.analyzeFrame('');
+      engine.updateVisionResult({
+        personVisible: fallback.personVisible,
+        exerciseMatch: fallback.exerciseMatch,
+        lightingOk: fallback.lightingOk,
+        confidence: fallback.confidence,
+        formScore: fallback.formScore,
+        coachTip: fallback.coachTip || undefined,
+      });
     }
   }, []);
 
