@@ -8,11 +8,13 @@ import { Card } from '../components/Card';
 import { ExerciseRow } from '../components/ExerciseRow';
 import { SectionHeader } from '../components/SectionHeader';
 import { MissionButton } from '../components/MissionButton';
+import { RestTimer } from '../components/RestTimer';
+import { RepLogModal } from '../components/RepLogModal';
 import { useMissionStore } from '../store/useMissionStore';
 import { useUserStore } from '../store/useUserStore';
 import { getWorkoutDay } from '../data/workouts';
 import { getExerciseById } from '../data/exercises';
-import type { CompletedExercise, CompletedMission } from '../types';
+import type { CompletedExercise, CompletedMission, Exercise } from '../types';
 import type { HomeStackParamList } from '../types/navigation';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'DailyMission'>;
@@ -32,6 +34,8 @@ export default function DailyMissionScreen() {
 
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [started, setStarted] = useState(false);
+  const [restExerciseId, setRestExerciseId] = useState<string | null>(null);
+  const [logExercise, setLogExercise] = useState<Exercise | null>(null);
 
   const workoutDay = todaysMission ? getWorkoutDay(todaysMission.workout_day_id) : null;
 
@@ -48,15 +52,40 @@ export default function DailyMissionScreen() {
   };
 
   const toggleExercise = (exerciseId: string) => {
+    const ex = getExerciseById(exerciseId);
+    if (!completedIds.has(exerciseId) && ex) {
+      // Opening rep log modal for logging
+      setLogExercise(ex);
+      return;
+    }
+    // Un-toggle
     setCompletedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(exerciseId)) {
-        next.delete(exerciseId);
-      } else {
-        next.add(exerciseId);
-      }
+      next.delete(exerciseId);
       return next;
     });
+  };
+
+  const handleLogSave = (exerciseId: string) => {
+    const ex = getExerciseById(exerciseId);
+    setCompletedIds((prev) => {
+      const next = new Set(prev);
+      next.add(exerciseId);
+      return next;
+    });
+    setLogExercise(null);
+    // Start rest timer if exercise has rest
+    if (ex && ex.rest_seconds > 0) {
+      setRestExerciseId(exerciseId);
+    }
+  };
+
+  const handleRestComplete = () => {
+    setRestExerciseId(null);
+  };
+
+  const handleExerciseInfo = (exerciseId: string) => {
+    navigation.navigate('ExerciseDetail', { exerciseId });
   };
 
   const handleFinish = () => {
@@ -171,6 +200,9 @@ export default function DailyMissionScreen() {
                         detail={detail}
                         completed={completedIds.has(exId)}
                         onToggle={() => toggleExercise(exId)}
+                        restSeconds={ex.rest_seconds}
+                        illustration={ex.illustration}
+                        onInfo={() => handleExerciseInfo(exId)}
                       />
                     );
                   })}
@@ -186,6 +218,25 @@ export default function DailyMissionScreen() {
               style={{ marginTop: spacing.xl }}
             />
           </>
+        )}
+
+        {/* Rest Timer Overlay */}
+        {restExerciseId && (
+          <RestTimer
+            seconds={getExerciseById(restExerciseId)?.rest_seconds || 60}
+            onComplete={handleRestComplete}
+            onSkip={handleRestComplete}
+          />
+        )}
+
+        {/* Rep Log Modal */}
+        {logExercise && (
+          <RepLogModal
+            exercise={logExercise}
+            visible={!!logExercise}
+            onClose={() => setLogExercise(null)}
+            onSave={() => handleLogSave(logExercise.id)}
+          />
         )}
       </ScrollView>
     </SafeAreaView>

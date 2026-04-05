@@ -1,9 +1,15 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing } from '../theme';
 import { Card } from '../components/Card';
 import { MissionButton } from '../components/MissionButton';
+import type { MissionsStackParamList } from '../types/navigation';
+
+type Nav = NativeStackNavigationProp<MissionsStackParamList, 'Challenges'>;
 
 interface ChallengeItem {
   id: string;
@@ -26,6 +32,7 @@ const sampleChallenges: ChallengeItem[] = [
 ];
 
 export default function ChallengesScreen() {
+  const navigation = useNavigation<Nav>();
   const categories = ['daily', 'weekly', 'monthly'] as const;
   const categoryLabels = { daily: 'Daily Challenges', weekly: 'Weekly Challenges', monthly: 'Monthly Challenges' };
   const categoryIcons = { daily: '📅', weekly: '📆', monthly: '🗓️' };
@@ -35,6 +42,22 @@ export default function ChallengesScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <Text style={styles.title}>Challenges</Text>
         <Text style={styles.subtitle}>Push yourself beyond the mission.</Text>
+
+        {/* Training Cards Banner */}
+        <TouchableOpacity
+          style={styles.cardsBanner}
+          activeOpacity={0.8}
+          onPress={() => navigation.navigate('WorkoutCards')}
+        >
+          <View style={styles.bannerLeft}>
+            <Text style={styles.bannerIcon}>🎴</Text>
+            <View>
+              <Text style={styles.bannerTitle}>TRAINING CARDS</Text>
+              <Text style={styles.bannerSub}>Browse all Movement & Swim Cards with AI recommendations</Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.accentGold} />
+        </TouchableOpacity>
 
         {categories.map((cat) => (
           <View key={cat}>
@@ -97,6 +120,37 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textMuted,
     marginBottom: spacing.lg,
+  },
+  cardsBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.accentGold,
+    borderRadius: 16,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  bannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: spacing.md,
+  },
+  bannerIcon: {
+    fontSize: 28,
+  },
+  bannerTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.accentGold,
+    letterSpacing: 1,
+  },
+  bannerSub: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 2,
   },
   categoryTitle: {
     fontSize: 16,

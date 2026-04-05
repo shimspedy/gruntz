@@ -9,11 +9,15 @@ export type HomeStackParamList = {
   Home: undefined;
   DailyMission: { missionDate?: string };
   MissionComplete: { xpEarned: number; coinsEarned: number; leveledUp: boolean; newRank?: string };
+  ExerciseDetail: { exerciseId: string };
 };
 
 export type MissionsStackParamList = {
   Challenges: undefined;
   Achievements: undefined;
+  WorkoutCards: undefined;
+  CardDetail: { cardId: string };
+  ExerciseDetail: { exerciseId: string };
 };
 
 export type ProgressStackParamList = {

@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from '../screens/HomeScreen';
 import DailyMissionScreen from '../screens/DailyMissionScreen';
 import MissionCompleteScreen from '../screens/MissionCompleteScreen';
+import ExerciseDetailScreen from '../screens/ExerciseDetailScreen';
 import type { HomeStackParamList } from '../types/navigation';
 import { colors } from '../theme';
 
@@ -28,6 +29,11 @@ export function HomeStack() {
         name="MissionComplete"
         component={MissionCompleteScreen}
         options={{ headerShown: false, gestureEnabled: false }}
+      />
+      <Stack.Screen
+        name="ExerciseDetail"
+        component={ExerciseDetailScreen}
+        options={{ title: 'Exercise', headerBackTitle: 'Back' }}
       />
     </Stack.Navigator>
   );

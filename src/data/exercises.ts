@@ -130,6 +130,250 @@ export const exercises: Exercise[] = [
   { id: 'assess_feet_gear', name: 'Assess Feet & Gear', category: 'recovery', description: 'Check feet, change socks, powder feet. Check gear.', duration_seconds: 300, rest_seconds: 0, equipment: [], equipment_access: 'none', xp_value: 5, form_tips: ['Clip toenails', 'Powder feet', 'Moleskin on hot spots'] },
 ];
 
+// ============================================================
+// EXERCISE ENRICHMENT DATA
+// Muscle groups, step-by-step instructions, illustrations
+// ============================================================
+
+const MUSCLE_GROUPS: Record<string, string[]> = {
+  // Warmup
+  ankles_hips_shoulders: ['hips', 'shoulders', 'thoracic spine'],
+  hip_bridge: ['glutes', 'hamstrings', 'core'],
+  elbow_pushups: ['chest', 'triceps', 'shoulders', 'core'],
+  bird_dog: ['core', 'glutes', 'shoulders'],
+  frog_squat_warmup: ['quads', 'glutes', 'adductors', 'hips'],
+  worlds_greatest_stretch: ['hips', 'thoracic spine', 'hamstrings', 'quads'],
+  inchworm: ['hamstrings', 'shoulders', 'core'],
+  walking_high_knees: ['hip flexors', 'quads', 'core'],
+  walking_quads_pulls: ['quads', 'hip flexors'],
+  cradles: ['glutes', 'hips', 'balance'],
+  backwards_hamstring: ['hamstrings', 'balance', 'core'],
+  high_knees: ['hip flexors', 'quads', 'cardiovascular'],
+  butt_kicks: ['hamstrings', 'quads', 'cardiovascular'],
+  // Core
+  forward_plank: ['core', 'shoulders', 'hip flexors'],
+  side_plank: ['obliques', 'shoulders', 'hips'],
+  flutter_kicks: ['lower abs', 'hip flexors', 'core'],
+  knees_to_elbows: ['abs', 'hip flexors', 'grip', 'lats'],
+  usmc_crunches: ['abs', 'hip flexors'],
+  mountain_climbers: ['core', 'shoulders', 'hip flexors', 'cardiovascular'],
+  // Calisthenics
+  pushups: ['chest', 'triceps', 'shoulders', 'core'],
+  hand_release_pushups: ['chest', 'triceps', 'shoulders', 'core'],
+  lunges_counter_rotation: ['quads', 'glutes', 'core', 'obliques'],
+  frog_squats: ['quads', 'glutes', 'adductors', 'hips'],
+  ammo_can_push_press: ['shoulders', 'triceps', 'core', 'legs'],
+  ammo_can_thruster: ['quads', 'glutes', 'shoulders', 'core'],
+  ammo_can_front_squats: ['quads', 'glutes', 'core', 'shoulders'],
+  air_squats: ['quads', 'glutes', 'hamstrings'],
+  burpees: ['full body', 'cardiovascular'],
+  skaters: ['glutes', 'quads', 'balance', 'cardiovascular'],
+  dumbbell_getups: ['core', 'shoulders', 'legs', 'balance'],
+  sandbag_getups: ['core', 'shoulders', 'legs', 'grip'],
+  tire_flips: ['back', 'legs', 'core', 'grip'],
+  high_crawl: ['shoulders', 'core', 'hip flexors'],
+  pullups: ['back', 'biceps', 'forearms', 'core'],
+  chinups: ['biceps', 'back', 'forearms'],
+  farmers_carry: ['grip', 'traps', 'core', 'legs'],
+  partner_drags: ['legs', 'back', 'core', 'grip'],
+  walking_ammo_can_lunge: ['quads', 'glutes', 'core', 'grip'],
+  broad_jumps: ['quads', 'glutes', 'calves', 'power'],
+  walking_lunges: ['quads', 'glutes', 'hamstrings', 'balance'],
+  // Running
+  run_1_5mi: ['cardiovascular', 'legs'],
+  run_3mi: ['cardiovascular', 'legs', 'endurance'],
+  sprint_200m: ['quads', 'hamstrings', 'cardiovascular', 'power'],
+  sprint_400m: ['cardiovascular', 'legs', 'anaerobic'],
+  sprint_800m: ['cardiovascular', 'legs', 'lactate threshold'],
+  jog_100_200m: ['cardiovascular', 'recovery'],
+  pft_run: ['cardiovascular', 'legs', 'mental toughness'],
+  // Swimming
+  swim_25m: ['shoulders', 'back', 'core'],
+  swim_50m: ['shoulders', 'back', 'core', 'legs'],
+  swim_100m: ['shoulders', 'back', 'core', 'cardiovascular'],
+  swim_200m: ['full body', 'cardiovascular', 'endurance'],
+  swim_300m: ['full body', 'cardiovascular', 'endurance'],
+  swim_500m: ['full body', 'cardiovascular', 'endurance', 'mental toughness'],
+  swim_800m: ['full body', 'cardiovascular', 'endurance'],
+  tread_water: ['legs', 'core', 'endurance'],
+  tread_hands_up: ['legs', 'core', 'mental toughness'],
+  underwater_swim: ['core', 'breath control', 'mental toughness'],
+  float_4min: ['relaxation', 'breath control'],
+  // Rucking
+  ruck_1_2mi: ['legs', 'back', 'shoulders', 'core'],
+  ruck_4mi: ['legs', 'back', 'shoulders', 'core', 'endurance'],
+  ruck_5mi: ['legs', 'back', 'shoulders', 'core', 'endurance'],
+  ruck_6mi: ['legs', 'back', 'shoulders', 'core', 'endurance'],
+  ruck_7mi: ['legs', 'back', 'shoulders', 'core', 'endurance'],
+  ruck_8mi: ['legs', 'back', 'shoulders', 'core', 'endurance', 'mental toughness'],
+  ruck_9mi: ['legs', 'back', 'shoulders', 'core', 'endurance', 'mental toughness'],
+  ruck_10mi: ['legs', 'back', 'shoulders', 'core', 'endurance', 'mental toughness'],
+  ruck_12mi: ['full body', 'endurance', 'mental toughness'],
+  // Recovery
+  ais_calf: ['calves'],
+  ais_hamstring: ['hamstrings'],
+  ais_it_band: ['IT band', 'hip'],
+  ais_groin: ['adductors'],
+  ais_quads: ['quads', 'hip flexors'],
+  ais_rotator_cuff: ['rotator cuff', 'shoulders'],
+  ais_thoracic: ['thoracic spine', 'shoulders'],
+  ais_middle_back: ['middle back', 'thoracic spine'],
+  ais_triceps: ['triceps'],
+  roller_full: ['full body', 'fascia'],
+  // Gym alternatives
+  bench_press: ['chest', 'triceps', 'shoulders'],
+  overhead_press: ['shoulders', 'triceps', 'core'],
+  barbell_thruster: ['quads', 'glutes', 'shoulders', 'core'],
+  barbell_front_squat: ['quads', 'glutes', 'core'],
+  goblet_squat: ['quads', 'glutes', 'core'],
+  lat_pulldown: ['lats', 'biceps', 'upper back'],
+  deadlift: ['back', 'glutes', 'hamstrings', 'core', 'grip'],
+  barbell_lunge: ['quads', 'glutes', 'hamstrings', 'core'],
+  turkish_getup: ['full body', 'core', 'shoulders', 'balance'],
+  sled_drag: ['legs', 'back', 'core', 'grip'],
+  hanging_leg_raises: ['lower abs', 'hip flexors', 'grip'],
+};
+
+const ILLUSTRATIONS: Record<string, string> = {
+  // Warmup
+  ankles_hips_shoulders: '🔄', hip_bridge: '🌉', elbow_pushups: '💪', bird_dog: '🐕',
+  frog_squat_warmup: '🐸', worlds_greatest_stretch: '🌍', inchworm: '🐛',
+  walking_high_knees: '🦵', walking_quads_pulls: '🦿', cradles: '🤱',
+  backwards_hamstring: '🔙', high_knees: '⬆️', butt_kicks: '👢',
+  // Core
+  forward_plank: '🧱', side_plank: '📐', flutter_kicks: '🦋',
+  knees_to_elbows: '🧲', usmc_crunches: '💫', mountain_climbers: '⛰️',
+  // Calisthenics
+  pushups: '🫸', hand_release_pushups: '✋', lunges_counter_rotation: '🔁',
+  frog_squats: '🐸', ammo_can_push_press: '📦', ammo_can_thruster: '🚀',
+  ammo_can_front_squats: '🏋️', air_squats: '⬇️', burpees: '💥',
+  skaters: '⛸️', dumbbell_getups: '🆙', sandbag_getups: '🎒',
+  tire_flips: '🛞', high_crawl: '🐊', pullups: '💪', chinups: '🤙',
+  farmers_carry: '🧑‍🌾', partner_drags: '🤝', walking_ammo_can_lunge: '🚶',
+  broad_jumps: '🦘', walking_lunges: '🚶‍♂️',
+  // Running
+  run_1_5mi: '🏃', run_3mi: '🏃‍♂️', sprint_200m: '⚡', sprint_400m: '⚡',
+  sprint_800m: '🏃‍♀️', jog_100_200m: '🚶‍♂️', pft_run: '🎖️',
+  // Swimming
+  swim_25m: '🏊', swim_50m: '🏊', swim_100m: '🏊‍♂️', swim_200m: '🌊',
+  swim_300m: '🌊', swim_500m: '🦈', swim_800m: '🐋',
+  tread_water: '🧘‍♂️', tread_hands_up: '🙌', underwater_swim: '🤿', float_4min: '🛟',
+  // Rucking
+  ruck_1_2mi: '🎒', ruck_4mi: '🎒', ruck_5mi: '🎒', ruck_6mi: '🎒',
+  ruck_7mi: '🎒', ruck_8mi: '🎒', ruck_9mi: '🎒', ruck_10mi: '🎒', ruck_12mi: '🎒',
+  // Recovery
+  ais_calf: '🧘', ais_hamstring: '🧘', ais_it_band: '🧘', ais_groin: '🧘',
+  ais_quads: '🧘', ais_rotator_cuff: '🧘', ais_thoracic: '🧘',
+  ais_middle_back: '🧘', ais_triceps: '🧘', roller_full: '🧴',
+  // Gym
+  bench_press: '🏋️', overhead_press: '🏋️‍♂️', barbell_thruster: '🏋️',
+  barbell_front_squat: '🏋️', goblet_squat: '🏋️', lat_pulldown: '🏋️',
+  deadlift: '🏋️‍♀️', barbell_lunge: '🏋️', turkish_getup: '🏋️',
+  sled_drag: '🛷', hanging_leg_raises: '🪜',
+  // Utility
+  rest_2min: '⏸️', assess_feet_gear: '🦶',
+};
+
+const EXERCISE_STEPS: Record<string, string[]> = {
+  pushups: [
+    'Start in high plank with hands shoulder-width apart.',
+    'Lower your chest to the ground, keeping elbows at 45°.',
+    'Push up through your hands to full arm extension.',
+    'Keep your back straight and core engaged throughout.',
+  ],
+  hand_release_pushups: [
+    'Start in push-up position.',
+    'Lower your entire body to the ground.',
+    'Lift both hands completely off the ground.',
+    'Place hands back down and push up to starting position.',
+  ],
+  pullups: [
+    'Hang from bar with hands wider than shoulders, palms away.',
+    'Engage your lats and pull your shoulder blades down.',
+    'Pull your chest toward the bar until chin clears it.',
+    'Lower with control to a full dead hang.',
+  ],
+  burpees: [
+    'Stand tall, then squat and place hands on ground.',
+    'Kick feet back into push-up position.',
+    'Perform a full push-up.',
+    'Fire legs back in and explode upward into a jump.',
+    'Reach hands overhead and spread eagle in the air.',
+  ],
+  forward_plank: [
+    'Place forearms on ground, elbows under shoulders.',
+    'Extend legs back, toes on ground.',
+    'Create a straight line from head to heels.',
+    'Hold position, breathing steadily.',
+  ],
+  side_plank: [
+    'Lie on your side with forearm on the ground.',
+    'Push up, creating a straight line from shoulder to ankle.',
+    "Don't let your hips sag.",
+    'Hold position, then switch sides.',
+  ],
+  air_squats: [
+    'Stand with feet shoulder-width apart.',
+    'Raise arms to shoulder height as you descend.',
+    'Push hips back and squat below parallel.',
+    'Drive through heels to stand, squeezing glutes at top.',
+  ],
+  usmc_crunches: [
+    'Lie on back with knees bent, feet flat on ground.',
+    'Cross arms over abdomen.',
+    'Drive upper body off the ground using your abs.',
+    'Return shoulders to the deck each rep.',
+  ],
+  dumbbell_getups: [
+    'Lie on back holding 30lb weight overhead with one arm.',
+    'Roll to elbow of opposite arm.',
+    'Push to hand, then sweep leg under to kneeling.',
+    'Stand up while keeping weight directly overhead.',
+    'Reverse the sequence back to the ground.',
+  ],
+  farmers_carry: [
+    'Deadlift two 50lb+ weights from the ground.',
+    'Stand tall with shoulders back and core braced.',
+    'Walk or run 50m without swaying the loads.',
+    "Set weights down with a controlled deadlift motion.",
+  ],
+  flutter_kicks: [
+    'Lie on back, hands under tailbone.',
+    'Raise legs 6-12 inches off the ground.',
+    'Alternate scissor kicks while keeping lower back pressed down.',
+    'Count in 4-count cadence.',
+  ],
+  mountain_climbers: [
+    'Start in push-up position.',
+    'Drive left knee toward chest while keeping right leg straight.',
+    'Quickly switch legs.',
+    'Maintain plank position throughout, count in 4-count cadence.',
+  ],
+  walking_lunges: [
+    'Stand tall with feet hip-width apart.',
+    'Step forward with one leg into a deep lunge.',
+    'Lower until back knee nearly touches the ground.',
+    'Drive through front heel to step forward into next lunge.',
+  ],
+  broad_jumps: [
+    'Stand with feet shoulder-width apart.',
+    'Rapidly squat, swinging arms back.',
+    'Explode forward and upward.',
+    'Land softly on both feet, absorbing impact through legs.',
+  ],
+};
+
+// Apply enrichment data to exercises
+exercises.forEach(ex => {
+  if (MUSCLE_GROUPS[ex.id]) ex.muscle_groups = MUSCLE_GROUPS[ex.id];
+  if (ILLUSTRATIONS[ex.id]) ex.illustration = ILLUSTRATIONS[ex.id];
+  if (EXERCISE_STEPS[ex.id]) ex.steps = EXERCISE_STEPS[ex.id];
+});
+
+// ============================================================
+// EXPORTS
+// ============================================================
+
 export function getExerciseById(id: string): Exercise | undefined {
   return exercises.find(e => e.id === id);
 }
@@ -138,12 +382,21 @@ export function getExercisesByCategory(category: Exercise['category']): Exercise
   return exercises.filter(e => e.category === category);
 }
 
-export function getExerciseForEquipment(exerciseId: string, equipmentAccess: EquipmentAccess): Exercise | undefined {
+export function getExercisesByMuscleGroup(muscleGroup: string): Exercise[] {
+  return exercises.filter(e => e.muscle_groups?.includes(muscleGroup));
+}
+
+export function getExerciseForEquipment(exerciseId: string, access: EquipmentAccess): Exercise | undefined {
   const exercise = getExerciseById(exerciseId);
   if (!exercise) return undefined;
-  if (equipmentAccess === 'gym' && exercise.gym_alternative_id) {
-    const gymAlt = getExerciseById(exercise.gym_alternative_id);
-    if (gymAlt) return gymAlt;
+  if (access === 'gym' && exercise.gym_alternative_id) {
+    return getExerciseById(exercise.gym_alternative_id) || exercise;
   }
   return exercise;
+}
+
+export function getAllMuscleGroups(): string[] {
+  const groups = new Set<string>();
+  exercises.forEach(e => e.muscle_groups?.forEach(g => groups.add(g)));
+  return Array.from(groups).sort();
 }

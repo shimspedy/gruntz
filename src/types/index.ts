@@ -16,6 +16,9 @@ export interface Exercise {
   xp_value: number;
   form_tips: string[];
   progression_rules?: ProgressionRules;
+  muscle_groups?: string[];
+  steps?: string[];
+  illustration?: string;
 }
 
 export interface ProgressionRules {
@@ -192,4 +195,65 @@ export interface CoachMessage {
   type: 'motivation' | 'insight' | 'recovery' | 'warning' | 'celebration';
   message: string;
   generated_at: string;
+}
+
+// Movement Card system
+export interface CardExercise {
+  exercise_id: string;
+  order: number;
+  prescribed_sets?: number;
+  prescribed_reps?: number;
+  prescribed_duration?: number;
+  notes?: string;
+}
+
+export interface MovementCard {
+  id: string;
+  card_number: number;
+  name: string;
+  category: 'strength' | 'ruck' | 'core' | 'total_body' | 'swim';
+  description: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  estimated_duration: number;
+  target_muscle_groups: string[];
+  sections: CardSection[];
+  total_rounds: number;
+  icon: string;
+}
+
+export interface CardSection {
+  id: string;
+  name: string;
+  rounds: number;
+  exercises: CardExercise[];
+  rest_between_rounds?: number;
+  notes?: string;
+}
+
+// Rep/set logging
+export interface SetLog {
+  set_number: number;
+  reps_completed?: number;
+  weight_used?: number;
+  duration_seconds?: number;
+  distance?: string;
+  rpe?: number;
+}
+
+export interface ExerciseLog {
+  exercise_id: string;
+  sets_completed: SetLog[];
+  rest_taken_seconds: number;
+  notes?: string;
+  timestamp: string;
+}
+
+// AI Recommendations
+export interface WorkoutRecommendation {
+  card_id: string;
+  card_name: string;
+  reason: string;
+  confidence: number;
+  priority: 'high' | 'medium' | 'low';
+  focus_areas: string[];
 }

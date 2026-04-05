@@ -1,0 +1,325 @@
+import React, { useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, spacing } from '../theme';
+import { Card } from '../components/Card';
+import { RepLogModal } from '../components/RepLogModal';
+import { getExerciseById } from '../data/exercises';
+import type { HomeStackParamList } from '../types/navigation';
+import type { SetLog } from '../types';
+
+type ExerciseDetailRoute = RouteProp<HomeStackParamList, 'ExerciseDetail'>;
+
+export default function ExerciseDetailScreen() {
+  const route = useRoute<ExerciseDetailRoute>();
+  const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+  const exercise = getExerciseById(route.params.exerciseId);
+  const [showLogModal, setShowLogModal] = useState(false);
+
+  if (!exercise) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <Text style={styles.errorText}>Exercise not found.</Text>
+      </SafeAreaView>
+    );
+  }
+
+  const handleLog = (_sets: SetLog[]) => {
+    setShowLogModal(false);
+  };
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+        {/* Hero */}
+        <View style={styles.hero}>
+          <Text style={styles.illustration}>{exercise.illustration || '💪'}</Text>
+          <Text style={styles.name}>{exercise.name}</Text>
+          <Text style={styles.category}>{exercise.category.toUpperCase()}</Text>
+        </View>
+
+        {/* Quick Stats */}
+        <View style={styles.statsRow}>
+          {exercise.sets && (
+            <View style={styles.statPill}>
+              <Text style={styles.statValue}>{exercise.sets}</Text>
+              <Text style={styles.statLabel}>SETS</Text>
+            </View>
+          )}
+          {exercise.reps && (
+            <View style={styles.statPill}>
+              <Text style={styles.statValue}>{exercise.reps}</Text>
+              <Text style={styles.statLabel}>REPS</Text>
+            </View>
+          )}
+          {exercise.duration_seconds && (
+            <View style={styles.statPill}>
+              <Text style={styles.statValue}>{exercise.duration_seconds}s</Text>
+              <Text style={styles.statLabel}>TIME</Text>
+            </View>
+          )}
+          {exercise.distance && (
+            <View style={styles.statPill}>
+              <Text style={styles.statValue}>{exercise.distance}</Text>
+              <Text style={styles.statLabel}>DIST</Text>
+            </View>
+          )}
+          {exercise.rest_seconds > 0 && (
+            <View style={[styles.statPill, styles.restPill]}>
+              <Text style={[styles.statValue, styles.restValue]}>{exercise.rest_seconds}s</Text>
+              <Text style={styles.statLabel}>REST</Text>
+            </View>
+          )}
+          <View style={styles.statPill}>
+            <Text style={[styles.statValue, { color: colors.accentGold }]}>{exercise.xp_value}</Text>
+            <Text style={styles.statLabel}>XP</Text>
+          </View>
+        </View>
+
+        {/* Description */}
+        <Card title="Description">
+          <Text style={styles.description}>{exercise.description}</Text>
+        </Card>
+
+        {/* Step-by-Step */}
+        {exercise.steps && exercise.steps.length > 0 && (
+          <Card title="How To Perform">
+            {exercise.steps.map((step, i) => (
+              <View key={i} style={styles.stepRow}>
+                <View style={styles.stepNumber}>
+                  <Text style={styles.stepNumberText}>{i + 1}</Text>
+                </View>
+                <Text style={styles.stepText}>{step}</Text>
+              </View>
+            ))}
+          </Card>
+        )}
+
+        {/* Form Tips */}
+        {exercise.form_tips.length > 0 && (
+          <Card title="Form Tips">
+            {exercise.form_tips.map((tip, i) => (
+              <View key={i} style={styles.tipRow}>
+                <Ionicons name="checkmark-circle" size={18} color={colors.accentGreen} />
+                <Text style={styles.tipText}>{tip}</Text>
+              </View>
+            ))}
+          </Card>
+        )}
+
+        {/* Muscle Groups */}
+        {exercise.muscle_groups && exercise.muscle_groups.length > 0 && (
+          <Card title="Muscle Groups">
+            <View style={styles.pillRow}>
+              {exercise.muscle_groups.map((group, i) => (
+                <View key={i} style={styles.musclePill}>
+                  <Text style={styles.musclePillText}>{group}</Text>
+                </View>
+              ))}
+            </View>
+          </Card>
+        )}
+
+        {/* Equipment */}
+        {exercise.equipment.length > 0 && (
+          <Card title="Equipment Needed">
+            {exercise.equipment.map((eq, i) => (
+              <View key={i} style={styles.tipRow}>
+                <Ionicons name="barbell-outline" size={18} color={colors.accent} />
+                <Text style={styles.tipText}>{eq}</Text>
+              </View>
+            ))}
+            <Text style={styles.equipmentAccess}>
+              Access level: {exercise.equipment_access.toUpperCase()}
+            </Text>
+          </Card>
+        )}
+
+        {/* Progression */}
+        {exercise.progression_rules && (
+          <Card title="Progression">
+            <Text style={styles.description}>
+              Increase by{' '}
+              {exercise.progression_rules.increment_reps
+                ? `${exercise.progression_rules.increment_reps} reps`
+                : exercise.progression_rules.increment_duration
+                ? `${exercise.progression_rules.increment_duration} seconds`
+                : `${exercise.progression_rules.increment_sets} sets`}
+              {' '}every {exercise.progression_rules.frequency}.
+            </Text>
+          </Card>
+        )}
+
+        {/* Log Button */}
+        <TouchableOpacity style={styles.logBtn} onPress={() => setShowLogModal(true)}>
+          <Text style={styles.logBtnText}>LOG THIS EXERCISE</Text>
+        </TouchableOpacity>
+      </ScrollView>
+
+      {showLogModal && (
+        <RepLogModal
+          visible={showLogModal}
+          exercise={exercise}
+          onSave={handleLog}
+          onClose={() => setShowLogModal(false)}
+        />
+      )}
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  scroll: {
+    flex: 1,
+  },
+  content: {
+    padding: spacing.md,
+    paddingBottom: spacing.xxl,
+  },
+  errorText: {
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: 100,
+    fontSize: 16,
+  },
+  hero: {
+    alignItems: 'center',
+    paddingVertical: spacing.xl,
+  },
+  illustration: {
+    fontSize: 64,
+    marginBottom: spacing.md,
+  },
+  name: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    textAlign: 'center',
+  },
+  category: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.accent,
+    letterSpacing: 2,
+    marginTop: spacing.xs,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  statPill: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+    minWidth: 60,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+  },
+  restPill: {
+    borderColor: colors.accent,
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.textPrimary,
+  },
+  restValue: {
+    color: colors.accent,
+  },
+  statLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.textMuted,
+    letterSpacing: 1,
+    marginTop: 2,
+  },
+  description: {
+    fontSize: 15,
+    color: colors.textSecondary,
+    lineHeight: 22,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: spacing.md,
+    gap: spacing.md,
+  },
+  stepNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepNumberText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#000',
+  },
+  stepText: {
+    flex: 1,
+    fontSize: 15,
+    color: colors.textPrimary,
+    lineHeight: 22,
+  },
+  tipRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  tipText: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  pillRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  musclePill: {
+    backgroundColor: colors.cardBorder,
+    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  musclePillText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    textTransform: 'capitalize',
+  },
+  equipmentAccess: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: spacing.sm,
+  },
+  logBtn: {
+    backgroundColor: colors.accent,
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: spacing.lg,
+  },
+  logBtnText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#000',
+    letterSpacing: 1.5,
+  },
+});
