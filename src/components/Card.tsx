@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { useColors, spacing } from '../theme';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 
 interface CardProps {
@@ -16,15 +17,15 @@ export function Card({ children, style, title, accentColor }: CardProps) {
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
-    <View style={[styles.card, style]}>
+    <Animated.View entering={FadeInUp.duration(400).springify().damping(18)} style={[styles.card, style]}>
       {/* Thin top accent strip */}
       <View style={[styles.topAccent, { backgroundColor: resolvedAccent }]} />
       {/* Corner cuts — both sides */}
       <View style={styles.cornerCutRight} />
       <View style={styles.cornerCutLeft} />
-      {title && <Text style={styles.title}>{title}</Text>}
+      {title && <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{title}</Text>}
       {children}
-    </View>
+    </Animated.View>
   );
 }
 

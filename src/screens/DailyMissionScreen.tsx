@@ -3,7 +3,8 @@ import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useColors, spacing } from '../theme';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 import { ExerciseRow } from '../components/ExerciseRow';
@@ -15,6 +16,7 @@ import { useMissionStore } from '../store/useMissionStore';
 import { useUserStore } from '../store/useUserStore';
 import { getWorkoutDay } from '../data/workouts';
 import { getExerciseById } from '../data/exercises';
+import { hapticMedium } from '../utils/haptics';
 import type { CompletedExercise, CompletedMission, Exercise } from '../types';
 import type { HomeStackParamList } from '../types/navigation';
 
@@ -53,6 +55,7 @@ export default function DailyMissionScreen() {
   const isPerfect = completedCount === totalExercises;
 
   const handleStart = () => {
+    hapticMedium();
     setStarted(true);
     startMission();
   };
@@ -155,9 +158,9 @@ export default function DailyMissionScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Mission Header */}
-        <View style={styles.header}>
+        <Animated.View entering={FadeInUp.duration(500)} style={styles.header}>
           <Text style={styles.missionLabel}>TODAY'S MISSION</Text>
-          <Text style={styles.title}>{workoutDay.title}</Text>
+          <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{workoutDay.title}</Text>
           <Text style={styles.objective}>{workoutDay.objective}</Text>
           <View style={styles.metaRow}>
             <Text style={styles.metaText}>⏱ {workoutDay.estimated_duration} min</Text>
@@ -166,7 +169,7 @@ export default function DailyMissionScreen() {
               ✅ {completedCount}/{totalExercises}
             </Text>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Progress Bar */}
         <View style={styles.progressTrack}>

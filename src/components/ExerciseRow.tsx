@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useColors, spacing } from '../theme';
+import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
+import { hapticLight } from '../utils/haptics';
 
 interface ExerciseRowProps {
   name: string;
@@ -18,14 +19,19 @@ export function ExerciseRow({ name, detail, completed, onToggle, restSeconds, il
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
+  const handleToggle = useCallback(() => {
+    hapticLight();
+    onToggle();
+  }, [onToggle]);
+
   return (
-    <TouchableOpacity style={styles.row} onPress={onToggle} activeOpacity={0.7}>
+    <TouchableOpacity style={styles.row} onPress={handleToggle} activeOpacity={0.7}>
       <View style={[styles.checkbox, completed && styles.checkboxCompleted]}>
         {completed && <Ionicons name="checkmark" size={16} color={colors.background} />}
       </View>
       {illustration && <Text style={styles.illustration}>{illustration}</Text>}
       <View style={styles.info}>
-        <Text style={[styles.name, completed && styles.nameCompleted]}>{name}</Text>
+        <Text style={[styles.name, completed && styles.nameCompleted]} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{name}</Text>
         <View style={styles.detailRow}>
           <Text style={styles.detail}>{detail}</Text>
           {restSeconds && restSeconds > 0 ? (

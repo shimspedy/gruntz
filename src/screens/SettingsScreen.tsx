@@ -1,11 +1,13 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Switch, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useColors, spacing, themeMetas, palettes } from '../theme';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useColors, spacing, themeMetas, palettes, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors, ThemeId } from '../theme';
 import { useThemeStore } from '../store/useThemeStore';
 import { Card } from '../components/Card';
 import { SectionHeader } from '../components/SectionHeader';
+import { hapticSelection, hapticLight } from '../utils/haptics';
 
 export default function SettingsScreen() {
   const colors = useColors();
@@ -29,7 +31,7 @@ export default function SettingsScreen() {
           { borderColor: isActive ? palette.accent : colors.cardBorder },
           isActive && { borderWidth: 2 },
         ]}
-        onPress={() => setTheme(meta.id)}
+        onPress={() => { hapticSelection(); setTheme(meta.id); }}
         activeOpacity={0.7}
       >
         <View style={[styles.chipAccent, { backgroundColor: palette.accent }]} />
@@ -74,7 +76,7 @@ export default function SettingsScreen() {
             </View>
             <Switch
               value={notificationsEnabled}
-              onValueChange={setNotificationsEnabled}
+              onValueChange={(v) => { hapticLight(); setNotificationsEnabled(v); }}
               trackColor={{ false: colors.backgroundSecondary, true: colors.accent }}
               thumbColor={colors.textPrimary}
             />
@@ -86,7 +88,7 @@ export default function SettingsScreen() {
             </View>
             <Switch
               value={imperialUnits}
-              onValueChange={setImperialUnits}
+              onValueChange={(v) => { hapticLight(); setImperialUnits(v); }}
               trackColor={{ false: colors.backgroundSecondary, true: colors.accent }}
               thumbColor={colors.textPrimary}
             />

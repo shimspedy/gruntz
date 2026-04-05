@@ -1,9 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, ScrollView } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import { useColors, spacing } from '../theme';
+import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
+import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
+import { hapticSuccess, hapticSelection, hapticLight } from '../utils/haptics';
 import type { Exercise, SetLog } from '../types';
 
 interface RepLogModalProps {
@@ -42,6 +44,7 @@ export function RepLogModal({ visible, exercise, onSave, onClose }: RepLogModalP
   };
 
   const addSet = () => {
+    hapticLight();
     setSets(prev => [...prev, {
       set_number: prev.length + 1,
       reps_completed: exercise.reps || undefined,
@@ -55,7 +58,7 @@ export function RepLogModal({ visible, exercise, onSave, onClose }: RepLogModalP
   };
 
   const handleSave = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    hapticSuccess();
     onSave(sets.map(s => ({ ...s, rpe })));
   };
 
@@ -63,9 +66,9 @@ export function RepLogModal({ visible, exercise, onSave, onClose }: RepLogModalP
   const isDistanceExercise = !!exercise.distance && !exercise.reps && !exercise.duration_seconds;
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View style={styles.overlay}>
-        <View style={styles.modal}>
+    <Modal visible={visible} animationType="none" transparent>
+      <BlurView intensity={40} tint="dark" style={styles.overlay}>
+        <Animated.View entering={FadeInDown.duration(300).springify()} exiting={FadeOutDown.duration(200)} style={styles.modal}>
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <Text style={styles.illustration}>{exercise.illustration || '💪'}</Text>
@@ -169,7 +172,7 @@ export function RepLogModal({ visible, exercise, onSave, onClose }: RepLogModalP
                 <TouchableOpacity
                   key={val}
                   style={[styles.rpeDot, rpe === val && styles.rpeDotActive]}
-                  onPress={() => { setRpe(val); Haptics.selectionAsync(); }}
+                  onPress={() => { setRpe(val); hapticSelection(); }}
                 >
                   <Text style={[styles.rpeDotText, rpe === val && styles.rpeDotTextActive]}>{val}</Text>
                 </TouchableOpacity>
@@ -181,10 +184,10 @@ export function RepLogModal({ visible, exercise, onSave, onClose }: RepLogModalP
           </View>
 
           <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-            <Text style={styles.saveBtnText}>LOG EXERCISE</Text>
+            <Text style={styles.saveBtnText} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>LOG EXERCISE</Text>
           </TouchableOpacity>
-        </View>
-      </View>
+        </Animated.View>
+      </BlurView>
     </Modal>
   );
 }
@@ -192,7 +195,6 @@ export function RepLogModal({ visible, exercise, onSave, onClose }: RepLogModalP
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'flex-end',
   },
   modal: {

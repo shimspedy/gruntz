@@ -6,6 +6,7 @@ import { MissionsStack } from './MissionsStack';
 import ProgressScreen from '../screens/ProgressScreen';
 import { ProfileStack } from './ProfileStack';
 import { useColors } from '../theme';
+import { hapticSelection } from '../utils/haptics';
 import type { RootTabParamList } from '../types/navigation';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -50,6 +51,11 @@ export function AppTabs() {
           return <Ionicons name={iconName} size={size} color={color} />;
         },
       })}
+      screenListeners={{
+        tabPress: () => {
+          hapticSelection();
+        },
+      }}
     >
       <Tab.Screen name="HomeTab" component={HomeStack} options={{ title: 'Home' }} />
       <Tab.Screen name="MissionsTab" component={MissionsStack} options={{ title: 'Missions' }} />

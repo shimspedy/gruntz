@@ -4,7 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
-import { useColors, spacing } from '../theme';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
+import { hapticMedium } from '../utils/haptics';
 import type { ThemeColors } from '../theme';
 import { getProgramById } from '../data/programs';
 import { useProgramStore } from '../store/useProgramStore';
@@ -27,6 +29,7 @@ export default function ProgramDetailScreen() {
   const accentColor = program.id === 'raider' ? colors.accent : colors.accentOrange;
 
   const handleStart = () => {
+    hapticMedium();
     Alert.alert(
       `Start ${program.name}?`,
       `This will set your active program to ${program.name}. You can switch anytime.`,
@@ -48,11 +51,11 @@ export default function ProgramDetailScreen() {
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Hero */}
-        <View style={styles.hero}>
+        <Animated.View entering={FadeInUp.duration(500)} style={styles.hero}>
           <Text style={styles.heroIcon}>{program.icon}</Text>
-          <Text style={styles.heroName}>{program.name}</Text>
-          <Text style={[styles.heroSub, { color: accentColor }]}>{program.subtitle}</Text>
-        </View>
+          <Text style={styles.heroName} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{program.name}</Text>
+          <Text style={[styles.heroSub, { color: accentColor }]} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{program.subtitle}</Text>
+        </Animated.View>
 
         {/* Stats Bar */}
         <View style={styles.statsBar}>
@@ -117,7 +120,7 @@ export default function ProgramDetailScreen() {
           onPress={handleStart}
           activeOpacity={0.85}
         >
-          <Text style={styles.startButtonText}>START {program.name.toUpperCase()}</Text>
+          <Text style={styles.startButtonText} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>START {program.name.toUpperCase()}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

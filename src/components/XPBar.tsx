@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useColors, spacing } from '../theme';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
+import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 
 interface XPBarProps {
@@ -14,17 +15,26 @@ export function XPBar({ current, required, level }: XPBarProps) {
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const progress = required > 0 ? Math.min(current / required, 1) : 1;
+  const fillWidth = useSharedValue(0);
+
+  useEffect(() => {
+    fillWidth.value = withTiming(progress, { duration: 800, easing: Easing.out(Easing.cubic) });
+  }, [progress]);
+
+  const animatedFillStyle = useAnimatedStyle(() => ({
+    width: `${fillWidth.value * 100}%`,
+  }));
 
   return (
     <View style={styles.container}>
       <View style={styles.labelRow}>
         <View style={styles.levelBadge}>
-          <Text style={styles.levelText}>LVL {level}</Text>
+          <Text style={styles.levelText} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>LVL {level}</Text>
         </View>
-        <Text style={styles.xpText}>{current} / {required} XP</Text>
+        <Text style={styles.xpText} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{current} / {required} XP</Text>
       </View>
       <View style={styles.track}>
-        <View style={[styles.fill, { width: `${progress * 100}%` }]} />
+        <Animated.View style={[styles.fill, animatedFillStyle]} />
         {/* Tick marks */}
         <View style={[styles.tick, { left: '25%' }]} />
         <View style={[styles.tick, { left: '50%' }]} />

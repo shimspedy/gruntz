@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
-import { useColors, spacing } from '../theme';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 
 interface StatCardProps {
@@ -19,15 +20,15 @@ export function StatCard({ icon, value, label, color, style }: StatCardProps) {
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
-    <View style={[styles.card, style]}>
+    <Animated.View entering={FadeInUp.duration(500).springify().damping(18)} style={[styles.card, style]}>
       {/* Top-left accent notch */}
       <View style={[styles.topAccent, { backgroundColor: resolvedColor }]} />
       {/* Top-right corner cut */}
       <View style={styles.cornerCut} />
       <Text style={styles.icon}>{icon}</Text>
-      <Text style={[styles.value, { color: resolvedColor }]}>{value}</Text>
-      <Text style={styles.label}>{label}</Text>
-    </View>
+      <Text style={[styles.value, { color: resolvedColor }]} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{value}</Text>
+      <Text style={styles.label} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{label}</Text>
+    </Animated.View>
   );
 }
 

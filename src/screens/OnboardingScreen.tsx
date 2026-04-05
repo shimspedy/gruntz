@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useColors, spacing } from '../theme';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { MissionButton } from '../components/MissionButton';
 import { Card } from '../components/Card';
 import { useUserStore } from '../store/useUserStore';
+import { hapticLight, hapticSelection, hapticSuccess } from '../utils/haptics';
 import type { UserProfile } from '../types';
 
 const fitnessLevels = ['beginner', 'intermediate', 'advanced'] as const;
@@ -29,12 +31,14 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   const [intensity, setIntensity] = useState<'low' | 'moderate' | 'high'>('moderate');
 
   const toggleGoal = (goal: string) => {
+    hapticSelection();
     setSelectedGoals((prev) =>
       prev.includes(goal) ? prev.filter((g) => g !== goal) : [...prev, goal]
     );
   };
 
   const handleComplete = () => {
+    hapticSuccess();
     const profile: UserProfile = {
       id: 'local',
       display_name: 'Warrior',
@@ -62,9 +66,9 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   const steps = [
     // Step 0: Welcome
     <View key="welcome" style={styles.stepContainer}>
-      <Text style={styles.welcomeEmoji}>⚔️</Text>
-      <Text style={styles.welcomeTitle}>GRUNTZ</Text>
-      <Text style={styles.welcomeSubtitle}>Military-Grade Fitness</Text>
+      <Animated.Text entering={FadeInUp.duration(600)} style={styles.welcomeEmoji}>⚔️</Animated.Text>
+      <Animated.Text entering={FadeInUp.duration(600).delay(200)} style={styles.welcomeTitle} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>GRUNTZ</Animated.Text>
+      <Animated.Text entering={FadeInUp.duration(600).delay(400)} style={styles.welcomeSubtitle}>Military-Grade Fitness</Animated.Text>
       <Text style={styles.welcomeDesc}>
         Transform your body with structured, progressive training inspired by elite military fitness programs.
       </Text>
@@ -78,7 +82,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
         <TouchableOpacity
           key={level}
           style={[styles.optionCard, fitnessLevel === level && styles.optionSelected]}
-          onPress={() => setFitnessLevel(level)}
+          onPress={() => { hapticSelection(); setFitnessLevel(level); }}
         >
           <Text style={[styles.optionText, fitnessLevel === level && styles.optionTextSelected]}>
             {level.charAt(0).toUpperCase() + level.slice(1)}
@@ -114,7 +118,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
           <TouchableOpacity
             key={d}
             style={[styles.dayButton, daysPerWeek === d && styles.dayButtonSelected]}
-            onPress={() => setDaysPerWeek(d)}
+            onPress={() => { hapticSelection(); setDaysPerWeek(d); }}
           >
             <Text style={[styles.dayText, daysPerWeek === d && styles.dayTextSelected]}>{d}</Text>
           </TouchableOpacity>
@@ -124,13 +128,13 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
       <Text style={[styles.stepTitle, { marginTop: spacing.xl }]}>Equipment Access</Text>
       <TouchableOpacity
         style={[styles.optionCard, hasPool && styles.optionSelected]}
-        onPress={() => setHasPool(!hasPool)}
+        onPress={() => { hapticSelection(); setHasPool(!hasPool); }}
       >
         <Text style={[styles.optionText, hasPool && styles.optionTextSelected]}>🏊 Pool Access</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.optionCard, hasRuck && styles.optionSelected]}
-        onPress={() => setHasRuck(!hasRuck)}
+        onPress={() => { hapticSelection(); setHasRuck(!hasRuck); }}
       >
         <Text style={[styles.optionText, hasRuck && styles.optionTextSelected]}>🎒 Ruck / Weighted Pack</Text>
       </TouchableOpacity>
@@ -144,7 +148,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
         <TouchableOpacity
           key={level}
           style={[styles.optionCard, intensity === level && styles.optionSelected]}
-          onPress={() => setIntensity(level)}
+          onPress={() => { hapticSelection(); setIntensity(level); }}
         >
           <Text style={[styles.optionText, intensity === level && styles.optionTextSelected]}>
             {level === 'low' ? '🟢 Low — Ease into it' : level === 'moderate' ? '🟡 Moderate — Balanced' : '🔴 High — Push the limits'}

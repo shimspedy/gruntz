@@ -3,9 +3,11 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useColors, spacing } from '../theme';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { PROGRAMS } from '../data/programs';
+import { hapticLight } from '../utils/haptics';
 import type { HomeStackParamList } from '../types/navigation';
 import type { TrainingProgram } from '../types';
 
@@ -48,7 +50,7 @@ function ProgramCard({ program, onPress, colors, styles }: { program: TrainingPr
   const accentColor = program.id === 'raider' ? colors.accent : colors.accentOrange;
 
   return (
-    <TouchableOpacity style={[styles.card, { borderColor: accentColor }]} onPress={onPress} activeOpacity={0.85}>
+    <TouchableOpacity style={[styles.card, { borderColor: accentColor }]} onPress={() => { hapticLight(); onPress(); }} activeOpacity={0.85}>
       <View style={styles.cardHeader}>
         <Text style={styles.cardIcon}>{program.icon}</Text>
         <View style={styles.cardDiffBadge}>

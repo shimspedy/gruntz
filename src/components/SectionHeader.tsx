@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useColors, spacing } from '../theme';
+import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 
 interface SectionHeaderProps {
@@ -18,7 +18,7 @@ export function SectionHeader({ title, subtitle, icon }: SectionHeaderProps) {
       <View style={styles.accentLine} />
       {icon && <Text style={styles.icon}>{icon}</Text>}
       <View>
-        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{title}</Text>
         {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
       </View>
     </View>

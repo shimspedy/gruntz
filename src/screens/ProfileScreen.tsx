@@ -4,7 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { useColors, spacing } from '../theme';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 import { XPBar } from '../components/XPBar';
@@ -13,6 +14,7 @@ import { useProgramStore } from '../store/useProgramStore';
 import { getXPToNextLevel } from '../utils/xp';
 import { getRankInfo } from '../data/ranks';
 import { getProgramById } from '../data/programs';
+import { hapticLight } from '../utils/haptics';
 import type { ProfileStackParamList } from '../types/navigation';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
@@ -39,13 +41,13 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Profile Header */}
-        <View style={styles.header}>
+        <Animated.View entering={FadeInUp.duration(500)} style={styles.header}>
           <View style={styles.avatarCircle}>
             <Text style={styles.avatarEmoji}>{rankInfo?.icon || '🔰'}</Text>
           </View>
-          <Text style={styles.displayName}>{profile?.display_name || 'Warrior'}</Text>
+          <Text style={styles.displayName} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{profile?.display_name || 'Warrior'}</Text>
           <Text style={styles.rankText}>{progress.current_rank} • Level {progress.current_level}</Text>
-        </View>
+        </Animated.View>
 
         {/* XP Bar */}
         <Card style={styles.section}>
@@ -78,7 +80,7 @@ export default function ProfileScreen() {
           <TouchableOpacity
             key={item.label}
             style={styles.menuItem}
-            onPress={() => navigation.navigate(item.screen)}
+            onPress={() => { hapticLight(); navigation.navigate(item.screen); }}
             activeOpacity={0.7}
           >
             <View style={styles.menuLeft}>

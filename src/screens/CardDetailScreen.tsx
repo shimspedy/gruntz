@@ -4,8 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { useColors, spacing } from '../theme';
+import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
+import { hapticLight } from '../utils/haptics';
 import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 import { getMovementCard } from '../data/movementCards';
@@ -31,6 +33,7 @@ export default function CardDetailScreen() {
   }
 
   const navigateToExercise = (exerciseId: string) => {
+    hapticLight();
     navigation.navigate('ExerciseDetail', { exerciseId });
   };
 
@@ -38,14 +41,14 @@ export default function CardDetailScreen() {
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Hero */}
-        <View style={styles.hero}>
+        <Animated.View entering={FadeInUp.duration(500)} style={styles.hero}>
           <Text style={styles.icon}>{card.icon}</Text>
-          <Text style={styles.cardLabel}>
+          <Text style={styles.cardLabel} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
             {card.category === 'swim' ? 'SWIM' : 'MOVEMENT'} CARD #{card.card_number}
           </Text>
-          <Text style={styles.cardName}>{card.name}</Text>
+          <Text style={styles.cardName} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{card.name}</Text>
           <Text style={styles.description}>{card.description}</Text>
-        </View>
+        </Animated.View>
 
         {/* Quick Stats */}
         <View style={styles.statsRow}>

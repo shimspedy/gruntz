@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useColors, spacing } from '../theme';
+import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 import { useUserStore } from '../store/useUserStore';
@@ -19,7 +19,7 @@ export default function AchievementsScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Achievements</Text>
+        <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>Achievements</Text>
         <Text style={styles.subtitle}>
           {userAchievements.filter((a) => a.unlocked).length} / {allAchievements.length} Unlocked
         </Text>

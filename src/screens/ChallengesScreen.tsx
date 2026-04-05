@@ -4,10 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { useColors, spacing } from '../theme';
+import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 import { MissionButton } from '../components/MissionButton';
+import { hapticLight } from '../utils/haptics';
 import type { MissionsStackParamList } from '../types/navigation';
 
 type Nav = NativeStackNavigationProp<MissionsStackParamList, 'Challenges'>;
@@ -50,7 +51,7 @@ export default function ChallengesScreen() {
         <TouchableOpacity
           style={styles.cardsBanner}
           activeOpacity={0.8}
-          onPress={() => navigation.navigate('WorkoutCards')}
+          onPress={() => { hapticLight(); navigation.navigate('WorkoutCards'); }}
         >
           <View style={styles.bannerLeft}>
             <Text style={styles.bannerIcon}>🎴</Text>

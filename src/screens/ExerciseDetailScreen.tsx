@@ -4,8 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { useColors, spacing } from '../theme';
+import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
+import { hapticMedium } from '../utils/haptics';
 import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 import { RepLogModal } from '../components/RepLogModal';
@@ -39,11 +41,11 @@ export default function ExerciseDetailScreen() {
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Hero */}
-        <View style={styles.hero}>
+        <Animated.View entering={FadeInUp.duration(500)} style={styles.hero}>
           <Text style={styles.illustration}>{exercise.illustration || '💪'}</Text>
-          <Text style={styles.name}>{exercise.name}</Text>
-          <Text style={styles.category}>{exercise.category.toUpperCase()}</Text>
-        </View>
+          <Text style={styles.name} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{exercise.name}</Text>
+          <Text style={styles.category} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{exercise.category.toUpperCase()}</Text>
+        </Animated.View>
 
         {/* Quick Stats */}
         <View style={styles.statsRow}>
@@ -158,8 +160,8 @@ export default function ExerciseDetailScreen() {
         )}
 
         {/* Log Button */}
-        <TouchableOpacity style={styles.logBtn} onPress={() => setShowLogModal(true)}>
-          <Text style={styles.logBtnText}>LOG THIS EXERCISE</Text>
+        <TouchableOpacity style={styles.logBtn} onPress={() => { hapticMedium(); setShowLogModal(true); }}>
+          <Text style={styles.logBtnText} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>LOG THIS EXERCISE</Text>
         </TouchableOpacity>
       </ScrollView>
 

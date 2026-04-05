@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useColors, spacing } from '../theme';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 import { useUserStore } from '../store/useUserStore';
@@ -17,14 +18,14 @@ export default function AvatarScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Avatar & Gear</Text>
+        <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>Avatar & Gear</Text>
 
         {/* Avatar Display */}
         <Card style={styles.avatarCard}>
-          <View style={styles.avatarCircle}>
+          <Animated.View entering={FadeInUp.duration(500)} style={styles.avatarCircle}>
             <Text style={styles.avatarEmoji}>{rankInfo?.icon || '🔰'}</Text>
-          </View>
-          <Text style={styles.rankName}>{progress.current_rank}</Text>
+          </Animated.View>
+          <Text style={styles.rankName} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{progress.current_rank}</Text>
           <Text style={styles.rankDesc}>{rankInfo?.description}</Text>
           <Text style={styles.levelText}>Level {progress.current_level}</Text>
         </Card>

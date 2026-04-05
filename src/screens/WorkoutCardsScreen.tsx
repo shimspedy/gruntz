@@ -4,13 +4,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { useColors, spacing } from '../theme';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 import { SectionHeader } from '../components/SectionHeader';
 import { movementCards, getAllMovementCards, getAllSwimCards } from '../data/movementCards';
 import { useUserStore } from '../store/useUserStore';
 import { getTopRecommendations, getStrengthProfile } from '../utils/recommendations';
+import { hapticLight } from '../utils/haptics';
 import type { MovementCard, WorkoutRecommendation } from '../types';
 import type { MissionsStackParamList } from '../types/navigation';
 
@@ -36,7 +38,7 @@ export default function WorkoutCardsScreen() {
 
   function CardItem({ card, onPress, recommended }: { card: MovementCard; onPress: () => void; recommended?: WorkoutRecommendation }) {
     return (
-      <TouchableOpacity activeOpacity={0.7} onPress={onPress}>
+      <TouchableOpacity activeOpacity={0.7} onPress={() => { hapticLight(); onPress(); }}>
         <View style={[styles.cardItem, recommended?.priority === 'high' && styles.cardItemHighlighted]}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardIcon}>{card.icon}</Text>

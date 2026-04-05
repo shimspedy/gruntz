@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useColors, spacing } from '../theme';
+import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 
@@ -30,8 +30,8 @@ export default function RecoveryScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Recovery Hub</Text>
-        <Text style={styles.subtitle}>Rest is where growth happens.</Text>
+        <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>Recovery Hub</Text>
+        <Text style={styles.subtitle} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>Rest is where growth happens.</Text>
 
         {/* Stretch Routine */}
         <Text style={styles.sectionTitle}>🧘 Quick Stretch Routine</Text>

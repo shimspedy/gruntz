@@ -3,7 +3,8 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useColors, spacing } from '../theme';
+import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
+import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { XPBar } from '../components/XPBar';
 import { StatCard } from '../components/StatCard';
@@ -16,6 +17,7 @@ import { getXPToNextLevel } from '../utils/xp';
 import { generateCoachMessage } from '../utils/adaptive';
 import { getRankInfo } from '../data/ranks';
 import { getProgramById } from '../data/programs';
+import { hapticLight } from '../utils/haptics';
 import type { HomeStackParamList } from '../types/navigation';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
@@ -58,10 +60,10 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Header */}
-        <View style={styles.header}>
+        <Animated.View entering={FadeInUp.duration(500)} style={styles.header}>
           <View>
-            <Text style={styles.greeting}>READY FOR ACTION</Text>
-            <Text style={styles.rankTitle}>
+            <Text style={styles.greeting} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>READY FOR ACTION</Text>
+            <Text style={styles.rankTitle} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
               {rankInfo?.icon} {progress.current_rank}
             </Text>
             {program && (
@@ -76,13 +78,13 @@ export default function HomeScreen() {
             <Text style={styles.streakIcon}>🔥</Text>
             <Text style={styles.streakCount}>{progress.streak_days}</Text>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Choose Program (only shown when no program selected) */}
         {!program && (
           <TouchableOpacity
             style={styles.noProgramBanner}
-            onPress={() => navigation.navigate('ProgramSelect')}
+            onPress={() => { hapticLight(); navigation.navigate('ProgramSelect'); }}
             activeOpacity={0.85}
           >
             <Text style={styles.noProgramIcon}>⚡</Text>

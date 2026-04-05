@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useColors, spacing } from '../theme';
+import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 import { StatCard } from '../components/StatCard';
@@ -27,7 +27,7 @@ export default function ProgressScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Progress Dashboard</Text>
+        <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>Progress Dashboard</Text>
 
         {/* Level & XP */}
         <Card style={styles.section}>

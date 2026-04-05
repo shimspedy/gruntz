@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import { useColors, spacing } from '../theme';
+import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
+import { hapticSuccess, hapticLight, hapticSelection } from '../utils/haptics';
 
 interface RestTimerProps {
   seconds: number;
@@ -30,12 +30,12 @@ export function RestTimer({ seconds, onComplete, onSkip }: RestTimerProps) {
       setRemaining(prev => {
         if (prev <= 1) {
           clearInterval(interval);
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          hapticSuccess();
           onCompleteRef.current();
           return 0;
         }
         if (prev <= 4) {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          hapticLight();
         }
         return prev - 1;
       });
@@ -65,7 +65,7 @@ export function RestTimer({ seconds, onComplete, onSkip }: RestTimerProps) {
     <View style={styles.container}>
       <View style={styles.timerCard}>
         <Text style={styles.label}>REST</Text>
-        <Animated.Text style={[styles.time, { transform: [{ scale: pulseAnim }] }]}>
+        <Animated.Text style={[styles.time, { transform: [{ scale: pulseAnim }] }]} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
           {formatTime(remaining)}
         </Animated.Text>
         <View style={styles.progressTrack}>
@@ -74,12 +74,12 @@ export function RestTimer({ seconds, onComplete, onSkip }: RestTimerProps) {
         <View style={styles.buttonRow}>
           <TouchableOpacity
             style={styles.controlBtn}
-            onPress={() => setIsPaused(p => !p)}
+            onPress={() => { hapticSelection(); setIsPaused(p => !p); }}
           >
             <Ionicons name={isPaused ? 'play' : 'pause'} size={20} color={colors.textPrimary} />
           </TouchableOpacity>
           {onSkip && (
-            <TouchableOpacity style={styles.skipBtn} onPress={onSkip}>
+            <TouchableOpacity style={styles.skipBtn} onPress={() => { hapticLight(); onSkip(); }}>
               <Text style={styles.skipText}>SKIP REST</Text>
               <Ionicons name="play-forward" size={16} color={colors.accent} />
             </TouchableOpacity>
