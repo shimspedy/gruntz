@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Animated } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
@@ -16,8 +16,11 @@ import type { ProgramPhase, ProgramId } from '../types';
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'ProgramDetail'>;
 type Route = RouteProp<HomeStackParamList, 'ProgramDetail'>;
 
+const TAB_BAR_HEIGHT = 72;
+
 export default function ProgramDetailScreen() {
   const colors = useColors();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const heroAnim = useFadeInUp(500);
   const navigation = useNavigation<Nav>();
@@ -114,8 +117,8 @@ export default function ProgramDetailScreen() {
         <View style={{ height: spacing.xxl }} />
       </ScrollView>
 
-      {/* Fixed bottom button */}
-      <View style={styles.bottomBar}>
+      {/* Fixed bottom button — above glass tab bar */}
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + TAB_BAR_HEIGHT }]}>
         <TouchableOpacity
           style={[styles.startButton, { backgroundColor: accentColor }]}
           onPress={handleStart}
@@ -154,7 +157,7 @@ function PhaseCard({ phase, accent, styles }: { phase: ProgramPhase; accent: str
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
-  content: { padding: spacing.md, paddingBottom: 120 },
+  content: { padding: spacing.md, paddingBottom: 180 },
   hero: { alignItems: 'center', marginBottom: spacing.lg, marginTop: spacing.md },
   heroIcon: { fontSize: 56, marginBottom: spacing.sm },
   heroName: { fontSize: 28, fontWeight: '900', color: colors.textPrimary },
@@ -205,7 +208,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   bottomBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     backgroundColor: colors.background, padding: spacing.md,
-    paddingBottom: spacing.xl, borderTopWidth: 1, borderTopColor: colors.cardBorder,
+    borderTopWidth: 1, borderTopColor: colors.cardBorder,
   },
   startButton: {
     borderRadius: 2, paddingVertical: 16, alignItems: 'center',
