@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import {
-  View, Text, TouchableOpacity, ScrollView, StyleSheet,
+  View, Text, TouchableOpacity, ScrollView, StyleSheet, Image, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useColors, spacing } from '../theme';
 import type { ThemeColors } from '../theme';
 import { analyzeForm, FormAnalysis } from '../services/aiEngine';
@@ -31,6 +32,8 @@ export default function FormAnalysisScreen() {
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<FormAnalysis | null>(null);
   const [showAllExercises, setShowAllExercises] = useState(false);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [isAnalyzingPhoto, setIsAnalyzingPhoto] = useState(false);
 
   const handleSelect = useCallback(async (exerciseName: string) => {
     hapticLight();
@@ -161,11 +164,81 @@ export default function FormAnalysisScreen() {
               </View>
             )}
 
-            {/* Camera placeholder for future */}
-            <View style={styles.cameraPlaceholder}>
-              <Ionicons name="camera-outline" size={28} color={colors.textMuted} />
-              <Text style={styles.cameraText}>Photo analysis coming soon</Text>
-              <Text style={styles.cameraSubtext}>Upload a video frame for AI-powered form feedback</Text>
+            {/* Camera — capture form photo */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>PHOTO ANALYSIS</Text>
+              {photoUri ? (
+                <View style={styles.photoContainer}>
+                  <Image source={{ uri: photoUri }} style={styles.photoPreview} resizeMode="cover" />
+                  <TouchableOpacity
+                    style={styles.retakeButton}
+                    onPress={() => setPhotoUri(null)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="refresh" size={16} color={colors.accent} />
+                    <Text style={styles.retakeText}>Retake</Text>
+                  </TouchableOpacity>
+                  {isAnalyzingPhoto && (
+                    <View style={styles.analyzingOverlay}>
+                      <ActivityIndicator size="large" color={colors.accent} />
+                      <Text style={styles.analyzingText}>Analyzing form...</Text>
+                    </View>
+                  )}
+                </View>
+              ) : (
+                <View style={styles.cameraButtons}>
+                  <TouchableOpacity
+                    style={styles.cameraButton}
+                    onPress={async () => {
+                      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+                      if (status !== 'granted') return;
+                      const result = await ImagePicker.launchCameraAsync({
+                        mediaTypes: ['images'],
+                        quality: 0.7,
+                        allowsEditing: true,
+                        aspect: [3, 4],
+                      });
+                      if (!result.canceled && result.assets[0]) {
+                        hapticLight();
+                        setPhotoUri(result.assets[0].uri);
+                        // Future: send base64 to GPT-4o for vision analysis
+                        // const base64 = result.assets[0].base64;
+                        // setIsAnalyzingPhoto(true);
+                        // const photoAnalysis = await analyzeForm(selectedExercise!, base64);
+                        // setIsAnalyzingPhoto(false);
+                      }
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="camera" size={22} color={colors.accent} />
+                    <Text style={styles.cameraButtonText}>Take Photo</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.cameraButton}
+                    onPress={async () => {
+                      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                      if (status !== 'granted') return;
+                      const result = await ImagePicker.launchImageLibraryAsync({
+                        mediaTypes: ['images'],
+                        quality: 0.7,
+                        allowsEditing: true,
+                        aspect: [3, 4],
+                      });
+                      if (!result.canceled && result.assets[0]) {
+                        hapticLight();
+                        setPhotoUri(result.assets[0].uri);
+                      }
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="images" size={22} color={colors.accent} />
+                    <Text style={styles.cameraButtonText}>Gallery</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+              <Text style={styles.cameraHint}>
+                📸 Take a photo of your form for reference. AI vision analysis activates when you connect GPT-4o.
+              </Text>
             </View>
           </>
         )}
@@ -341,22 +414,71 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.textPrimary,
     lineHeight: 20,
   },
-  cameraPlaceholder: {
+  cameraButtons: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  cameraButton: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.xl,
+    justifyContent: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    paddingVertical: 14,
     borderWidth: 1,
     borderColor: colors.cardBorder,
-    borderStyle: 'dashed',
-    borderRadius: 14,
-    gap: spacing.xs,
   },
-  cameraText: {
+  cameraButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textMuted,
+    color: colors.accent,
   },
-  cameraSubtext: {
+  photoContainer: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: spacing.sm,
+    position: 'relative',
+  },
+  photoPreview: {
+    width: '100%',
+    height: 300,
+    borderRadius: 12,
+  },
+  retakeButton: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.background + 'CC',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  retakeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.accent,
+  },
+  analyzingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.background + 'BB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+  },
+  analyzingText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  cameraHint: {
     fontSize: 12,
     color: colors.textMuted,
+    lineHeight: 18,
   },
 });

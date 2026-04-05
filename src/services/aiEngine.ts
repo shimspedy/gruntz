@@ -1,16 +1,21 @@
 import { UserProgress } from '../types';
 
 /**
- * AI Engine Abstraction Layer
+ * AI Engine Abstraction Layer — Dual LLM Architecture
  *
- * Swap-in architecture: Replace the rule-based implementations below
- * with OpenAI / Anthropic / local LLM calls when ready.
+ * Two-tier model strategy:
+ * - GPT-4o-mini: Chat coaching + plan generation (fast, cheap)
+ * - GPT-4o: Vision-based form analysis (photo/video, on-demand)
  *
- * To upgrade to OpenAI:
+ * To activate OpenAI:
  * 1. npm install openai
  * 2. Set EXPO_PUBLIC_AI_PROVIDER='openai' in .env
  * 3. Set EXPO_PUBLIC_OPENAI_API_KEY in .env
  * 4. The engine will auto-switch to API calls
+ *
+ * Cost estimate: ~$5-15/month for 1,000 active users
+ *   - GPT-4o-mini (~$0.15/1M input tokens) handles 95% of requests
+ *   - GPT-4o (~$2.50/1M input tokens) only for photo analysis
  */
 
 // ─── Configuration ──────────────────────────────────────────────
@@ -20,7 +25,15 @@ type AIProvider = 'local' | 'openai';
 const AI_PROVIDER: AIProvider = (process.env.EXPO_PUBLIC_AI_PROVIDER as AIProvider) || 'local';
 const OPENAI_API_KEY = process.env.EXPO_PUBLIC_OPENAI_API_KEY || '';
 
+/** GPT-4o-mini for text tasks (chat, plans) — fast & cheap */
+const TEXT_MODEL = 'gpt-4o-mini';
+
+/** GPT-4o for vision tasks (form analysis from photos) — powerful */
+const VISION_MODEL = 'gpt-4o';
+
 const SYSTEM_PROMPT = `You are a military fitness coach named "Gruntz Coach". You speak in a direct, motivational military style. You are knowledgeable about calisthenics, running, rucking, swimming, and tactical fitness. Keep responses concise (2-4 sentences). Never recommend exercises that could cause injury without proper form. Always encourage users but be honest about areas for improvement.`;
+
+const VISION_SYSTEM_PROMPT = `You are a military fitness form analyst. Analyze the provided exercise photo and assess form quality. Be specific about what is correct and what needs improvement. Respond in JSON format with: { "tips": [{ "area": string, "issue": string, "fix": string, "priority": "high"|"medium"|"low" }], "overallScore": number (0-100), "encouragement": string }`;
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -392,25 +405,36 @@ function localFormAnalysis(exerciseName: string): FormAnalysis {
   };
 }
 
-// ─── OpenAI Stubs (upgrade here) ────────────────────────────────
+// ─── OpenAI Implementation (upgrade here) ───────────────────────
+//
+// Install: npm install openai
+// Then uncomment the implementation blocks below
+//
 
 async function sendOpenAIChat(
   message: string,
   history: ChatMessage[],
   progress: UserProgress,
 ): Promise<string> {
-  // TODO: Replace with real OpenAI call
+  // ── GPT-4o-mini — fast text model for coaching chat ──
+  //
   // import OpenAI from 'openai';
   // const client = new OpenAI({ apiKey: OPENAI_API_KEY });
   // const messages = [
   //   { role: 'system' as const, content: SYSTEM_PROMPT },
-  //   { role: 'system' as const, content: `User stats: Level ${progress.current_level}, ${progress.current_rank}, ${progress.streak_days}-day streak, STR ${progress.strength_score}, END ${progress.endurance_score}` },
-  //   ...history.map(m => ({ role: m.role, content: m.content })),
+  //   { role: 'system' as const, content: `User stats: Level ${progress.current_level}, ${progress.current_rank}, ${progress.streak_days}-day streak, STR ${progress.strength_score}/100, END ${progress.endurance_score}/100, ${progress.workouts_completed} workouts` },
+  //   ...history.slice(-10).map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
   //   { role: 'user' as const, content: message },
   // ];
-  // const response = await client.chat.completions.create({ model: 'gpt-4o-mini', messages, max_tokens: 200 });
+  // const response = await client.chat.completions.create({
+  //   model: TEXT_MODEL,  // gpt-4o-mini
+  //   messages,
+  //   max_tokens: 300,
+  //   temperature: 0.7,
+  // });
   // return response.choices[0].message.content || 'No response';
   void SYSTEM_PROMPT;
+  void TEXT_MODEL;
   return localChatResponse(message, progress);
 }
 
@@ -419,16 +443,49 @@ async function generateOpenAIPlan(
   progress: UserProgress,
   daysPerWeek: number,
 ): Promise<GeneratedPlan> {
-  // TODO: Replace with real OpenAI call that returns structured JSON
-  // Use gpt-4o-mini with response_format: { type: 'json_object' }
+  // ── GPT-4o-mini — structured JSON plan generation ──
+  //
+  // import OpenAI from 'openai';
+  // const client = new OpenAI({ apiKey: OPENAI_API_KEY });
+  // const response = await client.chat.completions.create({
+  //   model: TEXT_MODEL,  // gpt-4o-mini
+  //   response_format: { type: 'json_object' },
+  //   messages: [
+  //     { role: 'system', content: 'Generate a workout plan as JSON matching: { name, description, weeklySchedule: [{ day, title, focus, exercises: [{ name, sets, reps?, duration?, rest, notes? }], estimatedMinutes }], estimatedDuration, difficulty }' },
+  //     { role: 'user', content: `Goal: ${goal}\nDays per week: ${daysPerWeek}\nUser level: ${progress.current_level}, rank: ${progress.current_rank}` },
+  //   ],
+  //   max_tokens: 2000,
+  //   temperature: 0.6,
+  // });
+  // return JSON.parse(response.choices[0].message.content || '{}');
+  void TEXT_MODEL;
   return localGeneratePlan(goal, progress, daysPerWeek);
 }
 
 async function analyzeFormOpenAI(
   exerciseName: string,
-  _imageBase64: string,
+  imageBase64: string,
 ): Promise<FormAnalysis> {
-  // TODO: Replace with GPT-4o vision call
-  // Send image + exercise name, get form scoring + tips
+  // ── GPT-4o — vision model for photo-based form analysis ──
+  //
+  // import OpenAI from 'openai';
+  // const client = new OpenAI({ apiKey: OPENAI_API_KEY });
+  // const response = await client.chat.completions.create({
+  //   model: VISION_MODEL,  // gpt-4o (vision capable)
+  //   response_format: { type: 'json_object' },
+  //   messages: [
+  //     { role: 'system', content: VISION_SYSTEM_PROMPT },
+  //     { role: 'user', content: [
+  //       { type: 'text', text: `Analyze form for: ${exerciseName}` },
+  //       { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
+  //     ]},
+  //   ],
+  //   max_tokens: 1000,
+  // });
+  // const parsed = JSON.parse(response.choices[0].message.content || '{}');
+  // return { exerciseName, ...parsed };
+  void VISION_MODEL;
+  void VISION_SYSTEM_PROMPT;
+  void imageBase64;
   return localFormAnalysis(exerciseName);
 }

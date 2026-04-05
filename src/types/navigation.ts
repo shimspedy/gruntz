@@ -15,6 +15,8 @@ export type HomeStackParamList = {
   CoachChat: undefined;
   PlanGenerator: undefined;
   FormAnalysis: undefined;
+  RunTracker: undefined;
+  RepCounter: undefined;
 };
 
 export type MissionsStackParamList = {

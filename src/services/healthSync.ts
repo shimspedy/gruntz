@@ -24,6 +24,10 @@ export interface WorkoutSyncData {
   endDate: Date;
   durationMinutes: number;
   caloriesBurned?: number;
+  distanceMiles?: number;
+  elevationGainFt?: number;
+  steps?: number;
+  avgHeartRate?: number;
   workoutType: 'functional_strength' | 'running' | 'swimming' | 'rucking' | 'flexibility';
   title: string;
 }
@@ -31,6 +35,14 @@ export interface WorkoutSyncData {
 export interface HealthPermissionStatus {
   granted: boolean;
   canRequest: boolean;
+}
+
+export interface HealthSummary {
+  todaySteps: number | null;
+  restingHeartRate: number | null;
+  latestHeartRate: number | null;
+  todayCalories: number | null;
+  sleepHoursLastNight: number | null;
 }
 
 /** Check if health sync is available on this device/build */
@@ -124,5 +136,86 @@ async function syncWorkoutAndroid(_data: WorkoutSyncData): Promise<boolean> {
 
 async function getStepsAndroid(): Promise<number | null> {
   // TODO: readRecords({ recordType: 'Steps', ... })
+  return null;
+}
+
+/** Get a summary of health data for the coach / recovery system */
+export async function getHealthSummary(): Promise<HealthSummary> {
+  if (!HEALTH_SYNC_AVAILABLE) {
+    return {
+      todaySteps: null,
+      restingHeartRate: null,
+      latestHeartRate: null,
+      todayCalories: null,
+      sleepHoursLastNight: null,
+    };
+  }
+
+  const [steps, heartRate, restingHR, calories, sleep] = await Promise.all([
+    getTodaySteps(),
+    getLatestHeartRate(),
+    getRestingHeartRate(),
+    getTodayActiveCalories(),
+    getLastNightSleep(),
+  ]);
+
+  return {
+    todaySteps: steps,
+    restingHeartRate: restingHR,
+    latestHeartRate: heartRate,
+    todayCalories: calories,
+    sleepHoursLastNight: sleep,
+  };
+}
+
+/** Get the most recent heart rate reading */
+export async function getLatestHeartRate(): Promise<number | null> {
+  if (!HEALTH_SYNC_AVAILABLE) return null;
+  if (Platform.OS === 'ios') {
+    // TODO: HKQuantityType.heartRate latest sample
+    return null;
+  } else if (Platform.OS === 'android') {
+    // TODO: readRecords({ recordType: 'HeartRate', ... })
+    return null;
+  }
+  return null;
+}
+
+/** Get resting heart rate */
+export async function getRestingHeartRate(): Promise<number | null> {
+  if (!HEALTH_SYNC_AVAILABLE) return null;
+  if (Platform.OS === 'ios') {
+    // TODO: HKQuantityType.restingHeartRate
+    return null;
+  } else if (Platform.OS === 'android') {
+    // TODO: readRecords({ recordType: 'RestingHeartRate', ... })
+    return null;
+  }
+  return null;
+}
+
+/** Get today's active calories burned */
+export async function getTodayActiveCalories(): Promise<number | null> {
+  if (!HEALTH_SYNC_AVAILABLE) return null;
+  if (Platform.OS === 'ios') {
+    // TODO: HKQuantityType.activeEnergyBurned
+    return null;
+  } else if (Platform.OS === 'android') {
+    // TODO: readRecords({ recordType: 'ActiveCaloriesBurned', ... })
+    return null;
+  }
+  return null;
+}
+
+/** Get last night's sleep duration in hours */
+export async function getLastNightSleep(): Promise<number | null> {
+  if (!HEALTH_SYNC_AVAILABLE) return null;
+  if (Platform.OS === 'ios') {
+    // TODO: HKCategoryType.sleepAnalysis
+    return null;
+  } else if (Platform.OS === 'android') {
+    // TODO: readRecords({ recordType: 'SleepSession', ... })
+    return null;
+  }
   return null;
 }

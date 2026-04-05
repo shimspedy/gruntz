@@ -9,6 +9,8 @@ import ExerciseDetailScreen from '../screens/ExerciseDetailScreen';
 import CoachChatScreen from '../screens/CoachChatScreen';
 import PlanGeneratorScreen from '../screens/PlanGeneratorScreen';
 import FormAnalysisScreen from '../screens/FormAnalysisScreen';
+import RunTrackerScreen from '../screens/RunTrackerScreen';
+import RepCounterScreen from '../screens/RepCounterScreen';
 import type { HomeStackParamList } from '../types/navigation';
 import { useColors } from '../theme';
 
@@ -65,6 +67,16 @@ export function HomeStack() {
         name="FormAnalysis"
         component={FormAnalysisScreen}
         options={{ title: 'Form Guide', headerBackTitle: 'Back' }}
+      />
+      <Stack.Screen
+        name="RunTracker"
+        component={RunTrackerScreen}
+        options={{ title: 'Run Tracker', headerBackTitle: 'Back' }}
+      />
+      <Stack.Screen
+        name="RepCounter"
+        component={RepCounterScreen}
+        options={{ title: 'Rep Counter', headerBackTitle: 'Back' }}
       />
     </Stack.Navigator>
   );

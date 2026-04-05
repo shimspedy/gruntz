@@ -30,7 +30,22 @@
     },
     "plugins": [
       "expo-notifications",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-sensors",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Gruntz uses your location to track runs and rucks.",
+          "locationWhenInUsePermission": "Gruntz uses your location to track runs and rucks."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Gruntz uses your camera to analyze exercise form.",
+          "photosPermission": "Gruntz accesses your photos for form analysis."
+        }
+      ]
     ]
   }
 }

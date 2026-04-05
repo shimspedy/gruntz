@@ -198,6 +198,26 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Sensor Tools */}
+        <View style={styles.aiToolsRow}>
+          <TouchableOpacity
+            style={styles.aiToolCard}
+            onPress={() => { hapticLight(); navigation.navigate('RunTracker'); }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.aiToolIcon}>🏃</Text>
+            <Text style={styles.aiToolLabel}>Run Tracker</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.aiToolCard}
+            onPress={() => { hapticLight(); navigation.navigate('RepCounter'); }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.aiToolIcon}>💪</Text>
+            <Text style={styles.aiToolLabel}>Rep Counter</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Quick Stats */}
         <Card title="Quick Stats">
           <View style={styles.quickStatRow}>
