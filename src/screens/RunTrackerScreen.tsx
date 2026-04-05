@@ -312,7 +312,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.cardBorder,
     padding: spacing.md,
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   startButton: {
     flexDirection: 'row',
