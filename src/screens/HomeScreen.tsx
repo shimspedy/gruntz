@@ -22,7 +22,7 @@ type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 export default function HomeScreen() {
   const navigation = useNavigation<Nav>();
   const { progress } = useUserStore();
-  const { todaysMission, loadTodaysMission } = useMissionStore();
+  const { todaysMission, isRestDay, nextWorkout, loadTodaysMission } = useMissionStore();
   const { selectedProgram, currentWeek, loadPersistedState } = useProgramStore();
 
   const program = selectedProgram ? getProgramById(selectedProgram) : null;
@@ -103,7 +103,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Today's Mission Card */}
-        {todaysMission && (
+        {todaysMission ? (
           <Card style={styles.missionCard}>
             <Text style={styles.missionLabel}>TODAY'S MISSION</Text>
             <Text style={styles.missionTitle}>{todaysMission.mission_title}</Text>
@@ -120,7 +120,26 @@ export default function HomeScreen() {
               style={{ marginTop: spacing.md }}
             />
           </Card>
-        )}
+        ) : isRestDay ? (
+          <Card style={styles.restDayCard}>
+            <Text style={styles.restDayIcon}>🛌</Text>
+            <Text style={styles.restDayTitle}>REST DAY</Text>
+            <Text style={styles.restDayMessage}>
+              Recovery is part of the mission. Hydrate, stretch, and prepare for tomorrow.
+            </Text>
+            {nextWorkout && (
+              <View style={styles.nextWorkoutPreview}>
+                <Text style={styles.nextWorkoutLabel}>TOMORROW'S MISSION</Text>
+                <Text style={styles.nextWorkoutTitle}>{nextWorkout.title}</Text>
+                <Text style={styles.nextWorkoutSummary}>{nextWorkout.objective}</Text>
+                <View style={styles.rewardRow}>
+                  <Text style={styles.rewardText}>⭐ {nextWorkout.rewards.xp} XP</Text>
+                  <Text style={styles.rewardText}>🪙 {nextWorkout.rewards.coins} Coins</Text>
+                </View>
+              </View>
+            )}
+          </Card>
+        ) : null}
 
         {/* Coach Message */}
         <Card style={styles.coachCard}>
@@ -204,6 +223,54 @@ const styles = StyleSheet.create({
   },
   missionCard: {
     marginBottom: spacing.md,
+  },
+  restDayCard: {
+    marginBottom: spacing.md,
+    alignItems: 'center',
+  },
+  restDayIcon: {
+    fontSize: 48,
+    marginBottom: spacing.sm,
+  },
+  restDayTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: colors.accentGold,
+    letterSpacing: 3,
+    marginBottom: spacing.sm,
+  },
+  restDayMessage: {
+    fontSize: 15,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: spacing.md,
+  },
+  nextWorkoutPreview: {
+    width: '100%',
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: 12,
+    padding: spacing.md,
+    marginTop: spacing.sm,
+  },
+  nextWorkoutLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: colors.accent,
+    letterSpacing: 2,
+    marginBottom: spacing.xs,
+  },
+  nextWorkoutTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    marginBottom: 4,
+  },
+  nextWorkoutSummary: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 19,
+    marginBottom: spacing.sm,
   },
   missionLabel: {
     fontSize: 11,

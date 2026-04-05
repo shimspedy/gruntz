@@ -1,11 +1,13 @@
 import { create } from 'zustand';
-import { DailyMission, CompletedExercise } from '../types';
+import { DailyMission, CompletedExercise, WorkoutDay } from '../types';
 import { allWorkoutDays, REST_DAYS, getWorkoutDaysForWeek } from '../data/workouts';
 import { rangerWorkouts, getRangerWeek } from '../data/rangerWorkouts';
 import { useProgramStore } from './useProgramStore';
 
 interface MissionState {
   todaysMission: DailyMission | null;
+  nextWorkout: WorkoutDay | null;
+  isRestDay: boolean;
   currentWeek: number;
   currentExerciseIndex: number;
   completedExercises: CompletedExercise[];
@@ -47,8 +49,33 @@ function getRangerWorkoutDay(currentWeek: number) {
   return weekDays.find(d => d.day === targetDay) || weekDays[0] || rangerWorkouts[0];
 }
 
+function getNextWorkoutDay(selectedProgram: string | null, activeWeek: number): WorkoutDay | null {
+  const dayOfWeek = new Date().getDay();
+  // Look ahead up to 6 days to find next workout
+  for (let offset = 1; offset <= 6; offset++) {
+    const futureDay = (dayOfWeek + offset) % 7;
+    if (selectedProgram === 'ranger') {
+      if (futureDay === 0) continue; // Sunday rest
+      const weekDays = getRangerWeek(activeWeek);
+      const found = weekDays.find(d => d.day === futureDay);
+      if (found) return found;
+    } else {
+      if (REST_DAYS.includes(futureDay)) continue;
+      const weekDays = getWorkoutDaysForWeek(activeWeek);
+      const dayMap: Record<number, number> = { 1: 1, 2: 2, 4: 4, 5: 5, 6: 6 };
+      const targetDay = dayMap[futureDay];
+      if (!targetDay) continue;
+      const found = weekDays.find(d => d.day === targetDay);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
 export const useMissionStore = create<MissionState>((set, get) => ({
   todaysMission: null,
+  nextWorkout: null,
+  isRestDay: false,
   currentWeek: 1,
   currentExerciseIndex: 0,
   completedExercises: [],
@@ -67,8 +94,9 @@ export const useMissionStore = create<MissionState>((set, get) => ({
     const today = new Date().toISOString().split('T')[0];
 
     if (!workoutDay) {
-      // Rest day
-      set({ todaysMission: null, completedExercises: [], currentExerciseIndex: 0, isActive: false });
+      // Rest day — find next upcoming workout
+      const next = getNextWorkoutDay(selectedProgram, activeWeek);
+      set({ todaysMission: null, isRestDay: true, nextWorkout: next, completedExercises: [], currentExerciseIndex: 0, isActive: false });
       return;
     }
 
@@ -82,7 +110,7 @@ export const useMissionStore = create<MissionState>((set, get) => ({
       reward_coins: workoutDay.rewards.coins,
       completed: false,
     };
-    set({ todaysMission: mission, completedExercises: [], currentExerciseIndex: 0, isActive: false });
+    set({ todaysMission: mission, isRestDay: false, nextWorkout: null, completedExercises: [], currentExerciseIndex: 0, isActive: false });
   },
 
   startMission: () => {
