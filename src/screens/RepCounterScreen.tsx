@@ -14,17 +14,17 @@ import type { EnginePhase, PauseReason } from '../engine/smartExerciseEngine';
 // ─── Exercise Options ────────────────────────────────────
 
 const EXERCISE_OPTIONS = [
-  { name: 'Push-Ups', icon: '\U0001f4aa' },
-  { name: 'Sit-Ups', icon: '\U0001f525' },
-  { name: 'Squats', icon: '\U0001f9b5' },
-  { name: 'Pull-Ups', icon: '\U0001f3cb\ufe0f' },
-  { name: 'Burpees', icon: '\u26a1' },
-  { name: 'Lunges', icon: '\U0001f3af' },
+  { name: 'Push-Ups', icon: '💪' },
+  { name: 'Sit-Ups', icon: '🔥' },
+  { name: 'Squats', icon: '🦵' },
+  { name: 'Pull-Ups', icon: '🏋️' },
+  { name: 'Burpees', icon: '⚡' },
+  { name: 'Lunges', icon: '🎯' },
 ];
 
 // Camera placement tips per exercise
 const PLACEMENT_TIPS: Record<string, string> = {
-  'Push-Ups': 'Place phone on the ground facing you, \u2248 6 ft away. Full body visible.',
+  'Push-Ups': 'Place phone on the ground facing you, ≈ 6 ft away. Full body visible.',
   'Sit-Ups': 'Prop phone at feet level, angled up to see your torso.',
   'Squats': 'Place phone at hip height, 6 ft away. Side view is best.',
   'Pull-Ups': 'Set phone on ground facing up toward the bar.',
@@ -227,12 +227,12 @@ export default function RepCounterScreen() {
           )}
           {engine.phase === 'calibrating' && (
             <Text style={styles.hudCalibrationText}>
-              {'\U0001f4f1'} Place phone on stable surface
+              📱 Place phone on stable surface
             </Text>
           )}
           {engine.phase === 'ready' && (
             <Text style={styles.hudReadyText}>
-              {'\U0001f464'} Get in position \u2014 camera is watching
+              👤 Get in position — camera is watching
             </Text>
           )}
         </View>
@@ -401,7 +401,7 @@ export default function RepCounterScreen() {
             </View>
             <View style={styles.howRow}>
               <Ionicons name="shield-checkmark-outline" size={16} color={colors.accent} />
-              <Text style={styles.howText}>Only valid reps count \u2014 no false positives</Text>
+              <Text style={styles.howText}>Only valid reps count — no false positives</Text>
             </View>
             <View style={styles.howRow}>
               <Ionicons name="fitness-outline" size={16} color={colors.accent} />
@@ -448,7 +448,7 @@ export default function RepCounterScreen() {
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Target</Text>
                 <Text style={styles.summaryValue}>
-                  {engine.reps >= targetReps ? '\u2705 Hit!' : `${targetReps - engine.reps} short`}
+                  {engine.reps >= targetReps ? '✅ Hit!' : `${targetReps - engine.reps} short`}
                 </Text>
               </View>
             )}
@@ -465,8 +465,8 @@ export default function RepCounterScreen() {
                   color: engine.formTrend === 'improving' ? colors.accentGreen
                     : engine.formTrend === 'declining' ? '#FF6666' : colors.textMuted,
                 }]}>
-                  {engine.formTrend === 'improving' ? '\U0001f4c8 Improving' :
-                   engine.formTrend === 'declining' ? '\U0001f4c9 Declining' : '\u27a1\ufe0f Stable'}
+                  {engine.formTrend === 'improving' ? '📈 Improving' :
+                   engine.formTrend === 'declining' ? '📉 Declining' : '➡️ Stable'}
                 </Text>
               </View>
             )}
