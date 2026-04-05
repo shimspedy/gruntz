@@ -17,10 +17,11 @@ export function Card({ children, style, title, accentColor }: CardProps) {
 
   return (
     <View style={[styles.card, style]}>
-      {/* Left accent bar */}
-      <View style={[styles.accentBar, { backgroundColor: resolvedAccent }]} />
-      {/* Top-right corner cut */}
-      <View style={styles.cornerCut} />
+      {/* Thin top accent strip */}
+      <View style={[styles.topAccent, { backgroundColor: resolvedAccent }]} />
+      {/* Corner cuts — both sides */}
+      <View style={styles.cornerCutRight} />
+      <View style={styles.cornerCutLeft} />
       {title && <Text style={styles.title}>{title}</Text>}
       {children}
     </View>
@@ -35,22 +36,29 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 2,
     borderWidth: 1,
     borderColor: colors.cardBorder,
-    borderLeftWidth: 0,
     padding: spacing.lg,
-    paddingLeft: spacing.lg + 3,
     overflow: 'hidden',
   },
-  accentBar: {
+  topAccent: {
     position: 'absolute',
-    left: 0,
     top: 0,
-    bottom: 0,
-    width: 3,
+    left: 0,
+    right: 0,
+    height: 2,
   },
-  cornerCut: {
+  cornerCutRight: {
     position: 'absolute',
     top: -CORNER_SIZE / 2,
     right: -CORNER_SIZE / 2,
+    width: CORNER_SIZE,
+    height: CORNER_SIZE,
+    backgroundColor: colors.background,
+    transform: [{ rotate: '45deg' }],
+  },
+  cornerCutLeft: {
+    position: 'absolute',
+    bottom: -CORNER_SIZE / 2,
+    left: -CORNER_SIZE / 2,
     width: CORNER_SIZE,
     height: CORNER_SIZE,
     backgroundColor: colors.background,
