@@ -1,9 +1,10 @@
 import { create } from 'zustand';
 import { DailyMission, CompletedExercise } from '../types';
-import { week1Days } from '../data/workouts';
+import { allWorkoutDays, REST_DAYS, getWorkoutDaysForWeek } from '../data/workouts';
 
 interface MissionState {
   todaysMission: DailyMission | null;
+  currentWeek: number;
   currentExerciseIndex: number;
   completedExercises: CompletedExercise[];
   missionStartTime: number | null;
@@ -14,33 +15,49 @@ interface MissionState {
   completeExercise: (exercise: CompletedExercise) => void;
   finishMission: () => void;
   resetMission: () => void;
+  setCurrentWeek: (week: number) => void;
 }
 
-function getTodayWorkoutDay() {
-  // For MVP: cycle through week 1 days based on a counter stored in workouts completed
-  // In production, this would track actual program progress
-  const dayIndex = new Date().getDay(); // 0-6
-  const adjustedIndex = dayIndex === 0 ? 6 : dayIndex - 1; // Mon=0, Sun=6
-  if (adjustedIndex >= week1Days.length) return week1Days[0]; // fallback
-  return week1Days[adjustedIndex];
+function getTodayWorkoutDay(currentWeek: number) {
+  const dayOfWeek = new Date().getDay(); // 0=Sun, 1=Mon ... 6=Sat
+
+  // Sun(0) and Wed(3) are rest days
+  if (REST_DAYS.includes(dayOfWeek)) return null;
+
+  const weekDays = getWorkoutDaysForWeek(currentWeek);
+  // Map day of week to workout day number: Mon=1, Tue=2, Thu=4, Fri=5, Sat=6
+  const dayMap: Record<number, number> = { 1: 1, 2: 2, 4: 4, 5: 5, 6: 6 };
+  const targetDay = dayMap[dayOfWeek];
+  if (!targetDay) return weekDays[0] || allWorkoutDays[0]; // fallback
+
+  return weekDays.find(d => d.day === targetDay) || weekDays[0] || allWorkoutDays[0];
 }
 
 export const useMissionStore = create<MissionState>((set, get) => ({
   todaysMission: null,
+  currentWeek: 1,
   currentExerciseIndex: 0,
   completedExercises: [],
   missionStartTime: null,
   isActive: false,
 
   loadTodaysMission: () => {
-    const workoutDay = getTodayWorkoutDay();
+    const { currentWeek } = get();
+    const workoutDay = getTodayWorkoutDay(currentWeek);
     const today = new Date().toISOString().split('T')[0];
+
+    if (!workoutDay) {
+      // Rest day
+      set({ todaysMission: null, completedExercises: [], currentExerciseIndex: 0, isActive: false });
+      return;
+    }
+
     const mission: DailyMission = {
       date: today,
       workout_day_id: workoutDay.id,
       mission_title: workoutDay.title,
       mission_summary: workoutDay.objective,
-      bonus_objectives: ['Complete all exercises', 'Set a personal record'],
+      bonus_objectives: ['Complete all exercises', 'Record your times'],
       reward_xp: workoutDay.rewards.xp,
       reward_coins: workoutDay.rewards.coins,
       completed: false,
@@ -68,5 +85,9 @@ export const useMissionStore = create<MissionState>((set, get) => ({
 
   resetMission: () => {
     set({ completedExercises: [], currentExerciseIndex: 0, missionStartTime: null, isActive: false });
+  },
+
+  setCurrentWeek: (week: number) => {
+    set({ currentWeek: Math.max(1, Math.min(10, week)) });
   },
 }));

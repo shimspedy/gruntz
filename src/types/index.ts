@@ -1,7 +1,9 @@
+export type EquipmentAccess = 'none' | 'minimal' | 'gym';
+
 export interface Exercise {
   id: string;
   name: string;
-  category: 'calisthenics' | 'core' | 'running' | 'swimming' | 'rucking' | 'warmup' | 'recovery';
+  category: 'calisthenics' | 'core' | 'running' | 'swimming' | 'rucking' | 'warmup' | 'recovery' | 'strength';
   description: string;
   sets?: number;
   reps?: number;
@@ -9,6 +11,8 @@ export interface Exercise {
   distance?: string;
   rest_seconds: number;
   equipment: string[];
+  equipment_access: EquipmentAccess;
+  gym_alternative_id?: string;
   xp_value: number;
   form_tips: string[];
   progression_rules?: ProgressionRules;
@@ -23,9 +27,10 @@ export interface ProgressionRules {
 
 export interface WorkoutSection {
   id: string;
-  type: 'warmup' | 'workout' | 'cardio' | 'recovery' | 'test';
+  type: 'warmup' | 'workout' | 'cardio' | 'recovery' | 'test' | 'ruck' | 'swim';
   title: string;
   instructions: string;
+  rounds?: number;
   exercises: string[]; // exercise IDs
 }
 
