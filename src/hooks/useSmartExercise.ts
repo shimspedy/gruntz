@@ -93,13 +93,27 @@ export function useSmartExercise(exerciseName: string) {
     const engine = engineRef.current;
     const camera = cameraRef.current;
 
-    if (!vision || !engine || !camera) return;
+    if (!vision || !engine) return;
     if (!vision.shouldAnalyze()) return;
+
+    // If no camera ref, use local fallback (still provides defaults)
+    if (!camera) {
+      const fallback = await vision.analyzeFrame('');
+      engine.updateVisionResult({
+        personVisible: fallback.personVisible,
+        exerciseMatch: fallback.exerciseMatch,
+        lightingOk: fallback.lightingOk,
+        confidence: fallback.confidence,
+        formScore: fallback.formScore,
+        coachTip: fallback.coachTip || undefined,
+      });
+      return;
+    }
 
     try {
       // Capture frame from camera
       const photo = await camera.takePictureAsync({
-        quality: 0.3, // Low quality for speed + cost
+        quality: 0.2, // Lower quality = faster capture
         base64: true,
         skipProcessing: true,
       });
@@ -141,14 +155,15 @@ export function useSmartExercise(exerciseName: string) {
 
     visionCountRef.current = 0;
 
-    // Start engine (sensors)
-    await engine.start();
-
-    // Start vision
+    // Start vision FIRST so it's ready when engine transitions to 'ready'
     vision.start();
 
-    // Start vision analysis loop
-    visionTimerRef.current = setInterval(runVisionAnalysis, 2000);
+    // Start engine (sensors + calibration)
+    await engine.start();
+
+    // Kick off first vision analysis immediately, then loop every 1.5s
+    setTimeout(runVisionAnalysis, 500);
+    visionTimerRef.current = setInterval(runVisionAnalysis, 1500);
 
     setState((prev) => ({
       ...prev,

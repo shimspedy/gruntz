@@ -82,67 +82,67 @@ export interface ExerciseMotionProfile {
 export const EXERCISE_PROFILES: Record<string, ExerciseMotionProfile> = {
   'Push-Ups': {
     primaryAxis: 'z',
-    peakThreshold: 1.08,
-    resetThreshold: 0.96,
-    minRepInterval: 800,
+    peakThreshold: 1.03,
+    resetThreshold: 0.99,
+    minRepInterval: 600,
     maxRepInterval: 8000,
     expectedOrientation: 'flat',
-    stationaryVarianceMax: 0.04,
+    stationaryVarianceMax: 0.06,
     formTips: ['Back straight', 'Full lockout', "Don't rest on ground"],
     description: 'Push up through hands keeping back straight. Full lockout at top.',
   },
   'Sit-Ups': {
     primaryAxis: 'z',
-    peakThreshold: 1.06,
-    resetThreshold: 0.97,
-    minRepInterval: 900,
+    peakThreshold: 1.03,
+    resetThreshold: 0.99,
+    minRepInterval: 700,
     maxRepInterval: 8000,
     expectedOrientation: 'flat',
-    stationaryVarianceMax: 0.04,
+    stationaryVarianceMax: 0.06,
     formTips: ['Shoulders to deck each rep', 'Use abs not momentum', 'Full ROM'],
     description: 'Lying on back, knees up, arms across abdomen. Drive upper body off ground.',
   },
   'Squats': {
     primaryAxis: 'y',
-    peakThreshold: 1.10,
-    resetThreshold: 0.95,
-    minRepInterval: 1000,
+    peakThreshold: 1.04,
+    resetThreshold: 0.98,
+    minRepInterval: 800,
     maxRepInterval: 8000,
     expectedOrientation: 'upright',
-    stationaryVarianceMax: 0.05,
+    stationaryVarianceMax: 0.07,
     formTips: ['Hip crease below knee', 'Heels on ground', 'Chest up'],
     description: 'Deep squat with arms at shoulder height. Explode up.',
   },
   'Pull-Ups': {
     primaryAxis: 'z',
-    peakThreshold: 1.06,
-    resetThreshold: 0.97,
-    minRepInterval: 1200,
+    peakThreshold: 1.03,
+    resetThreshold: 0.99,
+    minRepInterval: 900,
     maxRepInterval: 10000,
     expectedOrientation: 'flat',
-    stationaryVarianceMax: 0.05,
+    stationaryVarianceMax: 0.07,
     formTips: ['Full dead hang', 'Chin above bar', 'No kipping'],
     description: 'Dead hang, hands wider than shoulders. Pull chest to bar.',
   },
   'Burpees': {
     primaryAxis: 'z',
-    peakThreshold: 1.15,
-    resetThreshold: 0.90,
-    minRepInterval: 1500,
+    peakThreshold: 1.05,
+    resetThreshold: 0.97,
+    minRepInterval: 1200,
     maxRepInterval: 10000,
     expectedOrientation: 'flat',
-    stationaryVarianceMax: 0.06,
+    stationaryVarianceMax: 0.08,
     formTips: ['Full push-up', 'Explosive jump', 'Spread eagle in air'],
     description: 'Squat, kick back, push-up, fire legs in, jump with hands overhead.',
   },
   'Lunges': {
     primaryAxis: 'y',
-    peakThreshold: 1.08,
-    resetThreshold: 0.95,
-    minRepInterval: 900,
+    peakThreshold: 1.04,
+    resetThreshold: 0.98,
+    minRepInterval: 700,
     maxRepInterval: 8000,
     expectedOrientation: 'upright',
-    stationaryVarianceMax: 0.05,
+    stationaryVarianceMax: 0.07,
     formTips: ['Knee over foot', 'Body straight', 'Step through'],
     description: 'Step forward, lower to parallel, drive up. Alternate legs.',
   },
@@ -158,8 +158,8 @@ interface AccelSample {
   ts: number;
 }
 
-const CALIBRATION_DURATION_MS = 3000;
-const STATIONARY_WINDOW = 40; // 2 seconds at 50ms interval
+const CALIBRATION_DURATION_MS = 1500; // 1.5s calibration — fast start
+const STATIONARY_WINDOW = 20; // 1 second at 50ms interval
 
 export class SmartExerciseEngine {
   private exerciseName: string;
@@ -180,6 +180,7 @@ export class SmartExerciseEngine {
 
   // Phone stationarity
   private stationaryBuffer: number[] = [];
+  private readyEnteredAt: number = 0;
 
   // Callbacks
   private onStateChange: ((state: EngineState) => void) | null = null;
@@ -299,13 +300,13 @@ export class SmartExerciseEngine {
 
     // Transition logic based on vision
     if (this.state.phase === 'ready') {
-      if (result.personVisible && result.exerciseMatch) {
+      if (result.personVisible) {
+        // Person is visible — start counting. Exercise match will be
+        // validated per-rep, not as a gate to enter counting phase.
         this.state.phase = 'counting';
         this.state.coachMessage = 'You\'re in position. Let\'s go!';
-      } else if (!result.personVisible) {
+      } else if (!result.personVisible && result.confidence > 40) {
         this.state.coachMessage = 'I can\'t see you — adjust your camera position';
-      } else if (!result.exerciseMatch) {
-        this.state.coachMessage = `Get in position for ${this.exerciseName}`;
       }
     }
 
@@ -361,11 +362,12 @@ export class SmartExerciseEngine {
 
     // ─── Phase: READY ─────
     if (this.state.phase === 'ready') {
-      // Waiting for vision to confirm person + exercise
-      // If no vision check for 10s, allow counting with sensor-only
-      if (now - this.state.lastVisionCheck > 10000 && this.state.phoneStationary) {
+      // If no vision data has arrived within 2s, start counting with sensors only.
+      // This prevents the user from staring at "GET IN POSITION" forever.
+      const waitingTime = now - (this.readyEnteredAt || now);
+      if (waitingTime > 2000 && this.state.phoneStationary) {
         this.state.phase = 'counting';
-        this.state.coachMessage = 'Camera check pending — counting with sensors';
+        this.state.coachMessage = 'Go! AI vision will check form shortly.';
       }
       this.emit();
       return;
@@ -411,8 +413,8 @@ export class SmartExerciseEngine {
     }
 
     // Calibration complete — compute baseline from recent samples
-    const recentSamples = this.samples.slice(-40);
-    if (recentSamples.length < 20) {
+    const recentSamples = this.samples.slice(-20);
+    if (recentSamples.length < 10) {
       this.state.coachMessage = 'Hold still a bit longer...';
       this.emit();
       return;
@@ -427,8 +429,8 @@ export class SmartExerciseEngine {
     const avgMag = magValues.reduce((a, b) => a + b, 0) / magValues.length;
     const variance = magValues.reduce((s, m) => s + (m - avgMag) ** 2, 0) / magValues.length;
 
-    if (variance > this.profile.stationaryVarianceMax * 2) {
-      // Phone is still moving — not stationary
+    if (variance > this.profile.stationaryVarianceMax * 4) {
+      // Phone is being actively shaken — not just resting on a surface
       this.state.coachMessage = 'Phone is moving! Place it on a stable surface.';
       this.state.pauseReason = 'phone_in_hand';
       this.calibrationStart = now; // restart calibration
@@ -439,6 +441,7 @@ export class SmartExerciseEngine {
 
     this.calibrationBaseline = { x: avgX, y: avgY, z: avgZ };
     this.state.phoneStationary = true;
+    this.readyEnteredAt = Date.now();
     this.state.phase = 'ready';
     this.state.coachMessage = `Phone locked in. Get in position for ${this.exerciseName}.`;
     this.emit();
@@ -458,12 +461,17 @@ export class SmartExerciseEngine {
     const variance = this.stationaryBuffer.reduce((s, m) => s + (m - avg) ** 2, 0) / this.stationaryBuffer.length;
 
     const wasStationary = this.state.phoneStationary;
-    this.state.phoneStationary = variance < this.profile.stationaryVarianceMax;
+    // During counting, use a more generous threshold since exercise vibrations
+    // travel through the surface and cause variance spikes
+    const threshold = this.state.phase === 'counting'
+      ? this.profile.stationaryVarianceMax * 3
+      : this.profile.stationaryVarianceMax;
+    this.state.phoneStationary = variance < threshold;
 
     // If phone was stationary and now isn't during counting → pause
+    // Only for genuinely large movements (phone actually picked up)
     if (wasStationary && !this.state.phoneStationary && this.state.phase === 'counting') {
-      // Check if this is a big movement (phone picked up) vs exercise vibration
-      if (variance > this.profile.stationaryVarianceMax * 5) {
+      if (variance > this.profile.stationaryVarianceMax * 10) {
         this.state.phase = 'paused';
         this.state.pauseReason = 'phone_moved';
         this.state.coachMessage = 'Phone moved! Place it back on a stable surface.';
@@ -554,21 +562,24 @@ export class SmartExerciseEngine {
       return { valid: false, reason: 'Too fast — control the movement' };
     }
 
-    // Gate 3: If we have recent vision data, check person visibility
+    // Gate 3: If we have FRESH vision data (< 10s old), soft-gate on it
+    // Never block reps entirely on vision — just warn
     const timeSinceVision = Date.now() - this.state.lastVisionCheck;
-    if (timeSinceVision < 15000) {
-      // Vision data is fresh
-      if (!this.state.personVisible) {
+    if (timeSinceVision < 10000 && this.state.lastVisionCheck > 0) {
+      if (!this.state.personVisible && this.state.visionConfidence > 60) {
+        // Only reject if vision is highly confident no one is there
         return {
           valid: false,
           reason: 'I can\'t see you — adjust camera position',
         };
       }
-      if (!this.state.exerciseMatch && this.state.visionConfidence > 50) {
-        return {
-          valid: false,
-          reason: `That doesn't look like ${this.exerciseName} — check your form`,
-        };
+      // Wrong exercise: warn but still count — user may be transitioning
+      if (!this.state.exerciseMatch && this.state.visionConfidence > 70) {
+        // Count it but set a warning tip
+        const randomTip = this.profile.formTips[
+          Math.floor(Math.random() * this.profile.formTips.length)
+        ];
+        return { valid: true, tip: `Check form: ${randomTip}` };
       }
     }
 

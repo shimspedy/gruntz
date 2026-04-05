@@ -18,8 +18,8 @@ import type { Exercise } from '../types';
 
 const OPENAI_API_KEY = process.env.EXPO_PUBLIC_OPENAI_API_KEY || '';
 const VISION_MODEL = 'gpt-4o';
-const ANALYSIS_INTERVAL_MS = 4000; // Analyze every 4 seconds
-const MIN_ANALYSIS_INTERVAL_MS = 2500; // Don't analyze more often than this
+const ANALYSIS_INTERVAL_MS = 2500; // Analyze every 2.5 seconds
+const MIN_ANALYSIS_INTERVAL_MS = 1500; // Don't analyze more often than this
 
 const openai = OPENAI_API_KEY
   ? new OpenAI({ apiKey: OPENAI_API_KEY, dangerouslyAllowBrowser: true })
