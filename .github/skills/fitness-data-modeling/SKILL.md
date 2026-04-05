@@ -67,7 +67,7 @@ WorkoutPlan → WorkoutDay[] → WorkoutSection[] → Exercise[]
 }
 ```
 
-## Progression Principles (MARSOC-inspired)
+## Progression Principles (military-inspired)
 - Week 1-2: Foundation — build movement quality, baseline fitness
 - Week 3-4: Build — increase volume and introduce running/swimming
 - Week 5-6: Develop — add rucking, increase intensity

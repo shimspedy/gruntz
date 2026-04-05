@@ -259,7 +259,7 @@ export interface WorkoutRecommendation {
 }
 
 // Training Programs
-export type ProgramId = 'marsoc' | 'ranger';
+export type ProgramId = 'raider' | 'recon';
 
 export interface TrainingProgram {
   id: ProgramId;

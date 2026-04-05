@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { DailyMission, CompletedExercise, WorkoutDay } from '../types';
 import { allWorkoutDays, REST_DAYS, getWorkoutDaysForWeek } from '../data/workouts';
-import { rangerWorkouts, getRangerWeek } from '../data/rangerWorkouts';
+import { reconWorkouts, getReconWeek } from '../data/reconWorkouts';
 import { useProgramStore } from './useProgramStore';
 
 interface MissionState {
@@ -22,7 +22,7 @@ interface MissionState {
   setCurrentWeek: (week: number) => void;
 }
 
-function getMarsocWorkoutDay(currentWeek: number) {
+function getRaiderWorkoutDay(currentWeek: number) {
   const dayOfWeek = new Date().getDay(); // 0=Sun, 1=Mon ... 6=Sat
 
   // Sun(0) and Wed(3) are rest days
@@ -37,16 +37,16 @@ function getMarsocWorkoutDay(currentWeek: number) {
   return weekDays.find(d => d.day === targetDay) || weekDays[0] || allWorkoutDays[0];
 }
 
-function getRangerWorkoutDay(currentWeek: number) {
+function getReconWorkoutDay(currentWeek: number) {
   const dayOfWeek = new Date().getDay(); // 0=Sun, 1=Mon ... 6=Sat
 
-  // Sunday is the only rest day for Ranger (6 days/week Mon-Sat)
+  // Sunday is the only rest day for Recon (6 days/week Mon-Sat)
   if (dayOfWeek === 0) return null;
 
-  const weekDays = getRangerWeek(currentWeek);
+  const weekDays = getReconWeek(currentWeek);
   // Map day of week to day number: Mon=1, Tue=2, Wed=3, Thu=4, Fri=5, Sat=6
   const targetDay = dayOfWeek; // 1-6 maps directly
-  return weekDays.find(d => d.day === targetDay) || weekDays[0] || rangerWorkouts[0];
+  return weekDays.find(d => d.day === targetDay) || weekDays[0] || reconWorkouts[0];
 }
 
 function getNextWorkoutDay(selectedProgram: string | null, activeWeek: number): WorkoutDay | null {
@@ -54,9 +54,9 @@ function getNextWorkoutDay(selectedProgram: string | null, activeWeek: number): 
   // Look ahead up to 6 days to find next workout
   for (let offset = 1; offset <= 6; offset++) {
     const futureDay = (dayOfWeek + offset) % 7;
-    if (selectedProgram === 'ranger') {
+    if (selectedProgram === 'recon') {
       if (futureDay === 0) continue; // Sunday rest
-      const weekDays = getRangerWeek(activeWeek);
+      const weekDays = getReconWeek(activeWeek);
       const found = weekDays.find(d => d.day === futureDay);
       if (found) return found;
     } else {
@@ -88,9 +88,9 @@ export const useMissionStore = create<MissionState>((set, get) => ({
     const programWeek = useProgramStore.getState().currentWeek;
     const activeWeek = selectedProgram ? programWeek : currentWeek;
 
-    const workoutDay = selectedProgram === 'ranger'
-      ? getRangerWorkoutDay(activeWeek)
-      : getMarsocWorkoutDay(activeWeek);
+    const workoutDay = selectedProgram === 'recon'
+      ? getReconWorkoutDay(activeWeek)
+      : getRaiderWorkoutDay(activeWeek);
     const today = new Date().toISOString().split('T')[0];
 
     if (!workoutDay) {
@@ -137,7 +137,7 @@ export const useMissionStore = create<MissionState>((set, get) => ({
 
   setCurrentWeek: (week: number) => {
     const { selectedProgram } = useProgramStore.getState();
-    const max = selectedProgram === 'ranger' ? 12 : 10;
+    const max = selectedProgram === 'recon' ? 12 : 10;
     set({ currentWeek: Math.max(1, Math.min(max, week)) });
   },
 }));

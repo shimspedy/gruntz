@@ -40,7 +40,7 @@ export default function ProgramSelectScreen() {
 }
 
 function ProgramCard({ program, onPress }: { program: TrainingProgram; onPress: () => void }) {
-  const accentColor = program.id === 'marsoc' ? colors.accent : colors.accentOrange;
+  const accentColor = program.id === 'raider' ? colors.accent : colors.accentOrange;
 
   return (
     <TouchableOpacity style={[styles.card, { borderColor: accentColor }]} onPress={onPress} activeOpacity={0.85}>

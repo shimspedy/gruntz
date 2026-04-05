@@ -76,7 +76,7 @@ export default function HomeScreen() {
             <Text style={styles.noProgramIcon}>⚡</Text>
             <View style={styles.programBannerText}>
               <Text style={styles.noProgramTitle}>Choose Your Program</Text>
-              <Text style={styles.noProgramSub}>MARSOC or Ranger — pick your path</Text>
+              <Text style={styles.noProgramSub}>Raider or Recon — pick your path</Text>
             </View>
             <Text style={styles.noProgramArrow}>→</Text>
           </TouchableOpacity>

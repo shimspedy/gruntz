@@ -1,8 +1,8 @@
 import { WorkoutDay } from '../types';
 
 // ============================================================
-// MARSOC 10-WEEK A&S PREP — COMPLETE WORKOUT SCHEDULE
-// Faithful to the official MARSOC Fitness Preparation Log
+// RAIDER 10-WEEK PREP — COMPLETE WORKOUT SCHEDULE
+// Based on a special operations fitness preparation log
 //
 // Weekly structure:
 //   Sun: Rest, stretch, hydrate & recover
@@ -23,23 +23,23 @@ const POST_WORKOUT = ['ais_calf', 'ais_hamstring', 'ais_it_band', 'ais_groin', '
 // ============================================================
 
 // Card 1: Core Work
-const CARD_1_MARSOC_PREP = ['pullups', 'usmc_crunches', 'burpees']; // 3 rounds
+const CARD_1_RAIDER_PREP = ['pullups', 'usmc_crunches', 'burpees']; // 3 rounds
 const CARD_1_CORE = ['forward_plank', 'side_plank', 'knees_to_elbows', 'dumbbell_getups', 'flutter_kicks']; // 5 rounds
 const CARD_1_FINISHER = ['usmc_crunches']; // 2x100
 
 // Card 2: Ruck Based
 const CARD_2_DYNAMIC = ['lunges_counter_rotation', 'skaters', 'broad_jumps', 'mountain_climbers', 'skaters', 'dumbbell_getups'];
 const CARD_2_PLANKS = ['forward_plank', 'side_plank', 'frog_squats']; // 2 rounds
-const CARD_2_MARSOC = ['usmc_crunches', 'pullups', 'jog_100_200m']; // 5 rounds
+const CARD_2_RAIDER = ['usmc_crunches', 'pullups', 'jog_100_200m']; // 5 rounds
 const CARD_2_WORKOUT = ['high_crawl', 'partner_drags', 'walking_ammo_can_lunge', 'tire_flips', 'walking_ammo_can_lunge']; // 4 rounds
 
-// Card 3: MARSOC In Test Prep and Core
+// Card 3: Raider In Test Prep and Core
 const CARD_3_PLANKS = ['forward_plank', 'side_plank', 'frog_squats'];
-const CARD_3_MARSOC = ['hand_release_pushups', 'pullups', 'usmc_crunches']; // 4 rounds
+const CARD_3_RAIDER = ['hand_release_pushups', 'pullups', 'usmc_crunches']; // 4 rounds
 const CARD_3_FINISHER = ['usmc_crunches']; // max reps 2min, 1min, 30sec
 
 // Card 4: Ruck Based Strength
-const CARD_4_MARSOC = ['pullups', 'usmc_crunches', 'burpees']; // 3 rounds
+const CARD_4_RAIDER = ['pullups', 'usmc_crunches', 'burpees']; // 3 rounds
 const CARD_4_WORKOUT = ['ammo_can_front_squats', 'walking_lunges', 'ammo_can_thruster', 'dumbbell_getups']; // 4 rounds
 
 // Card 5: Total Body
@@ -67,8 +67,8 @@ function buildDay(
 
 function buildMonday(week: number, runType: 'split' | 'full3', cardNum: number): WorkoutDay {
   const cardMap: Record<number, string[]> = {
-    1: [...CARD_1_MARSOC_PREP, ...CARD_1_CORE, ...CARD_1_FINISHER],
-    3: [...CARD_3_PLANKS, ...CARD_3_MARSOC, ...CARD_3_FINISHER],
+    1: [...CARD_1_RAIDER_PREP, ...CARD_1_CORE, ...CARD_1_FINISHER],
+    3: [...CARD_3_PLANKS, ...CARD_3_RAIDER, ...CARD_3_FINISHER],
     5: [...CARD_5_PLANKS, ...CARD_5_WARMUP, ...CARD_5_WORKOUT, ...CARD_5_FINISHER],
   };
   const runExercises = runType === 'split' ? ['run_1_5mi'] : ['run_3mi'];
@@ -87,8 +87,8 @@ function buildMonday(week: number, runType: 'split' | 'full3', cardNum: number):
 
 function buildTuesday(week: number, cardNum: number): WorkoutDay {
   const cardMap: Record<number, string[]> = {
-    2: [...CARD_2_DYNAMIC, ...CARD_2_PLANKS, ...CARD_2_MARSOC, ...CARD_2_WORKOUT],
-    4: [...CARD_4_MARSOC, ...CARD_4_WORKOUT],
+    2: [...CARD_2_DYNAMIC, ...CARD_2_PLANKS, ...CARD_2_RAIDER, ...CARD_2_WORKOUT],
+    4: [...CARD_4_RAIDER, ...CARD_4_WORKOUT],
     6: [...CARD_6_WORKOUT, ...CARD_6_INTEST, ...CARD_6_PULLUPS],
   };
   const sections: WorkoutDay['sections'] = [
@@ -147,7 +147,7 @@ function buildSaturday(week: number, ruckId: string): WorkoutDay {
 }
 
 // ============================================================
-// 10-WEEK PROGRAM (exact MARSOC PDF schedule)
+// 10-WEEK PROGRAM (Raider prep schedule)
 // ============================================================
 
 // Week 1: Mon(Card1+split run), Tue(Card2), Thu(Swim1), Fri(4x400+2x200m swim), Sat(4mi ruck)

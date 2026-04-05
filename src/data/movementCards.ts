@@ -1,8 +1,8 @@
 import { MovementCard } from '../types';
 
 // ============================================================
-// MARSOC MOVEMENT CARDS (6) + SWIM CARDS (5)
-// Faithful to the official MARSOC Fitness Preparation Log
+// MOVEMENT CARDS (6) + SWIM CARDS (5)
+// Based on a special operations fitness preparation program
 // Each card is a self-contained workout block used in the weekly schedule
 // ============================================================
 
@@ -15,7 +15,7 @@ export const movementCards: MovementCard[] = [
     card_number: 1,
     name: 'Core Work',
     category: 'core',
-    description: 'Heavy core focus with MARSOC Prep warm-up, plank/core circuit, and crunches finisher. Builds the trunk stability needed for rucking and combat tasks.',
+    description: 'Heavy core focus with Raider Prep warm-up, plank/core circuit, and crunches finisher. Builds the trunk stability needed for rucking and combat tasks.',
     difficulty: 'intermediate',
     estimated_duration: 35,
     target_muscle_groups: ['core', 'shoulders', 'back', 'hip flexors'],
@@ -23,8 +23,8 @@ export const movementCards: MovementCard[] = [
     total_rounds: 10,
     sections: [
       {
-        id: 'card1_marsoc_prep',
-        name: 'MARSOC Prep Warm-Up',
+        id: 'card1_raider_prep',
+        name: 'Raider Prep Warm-Up',
         rounds: 3,
         rest_between_rounds: 60,
         notes: 'Complete all 3 exercises back-to-back, then rest.',
@@ -69,7 +69,7 @@ export const movementCards: MovementCard[] = [
     card_number: 2,
     name: 'Ruck Based',
     category: 'ruck',
-    description: 'Ruck-focused training with dynamic warmup, plank holds, MARSOC prep circuit, and heavy ruck movements including crawls, drags, and carries.',
+    description: 'Ruck-focused training with dynamic warmup, plank holds, Raider prep circuit, and heavy ruck movements including crawls, drags, and carries.',
     difficulty: 'advanced',
     estimated_duration: 45,
     target_muscle_groups: ['legs', 'back', 'core', 'shoulders', 'grip'],
@@ -103,8 +103,8 @@ export const movementCards: MovementCard[] = [
         ],
       },
       {
-        id: 'card2_marsoc',
-        name: 'MARSOC Prep Circuit',
+        id: 'card2_raider',
+        name: 'Raider Prep Circuit',
         rounds: 5,
         rest_between_rounds: 45,
         notes: '5 rounds with jog between rounds.',
@@ -132,14 +132,14 @@ export const movementCards: MovementCard[] = [
   },
 
   // ============================
-  // MOVEMENT CARD #3: MARSOC IN TEST PREP AND CORE
+  // MOVEMENT CARD #3: IN TEST PREP AND CORE
   // ============================
   {
     id: 'card_3',
     card_number: 3,
     name: 'In Test Prep & Core',
     category: 'core',
-    description: 'Prepares you for the MARSOC assessment tests. Focus on hand-release push-ups, pull-ups, and crunches with plank foundation.',
+    description: 'Prepares you for the assessment tests. Focus on hand-release push-ups, pull-ups, and crunches with plank foundation.',
     difficulty: 'intermediate',
     estimated_duration: 30,
     target_muscle_groups: ['chest', 'back', 'core', 'shoulders'],
@@ -158,8 +158,8 @@ export const movementCards: MovementCard[] = [
         ],
       },
       {
-        id: 'card3_marsoc_intest',
-        name: 'MARSOC In-Test Circuit',
+        id: 'card3_raider_intest',
+        name: 'Selection In-Test Circuit',
         rounds: 4,
         rest_between_rounds: 60,
         notes: '4 rounds. These are the actual A&S assessment exercises.',
@@ -200,8 +200,8 @@ export const movementCards: MovementCard[] = [
     total_rounds: 7,
     sections: [
       {
-        id: 'card4_marsoc_prep',
-        name: 'MARSOC Prep',
+        id: 'card4_raider_prep',
+        name: 'Raider Prep',
         rounds: 3,
         rest_between_rounds: 60,
         notes: '3 rounds of pull-ups, crunches, burpees.',

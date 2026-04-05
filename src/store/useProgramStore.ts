@@ -29,7 +29,7 @@ export const useProgramStore = create<ProgramState>((set, get) => ({
   },
 
   setCurrentWeek: (week) => {
-    const maxWeek = get().selectedProgram === 'ranger' ? 12 : 10;
+    const maxWeek = get().selectedProgram === 'recon' ? 12 : 10;
     const clamped = Math.max(1, Math.min(maxWeek, week));
     set({ currentWeek: clamped });
     persistState({ ...get(), currentWeek: clamped });

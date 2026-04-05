@@ -1,15 +1,15 @@
 import type { TrainingProgram, IntervalSplits } from '../types';
 
 // ============================================================
-// TRAINING PROGRAMS — MARSOC A&S Prep & Ranger Pre-SURT
+// TRAINING PROGRAMS — Raider Prep & Recon Prep
 // ============================================================
 
 export const PROGRAMS: TrainingProgram[] = [
   {
-    id: 'marsoc',
-    name: 'MARSOC A&S Prep',
-    subtitle: 'Marine Raider Selection',
-    description: 'Official 10-week MARSOC Assessment & Selection preparation. Progressive training with movement cards, swimming, rucking, and PFT preparation. Designed to take you from general fitness to special operations readiness.',
+    id: 'raider',
+    name: 'Raider Prep',
+    subtitle: 'Elite Selection Readiness',
+    description: '10-week assessment & selection preparation. Progressive training with movement cards, swimming, rucking, and PFT preparation. Designed to take you from general fitness to special operations readiness.',
     icon: '🦅',
     duration_weeks: 10,
     days_per_week: 5,
@@ -34,16 +34,16 @@ export const PROGRAMS: TrainingProgram[] = [
     },
   },
   {
-    id: 'ranger',
-    name: 'Ranger Pre-SURT',
-    subtitle: '12-Week Ranger School Prep',
-    description: 'Complete 12-week progressive program designed to prepare you for SURT and Ranger School. 3 phases with periodized strength, endurance, and functional training. RPE-driven intensity with assessment-based progressions for running and bodyweight exercises.',
+    id: 'recon',
+    name: 'Recon Prep',
+    subtitle: '12-Week Tactical School Prep',
+    description: 'Complete 12-week progressive program designed to prepare you for tactical selection. 3 phases with periodized strength, endurance, and functional training. RPE-driven intensity with assessment-based progressions for running and bodyweight exercises.',
     icon: '⚔️',
     duration_weeks: 12,
     days_per_week: 6,
     difficulty: 'elite',
     focus_areas: ['Barbell Strength', 'Running (Track + Tempo)', 'Rucking', 'Functional Carries', 'Bodyweight Assessment %'],
-    prerequisites: ['Ranger Physical Fitness Assessment completed', 'General physical preparedness', 'Gym access with barbell/rack', '5-mile run assessment time'],
+    prerequisites: ['Physical Fitness Assessment completed', 'General physical preparedness', 'Gym access with barbell/rack', '5-mile run assessment time'],
     equipment_needed: ['Barbell + squat rack', 'Bench press', 'Pull-up bar', 'Kettlebells', 'Dumbbells', 'Sled', 'Ruck (35-60 lbs)', 'Track/running route', 'Non-impact cardio machine'],
     phases: [
       {
@@ -66,7 +66,7 @@ export const PROGRAMS: TrainingProgram[] = [
         phase_number: 3,
         name: 'Peak & Taper',
         weeks: [9, 12],
-        description: 'Peak strength volume with 5x5/5x4/5x3 progressions. Heavy rucks, long runs, sled complexes. Final deload before SURT.',
+        description: 'Peak strength volume with 5x5/5x4/5x3 progressions. Heavy rucks, long runs, sled complexes. Final deload before selection.',
         focus: 'Peak performance + taper',
         is_deload_included: true,
       },
@@ -84,8 +84,8 @@ export const PROGRAMS: TrainingProgram[] = [
   },
 ];
 
-// Ranger interval split reference based on 5-mile assessment
-export const RANGER_INTERVAL_SPLITS: IntervalSplits[] = [
+// Recon interval split reference based on 5-mile assessment
+export const RECON_INTERVAL_SPLITS: IntervalSplits[] = [
   { mile_split_range: '6:30-7:00', splits_400m: '1:23-1:29', splits_800m: '2:46-2:58', splits_1200m: '4:09-4:27', splits_1600m: '5:32-5:56' },
   { mile_split_range: '7:01-7:30', splits_400m: '1:29-1:35', splits_800m: '2:58-3:10', splits_1200m: '4:27-4:45', splits_1600m: '5:56-6:20' },
   { mile_split_range: '7:31-8:00', splits_400m: '1:35-1:41', splits_800m: '3:10-3:22', splits_1200m: '4:45-5:03', splits_1600m: '6:20-6:44' },

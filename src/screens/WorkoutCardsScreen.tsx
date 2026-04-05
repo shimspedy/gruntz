@@ -109,7 +109,7 @@ export default function WorkoutCardsScreen() {
         </Card>
 
         {/* Movement Cards */}
-        <SectionHeader title="Movement Cards" subtitle="6 training cards from the MARSOC program" icon="💪" />
+        <SectionHeader title="Movement Cards" subtitle="6 training cards from the Raider program" icon="💪" />
         {movCards.map(card => (
           <CardItem
             key={card.id}

@@ -1,8 +1,8 @@
 import { Exercise, EquipmentAccess } from '../types';
 
 // ============================================================
-// MARSOC FITNESS PREPARATION LOG — COMPLETE EXERCISE DATABASE
-// Based on the official MARSOC 10-Week A&S Prep Program
+// RAIDER FITNESS PREPARATION LOG — COMPLETE EXERCISE DATABASE
+// Based on a 10-Week special operations prep program
 // Includes gym alternatives for equipment-access users
 // ============================================================
 
@@ -124,7 +124,7 @@ export const exercises: Exercise[] = [
   { id: 'hanging_leg_raises', name: 'Hanging Leg Raises', category: 'strength', description: 'Hang from bar, raise legs to 90°.', sets: 3, reps: 12, rest_seconds: 60, equipment: ['pull-up bar'], equipment_access: 'gym', xp_value: 12, form_tips: ['Control descent', 'No swinging'] },
 
   // ============================
-  // RANGER PRE-SURT EXERCISES
+  // RECON PREP EXERCISES
   // ============================
   // Barbell Strength
   { id: 'back_squat', name: 'Back Squat', category: 'strength', description: 'Barbell on upper back. Squat below parallel, drive through heels to lockout.', sets: 4, reps: 6, rest_seconds: 120, equipment: ['barbell', 'squat rack'], equipment_access: 'gym', xp_value: 20, form_tips: ['Bar on upper traps', 'Break at hips and knees', 'Knees track over toes', 'Drive through heels', 'Full depth below parallel'] },
@@ -147,7 +147,7 @@ export const exercises: Exercise[] = [
   { id: 'strict_situps', name: 'Strict Sit-Ups', category: 'core', description: 'Feet anchored, hands across chest. Full sit-up touching elbows to thighs.', sets: 3, reps: 30, rest_seconds: 60, equipment: [], equipment_access: 'none', xp_value: 10, form_tips: ['Feet anchored', 'Hands across chest', 'Full range from ground to up', 'Control descent'] },
   { id: 'strict_chinups', name: 'Strict Chin-Ups', category: 'strength', description: 'Underhand grip, dead hang. Pull slowly to chin above bar. No momentum.', sets: 3, reps: 6, rest_seconds: 90, equipment: ['pull-up bar'], equipment_access: 'minimal', xp_value: 18, form_tips: ['Underhand/supinated grip', 'Dead hang start', 'Controlled tempo', 'Add weight as needed'] },
   { id: 'strict_pushups', name: 'Strict Push-Ups', category: 'calisthenics', description: 'Standard push-up with perfect form. Chest to deck, full lockout. No sagging.', sets: 3, reps: 20, rest_seconds: 60, equipment: [], equipment_access: 'none', xp_value: 12, form_tips: ['Chest touches ground', 'Full lockout at top', 'Body straight', 'No sagging hips'] },
-  // Ranger Prep/Warmup
+  // Recon Prep/Warmup
   { id: 'straight_arm_pulls', name: 'Straight Arm Pulls', category: 'warmup', description: 'Straight arms, pull resistance band apart at chest height. Engage lats and rear delts.', sets: 1, reps: 5, rest_seconds: 0, equipment: ['resistance band'], equipment_access: 'minimal', xp_value: 5, form_tips: ['Arms straight', 'Chest height', 'Squeeze shoulder blades'] },
   { id: 'thoracic_rotations', name: 'Thoracic Spine Rotations', category: 'warmup', description: 'On all fours or seated, hand behind head. Rotate upper body, opening chest to ceiling.', sets: 1, reps: 8, rest_seconds: 0, equipment: [], equipment_access: 'none', xp_value: 5, form_tips: ['8 each side', 'Open chest fully', 'Hips stay square'] },
   { id: 'lat_hang_stretch', name: 'Lat Hang Stretch', category: 'warmup', description: 'Dead hang from pull-up bar to stretch lats and decompress spine.', duration_seconds: 20, rest_seconds: 0, equipment: ['pull-up bar'], equipment_access: 'minimal', xp_value: 5, form_tips: ['Relax completely', '20 seconds', 'Full dead hang'] },
@@ -157,7 +157,7 @@ export const exercises: Exercise[] = [
   { id: 'light_squat', name: 'Light Squat', category: 'warmup', description: 'Empty bar or light weight squats to warm up legs and spine.', sets: 1, reps: 6, rest_seconds: 0, equipment: ['barbell'], equipment_access: 'gym', xp_value: 5, form_tips: ['Light weight', 'Full depth', '5-6 reps'] },
   { id: 'rear_lunge_warmup', name: 'Rear Lunge (Warmup)', category: 'warmup', description: 'Bodyweight reverse lunge to warm up quads, glutes, and hip flexors.', sets: 1, reps: 10, rest_seconds: 0, equipment: [], equipment_access: 'none', xp_value: 5, form_tips: ['10 each side', 'Control step back', 'Drive through front heel'] },
   { id: 'bodyweight_hip_thrusts', name: 'Bodyweight Hip Thrusts', category: 'warmup', description: 'Shoulders on bench, drive hips up. Bodyweight only to activate glutes.', sets: 1, reps: 10, rest_seconds: 0, equipment: ['bench'], equipment_access: 'gym', xp_value: 5, form_tips: ['Squeeze glutes at top', 'Full extension', 'Activate posterior chain'] },
-  // Ranger Endurance
+  // Recon Endurance
   { id: 'run_400m_repeats', name: '400m Repeats', category: 'running', description: 'Track repeats at 5K race pace based on assessment splits.', sets: 8, distance: '400m', rest_seconds: 120, equipment: [], equipment_access: 'none', xp_value: 25, form_tips: ['Use assessment-based split times', '400m recovery walk between', 'Maintain form throughout'] },
   { id: 'run_800m_repeats', name: '800m Repeats', category: 'running', description: 'Track repeats at 5K race pace based on assessment splits.', sets: 5, distance: '800m', rest_seconds: 120, equipment: [], equipment_access: 'none', xp_value: 30, form_tips: ['Use assessment-based splits', '400m recovery walk between', 'Focus on even pacing'] },
   { id: 'run_1600m_repeats', name: '1600m Repeats', category: 'running', description: 'Track repeats at 15s/mile faster than 5-mile assessment.', sets: 2, distance: '1600m', rest_seconds: 180, equipment: [], equipment_access: 'none', xp_value: 35, form_tips: ['15s/mile faster than assessment', '400m recovery walk', 'Strong finish'] },
@@ -166,14 +166,14 @@ export const exercises: Exercise[] = [
   { id: 'tempo_run_mid', name: 'Mid Tempo Run', category: 'running', description: 'Tempo miles at 40 seconds slower than 5-mile assessment pace.', distance: '3-4 miles', rest_seconds: 0, equipment: [], equipment_access: 'none', xp_value: 35, form_tips: ['40s slower than assessment pace', 'Comfortably hard', 'Include warm-up/cool-down miles'] },
   { id: 'easy_pace_run', name: 'Easy Pace Run', category: 'running', description: 'Zone 2 conversation-pace run. Usually 2 min/mile slower than assessment.', distance: '3-7 miles', rest_seconds: 0, equipment: [], equipment_access: 'none', xp_value: 25, form_tips: ['Zone 2 effort', 'Can hold conversation', '2 min/mi slower than assessment', 'Build aerobic base'] },
   { id: 'pyramid_track', name: 'Pyramid Track Workout', category: 'running', description: '200-400-600-800-800-600-400-200m with 400m recovery walks.', distance: '4000m total', rest_seconds: 120, equipment: [], equipment_access: 'none', xp_value: 35, form_tips: ['Assessment-based splits', '400m walk recovery', 'Ladder up then down'] },
-  // Ranger Ruck (lighter 35# for Ranger vs 45# for MARSOC)
+  // Recon Ruck (lighter 35# for Recon vs 45# for Raider)
   { id: 'ruck_4mi_35', name: '4-Mile Ruck (35#)', category: 'rucking', description: 'Ruck 4 miles with 35lb pack. No running.', distance: '4 miles', rest_seconds: 0, equipment: ['ruck (35 lbs)'], equipment_access: 'minimal', xp_value: 35, form_tips: ['No running', 'Fast walking pace', 'Maintain posture'] },
   { id: 'ruck_5mi_35', name: '5-Mile Ruck (35#)', category: 'rucking', description: 'Ruck 5 miles with 35lb pack. No running.', distance: '5 miles', rest_seconds: 0, equipment: ['ruck (35 lbs)'], equipment_access: 'minimal', xp_value: 45, form_tips: ['No running', 'Steady pace', 'Hydrate'] },
   { id: 'ruck_6mi_35', name: '6-Mile Ruck (35#)', category: 'rucking', description: 'Ruck 6 miles with 35lb pack.', distance: '6 miles', rest_seconds: 0, equipment: ['ruck (35 lbs)'], equipment_access: 'minimal', xp_value: 50, form_tips: ['Consistent pace', 'Stay hydrated'] },
   { id: 'ruck_3mi_heavy', name: '3-Mile Heavy Ruck (55-60#)', category: 'rucking', description: 'Ruck 3 miles with 55-60lb pack. Build load tolerance.', distance: '3 miles', rest_seconds: 0, equipment: ['ruck (55-60 lbs)'], equipment_access: 'minimal', xp_value: 50, form_tips: ['Heavy load', 'Maintain posture', 'Drive through pace'] },
   { id: 'ruck_2mi_heavy', name: '2-Mile Heavy Ruck (55-60#)', category: 'rucking', description: 'Ruck 2 miles with 55-60lb pack. De-load week.', distance: '2 miles', rest_seconds: 0, equipment: ['ruck (55-60 lbs)'], equipment_access: 'minimal', xp_value: 35, form_tips: ['Heavy load, shorter distance', 'Maintain form'] },
   { id: 'ruck_4mi_35_fast', name: '4-Mile Ruck (35# Fast)', category: 'rucking', description: 'Ruck 4 miles with 35lb pack. 15-20 seconds faster per mile than normal. No running.', distance: '4 miles', rest_seconds: 0, equipment: ['ruck (35 lbs)'], equipment_access: 'minimal', xp_value: 40, form_tips: ['15-20s/mi faster', 'No running', 'Push pace'] },
-  // Ranger Functional / Carry / Sled
+  // Recon Functional / Carry / Sled
   { id: 'sled_pull_backwards', name: 'Sled Pull (Backwards Drag)', category: 'strength', description: 'Face sled, walk backward dragging it 50m. Engages quads, back, and grip.', sets: 6, distance: '50m', rest_seconds: 60, equipment: ['sled'], equipment_access: 'gym', xp_value: 15, form_tips: ['Low stance', 'Drive through legs backward', 'Keep arms extended'] },
   { id: 'sled_push_quick', name: 'Quick Sled Push', category: 'strength', description: 'Arms extended, drive sled forward 50m as fast as possible.', sets: 6, distance: '50m', rest_seconds: 60, equipment: ['sled'], equipment_access: 'gym', xp_value: 15, form_tips: ['Body at 45°', 'Drive through legs', 'Arms extended', 'Maximum effort'] },
   { id: 'pinch_grip_plate_carry', name: 'Pinch Grip Plate Carry', category: 'strength', description: 'Pinch grip weight plates, walk 60m. Builds extreme grip strength.', sets: 6, distance: '60m', rest_seconds: 60, equipment: ['weight plates'], equipment_access: 'gym', xp_value: 15, form_tips: ['Pinch plates with fingers', 'Upright posture', 'Grip is king'] },
@@ -295,7 +295,7 @@ const MUSCLE_GROUPS: Record<string, string[]> = {
   turkish_getup: ['full body', 'core', 'shoulders', 'balance'],
   sled_drag: ['legs', 'back', 'core', 'grip'],
   hanging_leg_raises: ['lower abs', 'hip flexors', 'grip'],
-  // Ranger Pre-SURT
+  // Recon Prep
   back_squat: ['quads', 'glutes', 'hamstrings', 'core', 'back'],
   rdl: ['hamstrings', 'glutes', 'lower back', 'grip'],
   weighted_step_up: ['quads', 'glutes', 'balance'],
@@ -388,7 +388,7 @@ const ILLUSTRATIONS: Record<string, string> = {
   barbell_front_squat: '🏋️', goblet_squat: '🏋️', lat_pulldown: '🏋️',
   deadlift: '🏋️‍♀️', barbell_lunge: '🏋️', turkish_getup: '🏋️',
   sled_drag: '🛷', hanging_leg_raises: '🪜',
-  // Ranger Pre-SURT
+  // Recon Prep
   back_squat: '🏋️', rdl: '🏋️‍♀️', weighted_step_up: '🪜', kb_swings: '🔔',
   lateral_lunge: '↔️', strict_pullup: '💪', bent_over_rows: '🚣',
   close_grip_pushups: '🫸', bent_over_reverse_flys: '🦅',

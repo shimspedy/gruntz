@@ -21,7 +21,7 @@ export default function ProgramDetailScreen() {
   const program = getProgramById(route.params.programId);
   if (!program) return null;
 
-  const accentColor = program.id === 'marsoc' ? colors.accent : colors.accentOrange;
+  const accentColor = program.id === 'raider' ? colors.accent : colors.accentOrange;
 
   const handleStart = () => {
     Alert.alert(
