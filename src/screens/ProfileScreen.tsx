@@ -50,12 +50,35 @@ export default function ProfileScreen() {
           </View>
           <Text style={styles.displayName} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{profile?.display_name || 'Warrior'}</Text>
           <Text style={styles.rankText}>{progress.current_rank} • Level {progress.current_level}</Text>
+          <Text style={styles.streakBadge}>🔥 {progress.streak_days}-day streak</Text>
         </Animated.View>
 
         {/* XP Bar */}
         <Card style={styles.section}>
           <XPBar current={xpInfo.current} required={xpInfo.required} level={progress.current_level} />
           <Text style={styles.totalXP}>{progress.current_xp.toLocaleString()} Total XP</Text>
+        </Card>
+
+        {/* Fitness Scores */}
+        <Card title="Fitness Scores" style={styles.section}>
+          <View style={styles.scoreGrid}>
+            <View style={styles.scoreItem}>
+              <Text style={[styles.scoreValue, { color: colors.accent }]}>{progress.strength_score}</Text>
+              <Text style={styles.scoreLabel}>Strength</Text>
+            </View>
+            <View style={styles.scoreItem}>
+              <Text style={[styles.scoreValue, { color: colors.accentGreen }]}>{progress.endurance_score}</Text>
+              <Text style={styles.scoreLabel}>Endurance</Text>
+            </View>
+            <View style={styles.scoreItem}>
+              <Text style={[styles.scoreValue, { color: colors.accentOrange }]}>{progress.stamina_score}</Text>
+              <Text style={styles.scoreLabel}>Stamina</Text>
+            </View>
+            <View style={styles.scoreItem}>
+              <Text style={[styles.scoreValue, { color: colors.accentGold }]}>{progress.consistency_score}</Text>
+              <Text style={styles.scoreLabel}>Consistency</Text>
+            </View>
+          </View>
         </Card>
 
         {/* Stats */}
@@ -107,17 +130,18 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: spacing.md,
-    paddingBottom: spacing.xxl,
+    padding: spacing.lg,
+    paddingBottom: 120,
   },
   header: {
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    marginTop: spacing.lg,
+    marginBottom: spacing.xl,
   },
   avatarCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: colors.card,
     alignItems: 'center',
     justifyContent: 'center',
@@ -126,20 +150,31 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: spacing.md,
   },
   avatarEmoji: {
-    fontSize: 36,
+    fontSize: 44,
   },
   displayName: {
-    fontSize: 24,
-    fontWeight: '800',
+    fontSize: 28,
+    fontWeight: '900',
     color: colors.textPrimary,
   },
   rankText: {
-    fontSize: 14,
+    fontSize: 15,
     color: colors.textSecondary,
-    marginTop: 4,
+    marginTop: 6,
+  },
+  streakBadge: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.streakFire,
+    marginTop: spacing.sm,
+    backgroundColor: colors.card,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: 20,
+    overflow: 'hidden',
   },
   section: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   totalXP: {
     fontSize: 13,
@@ -147,19 +182,40 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.sm,
   },
+  scoreGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  scoreItem: {
+    width: '48%',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+  },
+  scoreValue: {
+    fontSize: 28,
+    fontWeight: '900',
+  },
+  scoreLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textMuted,
+    marginTop: 4,
+    letterSpacing: 0.5,
+  },
   statRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
+    paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: colors.cardBorder,
   },
   statLabel: {
-    fontSize: 14,
+    fontSize: 15,
     color: colors.textSecondary,
   },
   statValue: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: colors.textPrimary,
   },
@@ -168,8 +224,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: colors.card,
-    borderRadius: 2,
-    padding: spacing.md,
+    borderRadius: 12,
+    padding: spacing.lg,
     marginBottom: spacing.sm,
     borderWidth: 1,
     borderColor: colors.cardBorder,
