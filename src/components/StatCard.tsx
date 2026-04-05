@@ -10,9 +10,15 @@ interface StatCardProps {
   style?: ViewStyle;
 }
 
+const CORNER = 10;
+
 export function StatCard({ icon, value, label, color = colors.accent, style }: StatCardProps) {
   return (
     <View style={[styles.card, style]}>
+      {/* Top-left accent notch */}
+      <View style={[styles.topAccent, { backgroundColor: color }]} />
+      {/* Top-right corner cut */}
+      <View style={styles.cornerCut} />
       <Text style={styles.icon}>{icon}</Text>
       <Text style={[styles.value, { color }]}>{value}</Text>
       <Text style={styles.label}>{label}</Text>
@@ -23,12 +29,29 @@ export function StatCard({ icon, value, label, color = colors.accent, style }: S
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.card,
-    borderRadius: 16,
+    borderRadius: 2,
     borderWidth: 1,
     borderColor: colors.cardBorder,
     padding: spacing.md,
     alignItems: 'center',
     flex: 1,
+    overflow: 'hidden',
+  },
+  topAccent: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    height: 2,
+    width: '60%',
+  },
+  cornerCut: {
+    position: 'absolute',
+    top: -CORNER / 2,
+    right: -CORNER / 2,
+    width: CORNER,
+    height: CORNER,
+    backgroundColor: colors.background,
+    transform: [{ rotate: '45deg' }],
   },
   icon: {
     fontSize: 24,

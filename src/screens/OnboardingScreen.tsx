@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
   },
   optionCard: {
     backgroundColor: colors.card,
-    borderRadius: 12,
+    borderRadius: 2,
     borderWidth: 2,
     borderColor: colors.cardBorder,
     padding: spacing.md,
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
   dayButton: {
     flex: 1,
     height: 56,
-    borderRadius: 12,
+    borderRadius: 2,
     backgroundColor: colors.card,
     borderWidth: 2,
     borderColor: colors.cardBorder,

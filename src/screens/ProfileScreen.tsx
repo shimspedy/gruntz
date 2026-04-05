@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: colors.card,
-    borderRadius: 12,
+    borderRadius: 2,
     padding: spacing.md,
     marginBottom: spacing.sm,
     borderWidth: 1,

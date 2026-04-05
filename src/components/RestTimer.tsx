@@ -98,9 +98,10 @@ const styles = StyleSheet.create({
   },
   timerCard: {
     backgroundColor: colors.card,
-    borderRadius: 16,
+    borderRadius: 2,
     borderWidth: 1,
     borderColor: colors.accent,
+    borderLeftWidth: 3,
     padding: spacing.lg,
     alignItems: 'center',
   },
@@ -139,7 +140,7 @@ const styles = StyleSheet.create({
   controlBtn: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: 3,
     backgroundColor: colors.cardBorder,
     alignItems: 'center',
     justifyContent: 'center',

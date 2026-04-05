@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundSecondary,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-    borderRadius: 8,
+    borderRadius: 2,
   },
   statsGrid: {
     flexDirection: 'row',

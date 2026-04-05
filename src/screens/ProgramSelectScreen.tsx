@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     fontSize: 15, color: colors.textSecondary, marginBottom: spacing.xl, lineHeight: 22,
   },
   card: {
-    backgroundColor: colors.card, borderRadius: 16, borderWidth: 1,
+    backgroundColor: colors.card, borderRadius: 2, borderWidth: 1,
     padding: spacing.lg, marginBottom: spacing.lg,
   },
   cardHeader: {
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   },
   cardIcon: { fontSize: 40 },
   cardDiffBadge: {
-    backgroundColor: colors.backgroundSecondary, borderRadius: 8,
+    backgroundColor: colors.backgroundSecondary, borderRadius: 2,
     paddingHorizontal: spacing.sm, paddingVertical: 4,
   },
   cardDiffText: { fontSize: 10, fontWeight: '800', letterSpacing: 1.5 },
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
   cardDesc: { fontSize: 14, color: colors.textSecondary, lineHeight: 21, marginBottom: spacing.md },
   cardStats: {
     flexDirection: 'row', backgroundColor: colors.backgroundSecondary,
-    borderRadius: 12, padding: spacing.md, marginBottom: spacing.md,
+    borderRadius: 2, padding: spacing.md, marginBottom: spacing.md,
     justifyContent: 'space-around', alignItems: 'center',
   },
   stat: { alignItems: 'center' },
@@ -128,12 +128,12 @@ const styles = StyleSheet.create({
   statDivider: { width: 1, height: 30, backgroundColor: colors.cardBorder },
   focusRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: spacing.md },
   focusChip: {
-    borderWidth: 1, borderRadius: 8,
+    borderWidth: 1, borderRadius: 2,
     paddingHorizontal: 10, paddingVertical: 4,
   },
   focusChipText: { fontSize: 11, fontWeight: '700' },
   cardButton: {
-    borderRadius: 12, paddingVertical: 14, alignItems: 'center',
+    borderRadius: 2, paddingVertical: 14, alignItems: 'center',
   },
   cardButtonText: {
     fontSize: 14, fontWeight: '800', color: colors.background, letterSpacing: 1,

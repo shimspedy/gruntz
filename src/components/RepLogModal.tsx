@@ -193,8 +193,10 @@ const styles = StyleSheet.create({
   },
   modal: {
     backgroundColor: colors.card,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 2,
+    borderTopWidth: 2,
+    borderTopColor: colors.accent,
     padding: spacing.lg,
     paddingBottom: spacing.xxl,
     maxHeight: '85%',
@@ -236,7 +238,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     backgroundColor: colors.background,
-    borderRadius: 8,
+    borderRadius: 2,
+    borderLeftWidth: 2,
+    borderLeftColor: colors.accentGold,
   },
   targetLabel: {
     fontSize: 11,
@@ -266,7 +270,7 @@ const styles = StyleSheet.create({
   setNumber: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: 3,
     backgroundColor: colors.cardBorder,
     alignItems: 'center',
     justifyContent: 'center',
@@ -289,7 +293,7 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: colors.background,
-    borderRadius: 8,
+    borderRadius: 2,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     color: colors.textPrimary,
@@ -335,7 +339,7 @@ const styles = StyleSheet.create({
   rpeDot: {
     width: 30,
     height: 30,
-    borderRadius: 15,
+    borderRadius: 3,
     backgroundColor: colors.cardBorder,
     alignItems: 'center',
     justifyContent: 'center',
@@ -349,7 +353,7 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   rpeDotTextActive: {
-    color: '#000',
+    color: colors.background,
   },
   rpeDesc: {
     fontSize: 12,
@@ -358,14 +362,14 @@ const styles = StyleSheet.create({
   },
   saveBtn: {
     backgroundColor: colors.accent,
-    borderRadius: 12,
+    borderRadius: 2,
     paddingVertical: 16,
     alignItems: 'center',
   },
   saveBtnText: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#000',
+    color: colors.background,
     letterSpacing: 1.5,
   },
 });

@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
   },
   statPill: {
     backgroundColor: colors.card,
-    borderRadius: 12,
+    borderRadius: 2,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     alignItems: 'center',
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
   stepNumber: {
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: 2,
     backgroundColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   stepNumberText: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#000',
+    color: colors.background,
   },
   stepText: {
     flex: 1,
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
   },
   musclePill: {
     backgroundColor: colors.cardBorder,
-    borderRadius: 8,
+    borderRadius: 2,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
   },
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
   },
   logBtn: {
     backgroundColor: colors.accent,
-    borderRadius: 12,
+    borderRadius: 2,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: spacing.lg,
@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
   logBtnText: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#000',
+    color: colors.background,
     letterSpacing: 1.5,
   },
 });

@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   },
   statPill: {
     backgroundColor: colors.card,
-    borderRadius: 12,
+    borderRadius: 2,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     alignItems: 'center',
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
   },
   musclePill: {
     backgroundColor: colors.cardBorder,
-    borderRadius: 8,
+    borderRadius: 2,
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
   },

@@ -17,7 +17,7 @@ export function ExerciseRow({ name, detail, completed, onToggle, restSeconds, il
   return (
     <TouchableOpacity style={styles.row} onPress={onToggle} activeOpacity={0.7}>
       <View style={[styles.checkbox, completed && styles.checkboxCompleted]}>
-        {completed && <Ionicons name="checkmark" size={16} color="#000" />}
+        {completed && <Ionicons name="checkmark" size={16} color={colors.background} />}
       </View>
       {illustration && <Text style={styles.illustration}>{illustration}</Text>}
       <View style={styles.info}>
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
   checkbox: {
     width: 28,
     height: 28,
-    borderRadius: 8,
+    borderRadius: 3,
     borderWidth: 2,
     borderColor: colors.textMuted,
     alignItems: 'center',

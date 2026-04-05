@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
   heroSub: { fontSize: 14, fontWeight: '700', letterSpacing: 1.5, marginTop: 4 },
   statsBar: {
     flexDirection: 'row', justifyContent: 'space-around',
-    backgroundColor: colors.card, borderRadius: 16, padding: spacing.lg,
+    backgroundColor: colors.card, borderRadius: 2, padding: spacing.lg,
     borderWidth: 1, borderColor: colors.cardBorder, marginBottom: spacing.lg,
   },
   stat: { alignItems: 'center' },
@@ -169,12 +169,12 @@ const styles = StyleSheet.create({
     letterSpacing: 2, marginBottom: spacing.md, marginTop: spacing.md,
   },
   phaseCard: {
-    backgroundColor: colors.card, borderRadius: 12, padding: spacing.md,
+    backgroundColor: colors.card, borderRadius: 2, padding: spacing.md,
     borderWidth: 1, borderColor: colors.cardBorder, marginBottom: spacing.sm,
   },
   phaseHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
   phaseNum: {
-    width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
+    width: 28, height: 28, borderRadius: 2, alignItems: 'center', justifyContent: 'center',
   },
   phaseNumText: { fontSize: 14, fontWeight: '900', color: colors.background },
   phaseHeaderText: { marginLeft: spacing.sm, flex: 1 },
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   phaseFocus: { fontSize: 12, fontWeight: '700' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: spacing.md },
   chip: {
-    borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5,
+    borderWidth: 1, borderRadius: 2, paddingHorizontal: 10, paddingVertical: 5,
   },
   chipText: { fontSize: 12, fontWeight: '700' },
   equipRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl, borderTopWidth: 1, borderTopColor: colors.cardBorder,
   },
   startButton: {
-    borderRadius: 14, paddingVertical: 16, alignItems: 'center',
+    borderRadius: 2, paddingVertical: 16, alignItems: 'center',
   },
   startButtonText: {
     fontSize: 16, fontWeight: '900', color: colors.background, letterSpacing: 1.5,

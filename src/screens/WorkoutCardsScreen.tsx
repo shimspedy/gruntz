@@ -19,7 +19,7 @@ function DifficultyBadge({ level }: { level: string }) {
   const colorMap: Record<string, string> = {
     beginner: colors.accentGreen,
     intermediate: colors.accentGold,
-    advanced: '#FF4444',
+    advanced: colors.accentRed,
   };
   return (
     <View style={[styles.diffBadge, { backgroundColor: colorMap[level] || colors.textMuted }]}>
@@ -57,7 +57,7 @@ function CardItem({ card, onPress, recommended }: { card: MovementCard; onPress:
         </View>
         {recommended && recommended.priority === 'high' && (
           <View style={styles.recBadge}>
-            <Ionicons name="sparkles" size={14} color="#000" />
+            <Ionicons name="sparkles" size={14} color={colors.background} />
             <Text style={styles.recBadgeText}>AI RECOMMENDED</Text>
           </View>
         )}
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
   },
   cardItem: {
     backgroundColor: colors.card,
-    borderRadius: 16,
+    borderRadius: 2,
     padding: spacing.md,
     marginBottom: spacing.md,
     borderWidth: 1,
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   diffBadgeText: {
     fontSize: 9,
     fontWeight: '800',
-    color: '#000',
+    color: colors.background,
     letterSpacing: 1,
   },
   cardDesc: {
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
   recBadgeText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#000',
+    color: colors.background,
     letterSpacing: 1,
   },
   recReason: {

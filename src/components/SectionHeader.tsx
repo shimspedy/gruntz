@@ -11,6 +11,7 @@ interface SectionHeaderProps {
 export function SectionHeader({ title, subtitle, icon }: SectionHeaderProps) {
   return (
     <View style={styles.container}>
+      <View style={styles.accentLine} />
       {icon && <Text style={styles.icon}>{icon}</Text>}
       <View>
         <Text style={styles.title}>{title}</Text>
@@ -26,6 +27,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.md,
     marginTop: spacing.lg,
+  },
+  accentLine: {
+    width: 3,
+    height: 20,
+    backgroundColor: colors.accent,
+    marginRight: spacing.sm,
+    borderRadius: 1,
   },
   icon: {
     fontSize: 20,

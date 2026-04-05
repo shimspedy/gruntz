@@ -112,23 +112,23 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
-    borderRadius: 12,
+    borderRadius: 2,
     marginBottom: spacing.md,
   },
   levelUpText: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#000',
+    color: colors.background,
   },
   rankBanner: {
     backgroundColor: colors.accentGold,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
-    borderRadius: 12,
+    borderRadius: 2,
   },
   rankText: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#000',
+    color: colors.background,
   },
 });
