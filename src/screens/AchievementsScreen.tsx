@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, SafeAreaView, FlatList } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, FlatList } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing } from '../theme';
 import { Card } from '../components/Card';
 import { useUserStore } from '../store/useUserStore';
