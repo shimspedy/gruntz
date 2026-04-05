@@ -7,11 +7,12 @@ import RecoveryScreen from '../screens/RecoveryScreen';
 import ProgramSelectScreen from '../screens/ProgramSelectScreen';
 import ProgramDetailScreen from '../screens/ProgramDetailScreen';
 import type { ProfileStackParamList } from '../types/navigation';
-import { colors } from '../theme';
+import { useColors } from '../theme';
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
 
 export function ProfileStack() {
+  const colors = useColors();
   return (
     <Stack.Navigator
       screenOptions={{

@@ -1,9 +1,10 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { colors, spacing } from '../theme';
+import { useColors, spacing } from '../theme';
+import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 import { ExerciseRow } from '../components/ExerciseRow';
 import { SectionHeader } from '../components/SectionHeader';
@@ -28,6 +29,8 @@ const sectionIcons: Record<string, string> = {
 };
 
 export default function DailyMissionScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const navigation = useNavigation<Nav>();
   const { todaysMission, startMission, finishMission, isActive } = useMissionStore();
   const { completeMission, addXP, checkAchievements } = useUserStore();
@@ -243,7 +246,7 @@ export default function DailyMissionScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.background,

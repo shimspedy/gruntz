@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { AppTabs } from './AppTabs';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import { useUserStore } from '../store/useUserStore';
-import { colors } from '../theme';
+import { useThemeStore } from '../store/useThemeStore';
+import { useColors } from '../theme';
 
 export function RootNavigator() {
+  const colors = useColors();
   const { isOnboarded } = useUserStore();
   const [onboarded, setOnboarded] = useState(isOnboarded);
+  const loadTheme = useThemeStore(s => s.loadPersistedTheme);
+  useEffect(() => { loadTheme(); }, []);
 
   return (
     <NavigationContainer

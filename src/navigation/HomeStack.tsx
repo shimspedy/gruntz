@@ -7,11 +7,12 @@ import DailyMissionScreen from '../screens/DailyMissionScreen';
 import MissionCompleteScreen from '../screens/MissionCompleteScreen';
 import ExerciseDetailScreen from '../screens/ExerciseDetailScreen';
 import type { HomeStackParamList } from '../types/navigation';
-import { colors } from '../theme';
+import { useColors } from '../theme';
 
 const Stack = createNativeStackNavigator<HomeStackParamList>();
 
 export function HomeStack() {
+  const colors = useColors();
   return (
     <Stack.Navigator
       screenOptions={{

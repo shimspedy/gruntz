@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { colors, spacing } from '../theme';
+import { useColors, spacing } from '../theme';
+import type { ThemeColors } from '../theme';
 
 interface RestTimerProps {
   seconds: number;
@@ -11,6 +12,9 @@ interface RestTimerProps {
 }
 
 export function RestTimer({ seconds, onComplete, onSkip }: RestTimerProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const [remaining, setRemaining] = useState(seconds);
   const [isPaused, setIsPaused] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -91,7 +95,7 @@ export function RestTimer({ seconds, onComplete, onSkip }: RestTimerProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.sm,

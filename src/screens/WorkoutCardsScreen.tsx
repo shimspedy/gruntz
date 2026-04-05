@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing } from '../theme';
+import { useColors, spacing } from '../theme';
+import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 import { SectionHeader } from '../components/SectionHeader';
 import { movementCards, getAllMovementCards, getAllSwimCards } from '../data/movementCards';
@@ -15,62 +16,64 @@ import type { MissionsStackParamList } from '../types/navigation';
 
 type Nav = NativeStackNavigationProp<MissionsStackParamList, 'WorkoutCards'>;
 
-function DifficultyBadge({ level }: { level: string }) {
-  const colorMap: Record<string, string> = {
-    beginner: colors.accentGreen,
-    intermediate: colors.accentGold,
-    advanced: colors.accentRed,
-  };
-  return (
-    <View style={[styles.diffBadge, { backgroundColor: colorMap[level] || colors.textMuted }]}>
-      <Text style={styles.diffBadgeText}>{level.toUpperCase()}</Text>
-    </View>
-  );
-}
-
-function CardItem({ card, onPress, recommended }: { card: MovementCard; onPress: () => void; recommended?: WorkoutRecommendation }) {
-  return (
-    <TouchableOpacity activeOpacity={0.7} onPress={onPress}>
-      <View style={[styles.cardItem, recommended?.priority === 'high' && styles.cardItemHighlighted]}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardIcon}>{card.icon}</Text>
-          <View style={styles.cardTitleArea}>
-            <Text style={styles.cardNumber}>CARD #{card.card_number}</Text>
-            <Text style={styles.cardName}>{card.name}</Text>
-          </View>
-          <DifficultyBadge level={card.difficulty} />
-        </View>
-        <Text style={styles.cardDesc} numberOfLines={2}>{card.description}</Text>
-        <View style={styles.cardMeta}>
-          <View style={styles.metaItem}>
-            <Ionicons name="time-outline" size={14} color={colors.textMuted} />
-            <Text style={styles.metaText}>{card.estimated_duration} min</Text>
-          </View>
-          <View style={styles.metaItem}>
-            <Ionicons name="repeat-outline" size={14} color={colors.textMuted} />
-            <Text style={styles.metaText}>{card.total_rounds} rounds</Text>
-          </View>
-          <View style={styles.metaItem}>
-            <Ionicons name="body-outline" size={14} color={colors.textMuted} />
-            <Text style={styles.metaText}>{card.target_muscle_groups.slice(0, 3).join(', ')}</Text>
-          </View>
-        </View>
-        {recommended && recommended.priority === 'high' && (
-          <View style={styles.recBadge}>
-            <Ionicons name="sparkles" size={14} color={colors.background} />
-            <Text style={styles.recBadgeText}>AI RECOMMENDED</Text>
-          </View>
-        )}
-        {recommended && (
-          <Text style={styles.recReason}>{recommended.reason}</Text>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
-}
-
 export default function WorkoutCardsScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const navigation = useNavigation<Nav>();
+
+  function DifficultyBadge({ level }: { level: string }) {
+    const colorMap: Record<string, string> = {
+      beginner: colors.accentGreen,
+      intermediate: colors.accentGold,
+      advanced: colors.accentRed,
+    };
+    return (
+      <View style={[styles.diffBadge, { backgroundColor: colorMap[level] || colors.textMuted }]}>
+        <Text style={styles.diffBadgeText}>{level.toUpperCase()}</Text>
+      </View>
+    );
+  }
+
+  function CardItem({ card, onPress, recommended }: { card: MovementCard; onPress: () => void; recommended?: WorkoutRecommendation }) {
+    return (
+      <TouchableOpacity activeOpacity={0.7} onPress={onPress}>
+        <View style={[styles.cardItem, recommended?.priority === 'high' && styles.cardItemHighlighted]}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardIcon}>{card.icon}</Text>
+            <View style={styles.cardTitleArea}>
+              <Text style={styles.cardNumber}>CARD #{card.card_number}</Text>
+              <Text style={styles.cardName}>{card.name}</Text>
+            </View>
+            <DifficultyBadge level={card.difficulty} />
+          </View>
+          <Text style={styles.cardDesc} numberOfLines={2}>{card.description}</Text>
+          <View style={styles.cardMeta}>
+            <View style={styles.metaItem}>
+              <Ionicons name="time-outline" size={14} color={colors.textMuted} />
+              <Text style={styles.metaText}>{card.estimated_duration} min</Text>
+            </View>
+            <View style={styles.metaItem}>
+              <Ionicons name="repeat-outline" size={14} color={colors.textMuted} />
+              <Text style={styles.metaText}>{card.total_rounds} rounds</Text>
+            </View>
+            <View style={styles.metaItem}>
+              <Ionicons name="body-outline" size={14} color={colors.textMuted} />
+              <Text style={styles.metaText}>{card.target_muscle_groups.slice(0, 3).join(', ')}</Text>
+            </View>
+          </View>
+          {recommended && recommended.priority === 'high' && (
+            <View style={styles.recBadge}>
+              <Ionicons name="sparkles" size={14} color={colors.background} />
+              <Text style={styles.recBadgeText}>AI RECOMMENDED</Text>
+            </View>
+          )}
+          {recommended && (
+            <Text style={styles.recReason}>{recommended.reason}</Text>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  }
   const { progress } = useUserStore();
   const recommendations = getTopRecommendations(progress, 11);
   const profile = getStrengthProfile(progress);
@@ -134,7 +137,7 @@ export default function WorkoutCardsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.background,

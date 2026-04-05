@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing } from '../theme';
+import { useColors, spacing } from '../theme';
+import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 import { RepLogModal } from '../components/RepLogModal';
 import { getExerciseById } from '../data/exercises';
@@ -15,6 +16,8 @@ import type { SetLog } from '../types';
 type ExerciseDetailRoute = RouteProp<HomeStackParamList, 'ExerciseDetail'>;
 
 export default function ExerciseDetailScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const route = useRoute<ExerciseDetailRoute>();
   const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const exercise = getExerciseById(route.params.exerciseId);
@@ -172,7 +175,7 @@ export default function ExerciseDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.background,

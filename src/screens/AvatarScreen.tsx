@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, spacing } from '../theme';
+import { useColors, spacing } from '../theme';
+import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 import { useUserStore } from '../store/useUserStore';
 import { getRankInfo, getUnlockedAvatarItems, ranks } from '../data/ranks';
 
 export default function AvatarScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { progress } = useUserStore();
   const rankInfo = getRankInfo(progress.current_rank);
   const unlockedItems = getUnlockedAvatarItems(progress.current_level, progress.current_rank);
@@ -78,7 +81,7 @@ export default function AvatarScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.background,

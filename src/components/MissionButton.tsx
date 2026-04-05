@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { TouchableOpacity, Text, View, StyleSheet, ViewStyle } from 'react-native';
-import { colors, spacing } from '../theme';
+import { useColors, spacing } from '../theme';
+import type { ThemeColors } from '../theme';
 
 interface MissionButtonProps {
   title: string;
@@ -12,6 +13,9 @@ interface MissionButtonProps {
 }
 
 export function MissionButton({ title, onPress, variant = 'primary', disabled = false, style, label }: MissionButtonProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const bgColor = variant === 'primary'
     ? colors.accent
     : variant === 'success'
@@ -45,7 +49,7 @@ export function MissionButton({ title, onPress, variant = 'primary', disabled = 
 const CUT_W = 18;
 const CUT_H = 24;
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   button: {
     height: 56,
     borderRadius: 2,

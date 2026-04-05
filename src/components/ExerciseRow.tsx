@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing } from '../theme';
+import { useColors, spacing } from '../theme';
+import type { ThemeColors } from '../theme';
 
 interface ExerciseRowProps {
   name: string;
@@ -14,6 +15,9 @@ interface ExerciseRowProps {
 }
 
 export function ExerciseRow({ name, detail, completed, onToggle, restSeconds, illustration, onInfo }: ExerciseRowProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <TouchableOpacity style={styles.row} onPress={onToggle} activeOpacity={0.7}>
       <View style={[styles.checkbox, completed && styles.checkboxCompleted]}>
@@ -39,7 +43,7 @@ export function ExerciseRow({ name, detail, completed, onToggle, restSeconds, il
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',

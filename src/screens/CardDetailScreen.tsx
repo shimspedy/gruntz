@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing } from '../theme';
+import { useColors, spacing } from '../theme';
+import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 import { getMovementCard } from '../data/movementCards';
 import { getExerciseById } from '../data/exercises';
@@ -15,6 +16,8 @@ type CardDetailRoute = RouteProp<MissionsStackParamList, 'CardDetail'>;
 type Nav = NativeStackNavigationProp<MissionsStackParamList, 'CardDetail'>;
 
 export default function CardDetailScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const route = useRoute<CardDetailRoute>();
   const navigation = useNavigation<Nav>();
   const card = getMovementCard(route.params.cardId);
@@ -129,7 +132,7 @@ export default function CardDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.background,

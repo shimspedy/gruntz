@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
-import { colors, spacing } from '../theme';
+import { useColors, spacing } from '../theme';
+import type { ThemeColors } from '../theme';
 import { getProgramById } from '../data/programs';
 import { useProgramStore } from '../store/useProgramStore';
 import type { HomeStackParamList } from '../types/navigation';
@@ -14,6 +15,8 @@ type Nav = NativeStackNavigationProp<HomeStackParamList, 'ProgramDetail'>;
 type Route = RouteProp<HomeStackParamList, 'ProgramDetail'>;
 
 export default function ProgramDetailScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const { selectProgram, setHasSeenProgramSelect } = useProgramStore();
@@ -73,7 +76,7 @@ export default function ProgramDetailScreen() {
         {/* Phases */}
         <Text style={styles.sectionTitle}>TRAINING PHASES</Text>
         {program.phases.map((phase) => (
-          <PhaseCard key={phase.phase_number} phase={phase} accent={accentColor} />
+          <PhaseCard key={phase.phase_number} phase={phase} accent={accentColor} styles={styles} />
         ))}
 
         {/* Focus Areas */}
@@ -121,7 +124,7 @@ export default function ProgramDetailScreen() {
   );
 }
 
-function PhaseCard({ phase, accent }: { phase: ProgramPhase; accent: string }) {
+function PhaseCard({ phase, accent, styles }: { phase: ProgramPhase; accent: string; styles: ReturnType<typeof createStyles> }) {
   return (
     <View style={styles.phaseCard}>
       <View style={styles.phaseHeader}>
@@ -144,7 +147,7 @@ function PhaseCard({ phase, accent }: { phase: ProgramPhase; accent: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
   content: { padding: spacing.md, paddingBottom: 120 },

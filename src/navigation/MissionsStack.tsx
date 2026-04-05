@@ -6,11 +6,12 @@ import WorkoutCardsScreen from '../screens/WorkoutCardsScreen';
 import CardDetailScreen from '../screens/CardDetailScreen';
 import ExerciseDetailScreen from '../screens/ExerciseDetailScreen';
 import type { MissionsStackParamList } from '../types/navigation';
-import { colors } from '../theme';
+import { useColors } from '../theme';
 
 const Stack = createNativeStackNavigator<MissionsStackParamList>();
 
 export function MissionsStack() {
+  const colors = useColors();
   return (
     <Stack.Navigator
       screenOptions={{

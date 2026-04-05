@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
-import { colors, spacing } from '../theme';
+import { useColors, spacing } from '../theme';
+import type { ThemeColors } from '../theme';
 
 interface StatCardProps {
   icon: string;
@@ -12,21 +13,25 @@ interface StatCardProps {
 
 const CORNER = 10;
 
-export function StatCard({ icon, value, label, color = colors.accent, style }: StatCardProps) {
+export function StatCard({ icon, value, label, color, style }: StatCardProps) {
+  const colors = useColors();
+  const resolvedColor = color ?? colors.accent;
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={[styles.card, style]}>
       {/* Top-left accent notch */}
-      <View style={[styles.topAccent, { backgroundColor: color }]} />
+      <View style={[styles.topAccent, { backgroundColor: resolvedColor }]} />
       {/* Top-right corner cut */}
       <View style={styles.cornerCut} />
       <Text style={styles.icon}>{icon}</Text>
-      <Text style={[styles.value, { color }]}>{value}</Text>
+      <Text style={[styles.value, { color: resolvedColor }]}>{value}</Text>
       <Text style={styles.label}>{label}</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   card: {
     backgroundColor: colors.card,
     borderRadius: 2,

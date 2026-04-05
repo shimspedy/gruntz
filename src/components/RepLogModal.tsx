@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { colors, spacing } from '../theme';
+import { useColors, spacing } from '../theme';
+import type { ThemeColors } from '../theme';
 import type { Exercise, SetLog } from '../types';
 
 interface RepLogModalProps {
@@ -13,6 +14,9 @@ interface RepLogModalProps {
 }
 
 export function RepLogModal({ visible, exercise, onSave, onClose }: RepLogModalProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const targetSets = exercise.sets || 1;
   const [sets, setSets] = useState<SetLog[]>(
     Array.from({ length: targetSets }, (_, i) => ({
@@ -185,7 +189,7 @@ export function RepLogModal({ visible, exercise, onSave, onClose }: RepLogModalP
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.7)',

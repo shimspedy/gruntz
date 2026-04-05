@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, spacing } from '../theme';
+import { useColors, spacing } from '../theme';
+import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 import { StatCard } from '../components/StatCard';
 import { XPBar } from '../components/XPBar';
@@ -9,6 +10,8 @@ import { useUserStore } from '../store/useUserStore';
 import { getXPToNextLevel } from '../utils/xp';
 
 export default function ProgressScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { progress } = useUserStore();
   const xpInfo = getXPToNextLevel(progress.current_xp);
 
@@ -95,7 +98,7 @@ export default function ProgressScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.background,

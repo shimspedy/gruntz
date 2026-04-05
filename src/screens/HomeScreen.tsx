@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { colors, spacing } from '../theme';
+import { useColors, spacing } from '../theme';
+import type { ThemeColors } from '../theme';
 import { XPBar } from '../components/XPBar';
 import { StatCard } from '../components/StatCard';
 import { MissionButton } from '../components/MissionButton';
@@ -20,6 +21,8 @@ import type { HomeStackParamList } from '../types/navigation';
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 
 export default function HomeScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const navigation = useNavigation<Nav>();
   const { progress } = useUserStore();
   const { todaysMission, isRestDay, nextWorkout, loadTodaysMission } = useMissionStore();
@@ -161,7 +164,7 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.background,

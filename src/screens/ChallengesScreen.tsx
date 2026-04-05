@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing } from '../theme';
+import { useColors, spacing } from '../theme';
+import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 import { MissionButton } from '../components/MissionButton';
 import type { MissionsStackParamList } from '../types/navigation';
@@ -32,6 +33,8 @@ const sampleChallenges: ChallengeItem[] = [
 ];
 
 export default function ChallengesScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const navigation = useNavigation<Nav>();
   const categories = ['daily', 'weekly', 'monthly'] as const;
   const categoryLabels = { daily: 'Daily Challenges', weekly: 'Weekly Challenges', monthly: 'Monthly Challenges' };
@@ -98,7 +101,7 @@ export default function ChallengesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.background,

@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { colors, spacing } from '../theme';
+import { useColors, spacing } from '../theme';
+import type { ThemeColors } from '../theme';
 import { PROGRAMS } from '../data/programs';
 import type { HomeStackParamList } from '../types/navigation';
 import type { TrainingProgram } from '../types';
@@ -12,6 +13,8 @@ const { width } = Dimensions.get('window');
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'ProgramSelect'>;
 
 export default function ProgramSelectScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const navigation = useNavigation<Nav>();
 
   return (
@@ -28,6 +31,8 @@ export default function ProgramSelectScreen() {
             key={program.id}
             program={program}
             onPress={() => navigation.navigate('ProgramDetail', { programId: program.id })}
+            colors={colors}
+            styles={styles}
           />
         ))}
 
@@ -39,7 +44,7 @@ export default function ProgramSelectScreen() {
   );
 }
 
-function ProgramCard({ program, onPress }: { program: TrainingProgram; onPress: () => void }) {
+function ProgramCard({ program, onPress, colors, styles }: { program: TrainingProgram; onPress: () => void; colors: ThemeColors; styles: ReturnType<typeof createStyles> }) {
   const accentColor = program.id === 'raider' ? colors.accent : colors.accentOrange;
 
   return (
@@ -87,7 +92,7 @@ function ProgramCard({ program, onPress }: { program: TrainingProgram; onPress: 
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
   content: { padding: spacing.md, paddingBottom: spacing.xxl },

@@ -5,12 +5,13 @@ import { HomeStack } from './HomeStack';
 import { MissionsStack } from './MissionsStack';
 import ProgressScreen from '../screens/ProgressScreen';
 import { ProfileStack } from './ProfileStack';
-import { colors } from '../theme';
+import { useColors } from '../theme';
 import type { RootTabParamList } from '../types/navigation';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
 export function AppTabs() {
+  const colors = useColors();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({

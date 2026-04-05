@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { colors, spacing } from '../theme';
+import { useColors, spacing } from '../theme';
+import type { ThemeColors } from '../theme';
 
 interface CardProps {
   children: React.ReactNode;
@@ -9,11 +10,15 @@ interface CardProps {
   accentColor?: string;
 }
 
-export function Card({ children, style, title, accentColor = colors.accent }: CardProps) {
+export function Card({ children, style, title, accentColor }: CardProps) {
+  const colors = useColors();
+  const resolvedAccent = accentColor ?? colors.accent;
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={[styles.card, style]}>
       {/* Left accent bar */}
-      <View style={[styles.accentBar, { backgroundColor: accentColor }]} />
+      <View style={[styles.accentBar, { backgroundColor: resolvedAccent }]} />
       {/* Top-right corner cut */}
       <View style={styles.cornerCut} />
       {title && <Text style={styles.title}>{title}</Text>}
@@ -24,7 +29,7 @@ export function Card({ children, style, title, accentColor = colors.accent }: Ca
 
 const CORNER_SIZE = 14;
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   card: {
     backgroundColor: colors.card,
     borderRadius: 2,

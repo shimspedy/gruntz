@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing } from '../theme';
+import { useColors, spacing } from '../theme';
+import type { ThemeColors } from '../theme';
 
 interface XPBarProps {
   current: number;
@@ -9,6 +10,9 @@ interface XPBarProps {
 }
 
 export function XPBar({ current, required, level }: XPBarProps) {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const progress = required > 0 ? Math.min(current / required, 1) : 1;
 
   return (
@@ -30,7 +34,7 @@ export function XPBar({ current, required, level }: XPBarProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     width: '100%',
   },
