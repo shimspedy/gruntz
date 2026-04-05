@@ -8,7 +8,7 @@ import { useColors } from '../theme';
 
 export function RootNavigator() {
   const colors = useColors();
-  const { isOnboarded } = useUserStore();
+  const isOnboarded = useUserStore((s) => s.isOnboarded);
   const [onboarded, setOnboarded] = useState(isOnboarded);
   const loadTheme = useThemeStore(s => s.loadPersistedTheme);
   useEffect(() => { loadTheme(); }, []);

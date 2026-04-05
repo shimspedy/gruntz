@@ -74,7 +74,7 @@ export default function WorkoutCardsScreen() {
       </TouchableOpacity>
     );
   }
-  const { progress } = useUserStore();
+  const progress = useUserStore((s) => s.progress);
   const recommendations = getTopRecommendations(progress, 11);
   const profile = getStrengthProfile(progress);
 

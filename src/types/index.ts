@@ -93,6 +93,7 @@ export interface UserProgress {
   recovery_score: number;
   exercises_completed: Record<string, number>;
   weekly_workouts: number[];
+  claimed_missions: Set<string>;
 }
 
 export type Rank = 'Recruit' | 'Cadet' | 'Operator' | 'Veteran' | 'Elite' | 'Shadow' | 'Apex';

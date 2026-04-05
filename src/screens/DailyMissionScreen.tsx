@@ -32,8 +32,11 @@ export default function DailyMissionScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const navigation = useNavigation<Nav>();
-  const { todaysMission, startMission, finishMission, isActive } = useMissionStore();
-  const { completeMission, addXP, checkAchievements } = useUserStore();
+  const todaysMission = useMissionStore((s) => s.todaysMission);
+  const startMission = useMissionStore((s) => s.startMission);
+  const finishMission = useMissionStore((s) => s.finishMission);
+  const completeMission = useUserStore((s) => s.completeMission);
+  const checkAchievements = useUserStore((s) => s.checkAchievements);
 
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [started, setStarted] = useState(false);

@@ -50,6 +50,12 @@ export const useUserStore = create<UserState>((set, get) => ({
 
   completeMission: (mission) => {
     set((state) => {
+      // Dedupe: reject if this mission_date + workout_day_id was already claimed
+      const claimKey = `${mission.mission_date}:${mission.workout_day_id}`;
+      if (state.progress.claimed_missions?.has(claimKey)) {
+        return state;
+      }
+
       const today = new Date().toISOString().split('T')[0];
       const wasStreakAlive = state.progress.last_workout_date
         ? isStreakAlive(state.progress.last_workout_date)
@@ -70,6 +76,9 @@ export const useUserStore = create<UserState>((set, get) => ({
         totalNewReps += reps;
       });
 
+      const newClaimed = new Set(state.progress.claimed_missions);
+      newClaimed.add(claimKey);
+
       return {
         progress: {
           ...state.progress,
@@ -81,6 +90,7 @@ export const useUserStore = create<UserState>((set, get) => ({
           workouts_completed: state.progress.workouts_completed + 1,
           total_reps: state.progress.total_reps + totalNewReps,
           exercises_completed: newExercisesCompleted,
+          claimed_missions: newClaimed,
         },
       };
     });

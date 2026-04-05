@@ -12,7 +12,7 @@ import { getXPToNextLevel } from '../utils/xp';
 export default function ProgressScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { progress } = useUserStore();
+  const progress = useUserStore((s) => s.progress);
   const xpInfo = getXPToNextLevel(progress.current_xp);
 
   const skillCategories = [

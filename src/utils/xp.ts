@@ -87,5 +87,6 @@ export function getDefaultProgress(userId: string): UserProgress {
     recovery_score: 0,
     exercises_completed: {},
     weekly_workouts: [],
+    claimed_missions: new Set(),
   };
 }

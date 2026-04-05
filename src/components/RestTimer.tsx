@@ -18,25 +18,20 @@ export function RestTimer({ seconds, onComplete, onSkip }: RestTimerProps) {
   const [remaining, setRemaining] = useState(seconds);
   const [isPaused, setIsPaused] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const progressAnim = useRef(new Animated.Value(0)).current;
+  const isPausedRef = useRef(isPaused);
+  isPausedRef.current = isPaused;
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   useEffect(() => {
-    Animated.timing(progressAnim, {
-      toValue: 1,
-      duration: seconds * 1000,
-      useNativeDriver: false,
-    }).start();
-  }, [seconds]);
-
-  useEffect(() => {
-    if (isPaused || remaining <= 0) return;
-
     const interval = setInterval(() => {
+      if (isPausedRef.current) return;
+
       setRemaining(prev => {
         if (prev <= 1) {
           clearInterval(interval);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          onComplete();
+          onCompleteRef.current();
           return 0;
         }
         if (prev <= 4) {
@@ -47,7 +42,7 @@ export function RestTimer({ seconds, onComplete, onSkip }: RestTimerProps) {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isPaused, remaining]);
+  }, [seconds]);
 
   useEffect(() => {
     if (remaining <= 5 && remaining > 0) {

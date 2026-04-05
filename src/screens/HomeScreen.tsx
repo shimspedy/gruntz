@@ -24,22 +24,31 @@ export default function HomeScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const navigation = useNavigation<Nav>();
-  const { progress } = useUserStore();
-  const { todaysMission, isRestDay, nextWorkout, loadTodaysMission } = useMissionStore();
-  const { selectedProgram, currentWeek, loadPersistedState } = useProgramStore();
+  const progress = useUserStore((s) => s.progress);
+  const todaysMission = useMissionStore((s) => s.todaysMission);
+  const isRestDay = useMissionStore((s) => s.isRestDay);
+  const nextWorkout = useMissionStore((s) => s.nextWorkout);
+  const loadTodaysMission = useMissionStore((s) => s.loadTodaysMission);
+  const selectedProgram = useProgramStore((s) => s.selectedProgram);
+  const currentWeek = useProgramStore((s) => s.currentWeek);
+  const loadPersistedState = useProgramStore((s) => s.loadPersistedState);
 
   const program = selectedProgram ? getProgramById(selectedProgram) : null;
 
+  const [hydrated, setHydrated] = React.useState(false);
+
   useEffect(() => {
     loadPersistedState().then(() => {
-      loadTodaysMission();
+      setHydrated(true);
     });
   }, []);
 
-  // Reload mission when program changes
+  // Load mission only after hydration, and when program/week changes
   useEffect(() => {
-    loadTodaysMission();
-  }, [selectedProgram, currentWeek]);
+    if (hydrated) {
+      loadTodaysMission();
+    }
+  }, [hydrated, selectedProgram, currentWeek]);
 
   const xpInfo = getXPToNextLevel(progress.current_xp);
   const rankInfo = getRankInfo(progress.current_rank);

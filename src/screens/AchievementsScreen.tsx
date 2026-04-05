@@ -10,7 +10,8 @@ import { achievements as allAchievements } from '../data/achievements';
 export default function AchievementsScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { achievements: userAchievements, progress } = useUserStore();
+  const userAchievements = useUserStore((s) => s.achievements);
+  const progress = useUserStore((s) => s.progress);
 
   const isUnlocked = (achievementId: string) =>
     userAchievements.some((a) => a.achievement_id === achievementId && a.unlocked);
