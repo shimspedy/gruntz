@@ -21,8 +21,14 @@ export const useThemeStore = create<ThemeState>((set) => ({
   loadPersistedTheme: async () => {
     try {
       const saved = await AsyncStorage.getItem(STORAGE_KEY);
-      if (saved && ['nightOps', 'desertStorm', 'arcticRecon', 'crimsonShadow'].includes(saved)) {
-        set({ themeId: saved as ThemeId });
+      if (saved) {
+        const validIds = [
+          'nightOps', 'desertStorm', 'arcticRecon', 'crimsonShadow',
+          'usArmy', 'usNavy', 'usMarines', 'usAirForce', 'usCoastGuard', 'usSpaceForce',
+        ];
+        if (validIds.includes(saved)) {
+          set({ themeId: saved as ThemeId });
+        }
       }
     } catch {
       // Use default

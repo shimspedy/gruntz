@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Switch, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useColors, spacing, themeMetas } from '../theme';
+import { useColors, spacing, themeMetas, palettes } from '../theme';
 import type { ThemeColors, ThemeId } from '../theme';
 import { useThemeStore } from '../store/useThemeStore';
 import { Card } from '../components/Card';
@@ -15,50 +15,54 @@ export default function SettingsScreen() {
   const themeId = useThemeStore((s) => s.themeId);
   const setTheme = useThemeStore((s) => s.setTheme);
 
+  const tacticalThemes = themeMetas.filter((m) => m.group === 'tactical');
+  const branchThemes = themeMetas.filter((m) => m.group === 'branch');
+
+  const renderThemeChip = (meta: typeof themeMetas[0]) => {
+    const isActive = meta.id === themeId;
+    const palette = palettes[meta.id];
+    return (
+      <TouchableOpacity
+        key={meta.id}
+        style={[
+          styles.themeChip,
+          { borderColor: isActive ? palette.accent : colors.cardBorder },
+          isActive && { borderWidth: 2 },
+        ]}
+        onPress={() => setTheme(meta.id)}
+        activeOpacity={0.7}
+      >
+        <View style={[styles.chipAccent, { backgroundColor: palette.accent }]} />
+        <View style={[styles.chipSwatch, { backgroundColor: palette.background }]}>
+          <View style={[styles.chipDot, { backgroundColor: palette.accent }]} />
+        </View>
+        <View style={styles.chipTextWrap}>
+          <Text style={[styles.chipName, isActive && { color: palette.accent }]}>{meta.icon} {meta.name}</Text>
+        </View>
+        {isActive && (
+          <View style={[styles.chipCheck, { backgroundColor: palette.accent }]}>
+            <Text style={styles.chipCheckText}>✓</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <Text style={styles.title}>Settings</Text>
 
-        {/* ── Theme Picker ── */}
-        <SectionHeader title="Theme" icon="🎨" />
+        {/* ── Tactical Themes ── */}
+        <SectionHeader title="Tactical Themes" icon="🎯" />
         <View style={styles.themeGrid}>
-          {themeMetas.map((meta) => {
-            const isActive = meta.id === themeId;
-            const palette = require('../theme/palettes').palettes[meta.id];
-            return (
-              <TouchableOpacity
-                key={meta.id}
-                style={[
-                  styles.themeCard,
-                  { borderColor: isActive ? palette.accent : colors.cardBorder },
-                  isActive && { borderWidth: 2 },
-                ]}
-                onPress={() => setTheme(meta.id)}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.themeAccentStrip, { backgroundColor: palette.accent }]} />
-                <View style={[styles.themePreview, { backgroundColor: palette.background }]}>
-                  <View style={[styles.themePreviewBar, { backgroundColor: palette.card }]}>
-                    <View style={[styles.themePreviewDot, { backgroundColor: palette.accent }]} />
-                    <View style={[styles.themePreviewLine, { backgroundColor: palette.textMuted }]} />
-                  </View>
-                  <View style={[styles.themePreviewBar, { backgroundColor: palette.card }]}>
-                    <View style={[styles.themePreviewDot, { backgroundColor: palette.accentGold }]} />
-                    <View style={[styles.themePreviewLine, { backgroundColor: palette.textMuted }]} />
-                  </View>
-                </View>
-                <Text style={styles.themeIcon}>{meta.icon}</Text>
-                <Text style={[styles.themeName, isActive && { color: palette.accent }]}>{meta.name}</Text>
-                <Text style={styles.themeDesc}>{meta.description}</Text>
-                {isActive && (
-                  <View style={[styles.activeIndicator, { backgroundColor: palette.accent }]}>
-                    <Text style={styles.activeText}>✓</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            );
-          })}
+          {tacticalThemes.map(renderThemeChip)}
+        </View>
+
+        {/* ── Branch Themes ── */}
+        <SectionHeader title="Rep Your Branch" icon="🇺🇸" subtitle="US Military" />
+        <View style={styles.themeGrid}>
+          {branchThemes.map(renderThemeChip)}
         </View>
 
         <SectionHeader title="Preferences" icon="⚙️" />
@@ -151,79 +155,61 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
-  themeCard: {
-    width: '47%',
+  themeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.card,
     borderRadius: 2,
     borderWidth: 1,
     borderColor: colors.cardBorder,
-    padding: spacing.md,
-    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingRight: 12,
     overflow: 'hidden',
+    width: '47%',
   },
-  themeAccentStrip: {
+  chipAccent: {
     position: 'absolute',
-    top: 0,
     left: 0,
-    right: 0,
-    height: 3,
+    top: 0,
+    bottom: 0,
+    width: 3,
   },
-  themePreview: {
-    width: '100%',
-    height: 48,
+  chipSwatch: {
+    width: 24,
+    height: 24,
     borderRadius: 2,
-    marginBottom: spacing.sm,
-    padding: 6,
-    justifyContent: 'space-between',
-  },
-  themePreviewBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 16,
-    borderRadius: 2,
-    paddingHorizontal: 6,
-    gap: 6,
-  },
-  themePreviewDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  themePreviewLine: {
-    flex: 1,
-    height: 4,
-    borderRadius: 2,
-  },
-  themeIcon: {
-    fontSize: 20,
-    marginBottom: 4,
-  },
-  themeName: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  themeDesc: {
-    fontSize: 11,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  activeIndicator: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 8,
+    marginLeft: 4,
   },
-  activeText: {
+  chipDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  chipTextWrap: {
+    flex: 1,
+  },
+  chipName: {
     fontSize: 12,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    letterSpacing: 0.3,
+  },
+  chipCheck: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 4,
+  },
+  chipCheckText: {
+    fontSize: 10,
     fontWeight: '800',
     color: colors.background,
   },
