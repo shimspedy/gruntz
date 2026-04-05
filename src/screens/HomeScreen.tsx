@@ -170,6 +170,34 @@ export default function HomeScreen() {
           ))}
         </GlassCard>
 
+        {/* AI Tools */}
+        <View style={styles.aiToolsRow}>
+          <TouchableOpacity
+            style={styles.aiToolCard}
+            onPress={() => { hapticLight(); navigation.navigate('CoachChat'); }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.aiToolIcon}>💬</Text>
+            <Text style={styles.aiToolLabel}>Ask Coach</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.aiToolCard}
+            onPress={() => { hapticLight(); navigation.navigate('PlanGenerator'); }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.aiToolIcon}>📋</Text>
+            <Text style={styles.aiToolLabel}>Build Plan</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.aiToolCard}
+            onPress={() => { hapticLight(); navigation.navigate('FormAnalysis'); }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.aiToolIcon}>🎯</Text>
+            <Text style={styles.aiToolLabel}>Form Guide</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Quick Stats */}
         <Card title="Quick Stats">
           <View style={styles.quickStatRow}>
@@ -384,6 +412,30 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: colors.textPrimary,
+  },
+  aiToolsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  aiToolCard: {
+    flex: 1,
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+  },
+  aiToolIcon: {
+    fontSize: 22,
+    marginBottom: 4,
+  },
+  aiToolLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    letterSpacing: 0.5,
   },
   programPill: {
     flexDirection: 'row',

@@ -12,6 +12,9 @@ export type HomeStackParamList = {
   DailyMission: { missionDate?: string };
   MissionComplete: { xpEarned: number; coinsEarned: number; leveledUp: boolean; newRank?: string };
   ExerciseDetail: { exerciseId: string };
+  CoachChat: undefined;
+  PlanGenerator: undefined;
+  FormAnalysis: undefined;
 };
 
 export type MissionsStackParamList = {

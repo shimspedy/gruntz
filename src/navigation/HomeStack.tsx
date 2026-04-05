@@ -6,6 +6,9 @@ import ProgramDetailScreen from '../screens/ProgramDetailScreen';
 import DailyMissionScreen from '../screens/DailyMissionScreen';
 import MissionCompleteScreen from '../screens/MissionCompleteScreen';
 import ExerciseDetailScreen from '../screens/ExerciseDetailScreen';
+import CoachChatScreen from '../screens/CoachChatScreen';
+import PlanGeneratorScreen from '../screens/PlanGeneratorScreen';
+import FormAnalysisScreen from '../screens/FormAnalysisScreen';
 import type { HomeStackParamList } from '../types/navigation';
 import { useColors } from '../theme';
 
@@ -47,6 +50,21 @@ export function HomeStack() {
         name="ExerciseDetail"
         component={ExerciseDetailScreen}
         options={{ title: 'Exercise', headerBackTitle: 'Back' }}
+      />
+      <Stack.Screen
+        name="CoachChat"
+        component={CoachChatScreen}
+        options={{ title: 'Ask the Coach', headerBackTitle: 'Back' }}
+      />
+      <Stack.Screen
+        name="PlanGenerator"
+        component={PlanGeneratorScreen}
+        options={{ title: 'Plan Generator', headerBackTitle: 'Back' }}
+      />
+      <Stack.Screen
+        name="FormAnalysis"
+        component={FormAnalysisScreen}
+        options={{ title: 'Form Guide', headerBackTitle: 'Back' }}
       />
     </Stack.Navigator>
   );
