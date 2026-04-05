@@ -35,6 +35,12 @@
       "expo-secure-store",
       "expo-sensors",
       [
+        "expo-camera",
+        {
+          "cameraPermission": "Gruntz uses your camera so you can see your form during reps."
+        }
+      ],
+      [
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "Gruntz uses your location to track runs and rucks.",
