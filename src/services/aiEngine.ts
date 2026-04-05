@@ -1,4 +1,5 @@
 import { UserProgress } from '../types';
+import OpenAI from 'openai';
 
 /**
  * AI Engine Abstraction Layer — Dual LLM Architecture
@@ -405,37 +406,34 @@ function localFormAnalysis(exerciseName: string): FormAnalysis {
   };
 }
 
-// ─── OpenAI Implementation (upgrade here) ───────────────────────
-//
-// Install: npm install openai
-// Then uncomment the implementation blocks below
-//
+// ─── OpenAI Implementation ──────────────────────────────────────
+
+const openai = OPENAI_API_KEY ? new OpenAI({ apiKey: OPENAI_API_KEY, dangerouslyAllowBrowser: true }) : null;
 
 async function sendOpenAIChat(
   message: string,
   history: ChatMessage[],
   progress: UserProgress,
 ): Promise<string> {
-  // ── GPT-4o-mini — fast text model for coaching chat ──
-  //
-  // import OpenAI from 'openai';
-  // const client = new OpenAI({ apiKey: OPENAI_API_KEY });
-  // const messages = [
-  //   { role: 'system' as const, content: SYSTEM_PROMPT },
-  //   { role: 'system' as const, content: `User stats: Level ${progress.current_level}, ${progress.current_rank}, ${progress.streak_days}-day streak, STR ${progress.strength_score}/100, END ${progress.endurance_score}/100, ${progress.workouts_completed} workouts` },
-  //   ...history.slice(-10).map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-  //   { role: 'user' as const, content: message },
-  // ];
-  // const response = await client.chat.completions.create({
-  //   model: TEXT_MODEL,  // gpt-4o-mini
-  //   messages,
-  //   max_tokens: 300,
-  //   temperature: 0.7,
-  // });
-  // return response.choices[0].message.content || 'No response';
-  void SYSTEM_PROMPT;
-  void TEXT_MODEL;
-  return localChatResponse(message, progress);
+  if (!openai) return localChatResponse(message, progress);
+  try {
+    const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: `User stats: Level ${progress.current_level}, ${progress.current_rank}, ${progress.streak_days}-day streak, STR ${progress.strength_score}/100, END ${progress.endurance_score}/100, ${progress.workouts_completed} workouts` },
+      ...history.slice(-10).map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+      { role: 'user', content: message },
+    ];
+    const response = await openai.chat.completions.create({
+      model: TEXT_MODEL,
+      messages,
+      max_tokens: 300,
+      temperature: 0.7,
+    });
+    return response.choices[0].message.content || 'No response from coach.';
+  } catch (error) {
+    console.warn('[AI] OpenAI chat error, falling back to local:', error);
+    return localChatResponse(message, progress);
+  }
 }
 
 async function generateOpenAIPlan(
@@ -443,49 +441,51 @@ async function generateOpenAIPlan(
   progress: UserProgress,
   daysPerWeek: number,
 ): Promise<GeneratedPlan> {
-  // ── GPT-4o-mini — structured JSON plan generation ──
-  //
-  // import OpenAI from 'openai';
-  // const client = new OpenAI({ apiKey: OPENAI_API_KEY });
-  // const response = await client.chat.completions.create({
-  //   model: TEXT_MODEL,  // gpt-4o-mini
-  //   response_format: { type: 'json_object' },
-  //   messages: [
-  //     { role: 'system', content: 'Generate a workout plan as JSON matching: { name, description, weeklySchedule: [{ day, title, focus, exercises: [{ name, sets, reps?, duration?, rest, notes? }], estimatedMinutes }], estimatedDuration, difficulty }' },
-  //     { role: 'user', content: `Goal: ${goal}\nDays per week: ${daysPerWeek}\nUser level: ${progress.current_level}, rank: ${progress.current_rank}` },
-  //   ],
-  //   max_tokens: 2000,
-  //   temperature: 0.6,
-  // });
-  // return JSON.parse(response.choices[0].message.content || '{}');
-  void TEXT_MODEL;
-  return localGeneratePlan(goal, progress, daysPerWeek);
+  if (!openai) return localGeneratePlan(goal, progress, daysPerWeek);
+  try {
+    const response = await openai.chat.completions.create({
+      model: TEXT_MODEL,
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: 'You are a military fitness plan generator. Generate a workout plan as JSON matching exactly this format: { "name": string, "description": string, "weeklySchedule": [{ "day": number, "title": string, "focus": string, "exercises": [{ "name": string, "sets": number, "reps": number (optional), "duration": string (optional), "rest": string, "notes": string (optional) }], "estimatedMinutes": number }], "estimatedDuration": string, "difficulty": "beginner" | "intermediate" | "advanced" }' },
+        { role: 'user', content: `Goal: ${goal}\nDays per week: ${daysPerWeek}\nUser level: ${progress.current_level}, rank: ${progress.current_rank}, strength: ${progress.strength_score}/100, endurance: ${progress.endurance_score}/100` },
+      ],
+      max_tokens: 2000,
+      temperature: 0.6,
+    });
+    const parsed = JSON.parse(response.choices[0].message.content || '{}');
+    return parsed as GeneratedPlan;
+  } catch (error) {
+    console.warn('[AI] OpenAI plan error, falling back to local:', error);
+    return localGeneratePlan(goal, progress, daysPerWeek);
+  }
 }
 
 async function analyzeFormOpenAI(
   exerciseName: string,
   imageBase64: string,
 ): Promise<FormAnalysis> {
-  // ── GPT-4o — vision model for photo-based form analysis ──
-  //
-  // import OpenAI from 'openai';
-  // const client = new OpenAI({ apiKey: OPENAI_API_KEY });
-  // const response = await client.chat.completions.create({
-  //   model: VISION_MODEL,  // gpt-4o (vision capable)
-  //   response_format: { type: 'json_object' },
-  //   messages: [
-  //     { role: 'system', content: VISION_SYSTEM_PROMPT },
-  //     { role: 'user', content: [
-  //       { type: 'text', text: `Analyze form for: ${exerciseName}` },
-  //       { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
-  //     ]},
-  //   ],
-  //   max_tokens: 1000,
-  // });
-  // const parsed = JSON.parse(response.choices[0].message.content || '{}');
-  // return { exerciseName, ...parsed };
-  void VISION_MODEL;
-  void VISION_SYSTEM_PROMPT;
-  void imageBase64;
-  return localFormAnalysis(exerciseName);
+  if (!openai) return localFormAnalysis(exerciseName);
+  try {
+    const response = await openai.chat.completions.create({
+      model: VISION_MODEL,
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: VISION_SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: [
+            { type: 'text' as const, text: `Analyze form for: ${exerciseName}` },
+            { type: 'image_url' as const, image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
+          ],
+        },
+      ],
+      max_tokens: 1000,
+    });
+    const parsed = JSON.parse(response.choices[0].message.content || '{}');
+    return { exerciseName, ...parsed } as FormAnalysis;
+  } catch (error) {
+    console.warn('[AI] OpenAI vision error, falling back to local:', error);
+    return localFormAnalysis(exerciseName);
+  }
 }
