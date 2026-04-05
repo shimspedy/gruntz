@@ -31,6 +31,8 @@ export type ProfileStackParamList = {
   Settings: undefined;
   Avatar: undefined;
   Recovery: undefined;
+  ProgramSelect: undefined;
+  ProgramDetail: { programId: string };
 };
 
 export type AuthStackParamList = {

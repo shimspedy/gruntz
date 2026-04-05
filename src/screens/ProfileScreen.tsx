@@ -8,8 +8,10 @@ import { colors, spacing } from '../theme';
 import { Card } from '../components/Card';
 import { XPBar } from '../components/XPBar';
 import { useUserStore } from '../store/useUserStore';
+import { useProgramStore } from '../store/useProgramStore';
 import { getXPToNextLevel } from '../utils/xp';
 import { getRankInfo } from '../data/ranks';
+import { getProgramById } from '../data/programs';
 import type { ProfileStackParamList } from '../types/navigation';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
@@ -20,7 +22,11 @@ export default function ProfileScreen() {
   const xpInfo = getXPToNextLevel(progress.current_xp);
   const rankInfo = getRankInfo(progress.current_rank);
 
+  const { selectedProgram } = useProgramStore();
+  const activeProgram = selectedProgram ? getProgramById(selectedProgram) : null;
+
   const menuItems = [
+    { label: activeProgram ? `Program: ${activeProgram.name}` : 'Choose Program', icon: 'shield-outline' as const, screen: 'ProgramSelect' as const },
     { label: 'Avatar & Gear', icon: 'person-outline' as const, screen: 'Avatar' as const },
     { label: 'Recovery Hub', icon: 'fitness-outline' as const, screen: 'Recovery' as const },
     { label: 'Settings', icon: 'settings-outline' as const, screen: 'Settings' as const },

@@ -52,6 +52,13 @@ export default function HomeScreen() {
             <Text style={styles.rankTitle}>
               {rankInfo?.icon} {progress.current_rank}
             </Text>
+            {program && (
+              <View style={styles.programPill}>
+                <Text style={styles.programPillText}>
+                  {program.icon} {program.name} · Wk {currentWeek}/{program.duration_weeks}
+                </Text>
+              </View>
+            )}
           </View>
           <View style={styles.streakBadge}>
             <Text style={styles.streakIcon}>🔥</Text>
@@ -59,21 +66,8 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Program Banner */}
-        {program ? (
-          <TouchableOpacity
-            style={[styles.programBanner, { borderColor: program.id === 'marsoc' ? colors.accent : colors.accentOrange }]}
-            onPress={() => navigation.navigate('ProgramSelect')}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.programIcon}>{program.icon}</Text>
-            <View style={styles.programBannerText}>
-              <Text style={styles.programName}>{program.name}</Text>
-              <Text style={styles.programWeek}>Week {currentWeek} of {program.duration_weeks}</Text>
-            </View>
-            <Text style={styles.programSwitch}>SWITCH</Text>
-          </TouchableOpacity>
-        ) : (
+        {/* Choose Program (only shown when no program selected) */}
+        {!program && (
           <TouchableOpacity
             style={styles.noProgramBanner}
             onPress={() => navigation.navigate('ProgramSelect')}
@@ -330,22 +324,23 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.textPrimary,
   },
-  programBanner: {
+  programPill: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.card,
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginTop: 6,
+    alignSelf: 'flex-start',
   },
-  programIcon: { fontSize: 28, marginRight: spacing.sm },
+  programPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMuted,
+    letterSpacing: 0.5,
+  },
   programBannerText: { flex: 1 },
-  programName: { fontSize: 16, fontWeight: '800', color: colors.textPrimary },
-  programWeek: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
-  programSwitch: {
-    fontSize: 11, fontWeight: '800', color: colors.accent, letterSpacing: 1,
-  },
   noProgramBanner: {
     flexDirection: 'row',
     alignItems: 'center',
