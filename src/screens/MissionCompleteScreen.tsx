@@ -6,7 +6,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { MissionButton } from '../components/MissionButton';
-import { hapticSuccess } from '../utils/haptics';
+import { hapticSuccess, hapticLevelUp, hapticHeartbeat } from '../utils/haptics';
 import { useBounceIn, useFadeInUp, useFadeInDown, useZoomIn } from '../utils/animations';
 import type { HomeStackParamList } from '../types/navigation';
 
@@ -21,7 +21,12 @@ export default function MissionCompleteScreen() {
   const { xpEarned, coinsEarned, leveledUp, newRank } = route.params;
 
   useEffect(() => {
-    hapticSuccess();
+    if (leveledUp || newRank) {
+      hapticLevelUp();
+    } else {
+      hapticSuccess();
+      setTimeout(() => hapticHeartbeat(), 600);
+    }
   }, []);
 
   const checkAnim = useBounceIn(600, 200);

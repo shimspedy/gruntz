@@ -10,14 +10,17 @@ import { XPBar } from '../components/XPBar';
 import { StatCard } from '../components/StatCard';
 import { MissionButton } from '../components/MissionButton';
 import { Card } from '../components/Card';
+import { GlassCard } from '../components/GlassCard';
 import { useUserStore } from '../store/useUserStore';
 import { useMissionStore } from '../store/useMissionStore';
 import { useProgramStore } from '../store/useProgramStore';
 import { getXPToNextLevel } from '../utils/xp';
 import { generateCoachMessage } from '../utils/adaptive';
+import { getTopInsights, CoachInsight } from '../services/coach';
 import { getRankInfo } from '../data/ranks';
 import { getProgramById } from '../data/programs';
 import { hapticLight } from '../utils/haptics';
+import { useAdaptiveLayout } from '../hooks/useAdaptiveLayout';
 import type { HomeStackParamList } from '../types/navigation';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
@@ -26,6 +29,7 @@ export default function HomeScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const heroAnim = useFadeInUp(500);
+  const { contentMaxWidth, horizontalPadding } = useAdaptiveLayout();
   const navigation = useNavigation<Nav>();
   const progress = useUserStore((s) => s.progress);
   const todaysMission = useMissionStore((s) => s.todaysMission);
@@ -56,10 +60,11 @@ export default function HomeScreen() {
   const xpInfo = getXPToNextLevel(progress.current_xp);
   const rankInfo = getRankInfo(progress.current_rank);
   const coachMessage = generateCoachMessage(progress);
+  const coachInsights = getTopInsights(progress);
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { maxWidth: contentMaxWidth, alignSelf: 'center', paddingHorizontal: horizontalPadding }]}>
         {/* Header */}
         <Animated.View style={[styles.header, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
           <View>
@@ -150,11 +155,20 @@ export default function HomeScreen() {
           </Card>
         ) : null}
 
-        {/* Coach Message */}
-        <Card style={styles.coachCard}>
-          <Text style={styles.coachLabel}>🎯 COACH</Text>
+        {/* Coach Insights — Liquid Glass */}
+        <GlassCard style={styles.coachCard}>
+          <Text style={styles.coachLabel}>🎯 SMART COACH</Text>
           <Text style={styles.coachMessage}>{coachMessage}</Text>
-        </Card>
+          {coachInsights.map((insight: CoachInsight, idx: number) => (
+            <View key={idx} style={styles.insightRow}>
+              <Text style={styles.insightIcon}>{insight.icon}</Text>
+              <View style={styles.insightContent}>
+                <Text style={styles.insightTitle}>{insight.title}</Text>
+                <Text style={styles.insightMessage}>{insight.message}</Text>
+              </View>
+            </View>
+          ))}
+        </GlassCard>
 
         {/* Quick Stats */}
         <Card title="Quick Stats">
@@ -326,6 +340,34 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 15,
     color: colors.textSecondary,
     lineHeight: 22,
+    marginBottom: spacing.sm,
+  },
+  insightRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: `${colors.cardBorder}66`,
+  },
+  insightIcon: {
+    fontSize: 16,
+    marginRight: spacing.sm,
+    marginTop: 2,
+  },
+  insightContent: {
+    flex: 1,
+  },
+  insightTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.accent,
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  insightMessage: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 18,
   },
   quickStatRow: {
     flexDirection: 'row',

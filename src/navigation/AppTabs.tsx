@@ -7,6 +7,7 @@ import ProgressScreen from '../screens/ProgressScreen';
 import { ProfileStack } from './ProfileStack';
 import { useColors } from '../theme';
 import { hapticSelection } from '../utils/haptics';
+import { GlassTabBar } from '../components/GlassTabBar';
 import type { RootTabParamList } from '../types/navigation';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -15,6 +16,7 @@ export function AppTabs() {
   const colors = useColors();
   return (
     <Tab.Navigator
+      tabBar={(props) => <GlassTabBar {...props} />}
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {

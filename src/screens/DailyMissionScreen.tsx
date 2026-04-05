@@ -17,6 +17,9 @@ import { useUserStore } from '../store/useUserStore';
 import { getWorkoutDay } from '../data/workouts';
 import { getExerciseById } from '../data/exercises';
 import { hapticMedium } from '../utils/haptics';
+import { showWorkoutProgress, clearWorkoutProgress, showWorkoutComplete } from '../services/notifications';
+import { isHealthSyncAvailable, syncWorkout } from '../services/healthSync';
+import { useAdaptiveLayout } from '../hooks/useAdaptiveLayout';
 import type { CompletedExercise, CompletedMission, Exercise } from '../types';
 import type { HomeStackParamList } from '../types/navigation';
 
@@ -34,6 +37,7 @@ export default function DailyMissionScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const heroAnim = useFadeInUp(500);
+  const { contentMaxWidth, horizontalPadding } = useAdaptiveLayout();
   const navigation = useNavigation<Nav>();
   const todaysMission = useMissionStore((s) => s.todaysMission);
   const startMission = useMissionStore((s) => s.startMission);
@@ -43,6 +47,7 @@ export default function DailyMissionScreen() {
 
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [started, setStarted] = useState(false);
+  const [missionStartTime] = useState(() => new Date());
   const [restExerciseId, setRestExerciseId] = useState<string | null>(null);
   const [logExercise, setLogExercise] = useState<Exercise | null>(null);
 
@@ -54,6 +59,13 @@ export default function DailyMissionScreen() {
   const totalExercises = allExerciseIds.length;
   const completedCount = completedIds.size;
   const isPerfect = completedCount === totalExercises;
+
+  // Live workout progress notification
+  useEffect(() => {
+    if (started && totalExercises > 0 && completedCount > 0) {
+      showWorkoutProgress(completedCount, totalExercises, workoutDay?.title ?? 'Mission');
+    }
+  }, [started, completedCount, totalExercises]);
 
   const handleStart = () => {
     hapticMedium();
@@ -135,6 +147,20 @@ export default function DailyMissionScreen() {
 
     completeMission(mission);
     finishMission();
+    clearWorkoutProgress();
+    showWorkoutComplete(totalExXP + completionBonus, 0);
+
+    // Sync to Health if available
+    if (isHealthSyncAvailable()) {
+      syncWorkout({
+        startDate: missionStartTime,
+        endDate: new Date(),
+        durationMinutes: Math.round(workoutDay.estimated_duration),
+        workoutType: 'functional_strength',
+        title: workoutDay.title,
+      });
+    }
+
     const newAchievements = checkAchievements();
 
     navigation.navigate('MissionComplete', {
@@ -157,7 +183,7 @@ export default function DailyMissionScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { maxWidth: contentMaxWidth, alignSelf: 'center', paddingHorizontal: horizontalPadding }]}>
         {/* Mission Header */}
         <Animated.View style={[styles.header, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
           <Text style={styles.missionLabel}>TODAY'S MISSION</Text>

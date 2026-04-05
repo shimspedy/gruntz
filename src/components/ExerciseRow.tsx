@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
-import { hapticLight } from '../utils/haptics';
+import { hapticLight, hapticDoubleTap } from '../utils/haptics';
 
 interface ExerciseRowProps {
   name: string;
@@ -20,9 +20,13 @@ export function ExerciseRow({ name, detail, completed, onToggle, restSeconds, il
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const handleToggle = useCallback(() => {
-    hapticLight();
+    if (!completed) {
+      hapticDoubleTap();
+    } else {
+      hapticLight();
+    }
     onToggle();
-  }, [onToggle]);
+  }, [onToggle, completed]);
 
   return (
     <TouchableOpacity style={styles.row} onPress={handleToggle} activeOpacity={0.7}>

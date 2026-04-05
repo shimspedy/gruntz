@@ -7,12 +7,16 @@ import { useThemeStore } from '../store/useThemeStore';
 import { Card } from '../components/Card';
 import { SectionHeader } from '../components/SectionHeader';
 import { hapticSelection, hapticLight } from '../utils/haptics';
+import { scheduleDailyReminder, cancelDailyReminder } from '../services/notifications';
+import { isHealthSyncAvailable, requestHealthPermissions } from '../services/healthSync';
 
 export default function SettingsScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
   const [imperialUnits, setImperialUnits] = React.useState(true);
+  const [healthSyncEnabled, setHealthSyncEnabled] = React.useState(false);
+  const healthAvailable = isHealthSyncAvailable();
   const themeId = useThemeStore((s) => s.themeId);
   const setTheme = useThemeStore((s) => s.setTheme);
 
@@ -75,7 +79,11 @@ export default function SettingsScreen() {
             </View>
             <Switch
               value={notificationsEnabled}
-              onValueChange={(v) => { hapticLight(); setNotificationsEnabled(v); }}
+              onValueChange={(v) => {
+                hapticLight();
+                setNotificationsEnabled(v);
+                if (v) { scheduleDailyReminder(7, 0); } else { cancelDailyReminder(); }
+              }}
               trackColor={{ false: colors.backgroundSecondary, true: colors.accent }}
               thumbColor={colors.textPrimary}
             />
@@ -90,6 +98,29 @@ export default function SettingsScreen() {
               onValueChange={(v) => { hapticLight(); setImperialUnits(v); }}
               trackColor={{ false: colors.backgroundSecondary, true: colors.accent }}
               thumbColor={colors.textPrimary}
+            />
+          </View>
+          <View style={styles.settingRow}>
+            <View>
+              <Text style={styles.settingLabel}>Health Sync</Text>
+              <Text style={styles.settingDesc}>
+                {healthAvailable ? 'Sync workouts to Apple Health / Health Connect' : 'Requires development build'}
+              </Text>
+            </View>
+            <Switch
+              value={healthSyncEnabled}
+              disabled={!healthAvailable}
+              onValueChange={async (v) => {
+                hapticLight();
+                if (v) {
+                  const status = await requestHealthPermissions();
+                  setHealthSyncEnabled(status.granted);
+                } else {
+                  setHealthSyncEnabled(false);
+                }
+              }}
+              trackColor={{ false: colors.backgroundSecondary, true: colors.accent }}
+              thumbColor={healthAvailable ? colors.textPrimary : colors.textMuted}
             />
           </View>
         </Card>

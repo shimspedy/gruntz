@@ -15,6 +15,7 @@ import { getXPToNextLevel } from '../utils/xp';
 import { getRankInfo } from '../data/ranks';
 import { getProgramById } from '../data/programs';
 import { hapticLight } from '../utils/haptics';
+import { useAdaptiveLayout } from '../hooks/useAdaptiveLayout';
 import type { ProfileStackParamList } from '../types/navigation';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
@@ -23,6 +24,7 @@ export default function ProfileScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const heroAnim = useFadeInUp(500);
+  const { contentMaxWidth, horizontalPadding } = useAdaptiveLayout();
   const navigation = useNavigation<Nav>();
   const { progress, profile } = useUserStore();
   const xpInfo = getXPToNextLevel(progress.current_xp);
@@ -40,7 +42,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { maxWidth: contentMaxWidth, alignSelf: 'center', paddingHorizontal: horizontalPadding }]}>
         {/* Profile Header */}
         <Animated.View style={[styles.header, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
           <View style={styles.avatarCircle}>
