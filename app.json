@@ -2,6 +2,7 @@
   "expo": {
     "name": "Gruntz",
     "slug": "gruntz",
+    "owner": "shimspedy",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -29,6 +30,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "expo-dev-client",
       "expo-notifications",
       "expo-secure-store",
       "expo-sensors",
