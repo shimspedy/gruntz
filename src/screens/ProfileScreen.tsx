@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useFadeInUp } from '../utils/animations';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
@@ -22,6 +22,7 @@ type Nav = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
 export default function ProfileScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const heroAnim = useFadeInUp(500);
   const navigation = useNavigation<Nav>();
   const { progress, profile } = useUserStore();
   const xpInfo = getXPToNextLevel(progress.current_xp);
@@ -41,7 +42,7 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Profile Header */}
-        <Animated.View entering={FadeInUp.duration(500)} style={styles.header}>
+        <Animated.View style={[styles.header, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
           <View style={styles.avatarCircle}>
             <Text style={styles.avatarEmoji}>{rankInfo?.icon || '🔰'}</Text>
           </View>

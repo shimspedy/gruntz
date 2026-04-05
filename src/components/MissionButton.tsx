@@ -1,11 +1,9 @@
 import React, { useMemo, useCallback } from 'react';
-import { TouchableOpacity, Text, View, StyleSheet, ViewStyle } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import { TouchableOpacity, Text, View, StyleSheet, ViewStyle, Animated } from 'react-native';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { hapticMedium } from '../utils/haptics';
-
-const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+import { usePressScale } from '../utils/animations';
 
 interface MissionButtonProps {
   title: string;
@@ -19,19 +17,7 @@ interface MissionButtonProps {
 export function MissionButton({ title, onPress, variant = 'primary', disabled = false, style, label }: MissionButtonProps) {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePressIn = useCallback(() => {
-    scale.value = withSpring(0.96, { damping: 15, stiffness: 300 });
-  }, []);
-
-  const handlePressOut = useCallback(() => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
-  }, []);
+  const { onPressIn, onPressOut, style: scaleStyle } = usePressScale();
 
   const handlePress = useCallback(() => {
     hapticMedium();
@@ -49,24 +35,26 @@ export function MissionButton({ title, onPress, variant = 'primary', disabled = 
   const tagLabel = label || (variant === 'primary' ? 'R-25' : variant === 'success' ? 'S-OK' : 'C-10');
 
   return (
-    <AnimatedTouchable
-      style={[styles.button, { backgroundColor: bgColor, borderColor, opacity: disabled ? 0.5 : 1 }, style, animatedStyle]}
-      onPress={handlePress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      disabled={disabled}
-      activeOpacity={0.8}
-    >
-      <Text style={[styles.text, { color: textColor }]} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{title}</Text>
-      {/* Bottom-left corner cut */}
-      <View style={[styles.cornerCut, { borderBottomColor: colors.background }]} />
-      {/* Right accent border */}
-      <View style={[styles.rightAccent, { backgroundColor: variant === 'secondary' ? colors.accent : colors.borderGlow }]} />
-      {/* Cyberpunk tag label */}
-      <View style={styles.tag}>
-        <Text style={styles.tagText}>{tagLabel}</Text>
-      </View>
-    </AnimatedTouchable>
+    <Animated.View style={scaleStyle}>
+      <TouchableOpacity
+        style={[styles.button, { backgroundColor: bgColor, borderColor, opacity: disabled ? 0.5 : 1 }, style]}
+        onPress={handlePress}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        disabled={disabled}
+        activeOpacity={0.8}
+      >
+        <Text style={[styles.text, { color: textColor }]} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{title}</Text>
+        {/* Bottom-left corner cut */}
+        <View style={[styles.cornerCut, { borderBottomColor: colors.background }]} />
+        {/* Right accent border */}
+        <View style={[styles.rightAccent, { backgroundColor: variant === 'secondary' ? colors.accent : colors.borderGlow }]} />
+        {/* Cyberpunk tag label */}
+        <View style={styles.tag}>
+          <Text style={styles.tagText}>{tagLabel}</Text>
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 

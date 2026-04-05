@@ -3,7 +3,6 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { PROGRAMS } from '../data/programs';

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useFadeInUp } from '../utils/animations';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { MissionButton } from '../components/MissionButton';
@@ -21,6 +21,9 @@ interface OnboardingScreenProps {
 export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const emojiAnim = useFadeInUp(600);
+  const titleAnim = useFadeInUp(600, 200);
+  const subtitleAnim = useFadeInUp(600, 400);
   const { setProfile, setOnboarded } = useUserStore();
   const [step, setStep] = useState(0);
   const [fitnessLevel, setFitnessLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner');
@@ -66,9 +69,9 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   const steps = [
     // Step 0: Welcome
     <View key="welcome" style={styles.stepContainer}>
-      <Animated.Text entering={FadeInUp.duration(600)} style={styles.welcomeEmoji}>⚔️</Animated.Text>
-      <Animated.Text entering={FadeInUp.duration(600).delay(200)} style={styles.welcomeTitle} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>GRUNTZ</Animated.Text>
-      <Animated.Text entering={FadeInUp.duration(600).delay(400)} style={styles.welcomeSubtitle}>Military-Grade Fitness</Animated.Text>
+      <Animated.Text style={[styles.welcomeEmoji, { opacity: emojiAnim.opacity, transform: emojiAnim.transform }]}>⚔️</Animated.Text>
+      <Animated.Text style={[styles.welcomeTitle, { opacity: titleAnim.opacity, transform: titleAnim.transform }]} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>GRUNTZ</Animated.Text>
+      <Animated.Text style={[styles.welcomeSubtitle, { opacity: subtitleAnim.opacity, transform: subtitleAnim.transform }]}>Military-Grade Fitness</Animated.Text>
       <Text style={styles.welcomeDesc}>
         Transform your body with structured, progressive training inspired by elite military fitness programs.
       </Text>

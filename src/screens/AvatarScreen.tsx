@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
+import { useFadeInUp } from '../utils/animations';
 import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 import { useUserStore } from '../store/useUserStore';
@@ -11,6 +11,7 @@ import { getRankInfo, getUnlockedAvatarItems, ranks } from '../data/ranks';
 export default function AvatarScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const heroAnim = useFadeInUp(500);
   const { progress } = useUserStore();
   const rankInfo = getRankInfo(progress.current_rank);
   const unlockedItems = getUnlockedAvatarItems(progress.current_level, progress.current_rank);
@@ -22,7 +23,7 @@ export default function AvatarScreen() {
 
         {/* Avatar Display */}
         <Card style={styles.avatarCard}>
-          <Animated.View entering={FadeInUp.duration(500)} style={styles.avatarCircle}>
+          <Animated.View style={[styles.avatarCircle, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
             <Text style={styles.avatarEmoji}>{rankInfo?.icon || '🔰'}</Text>
           </Animated.View>
           <Text style={styles.rankName} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{progress.current_rank}</Text>

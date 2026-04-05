@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, ScrollView, Animated } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { hapticSuccess, hapticSelection, hapticLight } from '../utils/haptics';
+import { useFadeInDown } from '../utils/animations';
 import type { Exercise, SetLog } from '../types';
 
 interface RepLogModalProps {
@@ -18,6 +18,7 @@ interface RepLogModalProps {
 export function RepLogModal({ visible, exercise, onSave, onClose }: RepLogModalProps) {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const fadeIn = useFadeInDown(300);
 
   const targetSets = exercise.sets || 1;
   const [sets, setSets] = useState<SetLog[]>(
@@ -66,9 +67,9 @@ export function RepLogModal({ visible, exercise, onSave, onClose }: RepLogModalP
   const isDistanceExercise = !!exercise.distance && !exercise.reps && !exercise.duration_seconds;
 
   return (
-    <Modal visible={visible} animationType="none" transparent>
+    <Modal visible={visible} animationType="fade" transparent>
       <BlurView intensity={40} tint="dark" style={styles.overlay}>
-        <Animated.View entering={FadeInDown.duration(300).springify()} exiting={FadeOutDown.duration(200)} style={styles.modal}>
+        <Animated.View style={[styles.modal, { opacity: fadeIn.opacity, transform: fadeIn.transform }]}>
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <Text style={styles.illustration}>{exercise.illustration || '💪'}</Text>

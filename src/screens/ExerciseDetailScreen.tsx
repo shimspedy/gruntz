@@ -1,13 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
-import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import { hapticMedium } from '../utils/haptics';
+import { useFadeInUp } from '../utils/animations';
 import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 import { RepLogModal } from '../components/RepLogModal';
@@ -20,6 +20,7 @@ type ExerciseDetailRoute = RouteProp<HomeStackParamList, 'ExerciseDetail'>;
 export default function ExerciseDetailScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const heroAnim = useFadeInUp(500);
   const route = useRoute<ExerciseDetailRoute>();
   const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const exercise = getExerciseById(route.params.exerciseId);
@@ -41,7 +42,7 @@ export default function ExerciseDetailScreen() {
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Hero */}
-        <Animated.View entering={FadeInUp.duration(500)} style={styles.hero}>
+        <Animated.View style={[styles.hero, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
           <Text style={styles.illustration}>{exercise.illustration || '💪'}</Text>
           <Text style={styles.name} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{exercise.name}</Text>
           <Text style={styles.category} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{exercise.category.toUpperCase()}</Text>

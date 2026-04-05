@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
-import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import { hapticLight } from '../utils/haptics';
+import { useFadeInUp } from '../utils/animations';
 import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 import { getMovementCard } from '../data/movementCards';
@@ -20,6 +20,7 @@ type Nav = NativeStackNavigationProp<MissionsStackParamList, 'CardDetail'>;
 export default function CardDetailScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const heroAnim = useFadeInUp(500);
   const route = useRoute<CardDetailRoute>();
   const navigation = useNavigation<Nav>();
   const card = getMovementCard(route.params.cardId);
@@ -41,7 +42,7 @@ export default function CardDetailScreen() {
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Hero */}
-        <Animated.View entering={FadeInUp.duration(500)} style={styles.hero}>
+        <Animated.View style={[styles.hero, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
           <Text style={styles.icon}>{card.icon}</Text>
           <Text style={styles.cardLabel} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
             {card.category === 'swim' ? 'SWIM' : 'MOVEMENT'} CARD #{card.card_number}

@@ -1,13 +1,13 @@
 import React, { useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Animated, { FadeInUp, FadeInDown, BounceIn, ZoomIn } from 'react-native-reanimated';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { MissionButton } from '../components/MissionButton';
 import { hapticSuccess } from '../utils/haptics';
+import { useBounceIn, useFadeInUp, useFadeInDown, useZoomIn } from '../utils/animations';
 import type { HomeStackParamList } from '../types/navigation';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'MissionComplete'>;
@@ -24,14 +24,22 @@ export default function MissionCompleteScreen() {
     hapticSuccess();
   }, []);
 
+  const checkAnim = useBounceIn(600, 200);
+  const titleAnim = useFadeInUp(500, 400);
+  const subtitleAnim = useFadeInUp(500, 600);
+  const rewardsAnim = useZoomIn(500, 800);
+  const levelUpAnim = useFadeInUp(500, 1000);
+  const rankAnim = useFadeInUp(500, 1200);
+  const buttonAnim = useFadeInDown(500, 1400);
+
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
-        <Animated.Text entering={BounceIn.duration(600).delay(200)} style={styles.checkmark}>✅</Animated.Text>
-        <Animated.Text entering={FadeInUp.duration(500).delay(400)} style={styles.title} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>MISSION COMPLETE</Animated.Text>
-        <Animated.Text entering={FadeInUp.duration(500).delay(600)} style={styles.subtitle}>Outstanding work, warrior.</Animated.Text>
+        <Animated.Text style={[styles.checkmark, { opacity: checkAnim.opacity, transform: checkAnim.transform }]}>✅</Animated.Text>
+        <Animated.Text style={[styles.title, { opacity: titleAnim.opacity, transform: titleAnim.transform }]} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>MISSION COMPLETE</Animated.Text>
+        <Animated.Text style={[styles.subtitle, { opacity: subtitleAnim.opacity, transform: subtitleAnim.transform }]}>Outstanding work, warrior.</Animated.Text>
 
-        <Animated.View entering={ZoomIn.duration(500).delay(800)} style={styles.rewardsContainer}>
+        <Animated.View style={[styles.rewardsContainer, { opacity: rewardsAnim.opacity, transform: rewardsAnim.transform }]}>
           <View style={styles.rewardItem}>
             <Text style={styles.rewardIcon}>⭐</Text>
             <Text style={styles.rewardValue} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>+{xpEarned}</Text>
@@ -45,18 +53,18 @@ export default function MissionCompleteScreen() {
         </Animated.View>
 
         {leveledUp && (
-          <Animated.View entering={FadeInUp.duration(500).delay(1000)} style={styles.levelUpBanner}>
+          <Animated.View style={[styles.levelUpBanner, { opacity: levelUpAnim.opacity, transform: levelUpAnim.transform }]}>
             <Text style={styles.levelUpText}>🎉 LEVEL UP!</Text>
           </Animated.View>
         )}
 
         {newRank && (
-          <Animated.View entering={FadeInUp.duration(500).delay(1200)} style={styles.rankBanner}>
+          <Animated.View style={[styles.rankBanner, { opacity: rankAnim.opacity, transform: rankAnim.transform }]}>
             <Text style={styles.rankText}>🎖️ NEW RANK: {newRank.toUpperCase()}</Text>
           </Animated.View>
         )}
 
-        <Animated.View entering={FadeInDown.duration(500).delay(1400)} style={{ width: '100%' }}>
+        <Animated.View style={[{ width: '100%' }, { opacity: buttonAnim.opacity, transform: buttonAnim.transform }]}>
           <MissionButton
             title="BACK TO BASE"
             onPress={() => navigation.popToTop()}

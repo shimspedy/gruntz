@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
+import { useFadeInUp } from '../utils/animations';
 import type { ThemeColors } from '../theme';
 import { XPBar } from '../components/XPBar';
 import { StatCard } from '../components/StatCard';
@@ -25,6 +25,7 @@ type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 export default function HomeScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const heroAnim = useFadeInUp(500);
   const navigation = useNavigation<Nav>();
   const progress = useUserStore((s) => s.progress);
   const todaysMission = useMissionStore((s) => s.todaysMission);
@@ -60,7 +61,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Header */}
-        <Animated.View entering={FadeInUp.duration(500)} style={styles.header}>
+        <Animated.View style={[styles.header, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
           <View>
             <Text style={styles.greeting} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>READY FOR ACTION</Text>
             <Text style={styles.rankTitle} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>

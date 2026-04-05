@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import { View, Text, StyleSheet, StyleProp, ViewStyle, Animated } from 'react-native';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
+import { useFadeInUp } from '../utils/animations';
 
 interface CardProps {
   children: React.ReactNode;
@@ -15,9 +15,10 @@ export function Card({ children, style, title, accentColor }: CardProps) {
   const colors = useColors();
   const resolvedAccent = accentColor ?? colors.accent;
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const fadeIn = useFadeInUp(400);
 
   return (
-    <Animated.View entering={FadeInUp.duration(400).springify().damping(18)} style={[styles.card, style]}>
+    <Animated.View style={[styles.card, style, { opacity: fadeIn.opacity, transform: fadeIn.transform }]}>
       {/* Thin top accent strip */}
       <View style={[styles.topAccent, { backgroundColor: resolvedAccent }]} />
       {/* Corner cuts — both sides */}

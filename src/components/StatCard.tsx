@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ViewStyle } from 'react-native';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import { View, Text, StyleSheet, ViewStyle, Animated } from 'react-native';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
+import { useFadeInUp } from '../utils/animations';
 
 interface StatCardProps {
   icon: string;
@@ -18,9 +18,10 @@ export function StatCard({ icon, value, label, color, style }: StatCardProps) {
   const colors = useColors();
   const resolvedColor = color ?? colors.accent;
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const fadeIn = useFadeInUp(500);
 
   return (
-    <Animated.View entering={FadeInUp.duration(500).springify().damping(18)} style={[styles.card, style]}>
+    <Animated.View style={[styles.card, style, { opacity: fadeIn.opacity, transform: fadeIn.transform }]}>
       {/* Top-left accent notch */}
       <View style={[styles.topAccent, { backgroundColor: resolvedColor }]} />
       {/* Top-right corner cut */}

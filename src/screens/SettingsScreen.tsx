@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Switch, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useColors, spacing, themeMetas, palettes, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors, ThemeId } from '../theme';
 import { useThemeStore } from '../store/useThemeStore';

@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
-import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import { hapticMedium } from '../utils/haptics';
+import { useFadeInUp } from '../utils/animations';
 import type { ThemeColors } from '../theme';
 import { getProgramById } from '../data/programs';
 import { useProgramStore } from '../store/useProgramStore';
@@ -19,6 +19,7 @@ type Route = RouteProp<HomeStackParamList, 'ProgramDetail'>;
 export default function ProgramDetailScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const heroAnim = useFadeInUp(500);
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const { selectProgram, setHasSeenProgramSelect } = useProgramStore();
@@ -51,7 +52,7 @@ export default function ProgramDetailScreen() {
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Hero */}
-        <Animated.View entering={FadeInUp.duration(500)} style={styles.hero}>
+        <Animated.View style={[styles.hero, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
           <Text style={styles.heroIcon}>{program.icon}</Text>
           <Text style={styles.heroName} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{program.name}</Text>
           <Text style={[styles.heroSub, { color: accentColor }]} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{program.subtitle}</Text>

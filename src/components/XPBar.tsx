@@ -1,8 +1,8 @@
-import React, { useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
+import { useAnimatedFill } from '../utils/animations';
 
 interface XPBarProps {
   current: number;
@@ -15,15 +15,14 @@ export function XPBar({ current, required, level }: XPBarProps) {
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const progress = required > 0 ? Math.min(current / required, 1) : 1;
-  const fillWidth = useSharedValue(0);
+  const fillProgress = useAnimatedFill(progress);
 
-  useEffect(() => {
-    fillWidth.value = withTiming(progress, { duration: 800, easing: Easing.out(Easing.cubic) });
-  }, [progress]);
-
-  const animatedFillStyle = useAnimatedStyle(() => ({
-    width: `${fillWidth.value * 100}%`,
-  }));
+  const animatedFillStyle = {
+    width: fillProgress.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0%', '100%'],
+    }),
+  };
 
   return (
     <View style={styles.container}>

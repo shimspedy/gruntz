@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Alert, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useFadeInUp } from '../utils/animations';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
@@ -33,6 +33,7 @@ const sectionIcons: Record<string, string> = {
 export default function DailyMissionScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const heroAnim = useFadeInUp(500);
   const navigation = useNavigation<Nav>();
   const todaysMission = useMissionStore((s) => s.todaysMission);
   const startMission = useMissionStore((s) => s.startMission);
@@ -158,7 +159,7 @@ export default function DailyMissionScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Mission Header */}
-        <Animated.View entering={FadeInUp.duration(500)} style={styles.header}>
+        <Animated.View style={[styles.header, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
           <Text style={styles.missionLabel}>TODAY'S MISSION</Text>
           <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{workoutDay.title}</Text>
           <Text style={styles.objective}>{workoutDay.objective}</Text>
