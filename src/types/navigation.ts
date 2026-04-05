@@ -7,6 +7,8 @@ export type RootTabParamList = {
 
 export type HomeStackParamList = {
   Home: undefined;
+  ProgramSelect: undefined;
+  ProgramDetail: { programId: string };
   DailyMission: { missionDate?: string };
   MissionComplete: { xpEarned: number; coinsEarned: number; leveledUp: boolean; newRank?: string };
   ExerciseDetail: { exerciseId: string };

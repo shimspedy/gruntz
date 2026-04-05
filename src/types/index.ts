@@ -257,3 +257,60 @@ export interface WorkoutRecommendation {
   priority: 'high' | 'medium' | 'low';
   focus_areas: string[];
 }
+
+// Training Programs
+export type ProgramId = 'marsoc' | 'ranger';
+
+export interface TrainingProgram {
+  id: ProgramId;
+  name: string;
+  subtitle: string;
+  description: string;
+  icon: string;
+  duration_weeks: number;
+  days_per_week: number;
+  difficulty: 'intermediate' | 'advanced' | 'elite';
+  focus_areas: string[];
+  prerequisites: string[];
+  equipment_needed: string[];
+  phases: ProgramPhase[];
+  rpe_guide: RPEGuide;
+}
+
+export interface ProgramPhase {
+  phase_number: number;
+  name: string;
+  weeks: [number, number]; // [start, end]
+  description: string;
+  focus: string;
+  is_deload_included: boolean;
+}
+
+export interface RPEGuide {
+  scale: RPELevel[];
+}
+
+export interface RPELevel {
+  value: number | string;
+  label: string;
+  description: string;
+  color: string;
+}
+
+export interface IntervalSplits {
+  mile_split_range: string;
+  splits_400m: string;
+  splits_800m: string;
+  splits_1200m: string;
+  splits_1600m: string;
+}
+
+export interface UserAssessment {
+  five_mile_time_minutes?: number;
+  mile_split_seconds?: number;
+  max_pushups?: number;
+  max_situps?: number;
+  max_chinups?: number;
+  max_pullups?: number;
+  assessed_at?: string;
+}

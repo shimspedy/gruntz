@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { DailyMission, CompletedExercise } from '../types';
 import { allWorkoutDays, REST_DAYS, getWorkoutDaysForWeek } from '../data/workouts';
+import { rangerWorkouts, getRangerWeek } from '../data/rangerWorkouts';
+import { useProgramStore } from './useProgramStore';
 
 interface MissionState {
   todaysMission: DailyMission | null;
@@ -18,7 +20,7 @@ interface MissionState {
   setCurrentWeek: (week: number) => void;
 }
 
-function getTodayWorkoutDay(currentWeek: number) {
+function getMarsocWorkoutDay(currentWeek: number) {
   const dayOfWeek = new Date().getDay(); // 0=Sun, 1=Mon ... 6=Sat
 
   // Sun(0) and Wed(3) are rest days
@@ -33,6 +35,18 @@ function getTodayWorkoutDay(currentWeek: number) {
   return weekDays.find(d => d.day === targetDay) || weekDays[0] || allWorkoutDays[0];
 }
 
+function getRangerWorkoutDay(currentWeek: number) {
+  const dayOfWeek = new Date().getDay(); // 0=Sun, 1=Mon ... 6=Sat
+
+  // Sunday is the only rest day for Ranger (6 days/week Mon-Sat)
+  if (dayOfWeek === 0) return null;
+
+  const weekDays = getRangerWeek(currentWeek);
+  // Map day of week to day number: Mon=1, Tue=2, Wed=3, Thu=4, Fri=5, Sat=6
+  const targetDay = dayOfWeek; // 1-6 maps directly
+  return weekDays.find(d => d.day === targetDay) || weekDays[0] || rangerWorkouts[0];
+}
+
 export const useMissionStore = create<MissionState>((set, get) => ({
   todaysMission: null,
   currentWeek: 1,
@@ -43,7 +57,13 @@ export const useMissionStore = create<MissionState>((set, get) => ({
 
   loadTodaysMission: () => {
     const { currentWeek } = get();
-    const workoutDay = getTodayWorkoutDay(currentWeek);
+    const { selectedProgram } = useProgramStore.getState();
+    const programWeek = useProgramStore.getState().currentWeek;
+    const activeWeek = selectedProgram ? programWeek : currentWeek;
+
+    const workoutDay = selectedProgram === 'ranger'
+      ? getRangerWorkoutDay(activeWeek)
+      : getMarsocWorkoutDay(activeWeek);
     const today = new Date().toISOString().split('T')[0];
 
     if (!workoutDay) {
@@ -88,6 +108,8 @@ export const useMissionStore = create<MissionState>((set, get) => ({
   },
 
   setCurrentWeek: (week: number) => {
-    set({ currentWeek: Math.max(1, Math.min(10, week)) });
+    const { selectedProgram } = useProgramStore.getState();
+    const max = selectedProgram === 'ranger' ? 12 : 10;
+    set({ currentWeek: Math.max(1, Math.min(max, week)) });
   },
 }));

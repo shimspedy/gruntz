@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -10,9 +10,11 @@ import { MissionButton } from '../components/MissionButton';
 import { Card } from '../components/Card';
 import { useUserStore } from '../store/useUserStore';
 import { useMissionStore } from '../store/useMissionStore';
+import { useProgramStore } from '../store/useProgramStore';
 import { getXPToNextLevel } from '../utils/xp';
 import { generateCoachMessage } from '../utils/adaptive';
 import { getRankInfo } from '../data/ranks';
+import { getProgramById } from '../data/programs';
 import type { HomeStackParamList } from '../types/navigation';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
@@ -21,10 +23,20 @@ export default function HomeScreen() {
   const navigation = useNavigation<Nav>();
   const { progress } = useUserStore();
   const { todaysMission, loadTodaysMission } = useMissionStore();
+  const { selectedProgram, currentWeek, loadPersistedState } = useProgramStore();
+
+  const program = selectedProgram ? getProgramById(selectedProgram) : null;
 
   useEffect(() => {
-    loadTodaysMission();
+    loadPersistedState().then(() => {
+      loadTodaysMission();
+    });
   }, []);
+
+  // Reload mission when program changes
+  useEffect(() => {
+    loadTodaysMission();
+  }, [selectedProgram, currentWeek]);
 
   const xpInfo = getXPToNextLevel(progress.current_xp);
   const rankInfo = getRankInfo(progress.current_rank);
@@ -46,6 +58,35 @@ export default function HomeScreen() {
             <Text style={styles.streakCount}>{progress.streak_days}</Text>
           </View>
         </View>
+
+        {/* Program Banner */}
+        {program ? (
+          <TouchableOpacity
+            style={[styles.programBanner, { borderColor: program.id === 'marsoc' ? colors.accent : colors.accentOrange }]}
+            onPress={() => navigation.navigate('ProgramSelect')}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.programIcon}>{program.icon}</Text>
+            <View style={styles.programBannerText}>
+              <Text style={styles.programName}>{program.name}</Text>
+              <Text style={styles.programWeek}>Week {currentWeek} of {program.duration_weeks}</Text>
+            </View>
+            <Text style={styles.programSwitch}>SWITCH</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={styles.noProgramBanner}
+            onPress={() => navigation.navigate('ProgramSelect')}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.noProgramIcon}>⚡</Text>
+            <View style={styles.programBannerText}>
+              <Text style={styles.noProgramTitle}>Choose Your Program</Text>
+              <Text style={styles.noProgramSub}>MARSOC or Ranger — pick your path</Text>
+            </View>
+            <Text style={styles.noProgramArrow}>→</Text>
+          </TouchableOpacity>
+        )}
 
         {/* XP Bar */}
         <View style={styles.xpContainer}>
@@ -222,4 +263,34 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.textPrimary,
   },
+  programBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  programIcon: { fontSize: 28, marginRight: spacing.sm },
+  programBannerText: { flex: 1 },
+  programName: { fontSize: 16, fontWeight: '800', color: colors.textPrimary },
+  programWeek: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+  programSwitch: {
+    fontSize: 11, fontWeight: '800', color: colors.accent, letterSpacing: 1,
+  },
+  noProgramBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.accent,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  noProgramIcon: { fontSize: 28, marginRight: spacing.sm },
+  noProgramTitle: { fontSize: 16, fontWeight: '800', color: colors.textPrimary },
+  noProgramSub: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+  noProgramArrow: { fontSize: 20, color: colors.accent, fontWeight: '800' },
 });

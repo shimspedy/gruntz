@@ -1,6 +1,8 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from '../screens/HomeScreen';
+import ProgramSelectScreen from '../screens/ProgramSelectScreen';
+import ProgramDetailScreen from '../screens/ProgramDetailScreen';
 import DailyMissionScreen from '../screens/DailyMissionScreen';
 import MissionCompleteScreen from '../screens/MissionCompleteScreen';
 import ExerciseDetailScreen from '../screens/ExerciseDetailScreen';
@@ -20,6 +22,16 @@ export function HomeStack() {
       }}
     >
       <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+      <Stack.Screen
+        name="ProgramSelect"
+        component={ProgramSelectScreen}
+        options={{ title: 'Programs', headerBackTitle: 'Back' }}
+      />
+      <Stack.Screen
+        name="ProgramDetail"
+        component={ProgramDetailScreen}
+        options={{ title: 'Program Details', headerBackTitle: 'Back' }}
+      />
       <Stack.Screen
         name="DailyMission"
         component={DailyMissionScreen}
