@@ -18,8 +18,8 @@ import type { Exercise } from '../types';
 
 const OPENAI_API_KEY = process.env.EXPO_PUBLIC_OPENAI_API_KEY || '';
 const VISION_MODEL = 'gpt-4o';
-const ANALYSIS_INTERVAL_MS = 2500; // Analyze every 2.5 seconds
-const MIN_ANALYSIS_INTERVAL_MS = 1500; // Don't analyze more often than this
+const ANALYSIS_INTERVAL_MS = 3000; // Vision is the PRIMARY rep counter via phase tracking
+const MIN_ANALYSIS_INTERVAL_MS = 1000; // Hook manages pacing; this is just a safety floor
 
 const openai = OPENAI_API_KEY
   ? new OpenAI({ apiKey: OPENAI_API_KEY, dangerouslyAllowBrowser: true })
@@ -102,10 +102,18 @@ Analyze the camera frame and return ONLY valid JSON (no markdown, no explanation
   "matches_expected": boolean,   // Does the detected exercise match "${exerciseName}"?
   "confidence": number,          // 0-100, how confident are you in this assessment?
   "form_score": number,          // 0-100, form quality (100=perfect, 0=terrible). 50 if unsure.
-  "phase": string,               // "up", "down", "neutral", "standing", or "unknown"
+  "phase": string,               // CRITICAL: "up", "down", "standing", or "unknown"
   "form_errors": string[],       // Specific form issues you can see (max 3, be brief)
   "coach_tip": string            // One short coaching tip (max 15 words). Military style, direct.
 }
+
+PHASE DETECTION (most important field!):
+- For push-ups: "up" = arms extended/locked, body high. "down" = arms bent, chest near floor.
+- For squats: "up" = standing tall. "down" = thighs parallel or below.
+- For pull-ups: "up" = chin above bar. "down" = arms extended.
+- "standing" = person visible but NOT in exercise position yet.
+- "unknown" = ONLY if image is too blurry to tell or no person visible. Avoid this — guess up or down if possible.
+- A rep = one complete down→up cycle. Accurate phase detection is critical for counting.
 
 RULES:
 - If no person is visible, set person_visible=false and confidence=0.
@@ -113,6 +121,7 @@ RULES:
 - Be specific about form errors based on what you actually see.
 - Use the exercise's form tips as your reference for what good form looks like.
 - Do NOT count reps — just assess the current frame.
+- ALWAYS try to determine phase — even if blurry, estimate based on body position.
 - coach_tip should be actionable and brief, like a drill sergeant's cue.
 - If the person is clearly doing a different exercise, say what it looks like.`;
 }

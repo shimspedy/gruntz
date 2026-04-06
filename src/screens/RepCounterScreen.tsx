@@ -94,6 +94,12 @@ export default function RepCounterScreen() {
   const engine = useSmartExercise(selectedExercise.name);
   const cameraRef = useRef<CameraView>(null);
 
+  // Sync camera ref to hook when CameraView is ready to capture
+  const handleCameraReady = useCallback(() => {
+    console.log('[RepCounter] onCameraReady fired, ref:', cameraRef.current ? 'YES' : 'null');
+    engine.setCameraRef(cameraRef.current);
+  }, [engine.setCameraRef]);
+
   // ─── Handlers ───────────────────────────────────────────
 
   const handleStart = useCallback(async () => {
@@ -108,7 +114,6 @@ export default function RepCounterScreen() {
       }
     }
     hapticMedium();
-    engine.setCameraRef(cameraRef.current);
     await engine.start();
   }, [engine, permission, requestPermission]);
 
@@ -153,16 +158,19 @@ export default function RepCounterScreen() {
   const isSessionActive = engine.phase !== 'setup' && engine.phase !== 'complete';
   const showCamera = isSessionActive && permission?.granted;
 
-  // ─── ACTIVE SESSION: Camera + Smart Overlays ───────────
+  // ─── SINGLE RETURN — stable tree prevents camera unmount races ───
 
-  if (showCamera) {
-    return (
-      <View style={styles.cameraContainer}>
-        <CameraView
-          ref={cameraRef}
-          style={styles.camera}
-          facing="front"
-        />
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* ─── ACTIVE SESSION: Camera + Smart Overlays ─── */}
+      {showCamera && (
+        <View style={[StyleSheet.absoluteFill, styles.cameraContainer]}>
+          <CameraView
+            ref={cameraRef}
+            style={styles.camera}
+            facing="front"
+            onCameraReady={handleCameraReady}
+          />
 
         {/* Phase-colored border */}
         <View style={[styles.cameraBorder, {
@@ -223,6 +231,14 @@ export default function RepCounterScreen() {
               {targetReps && (
                 <Text style={styles.hudRepTarget}>/ {targetReps}</Text>
               )}
+            </View>
+          )}
+          {engine.phase === 'counting' && (
+            <View style={styles.sensorMeter}>
+              <View style={[styles.sensorBar, {
+                width: `${Math.min(100, Math.abs(engine.currentMotion - 1.0) * 2000)}%`,
+                backgroundColor: engine.currentMotion > 1.01 ? colors.accentGreen : colors.textMuted,
+              }]} />
             </View>
           )}
           {engine.phase === 'calibrating' && (
@@ -328,13 +344,11 @@ export default function RepCounterScreen() {
           </TouchableOpacity>
           <View style={{ width: 48 }} />
         </View>
-      </View>
-    );
-  }
+        </View>
+      )}
 
-  // ─── SETUP / SUMMARY PHASE ────────────────────────────
-
-  return (
+      {/* ─── SETUP / SUMMARY PHASE ─── */}
+      {!showCamera && (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Exercise selector */}
@@ -508,6 +522,8 @@ export default function RepCounterScreen() {
         ) : null}
       </View>
     </SafeAreaView>
+      )}
+    </View>
   );
 }
 
@@ -519,7 +535,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   content: { padding: spacing.md, paddingBottom: 140 },
 
   // Camera
-  cameraContainer: { flex: 1, backgroundColor: '#000' },
+  cameraContainer: { flex: 1, backgroundColor: '#000', zIndex: 10 },
   camera: { flex: 1 },
   cameraBorder: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
@@ -607,6 +623,16 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   hudProgressFill: {
     height: '100%', backgroundColor: colors.accent,
+  },
+
+  // Live sensor meter
+  sensorMeter: {
+    width: 120, height: 4, borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.15)', marginTop: 8,
+    alignSelf: 'center', overflow: 'hidden',
+  },
+  sensorBar: {
+    height: '100%', borderRadius: 2,
   },
 
   // Form badge (top-right)

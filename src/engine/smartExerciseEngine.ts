@@ -82,67 +82,67 @@ export interface ExerciseMotionProfile {
 export const EXERCISE_PROFILES: Record<string, ExerciseMotionProfile> = {
   'Push-Ups': {
     primaryAxis: 'z',
-    peakThreshold: 1.03,
-    resetThreshold: 0.99,
-    minRepInterval: 600,
+    peakThreshold: 1.015,
+    resetThreshold: 0.995,
+    minRepInterval: 400,
     maxRepInterval: 8000,
     expectedOrientation: 'flat',
-    stationaryVarianceMax: 0.06,
+    stationaryVarianceMax: 0.08,
     formTips: ['Back straight', 'Full lockout', "Don't rest on ground"],
     description: 'Push up through hands keeping back straight. Full lockout at top.',
   },
   'Sit-Ups': {
     primaryAxis: 'z',
-    peakThreshold: 1.03,
-    resetThreshold: 0.99,
-    minRepInterval: 700,
+    peakThreshold: 1.015,
+    resetThreshold: 0.995,
+    minRepInterval: 400,
     maxRepInterval: 8000,
     expectedOrientation: 'flat',
-    stationaryVarianceMax: 0.06,
+    stationaryVarianceMax: 0.08,
     formTips: ['Shoulders to deck each rep', 'Use abs not momentum', 'Full ROM'],
     description: 'Lying on back, knees up, arms across abdomen. Drive upper body off ground.',
   },
   'Squats': {
     primaryAxis: 'y',
-    peakThreshold: 1.04,
-    resetThreshold: 0.98,
-    minRepInterval: 800,
+    peakThreshold: 1.02,
+    resetThreshold: 0.99,
+    minRepInterval: 500,
     maxRepInterval: 8000,
     expectedOrientation: 'upright',
-    stationaryVarianceMax: 0.07,
+    stationaryVarianceMax: 0.09,
     formTips: ['Hip crease below knee', 'Heels on ground', 'Chest up'],
     description: 'Deep squat with arms at shoulder height. Explode up.',
   },
   'Pull-Ups': {
     primaryAxis: 'z',
-    peakThreshold: 1.03,
-    resetThreshold: 0.99,
-    minRepInterval: 900,
+    peakThreshold: 1.015,
+    resetThreshold: 0.995,
+    minRepInterval: 500,
     maxRepInterval: 10000,
     expectedOrientation: 'flat',
-    stationaryVarianceMax: 0.07,
+    stationaryVarianceMax: 0.09,
     formTips: ['Full dead hang', 'Chin above bar', 'No kipping'],
     description: 'Dead hang, hands wider than shoulders. Pull chest to bar.',
   },
   'Burpees': {
     primaryAxis: 'z',
-    peakThreshold: 1.05,
-    resetThreshold: 0.97,
-    minRepInterval: 1200,
+    peakThreshold: 1.025,
+    resetThreshold: 0.99,
+    minRepInterval: 800,
     maxRepInterval: 10000,
     expectedOrientation: 'flat',
-    stationaryVarianceMax: 0.08,
+    stationaryVarianceMax: 0.10,
     formTips: ['Full push-up', 'Explosive jump', 'Spread eagle in air'],
     description: 'Squat, kick back, push-up, fire legs in, jump with hands overhead.',
   },
   'Lunges': {
     primaryAxis: 'y',
-    peakThreshold: 1.04,
-    resetThreshold: 0.98,
-    minRepInterval: 700,
+    peakThreshold: 1.02,
+    resetThreshold: 0.99,
+    minRepInterval: 400,
     maxRepInterval: 8000,
     expectedOrientation: 'upright',
-    stationaryVarianceMax: 0.07,
+    stationaryVarianceMax: 0.09,
     formTips: ['Knee over foot', 'Body straight', 'Step through'],
     description: 'Step forward, lower to parallel, drive up. Alternate legs.',
   },
@@ -170,13 +170,20 @@ export class SmartExerciseEngine {
   // Accelerometer
   private subscription: ReturnType<typeof Accelerometer.addListener> | null = null;
   private samples: AccelSample[] = [];
-  private calibrationBaseline: { x: number; y: number; z: number } | null = null;
+  private calibrationBaseline: { x: number; y: number; z: number; mag: number } | null = null;
   private calibrationStart = 0;
 
-  // Rep counting
+  // Rep counting (sensor)
   private isPeaked = false;
   private lastRepTime = 0;
   private repCandidateCount = 0;
+  private sensorReps = 0;
+  private sampleCount = 0;
+
+  // Rep counting (vision — primary)
+  private visionReps = 0;
+  private lastVisionPhase: string = 'unknown';
+  private visionPhaseHistory: string[] = [];
 
   // Phone stationarity
   private stationaryBuffer: number[] = [];
@@ -247,6 +254,11 @@ export class SmartExerciseEngine {
     this.isPeaked = false;
     this.lastRepTime = 0;
     this.repCandidateCount = 0;
+    this.sensorReps = 0;
+    this.sampleCount = 0;
+    this.visionReps = 0;
+    this.lastVisionPhase = 'unknown';
+    this.visionPhaseHistory = [];
     this.calibrationBaseline = null;
 
     Accelerometer.setUpdateInterval(50);
@@ -280,6 +292,7 @@ export class SmartExerciseEngine {
     confidence: number;
     formScore?: number;
     coachTip?: string;
+    phase?: string;
   }) {
     this.state.personVisible = result.personVisible;
     this.state.exerciseMatch = result.exerciseMatch;
@@ -296,6 +309,37 @@ export class SmartExerciseEngine {
 
     if (result.coachTip) {
       this.state.coachMessage = result.coachTip;
+    }
+
+    // ─── VISION-BASED REP COUNTING (primary counter) ─────
+    // Track phase transitions: a complete rep = down→up (push-ups, pull-ups)
+    // or down→up (squats, lunges) depending on exercise
+    if (this.state.phase === 'counting' && result.personVisible) {
+      const currentPhase = result.phase || 'unknown';
+
+      // Skip 'unknown' frames — don't let blurry captures break the phase chain
+      if (currentPhase === 'unknown') {
+        console.log(`[Engine] 📷 Skipping unknown phase (keeping last=${this.lastVisionPhase})`);
+      } else if (currentPhase !== this.lastVisionPhase) {
+        this.visionPhaseHistory.push(currentPhase);
+        console.log(`[Engine] 📷 Phase: ${this.lastVisionPhase}→${currentPhase} history=[${this.visionPhaseHistory.slice(-5).join(',')}]`);
+
+        // Count a rep when we see a full cycle: down→up
+        // Also accept standing→down→up for the first rep
+        if (this.lastVisionPhase === 'down' && currentPhase === 'up') {
+          this.visionReps += 1;
+          const bestReps = Math.max(this.sensorReps, this.visionReps);
+          if (bestReps > this.state.reps) {
+            this.state.validReps = bestReps;
+            this.state.reps = bestReps;
+            this.lastRepTime = Date.now();
+            this.onRepCounted?.(bestReps);
+          }
+          console.log(`[Engine] 📷 Vision rep! vReps=${this.visionReps} total=${this.state.reps}`);
+        }
+
+        this.lastVisionPhase = currentPhase;
+      }
     }
 
     // Transition logic based on vision
@@ -439,7 +483,11 @@ export class SmartExerciseEngine {
       return;
     }
 
-    this.calibrationBaseline = { x: avgX, y: avgY, z: avgZ };
+    this.calibrationBaseline = {
+      x: avgX, y: avgY, z: avgZ,
+      mag: avgMag, // Use average of per-sample magnitudes (matches how mag is computed in handleAccelData)
+    };
+    console.log(`[Engine] ✅ Calibration complete: baseline={x:${avgX.toFixed(3)}, y:${avgY.toFixed(3)}, z:${avgZ.toFixed(3)}, mag:${avgMag.toFixed(4)}} variance=${variance.toFixed(6)}`);
     this.state.phoneStationary = true;
     this.readyEnteredAt = Date.now();
     this.state.phase = 'ready';
@@ -479,36 +527,34 @@ export class SmartExerciseEngine {
     }
   }
 
-  // ─── Smart Rep Detection ────────────────────────────────────
+  // ─── Smart Rep Detection (Rolling Average High-Pass Filter) ──
 
   private handleRepDetection(x: number, y: number, z: number, mag: number, now: number) {
     if (!this.calibrationBaseline) return;
 
-    // Calculate deviation from baseline on the primary axis
-    let primaryDeviation: number;
-    switch (this.profile.primaryAxis) {
-      case 'x':
-        primaryDeviation = Math.abs(x - this.calibrationBaseline.x);
-        break;
-      case 'y':
-        primaryDeviation = Math.abs(y - this.calibrationBaseline.y);
-        break;
-      case 'z':
-        primaryDeviation = Math.abs(z - this.calibrationBaseline.z);
-        break;
+    // HIGH-PASS FILTER: Compare magnitude to a SHORT rolling average
+    // This eliminates baseline drift — only sudden changes trigger peaks.
+    // The calibration baseline drifts (e.g., 1.054 vs 1.000 at rest) making
+    // static comparison useless. Rolling average tracks the slow drift.
+    const recentCount = Math.min(this.samples.length, 20); // ~1 second window
+    const recentSamples = this.samples.slice(-recentCount);
+    const rollingAvg = recentSamples.reduce((s, r) => s + r.mag, 0) / recentCount;
+    const instantDeviation = Math.abs(mag - rollingAvg);
+
+    // Sensor thresholds — looking for real physical impact, not micro-vibrations
+    // During push-ups on concrete, we see mag swings of 0.1-0.8
+    const SENSOR_PEAK_THRESHOLD = 0.06;  // Magnitude must jump 0.06 from rolling avg
+    const SENSOR_RESET_THRESHOLD = 0.02; // Must settle back within 0.02 of rolling avg
+
+    // Log signal periodically (every 200th sample to reduce spam)
+    this.sampleCount++;
+    if (this.sampleCount % 200 === 0) {
+      console.log(`[Engine] mag=${mag.toFixed(4)} avg=${rollingAvg.toFixed(4)} dev=${instantDeviation.toFixed(4)} peak=${this.isPeaked} sR=${this.sensorReps} vR=${this.visionReps} reps=${this.state.reps}`);
     }
 
-    // Use magnitude-based detection (vibrations from exercise impact)
-    // The phone picks up floor vibrations from push-ups, squats landing, etc.
-    const deviationFromGravity = Math.abs(mag - 1.0);
-    const combinedSignal = deviationFromGravity + primaryDeviation * 0.3;
-
-    const peakThreshold = this.profile.peakThreshold - 1.0; // Convert to deviation
-    const resetThreshold = this.profile.resetThreshold - 1.0;
-
-    if (!this.isPeaked && combinedSignal > peakThreshold) {
+    if (!this.isPeaked && instantDeviation > SENSOR_PEAK_THRESHOLD) {
       this.isPeaked = true;
-    } else if (this.isPeaked && combinedSignal < resetThreshold) {
+    } else if (this.isPeaked && instantDeviation < SENSOR_RESET_THRESHOLD) {
       this.isPeaked = false;
       const timeSinceLastRep = now - this.lastRepTime;
 
@@ -517,10 +563,14 @@ export class SmartExerciseEngine {
         const gateResult = this.validateRepGate(timeSinceLastRep);
 
         if (gateResult.valid) {
-          this.state.validReps += 1;
-          this.state.reps = this.state.validReps;
+          this.sensorReps += 1;
+          // Use the higher of sensor or vision rep count
+          const bestReps = Math.max(this.sensorReps, this.visionReps);
+          this.state.validReps = bestReps;
+          this.state.reps = bestReps;
           this.lastRepTime = now;
-          this.onRepCounted?.(this.state.validReps);
+          this.onRepCounted?.(bestReps);
+          console.log(`[Engine] 🏋️ Sensor rep! dev=${instantDeviation.toFixed(4)} sReps=${this.sensorReps} total=${bestReps}`);
 
           if (gateResult.tip) {
             this.state.coachMessage = gateResult.tip;

@@ -53,8 +53,10 @@ export function useSmartExercise(exerciseName: string) {
   const engineRef = useRef<SmartExerciseEngine | null>(null);
   const visionRef = useRef<VisionCoach | null>(null);
   const cameraRef = useRef<CameraView | null>(null);
-  const visionTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const visionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const visionCountRef = useRef(0);
+  const visionBusyRef = useRef(false);
+  const visionActiveRef = useRef(false);
 
   // Create engine and vision coach when exercise changes
   useEffect(() => {
@@ -83,6 +85,7 @@ export function useSmartExercise(exerciseName: string) {
 
   // Set camera ref for frame capture
   const setCameraRef = useCallback((ref: CameraView | null) => {
+    console.log('[useSmartExercise] Camera ref set:', ref ? 'YES' : 'null');
     cameraRef.current = ref;
   }, []);
 
@@ -94,7 +97,17 @@ export function useSmartExercise(exerciseName: string) {
     const camera = cameraRef.current;
 
     if (!vision || !engine) return;
-    if (!vision.shouldAnalyze()) return;
+    if (visionBusyRef.current) return; // Skip if previous call still in flight
+
+    visionBusyRef.current = true;
+
+    const scheduleNext = () => {
+      visionBusyRef.current = false;
+      // Schedule next analysis 2s AFTER this one completes (not from start)
+      if (visionActiveRef.current) {
+        visionTimerRef.current = setTimeout(runVisionAnalysis, 2000);
+      }
+    };
 
     // If no camera ref, use local fallback (still provides defaults)
     if (!camera) {
@@ -106,16 +119,19 @@ export function useSmartExercise(exerciseName: string) {
         confidence: fallback.confidence,
         formScore: fallback.formScore,
         coachTip: fallback.coachTip || undefined,
+        phase: fallback.phase,
       });
+      scheduleNext();
       return;
     }
 
     try {
       // Capture frame from camera
       const photo = await camera.takePictureAsync({
-        quality: 0.2, // Lower quality = faster capture
+        quality: 0.1,
         base64: true,
         skipProcessing: true,
+        shutterSound: false,
       });
 
       if (!photo?.base64) {
@@ -129,15 +145,17 @@ export function useSmartExercise(exerciseName: string) {
           confidence: fallback.confidence,
           formScore: fallback.formScore,
           coachTip: fallback.coachTip || undefined,
+          phase: fallback.phase,
         });
-        return;
+        return; // finally will call scheduleNext()
       }
 
-      // Analyze frame
+      // Analyze frame — hook manages timing, no shouldAnalyze() needed
       const result = await vision.analyzeFrame(photo.base64);
       visionCountRef.current++;
+      console.log(`[Vision] #${visionCountRef.current} phase=${result.phase} person=${result.personVisible} match=${result.exerciseMatch} form=${result.formScore} conf=${result.confidence} tip="${result.coachTip}"`);
 
-      // Feed result to engine
+      // Feed result to engine (including phase for vision-based rep counting)
       engine.updateVisionResult({
         personVisible: result.personVisible,
         exerciseMatch: result.exerciseMatch,
@@ -145,6 +163,7 @@ export function useSmartExercise(exerciseName: string) {
         confidence: result.confidence,
         formScore: result.formScore,
         coachTip: result.coachTip || undefined,
+        phase: result.phase,
       });
 
       // Update hook state with vision-specific info
@@ -165,7 +184,10 @@ export function useSmartExercise(exerciseName: string) {
         confidence: fallback.confidence,
         formScore: fallback.formScore,
         coachTip: fallback.coachTip || undefined,
+        phase: fallback.phase,
       });
+    } finally {
+      scheduleNext();
     }
   }, []);
 
@@ -184,9 +206,11 @@ export function useSmartExercise(exerciseName: string) {
     // Start engine (sensors + calibration)
     await engine.start();
 
-    // Kick off first vision analysis immediately, then loop every 1.5s
-    setTimeout(runVisionAnalysis, 500);
-    visionTimerRef.current = setInterval(runVisionAnalysis, 1500);
+    // Kick off vision analysis loop — recursive setTimeout fires 2s AFTER each
+    // analysis completes, so no wasted ticks while GPT-4o API is in flight.
+    // Vision is the PRIMARY rep counter — tracks phase transitions (down→up = rep)
+    visionActiveRef.current = true;
+    visionTimerRef.current = setTimeout(runVisionAnalysis, 1500);
 
     setState((prev) => ({
       ...prev,
@@ -198,9 +222,10 @@ export function useSmartExercise(exerciseName: string) {
   const stop = useCallback(() => {
     engineRef.current?.stop();
     visionRef.current?.stop();
+    visionActiveRef.current = false;
 
     if (visionTimerRef.current) {
-      clearInterval(visionTimerRef.current);
+      clearTimeout(visionTimerRef.current);
       visionTimerRef.current = null;
     }
 
@@ -214,9 +239,10 @@ export function useSmartExercise(exerciseName: string) {
   const reset = useCallback(() => {
     engineRef.current?.reset();
     visionRef.current?.stop();
+    visionActiveRef.current = false;
 
     if (visionTimerRef.current) {
-      clearInterval(visionTimerRef.current);
+      clearTimeout(visionTimerRef.current);
       visionTimerRef.current = null;
     }
 
@@ -229,8 +255,9 @@ export function useSmartExercise(exerciseName: string) {
     return () => {
       engineRef.current?.stop();
       visionRef.current?.stop();
+      visionActiveRef.current = false;
       if (visionTimerRef.current) {
-        clearInterval(visionTimerRef.current);
+        clearTimeout(visionTimerRef.current);
       }
     };
   }, []);
