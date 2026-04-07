@@ -1,8 +1,7 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, StyleProp, ViewStyle, Animated } from 'react-native';
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
-import { useFadeInUp } from '../utils/animations';
 
 interface CardProps {
   children: React.ReactNode;
@@ -15,63 +14,46 @@ export function Card({ children, style, title, accentColor }: CardProps) {
   const colors = useColors();
   const resolvedAccent = accentColor ?? colors.accent;
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const fadeIn = useFadeInUp(400);
 
   return (
-    <Animated.View style={[styles.card, style, { opacity: fadeIn.opacity, transform: fadeIn.transform }]}>
-      {/* Thin top accent strip */}
+    <View style={[styles.card, style]}>
       <View style={[styles.topAccent, { backgroundColor: resolvedAccent }]} />
-      {/* Corner cuts — both sides */}
-      <View style={styles.cornerCutRight} />
-      <View style={styles.cornerCutLeft} />
       {title && <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{title}</Text>}
       {children}
-    </Animated.View>
+    </View>
   );
 }
-
-const CORNER_SIZE = 14;
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
   card: {
     backgroundColor: colors.card,
-    borderRadius: 2,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: colors.cardBorder,
     padding: spacing.lg,
     overflow: 'hidden',
+    shadowColor: colors.background,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    elevation: 4,
   },
   topAccent: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
+    top: 14,
+    left: spacing.lg,
+    width: 64,
     height: 2,
-  },
-  cornerCutRight: {
-    position: 'absolute',
-    top: -CORNER_SIZE / 2,
-    right: -CORNER_SIZE / 2,
-    width: CORNER_SIZE,
-    height: CORNER_SIZE,
-    backgroundColor: colors.background,
-    transform: [{ rotate: '45deg' }],
-  },
-  cornerCutLeft: {
-    position: 'absolute',
-    bottom: -CORNER_SIZE / 2,
-    left: -CORNER_SIZE / 2,
-    width: CORNER_SIZE,
-    height: CORNER_SIZE,
-    backgroundColor: colors.background,
-    transform: [{ rotate: '45deg' }],
+    borderRadius: 999,
+    opacity: 0.92,
   },
   title: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '800',
     color: colors.textPrimary,
-    letterSpacing: 1,
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
     marginBottom: spacing.md,
+    paddingTop: 8,
   },
 });

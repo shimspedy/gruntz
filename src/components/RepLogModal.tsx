@@ -7,6 +7,7 @@ import type { ThemeColors } from '../theme';
 import { hapticSuccess, hapticSelection, hapticLight } from '../utils/haptics';
 import { useFadeInDown } from '../utils/animations';
 import type { Exercise, SetLog } from '../types';
+import { GameIcon } from './GameIcon';
 
 interface RepLogModalProps {
   visible: boolean;
@@ -72,7 +73,7 @@ export function RepLogModal({ visible, exercise, onSave, onClose }: RepLogModalP
         <Animated.View style={[styles.modal, { opacity: fadeIn.opacity, transform: fadeIn.transform }]}>
           <View style={styles.header}>
             <View style={styles.headerLeft}>
-              <Text style={styles.illustration}>{exercise.illustration || '💪'}</Text>
+              <GameIcon name={exercise.illustration || exercise.category} size={44} color={colors.accent} style={styles.illustration} />
               <View>
                 <Text style={styles.title}>{exercise.name}</Text>
                 <Text style={styles.category}>{exercise.category.toUpperCase()}</Text>
@@ -92,7 +93,10 @@ export function RepLogModal({ visible, exercise, onSave, onClose }: RepLogModalP
               {exercise.distance ? ` ${exercise.distance}` : ''}
             </Text>
             {exercise.rest_seconds > 0 && (
-              <Text style={styles.restLabel}>⏱ {exercise.rest_seconds}s rest</Text>
+              <View style={styles.restWrap}>
+                <GameIcon name="time" size={16} color={colors.accent} variant="minimal" />
+                <Text style={styles.restLabel}>{exercise.rest_seconds}s rest</Text>
+              </View>
             )}
           </View>
 
@@ -220,7 +224,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: spacing.md,
   },
   illustration: {
-    fontSize: 32,
+    marginRight: spacing.xs,
   },
   title: {
     fontSize: 20,
@@ -264,6 +268,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 12,
     color: colors.accent,
     fontWeight: '600',
+  },
+  restWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   setsList: {
     maxHeight: 200,

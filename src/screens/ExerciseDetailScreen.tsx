@@ -10,6 +10,7 @@ import { hapticMedium } from '../utils/haptics';
 import { useFadeInUp } from '../utils/animations';
 import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
+import { GameIcon } from '../components/GameIcon';
 import { RepLogModal } from '../components/RepLogModal';
 import { getExerciseById } from '../data/exercises';
 import type { HomeStackParamList } from '../types/navigation';
@@ -43,7 +44,7 @@ export default function ExerciseDetailScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Hero */}
         <Animated.View style={[styles.hero, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
-          <Text style={styles.illustration}>{exercise.illustration || '💪'}</Text>
+          <GameIcon name={exercise.illustration || exercise.category} size={84} color={colors.accent} style={styles.illustration} />
           <Text style={styles.name} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{exercise.name}</Text>
           <Text style={styles.category} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{exercise.category.toUpperCase()}</Text>
         </Animated.View>
@@ -201,7 +202,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingVertical: spacing.xl,
   },
   illustration: {
-    fontSize: 64,
     marginBottom: spacing.md,
   },
   name: {

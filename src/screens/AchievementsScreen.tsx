@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
+import { GameIcon } from '../components/GameIcon';
 import { useUserStore } from '../store/useUserStore';
 import { achievements as allAchievements } from '../data/achievements';
 
@@ -32,9 +33,12 @@ export default function AchievementsScreen() {
               style={[styles.achievementCard, unlocked && styles.achievementUnlocked]}
             >
               <View style={styles.row}>
-                <Text style={[styles.icon, !unlocked && styles.iconLocked]}>
-                  {achievement.icon}
-                </Text>
+                <GameIcon
+                  name={achievement.icon}
+                  size={36}
+                  color={unlocked ? colors.accentGold : colors.textMuted}
+                  style={[styles.icon, !unlocked && styles.iconLocked]}
+                />
                 <View style={styles.info}>
                   <Text style={[styles.name, !unlocked && styles.nameLocked]}>
                     {achievement.name}
@@ -42,7 +46,7 @@ export default function AchievementsScreen() {
                   <Text style={styles.description}>{achievement.description}</Text>
                 </View>
                 {unlocked ? (
-                  <Text style={styles.unlockedBadge}>✅</Text>
+                  <GameIcon name="check" size={24} color={colors.accentGreen} style={styles.unlockedBadge} />
                 ) : (
                   <Text style={styles.xpReward}>+{achievement.xp_reward} XP</Text>
                 )}
@@ -91,7 +95,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
   },
   icon: {
-    fontSize: 32,
     marginRight: spacing.md,
   },
   iconLocked: {
@@ -114,7 +117,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginTop: 2,
   },
   unlockedBadge: {
-    fontSize: 20,
+    marginLeft: spacing.sm,
   },
   xpReward: {
     fontSize: 12,

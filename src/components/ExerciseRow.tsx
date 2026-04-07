@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { hapticLight, hapticDoubleTap } from '../utils/haptics';
+import { GameIcon } from './GameIcon';
 
 interface ExerciseRowProps {
   name: string;
@@ -33,17 +34,25 @@ export function ExerciseRow({ name, detail, completed, onToggle, restSeconds, il
       <View style={[styles.checkbox, completed && styles.checkboxCompleted]}>
         {completed && <Ionicons name="checkmark" size={16} color={colors.background} />}
       </View>
-      {illustration && <Text style={styles.illustration}>{illustration}</Text>}
+      {illustration ? <GameIcon name={illustration} size={26} style={styles.illustration} /> : null}
       <View style={styles.info}>
         <Text style={[styles.name, completed && styles.nameCompleted]} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{name}</Text>
         <View style={styles.detailRow}>
           <Text style={styles.detail}>{detail}</Text>
           {restSeconds && restSeconds > 0 ? (
-            <Text style={styles.restLabel}>⏱ {restSeconds}s</Text>
+            <View style={styles.restWrap}>
+              <GameIcon name="time" size={16} color={colors.accent} variant="minimal" />
+              <Text style={styles.restLabel}>{restSeconds}s</Text>
+            </View>
           ) : null}
         </View>
       </View>
-      {completed && <Text style={styles.xpBadge}>+XP</Text>}
+      {completed && (
+        <View style={styles.xpBadge}>
+          <GameIcon name="xp" size={16} color={colors.accentGold} variant="minimal" animated={false} />
+          <Text style={styles.xpBadgeText}>+XP</Text>
+        </View>
+      )}
       {onInfo && (
         <TouchableOpacity onPress={onInfo} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Ionicons name="information-circle-outline" size={22} color={colors.textMuted} />
@@ -76,7 +85,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderColor: colors.accentGreen,
   },
   illustration: {
-    fontSize: 20,
     marginRight: spacing.sm,
   },
   info: {
@@ -101,19 +109,29 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 13,
     color: colors.textMuted,
   },
+  restWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   restLabel: {
     fontSize: 12,
     color: colors.accent,
     fontWeight: '600',
   },
   xpBadge: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.accentGold,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     backgroundColor: colors.backgroundSecondary,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
     marginRight: spacing.sm,
+  },
+  xpBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.accentGold,
   },
 });

@@ -1,6 +1,5 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
 import { HomeStack } from './HomeStack';
 import { MissionsStack } from './MissionsStack';
 import ProgressScreen from '../screens/ProgressScreen';
@@ -8,6 +7,7 @@ import { ProfileStack } from './ProfileStack';
 import { useColors } from '../theme';
 import { hapticSelection } from '../utils/haptics';
 import { GlassTabBar } from '../components/GlassTabBar';
+import { GameIcon } from '../components/GameIcon';
 import type { RootTabParamList } from '../types/navigation';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -34,23 +34,31 @@ export function AppTabs() {
           fontWeight: '600',
           letterSpacing: 0.5,
         },
-        tabBarIcon: ({ color, size }) => {
-          let iconName: keyof typeof Ionicons.glyphMap = 'home';
+        tabBarIcon: ({ color, size, focused }) => {
+          let iconName: 'home' | 'mission' | 'progress' | 'profile' = 'home';
           switch (route.name) {
             case 'HomeTab':
               iconName = 'home';
               break;
             case 'MissionsTab':
-              iconName = 'trophy';
+              iconName = 'mission';
               break;
             case 'ProgressTab':
-              iconName = 'bar-chart';
+              iconName = 'progress';
               break;
             case 'ProfileTab':
-              iconName = 'person';
+              iconName = 'profile';
               break;
           }
-          return <Ionicons name={iconName} size={size} color={color} />;
+          return (
+            <GameIcon
+              name={iconName}
+              size={Math.max(size + 8, 30)}
+              color={color}
+              variant="minimal"
+              animated={focused}
+            />
+          );
         },
       })}
       screenListeners={{

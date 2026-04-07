@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
+import { GameIcon } from './GameIcon';
 
 interface SectionHeaderProps {
   title: string;
@@ -16,7 +17,7 @@ export function SectionHeader({ title, subtitle, icon }: SectionHeaderProps) {
   return (
     <View style={styles.container}>
       <View style={styles.accentLine} />
-      {icon && <Text style={styles.icon}>{icon}</Text>}
+      {icon ? <GameIcon name={icon} size={24} style={styles.icon} /> : null}
       <View>
         <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{title}</Text>
         {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
@@ -40,7 +41,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 1,
   },
   icon: {
-    fontSize: 20,
     marginRight: spacing.sm,
   },
   title: {

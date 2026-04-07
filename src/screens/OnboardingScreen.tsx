@@ -6,6 +6,7 @@ import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { MissionButton } from '../components/MissionButton';
 import { Card } from '../components/Card';
+import { GameIcon } from '../components/GameIcon';
 import { useUserStore } from '../store/useUserStore';
 import { hapticLight, hapticSelection, hapticSuccess } from '../utils/haptics';
 import type { UserProfile } from '../types';
@@ -69,7 +70,9 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   const steps = [
     // Step 0: Welcome
     <View key="welcome" style={styles.stepContainer}>
-      <Animated.Text style={[styles.welcomeEmoji, { opacity: emojiAnim.opacity, transform: emojiAnim.transform }]}>⚔️</Animated.Text>
+      <Animated.View style={[styles.welcomeEmoji, { opacity: emojiAnim.opacity, transform: emojiAnim.transform }]}>
+        <GameIcon name="program" size={92} color={colors.accent} />
+      </Animated.View>
       <Animated.Text style={[styles.welcomeTitle, { opacity: titleAnim.opacity, transform: titleAnim.transform }]} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>GRUNTZ</Animated.Text>
       <Animated.Text style={[styles.welcomeSubtitle, { opacity: subtitleAnim.opacity, transform: subtitleAnim.transform }]}>Military-Grade Fitness</Animated.Text>
       <Text style={styles.welcomeDesc}>
@@ -133,13 +136,19 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
         style={[styles.optionCard, hasPool && styles.optionSelected]}
         onPress={() => { hapticSelection(); setHasPool(!hasPool); }}
       >
-        <Text style={[styles.optionText, hasPool && styles.optionTextSelected]}>🏊 Pool Access</Text>
+        <View style={styles.optionRow}>
+          <GameIcon name="pool" size={22} color={hasPool ? colors.background : colors.textPrimary} variant="minimal" animated={hasPool} />
+          <Text style={[styles.optionText, hasPool && styles.optionTextSelected]}>Pool Access</Text>
+        </View>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.optionCard, hasRuck && styles.optionSelected]}
         onPress={() => { hapticSelection(); setHasRuck(!hasRuck); }}
       >
-        <Text style={[styles.optionText, hasRuck && styles.optionTextSelected]}>🎒 Ruck / Weighted Pack</Text>
+        <View style={styles.optionRow}>
+          <GameIcon name="ruck" size={22} color={hasRuck ? colors.background : colors.textPrimary} variant="minimal" animated={hasRuck} />
+          <Text style={[styles.optionText, hasRuck && styles.optionTextSelected]}>Ruck / Weighted Pack</Text>
+        </View>
       </TouchableOpacity>
       <MissionButton title="NEXT" onPress={() => setStep(4)} style={styles.nextButton} />
     </View>,
@@ -153,9 +162,18 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
           style={[styles.optionCard, intensity === level && styles.optionSelected]}
           onPress={() => { hapticSelection(); setIntensity(level); }}
         >
-          <Text style={[styles.optionText, intensity === level && styles.optionTextSelected]}>
-            {level === 'low' ? '🟢 Low — Ease into it' : level === 'moderate' ? '🟡 Moderate — Balanced' : '🔴 High — Push the limits'}
-          </Text>
+          <View style={styles.optionRow}>
+            <GameIcon
+              name={level === 'low' ? 'intensity_low' : level === 'moderate' ? 'intensity_medium' : 'intensity_high'}
+              size={22}
+              color={intensity === level ? colors.background : colors.textPrimary}
+              variant="minimal"
+              animated={intensity === level}
+            />
+            <Text style={[styles.optionText, intensity === level && styles.optionTextSelected]}>
+              {level === 'low' ? 'Low — Ease into it' : level === 'moderate' ? 'Moderate — Balanced' : 'High — Push the limits'}
+            </Text>
+          </View>
         </TouchableOpacity>
       ))}
       <MissionButton title="LET'S GO" onPress={handleComplete} style={styles.nextButton} />
@@ -206,9 +224,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   welcomeEmoji: {
-    fontSize: 64,
     textAlign: 'center',
     marginBottom: spacing.lg,
+    alignItems: 'center',
   },
   welcomeTitle: {
     fontSize: 42,
@@ -289,6 +307,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   dayTextSelected: {
     color: colors.accent,
+  },
+  optionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   nextButton: {
     marginTop: spacing.xl,

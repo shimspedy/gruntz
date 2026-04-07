@@ -11,6 +11,7 @@ import { StatCard } from '../components/StatCard';
 import { MissionButton } from '../components/MissionButton';
 import { Card } from '../components/Card';
 import { GlassCard } from '../components/GlassCard';
+import { GameIcon } from '../components/GameIcon';
 import { useUserStore } from '../store/useUserStore';
 import { useMissionStore } from '../store/useMissionStore';
 import { useProgramStore } from '../store/useProgramStore';
@@ -67,22 +68,29 @@ export default function HomeScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { maxWidth: contentMaxWidth, alignSelf: 'center', paddingHorizontal: horizontalPadding }]}>
         {/* Header */}
         <Animated.View style={[styles.header, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
-          <View>
+          <View style={styles.headerMain}>
             <Text style={styles.greeting} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>READY FOR ACTION</Text>
-            <Text style={styles.rankTitle} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
-              {rankInfo?.icon} {progress.current_rank}
-            </Text>
+            <View style={styles.rankRow}>
+              <GameIcon name={rankInfo?.icon || 'rank'} size={34} color={colors.textPrimary} />
+              <Text style={styles.rankTitle} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
+                {progress.current_rank}
+              </Text>
+            </View>
             {program && (
               <View style={styles.programPill}>
+                <GameIcon name={program.icon} size={20} color={colors.accent} variant="minimal" />
                 <Text style={styles.programPillText}>
-                  {program.icon} {program.name} · Wk {currentWeek}/{program.duration_weeks}
+                  {program.name} · Wk {currentWeek}/{program.duration_weeks}
                 </Text>
               </View>
             )}
           </View>
           <View style={styles.streakBadge}>
-            <Text style={styles.streakIcon}>🔥</Text>
-            <Text style={styles.streakCount}>{progress.streak_days}</Text>
+            <GameIcon name="streak" size={26} color={colors.streakFire} />
+            <View style={styles.streakMeta}>
+              <Text style={styles.streakCount}>{progress.streak_days}</Text>
+              <Text style={styles.streakLabel}>STREAK</Text>
+            </View>
           </View>
         </Animated.View>
 
@@ -93,12 +101,12 @@ export default function HomeScreen() {
             onPress={() => { hapticLight(); navigation.navigate('ProgramSelect'); }}
             activeOpacity={0.85}
           >
-            <Text style={styles.noProgramIcon}>⚡</Text>
+            <GameIcon name="program" size={28} color={colors.accent} />
             <View style={styles.programBannerText}>
               <Text style={styles.noProgramTitle}>Choose Your Program</Text>
               <Text style={styles.noProgramSub}>Raider or Recon — pick your path</Text>
             </View>
-            <Text style={styles.noProgramArrow}>→</Text>
+            <GameIcon name="target" size={20} color={colors.accent} variant="minimal" />
           </TouchableOpacity>
         )}
 
@@ -109,11 +117,9 @@ export default function HomeScreen() {
 
         {/* Stats Row */}
         <View style={styles.statsRow}>
-          <StatCard icon="⚡" value={progress.current_level} label="Level" color={colors.accent} />
-          <View style={{ width: spacing.sm }} />
-          <StatCard icon="🔥" value={progress.streak_days} label="Streak" color={colors.streakFire} />
-          <View style={{ width: spacing.sm }} />
-          <StatCard icon="💪" value={progress.workouts_completed} label="Missions" color={colors.accentGreen} />
+          <StatCard icon="level" value={progress.current_level} label="Level" color={colors.accent} />
+          <StatCard icon="streak" value={progress.streak_days} label="Streak" color={colors.streakFire} />
+          <StatCard icon="mission" value={progress.workouts_completed} label="Ops" color={colors.accentGreen} />
         </View>
 
         {/* Today's Mission Card */}
@@ -123,11 +129,17 @@ export default function HomeScreen() {
             <Text style={styles.missionTitle}>{todaysMission.mission_title}</Text>
             <Text style={styles.missionSummary}>{todaysMission.mission_summary}</Text>
             <View style={styles.rewardRow}>
-              <Text style={styles.rewardText}>⭐ {todaysMission.reward_xp} XP</Text>
-              <Text style={styles.rewardText}>🪙 {todaysMission.reward_coins} Coins</Text>
+              <View style={styles.rewardPill}>
+                <GameIcon name="xp" size={18} color={colors.accentGold} variant="minimal" />
+                <Text style={styles.rewardText}>{todaysMission.reward_xp} XP</Text>
+              </View>
+              <View style={styles.rewardPill}>
+                <GameIcon name="coin" size={18} color={colors.accentGold} variant="minimal" />
+                <Text style={styles.rewardText}>{todaysMission.reward_coins} Coins</Text>
+              </View>
             </View>
             <MissionButton
-              title={todaysMission.completed ? '✓ COMPLETED' : 'START MISSION'}
+              title={todaysMission.completed ? 'MISSION COMPLETE' : 'START MISSION'}
               onPress={() => navigation.navigate('DailyMission', {})}
               variant={todaysMission.completed ? 'success' : 'primary'}
               disabled={todaysMission.completed}
@@ -136,7 +148,7 @@ export default function HomeScreen() {
           </Card>
         ) : isRestDay ? (
           <Card style={styles.restDayCard}>
-            <Text style={styles.restDayIcon}>🛌</Text>
+            <GameIcon name="rest" size={60} color={colors.accent} style={styles.restDayIcon} />
             <Text style={styles.restDayTitle}>REST DAY</Text>
             <Text style={styles.restDayMessage}>
               Recovery is part of the mission. Hydrate, stretch, and prepare for tomorrow.
@@ -147,8 +159,14 @@ export default function HomeScreen() {
                 <Text style={styles.nextWorkoutTitle}>{nextWorkout.title}</Text>
                 <Text style={styles.nextWorkoutSummary}>{nextWorkout.objective}</Text>
                 <View style={styles.rewardRow}>
-                  <Text style={styles.rewardText}>⭐ {nextWorkout.rewards.xp} XP</Text>
-                  <Text style={styles.rewardText}>🪙 {nextWorkout.rewards.coins} Coins</Text>
+                  <View style={styles.rewardPill}>
+                    <GameIcon name="xp" size={18} color={colors.accentGold} variant="minimal" />
+                    <Text style={styles.rewardText}>{nextWorkout.rewards.xp} XP</Text>
+                  </View>
+                  <View style={styles.rewardPill}>
+                    <GameIcon name="coin" size={18} color={colors.accentGold} variant="minimal" />
+                    <Text style={styles.rewardText}>{nextWorkout.rewards.coins} Coins</Text>
+                  </View>
                 </View>
               </View>
             )}
@@ -157,11 +175,11 @@ export default function HomeScreen() {
 
         {/* Coach Insights — Liquid Glass */}
         <GlassCard style={styles.coachCard}>
-          <Text style={styles.coachLabel}>🎯 SMART COACH</Text>
+          <Text style={styles.coachLabel}>COACH NOTES</Text>
           <Text style={styles.coachMessage}>{coachMessage}</Text>
           {coachInsights.map((insight: CoachInsight, idx: number) => (
             <View key={idx} style={styles.insightRow}>
-              <Text style={styles.insightIcon}>{insight.icon}</Text>
+              <GameIcon name={insight.icon} size={24} color={colors.accent} style={styles.insightIcon} />
               <View style={styles.insightContent}>
                 <Text style={styles.insightTitle}>{insight.title}</Text>
                 <Text style={styles.insightMessage}>{insight.message}</Text>
@@ -170,51 +188,30 @@ export default function HomeScreen() {
           ))}
         </GlassCard>
 
-        {/* AI Tools */}
+        {/* Quick Actions */}
         <View style={styles.aiToolsRow}>
           <TouchableOpacity
             style={styles.aiToolCard}
-            onPress={() => { hapticLight(); navigation.navigate('CoachChat'); }}
+            onPress={() => {
+              hapticLight();
+              if (program) {
+                navigation.navigate('ProgramDetail', { programId: program.id });
+                return;
+              }
+              navigation.navigate('ProgramSelect');
+            }}
             activeOpacity={0.7}
           >
-            <Text style={styles.aiToolIcon}>💬</Text>
-            <Text style={styles.aiToolLabel}>Ask Coach</Text>
+            <GameIcon name={program ? program.icon : 'program'} size={28} color={colors.accent} style={styles.aiToolIcon} />
+            <Text style={styles.aiToolLabel}>{program ? 'Program Details' : 'Choose Program'}</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.aiToolCard}
-            onPress={() => { hapticLight(); navigation.navigate('PlanGenerator'); }}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.aiToolIcon}>📋</Text>
-            <Text style={styles.aiToolLabel}>Build Plan</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.aiToolCard}
-            onPress={() => { hapticLight(); navigation.navigate('FormAnalysis'); }}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.aiToolIcon}>🎯</Text>
-            <Text style={styles.aiToolLabel}>Form Guide</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Sensor Tools */}
-        <View style={styles.aiToolsRow}>
           <TouchableOpacity
             style={styles.aiToolCard}
             onPress={() => { hapticLight(); navigation.navigate('RunTracker'); }}
             activeOpacity={0.7}
           >
-            <Text style={styles.aiToolIcon}>🏃</Text>
+            <GameIcon name="run" size={28} color={colors.accent} style={styles.aiToolIcon} />
             <Text style={styles.aiToolLabel}>Run Tracker</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.aiToolCard}
-            onPress={() => { hapticLight(); navigation.navigate('RepCounter'); }}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.aiToolIcon}>💪</Text>
-            <Text style={styles.aiToolLabel}>Rep Counter</Text>
           </TouchableOpacity>
         </View>
 
@@ -247,14 +244,18 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: spacing.md,
+    paddingVertical: spacing.md,
     paddingBottom: spacing.xxl,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: spacing.lg,
+    gap: spacing.md,
+  },
+  headerMain: {
+    flex: 1,
   },
   greeting: {
     fontSize: 12,
@@ -262,36 +263,55 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.textMuted,
     letterSpacing: 2,
   },
+  rankRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: 4,
+  },
   rankTitle: {
     fontSize: 24,
     fontWeight: '800',
     color: colors.textPrimary,
-    marginTop: 4,
   },
   streakBadge: {
     backgroundColor: colors.card,
-    borderRadius: 2,
-    padding: spacing.md,
+    borderRadius: 18,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 12,
     alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
     borderWidth: 1,
     borderColor: colors.cardBorder,
-    borderTopWidth: 2,
-    borderTopColor: colors.streakFire,
+    minWidth: 96,
+    shadowColor: colors.background,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.14,
+    shadowRadius: 16,
+    elevation: 3,
   },
-  streakIcon: {
-    fontSize: 20,
+  streakMeta: {
+    alignItems: 'flex-start',
   },
   streakCount: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 22,
+    fontWeight: '900',
     color: colors.streakFire,
-    marginTop: 2,
+    lineHeight: 24,
+  },
+  streakLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: colors.textMuted,
+    letterSpacing: 1.1,
   },
   xpContainer: {
     marginBottom: spacing.lg,
   },
   statsRow: {
     flexDirection: 'row',
+    gap: spacing.sm,
     marginBottom: spacing.lg,
   },
   missionCard: {
@@ -302,7 +322,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
   },
   restDayIcon: {
-    fontSize: 48,
     marginBottom: spacing.sm,
   },
   restDayTitle: {
@@ -322,9 +341,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   nextWorkoutPreview: {
     width: '100%',
     backgroundColor: colors.backgroundSecondary,
-    borderRadius: 2,
-    borderLeftWidth: 2,
-    borderLeftColor: colors.accent,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
     padding: spacing.md,
     marginTop: spacing.sm,
   },
@@ -367,7 +386,19 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   rewardRow: {
     flexDirection: 'row',
-    gap: spacing.md,
+    gap: spacing.sm,
+    flexWrap: 'wrap',
+  },
+  rewardPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
   rewardText: {
     fontSize: 14,
@@ -398,7 +429,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderTopColor: `${colors.cardBorder}66`,
   },
   insightIcon: {
-    fontSize: 16,
     marginRight: spacing.sm,
     marginTop: 2,
   },
@@ -441,14 +471,18 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   aiToolCard: {
     flex: 1,
     backgroundColor: colors.card,
-    borderRadius: 12,
-    paddingVertical: 14,
+    borderRadius: 18,
+    paddingVertical: 16,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.cardBorder,
+    shadowColor: colors.background,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 3,
   },
   aiToolIcon: {
-    fontSize: 22,
     marginBottom: 4,
   },
   aiToolLabel: {
@@ -461,13 +495,14 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.card,
-    borderRadius: 2,
-    borderLeftWidth: 2,
-    borderLeftColor: colors.accent,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     marginTop: 6,
     alignSelf: 'flex-start',
+    gap: 6,
   },
   programPillText: {
     fontSize: 11,
@@ -480,15 +515,14 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.card,
-    borderRadius: 2,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: colors.accent,
-    borderLeftWidth: 3,
     padding: spacing.md,
     marginBottom: spacing.lg,
   },
-  noProgramIcon: { fontSize: 28, marginRight: spacing.sm },
+  noProgramIcon: { marginRight: spacing.sm },
   noProgramTitle: { fontSize: 16, fontWeight: '800', color: colors.textPrimary },
   noProgramSub: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
-  noProgramArrow: { fontSize: 20, color: colors.accent, fontWeight: '800' },
+  noProgramArrow: {},
 });

@@ -1,4 +1,6 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { UserProgress, UserProfile, Rank, CompletedMission, UserAchievement } from '../types';
 import { getLevelForXP, getRank, getXPToNextLevel, calculateStreakBonus, isStreakAlive, getDefaultProgress } from '../utils/xp';
 import { achievements } from '../data/achievements';
@@ -9,9 +11,11 @@ interface UserState {
   achievements: UserAchievement[];
   isLoading: boolean;
   isOnboarded: boolean;
+  hasHydrated: boolean;
 
   setProfile: (profile: UserProfile) => void;
   setOnboarded: (onboarded: boolean) => void;
+  setHydrated: (hydrated: boolean) => void;
   addXP: (amount: number) => void;
   completeMission: (mission: CompletedMission) => void;
   updateStreak: () => void;
@@ -20,148 +24,194 @@ interface UserState {
 }
 
 const initialProgress = getDefaultProgress('local');
+const STORAGE_KEY = '@gruntz_user';
 
-export const useUserStore = create<UserState>((set, get) => ({
-  profile: null,
-  progress: initialProgress,
-  achievements: [],
-  isLoading: false,
-  isOnboarded: false,
+export const useUserStore = create<UserState>()(
+  persist(
+    (set, get) => ({
+      profile: null,
+      progress: initialProgress,
+      achievements: [],
+      isLoading: false,
+      isOnboarded: false,
+      hasHydrated: false,
 
-  setProfile: (profile) => set({ profile }),
+      setProfile: (profile) => set({ profile }),
 
-  setOnboarded: (onboarded) => set({ isOnboarded: onboarded }),
+      setOnboarded: (onboarded) => set({ isOnboarded: onboarded }),
+      setHydrated: (hydrated) => set({ hasHydrated: hydrated }),
 
-  addXP: (amount) => {
-    set((state) => {
-      const newXP = state.progress.current_xp + amount;
-      const newLevel = getLevelForXP(newXP);
-      const newRank = getRank(newLevel);
-      return {
-        progress: {
-          ...state.progress,
-          current_xp: newXP,
-          current_level: newLevel,
-          current_rank: newRank,
-        },
-      };
-    });
-  },
+      addXP: (amount) => {
+        set((state) => {
+          const newXP = state.progress.current_xp + amount;
+          const newLevel = getLevelForXP(newXP);
+          const newRank = getRank(newLevel);
+          return {
+            progress: {
+              ...state.progress,
+              current_xp: newXP,
+              current_level: newLevel,
+              current_rank: newRank,
+            },
+          };
+        });
+      },
 
-  completeMission: (mission) => {
-    set((state) => {
-      // Dedupe: reject if this mission_date + workout_day_id was already claimed
-      const claimKey = `${mission.mission_date}:${mission.workout_day_id}`;
-      if (state.progress.claimed_missions?.has(claimKey)) {
-        return state;
-      }
-
-      const today = new Date().toISOString().split('T')[0];
-      const wasStreakAlive = state.progress.last_workout_date
-        ? isStreakAlive(state.progress.last_workout_date)
-        : false;
-      const newStreak = wasStreakAlive ? state.progress.streak_days + 1 : 1;
-      const streakBonus = calculateStreakBonus(newStreak);
-
-      const totalXP = mission.total_xp + mission.completion_bonus + mission.pr_bonus + streakBonus;
-      const newXP = state.progress.current_xp + totalXP;
-      const newLevel = getLevelForXP(newXP);
-      const newRank = getRank(newLevel);
-
-      const newExercisesCompleted = { ...state.progress.exercises_completed };
-      let totalNewReps = 0;
-      mission.exercises.forEach((ex) => {
-        const reps = ex.completed_reps || 0;
-        newExercisesCompleted[ex.exercise_id] = (newExercisesCompleted[ex.exercise_id] || 0) + reps;
-        totalNewReps += reps;
-      });
-
-      const newClaimed = new Set(state.progress.claimed_missions);
-      newClaimed.add(claimKey);
-
-      return {
-        progress: {
-          ...state.progress,
-          current_xp: newXP,
-          current_level: newLevel,
-          current_rank: newRank,
-          streak_days: newStreak,
-          last_workout_date: today,
-          workouts_completed: state.progress.workouts_completed + 1,
-          total_reps: state.progress.total_reps + totalNewReps,
-          exercises_completed: newExercisesCompleted,
-          claimed_missions: newClaimed,
-        },
-      };
-    });
-  },
-
-  updateStreak: () => {
-    set((state) => {
-      if (state.progress.last_workout_date && !isStreakAlive(state.progress.last_workout_date)) {
-        return {
-          progress: {
-            ...state.progress,
-            streak_days: 0,
-          },
-        };
-      }
-      return state;
-    });
-  },
-
-  checkAchievements: () => {
-    const state = get();
-    const newUnlocks: string[] = [];
-    const currentAchievements = [...state.achievements];
-
-    achievements.forEach((achievement) => {
-      const existing = currentAchievements.find((a) => a.achievement_id === achievement.id);
-      if (existing?.unlocked) return;
-
-      let unlocked = false;
-      switch (achievement.condition_type) {
-        case 'workouts_completed':
-          unlocked = state.progress.workouts_completed >= achievement.condition_value;
-          break;
-        case 'streak_days':
-          unlocked = state.progress.streak_days >= achievement.condition_value;
-          break;
-        case 'total_xp':
-          unlocked = state.progress.current_xp >= achievement.condition_value;
-          break;
-        case 'level':
-          unlocked = state.progress.current_level >= achievement.condition_value;
-          break;
-        default:
-          if (achievement.condition_type.startsWith('exercise_total_')) {
-            const exerciseId = achievement.condition_type.replace('exercise_total_', '');
-            const total = state.progress.exercises_completed[exerciseId] || 0;
-            unlocked = total >= achievement.condition_value;
+      completeMission: (mission) => {
+        set((state) => {
+          // Dedupe: reject if this mission_date + workout_day_id was already claimed
+          const claimKey = `${mission.mission_date}:${mission.workout_day_id}`;
+          if (state.progress.claimed_missions?.has(claimKey)) {
+            return state;
           }
-      }
 
-      if (unlocked) {
-        newUnlocks.push(achievement.id);
-        const idx = currentAchievements.findIndex((a) => a.achievement_id === achievement.id);
-        const ua = {
-          achievement_id: achievement.id,
-          unlocked: true,
-          unlocked_at: new Date().toISOString(),
-        };
-        if (idx >= 0) {
-          currentAchievements[idx] = ua;
-        } else {
-          currentAchievements.push(ua);
+          const today = new Date().toISOString().split('T')[0];
+          const wasStreakAlive = state.progress.last_workout_date
+            ? isStreakAlive(state.progress.last_workout_date)
+            : false;
+          const newStreak = wasStreakAlive ? state.progress.streak_days + 1 : 1;
+          const streakBonus = calculateStreakBonus(newStreak);
+
+          const totalXP = mission.total_xp + mission.completion_bonus + mission.pr_bonus + streakBonus;
+          const newXP = state.progress.current_xp + totalXP;
+          const newLevel = getLevelForXP(newXP);
+          const newRank = getRank(newLevel);
+
+          const newExercisesCompleted = { ...state.progress.exercises_completed };
+          let totalNewReps = 0;
+          mission.exercises.forEach((ex) => {
+            const reps = ex.completed_reps || 0;
+            newExercisesCompleted[ex.exercise_id] = (newExercisesCompleted[ex.exercise_id] || 0) + reps;
+            totalNewReps += reps;
+          });
+
+          const newClaimed = new Set(state.progress.claimed_missions);
+          newClaimed.add(claimKey);
+
+          return {
+            progress: {
+              ...state.progress,
+              current_xp: newXP,
+              current_level: newLevel,
+              current_rank: newRank,
+              streak_days: newStreak,
+              last_workout_date: today,
+              workouts_completed: state.progress.workouts_completed + 1,
+              total_reps: state.progress.total_reps + totalNewReps,
+              exercises_completed: newExercisesCompleted,
+              claimed_missions: newClaimed,
+            },
+          };
+        });
+      },
+
+      updateStreak: () => {
+        set((state) => {
+          if (state.progress.last_workout_date && !isStreakAlive(state.progress.last_workout_date)) {
+            return {
+              progress: {
+                ...state.progress,
+                streak_days: 0,
+              },
+            };
+          }
+          return state;
+        });
+      },
+
+      checkAchievements: () => {
+        const state = get();
+        const newUnlocks: string[] = [];
+        const currentAchievements = [...state.achievements];
+
+        achievements.forEach((achievement) => {
+          const existing = currentAchievements.find((a) => a.achievement_id === achievement.id);
+          if (existing?.unlocked) return;
+
+          let unlocked = false;
+          switch (achievement.condition_type) {
+            case 'workouts_completed':
+              unlocked = state.progress.workouts_completed >= achievement.condition_value;
+              break;
+            case 'streak_days':
+              unlocked = state.progress.streak_days >= achievement.condition_value;
+              break;
+            case 'total_xp':
+              unlocked = state.progress.current_xp >= achievement.condition_value;
+              break;
+            case 'level':
+              unlocked = state.progress.current_level >= achievement.condition_value;
+              break;
+            default:
+              if (achievement.condition_type.startsWith('exercise_total_')) {
+                const exerciseId = achievement.condition_type.replace('exercise_total_', '');
+                const total = state.progress.exercises_completed[exerciseId] || 0;
+                unlocked = total >= achievement.condition_value;
+              }
+          }
+
+          if (unlocked) {
+            newUnlocks.push(achievement.id);
+            const idx = currentAchievements.findIndex((a) => a.achievement_id === achievement.id);
+            const ua = {
+              achievement_id: achievement.id,
+              unlocked: true,
+              unlocked_at: new Date().toISOString(),
+            };
+            if (idx >= 0) {
+              currentAchievements[idx] = ua;
+            } else {
+              currentAchievements.push(ua);
+            }
+          }
+        });
+
+        if (newUnlocks.length > 0) {
+          set({ achievements: currentAchievements });
         }
-      }
-    });
+        return newUnlocks;
+      },
 
-    if (newUnlocks.length > 0) {
-      set({ achievements: currentAchievements });
+      reset: () =>
+        set({
+          profile: null,
+          progress: getDefaultProgress('local'),
+          achievements: [],
+          isOnboarded: false,
+        }),
+    }),
+    {
+      name: STORAGE_KEY,
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        profile: state.profile,
+        progress: {
+          ...state.progress,
+          claimed_missions: Array.from(state.progress.claimed_missions),
+        },
+        achievements: state.achievements,
+        isOnboarded: state.isOnboarded,
+      }),
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as Partial<UserState> & {
+          progress?: Partial<UserProgress> & { claimed_missions?: string[] };
+        };
+
+        return {
+          ...currentState,
+          ...persisted,
+          progress: persisted.progress
+            ? {
+                ...currentState.progress,
+                ...persisted.progress,
+                claimed_missions: new Set(persisted.progress.claimed_missions ?? []),
+              }
+            : currentState.progress,
+        };
+      },
+      onRehydrateStorage: () => () => {
+        useUserStore.setState({ hasHydrated: true });
+      },
     }
-    return newUnlocks;
-  },
-
-  reset: () => set({ profile: null, progress: initialProgress, achievements: [], isOnboarded: false }),
-}));
+  )
+);

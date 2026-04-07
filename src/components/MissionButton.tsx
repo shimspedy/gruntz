@@ -35,7 +35,7 @@ export function MissionButton({ title, onPress, variant = 'primary', disabled = 
   const tagLabel = label || (variant === 'primary' ? 'R-25' : variant === 'success' ? 'S-OK' : 'C-10');
 
   return (
-    <Animated.View style={scaleStyle}>
+    <Animated.View style={[styles.wrapper, scaleStyle]}>
       <TouchableOpacity
         style={[styles.button, { backgroundColor: bgColor, borderColor, opacity: disabled ? 0.5 : 1 }, style]}
         onPress={handlePress}
@@ -44,12 +44,8 @@ export function MissionButton({ title, onPress, variant = 'primary', disabled = 
         disabled={disabled}
         activeOpacity={0.8}
       >
+        <View style={[styles.topGlow, { backgroundColor: variant === 'secondary' ? colors.accent : colors.borderGlow }]} />
         <Text style={[styles.text, { color: textColor }]} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{title}</Text>
-        {/* Bottom-left corner cut */}
-        <View style={[styles.cornerCut, { borderBottomColor: colors.background }]} />
-        {/* Right accent border */}
-        <View style={[styles.rightAccent, { backgroundColor: variant === 'secondary' ? colors.accent : colors.borderGlow }]} />
-        {/* Cyberpunk tag label */}
         <View style={styles.tag}>
           <Text style={styles.tagText}>{tagLabel}</Text>
         </View>
@@ -58,50 +54,48 @@ export function MissionButton({ title, onPress, variant = 'primary', disabled = 
   );
 }
 
-const CUT_W = 18;
-const CUT_H = 24;
-
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  wrapper: {
+    width: '100%',
+  },
   button: {
-    height: 56,
-    borderRadius: 2,
+    width: '100%',
+    minHeight: 60,
+    borderRadius: 18,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xl,
     overflow: 'hidden',
+    shadowColor: colors.accent,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  topGlow: {
+    position: 'absolute',
+    top: 12,
+    left: spacing.lg,
+    width: 72,
+    height: 2,
+    borderRadius: 999,
+    opacity: 0.85,
   },
   text: {
     fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 1.5,
+    fontWeight: '800',
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
-  },
-  cornerCut: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    width: 0,
-    height: 0,
-    borderStyle: 'solid',
-    borderRightWidth: CUT_W,
-    borderRightColor: 'transparent',
-    borderBottomWidth: CUT_H,
-  },
-  rightAccent: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: 3,
   },
   tag: {
     position: 'absolute',
-    bottom: 2,
+    bottom: 8,
     right: 10,
     backgroundColor: colors.cyberYellow,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 999,
   },
   tagText: {
     fontSize: 7,

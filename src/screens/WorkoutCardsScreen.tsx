@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
+import { GameIcon } from '../components/GameIcon';
 import { SectionHeader } from '../components/SectionHeader';
 import { movementCards, getAllMovementCards, getAllSwimCards } from '../data/movementCards';
 import { useUserStore } from '../store/useUserStore';
@@ -37,10 +38,10 @@ export default function WorkoutCardsScreen() {
 
   function CardItem({ card, onPress, recommended }: { card: MovementCard; onPress: () => void; recommended?: WorkoutRecommendation }) {
     return (
-      <TouchableOpacity activeOpacity={0.7} onPress={() => { hapticLight(); onPress(); }}>
+        <TouchableOpacity activeOpacity={0.7} onPress={() => { hapticLight(); onPress(); }}>
         <View style={[styles.cardItem, recommended?.priority === 'high' && styles.cardItemHighlighted]}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardIcon}>{card.icon}</Text>
+            <GameIcon name={card.icon} size={34} color={colors.accent} style={styles.cardIcon} />
             <View style={styles.cardTitleArea}>
               <Text style={styles.cardNumber}>CARD #{card.card_number}</Text>
               <Text style={styles.cardName}>{card.name}</Text>
@@ -65,7 +66,7 @@ export default function WorkoutCardsScreen() {
           {recommended && recommended.priority === 'high' && (
             <View style={styles.recBadge}>
               <Ionicons name="sparkles" size={14} color={colors.background} />
-              <Text style={styles.recBadgeText}>AI RECOMMENDED</Text>
+              <Text style={styles.recBadgeText}>RECOMMENDED</Text>
             </View>
           )}
           {recommended && (
@@ -76,6 +77,7 @@ export default function WorkoutCardsScreen() {
     );
   }
   const progress = useUserStore((s) => s.progress);
+  const unlockedCount = useUserStore((s) => s.achievements.filter((a) => a.unlocked).length);
   const recommendations = getTopRecommendations(progress, 11);
   const profile = getStrengthProfile(progress);
 
@@ -88,20 +90,35 @@ export default function WorkoutCardsScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+        <TouchableOpacity
+          style={styles.achievementsBanner}
+          activeOpacity={0.8}
+          onPress={() => { hapticLight(); navigation.navigate('Achievements'); }}
+        >
+          <View style={styles.bannerLeft}>
+            <GameIcon name="achievement" size={34} color={colors.accentGold} style={styles.bannerIcon} />
+            <View>
+              <Text style={styles.bannerTitle}>MISSION ACHIEVEMENTS</Text>
+              <Text style={styles.bannerSub}>{unlockedCount} unlocked. Track medals, streaks, and milestones.</Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.accentGold} />
+        </TouchableOpacity>
+
         {/* Strength Profile */}
         <Card style={styles.profileCard}>
           <Text style={styles.profileTitle}>YOUR STRENGTH PROFILE</Text>
           <View style={styles.profileGrid}>
             {[
-              { label: 'Upper', value: profile.upper_body, icon: '💪' },
-              { label: 'Lower', value: profile.lower_body, icon: '🦵' },
-              { label: 'Core', value: profile.core, icon: '🔥' },
-              { label: 'Endurance', value: profile.endurance, icon: '🏃' },
-              { label: 'Swim', value: profile.swimming, icon: '🏊' },
-              { label: 'Ruck', value: profile.rucking, icon: '🎒' },
+              { label: 'Upper', value: profile.upper_body, icon: 'strength' },
+              { label: 'Lower', value: profile.lower_body, icon: 'lower' },
+              { label: 'Core', value: profile.core, icon: 'core' },
+              { label: 'Endurance', value: profile.endurance, icon: 'run' },
+              { label: 'Swim', value: profile.swimming, icon: 'swim' },
+              { label: 'Ruck', value: profile.rucking, icon: 'ruck' },
             ].map(item => (
               <View key={item.label} style={styles.profileItem}>
-                <Text style={styles.profileIcon}>{item.icon}</Text>
+                <GameIcon name={item.icon} size={20} color={colors.accent} style={styles.profileIcon} />
                 <View style={styles.profileBarTrack}>
                   <View style={[styles.profileBarFill, { width: `${Math.max(5, item.value)}%` }]} />
                 </View>
@@ -113,7 +130,7 @@ export default function WorkoutCardsScreen() {
         </Card>
 
         {/* Movement Cards */}
-        <SectionHeader title="Movement Cards" subtitle="6 training cards from the Raider program" icon="💪" />
+        <SectionHeader title="Movement Cards" subtitle="6 training cards from the Raider program" icon="strength" />
         {movCards.map(card => (
           <CardItem
             key={card.id}
@@ -124,7 +141,7 @@ export default function WorkoutCardsScreen() {
         ))}
 
         {/* Swim Cards */}
-        <SectionHeader title="Swim Cards" subtitle="5 progressive swim training cards" icon="🏊" />
+        <SectionHeader title="Swim Cards" subtitle="5 progressive swim training cards" icon="swim" />
         {swimCards.map(card => (
           <CardItem
             key={card.id}
@@ -150,6 +167,37 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     padding: spacing.md,
     paddingBottom: spacing.xxl,
   },
+  achievementsBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.accentGold,
+    borderRadius: 2,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  bannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: spacing.md,
+  },
+  bannerIcon: {
+    marginRight: spacing.xs,
+  },
+  bannerTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.accentGold,
+    letterSpacing: 1,
+  },
+  bannerSub: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
   profileCard: {
     marginBottom: spacing.md,
   },
@@ -169,9 +217,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: spacing.sm,
   },
   profileIcon: {
-    fontSize: 16,
     width: 24,
-    textAlign: 'center',
   },
   profileBarTrack: {
     flex: 1,
@@ -217,7 +263,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: spacing.md,
   },
   cardIcon: {
-    fontSize: 28,
+    marginRight: spacing.xs,
   },
   cardTitleArea: {
     flex: 1,

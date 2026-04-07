@@ -10,6 +10,7 @@ import { hapticLight } from '../utils/haptics';
 import { useFadeInUp } from '../utils/animations';
 import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
+import { GameIcon } from '../components/GameIcon';
 import { getMovementCard } from '../data/movementCards';
 import { getExerciseById } from '../data/exercises';
 import type { MissionsStackParamList } from '../types/navigation';
@@ -43,7 +44,7 @@ export default function CardDetailScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Hero */}
         <Animated.View style={[styles.hero, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
-          <Text style={styles.icon}>{card.icon}</Text>
+          <GameIcon name={card.icon} size={76} color={colors.accent} style={styles.icon} />
           <Text style={styles.cardLabel} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
             {card.category === 'swim' ? 'SWIM' : 'MOVEMENT'} CARD #{card.card_number}
           </Text>
@@ -88,7 +89,10 @@ export default function CardDetailScreen() {
               <View style={styles.sectionMeta}>
                 <Text style={styles.sectionRounds}>{section.rounds} round{section.rounds > 1 ? 's' : ''}</Text>
                 {section.rest_between_rounds && (
-                  <Text style={styles.sectionRest}>⏱ {section.rest_between_rounds}s rest</Text>
+                  <View style={styles.restWrap}>
+                    <GameIcon name="time" size={16} color={colors.accent} variant="minimal" />
+                    <Text style={styles.sectionRest}>{section.rest_between_rounds}s rest</Text>
+                  </View>
                 )}
               </View>
             </View>
@@ -111,13 +115,16 @@ export default function CardDetailScreen() {
                     activeOpacity={0.7}
                     onPress={() => navigateToExercise(cardEx.exercise_id)}
                   >
-                    <Text style={styles.exIcon}>{exercise.illustration || '💪'}</Text>
+                    <GameIcon name={exercise.illustration || exercise.category} size={28} color={colors.accent} style={styles.exIcon} />
                     <View style={styles.exInfo}>
                       <Text style={styles.exName}>{exercise.name}</Text>
                       <View style={styles.exDetailRow}>
                         {detail ? <Text style={styles.exDetail}>{detail}</Text> : null}
                         {exercise.rest_seconds > 0 && (
-                          <Text style={styles.exRest}>⏱ {exercise.rest_seconds}s rest</Text>
+                          <View style={styles.restWrap}>
+                            <GameIcon name="time" size={16} color={colors.accent} variant="minimal" />
+                            <Text style={styles.exRest}>{exercise.rest_seconds}s rest</Text>
+                          </View>
                         )}
                       </View>
                       {cardEx.notes && (
@@ -159,7 +166,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingVertical: spacing.lg,
   },
   icon: {
-    fontSize: 56,
     marginBottom: spacing.sm,
   },
   cardLabel: {
@@ -263,6 +269,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontWeight: '600',
     color: colors.accent,
   },
+  restWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   sectionNotes: {
     fontSize: 13,
     fontStyle: 'italic',
@@ -278,7 +289,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: spacing.md,
   },
   exIcon: {
-    fontSize: 24,
+    marginRight: spacing.xs,
   },
   exInfo: {
     flex: 1,

@@ -5,18 +5,16 @@ import { useColors, spacing, themeMetas, palettes, MAX_FONT_MULTIPLIER } from '.
 import type { ThemeColors, ThemeId } from '../theme';
 import { useThemeStore } from '../store/useThemeStore';
 import { Card } from '../components/Card';
+import { GameIcon } from '../components/GameIcon';
 import { SectionHeader } from '../components/SectionHeader';
 import { hapticSelection, hapticLight } from '../utils/haptics';
 import { scheduleDailyReminder, cancelDailyReminder } from '../services/notifications';
-import { isHealthSyncAvailable, requestHealthPermissions } from '../services/healthSync';
 
 export default function SettingsScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
   const [imperialUnits, setImperialUnits] = React.useState(true);
-  const [healthSyncEnabled, setHealthSyncEnabled] = React.useState(false);
-  const healthAvailable = isHealthSyncAvailable();
   const themeId = useThemeStore((s) => s.themeId);
   const setTheme = useThemeStore((s) => s.setTheme);
 
@@ -42,11 +40,14 @@ export default function SettingsScreen() {
           <View style={[styles.chipDot, { backgroundColor: palette.accent }]} />
         </View>
         <View style={styles.chipTextWrap}>
-          <Text style={[styles.chipName, isActive && { color: palette.accent }]}>{meta.icon} {meta.name}</Text>
+          <View style={styles.chipNameRow}>
+            <GameIcon name={meta.icon} size={18} color={isActive ? palette.accent : colors.textPrimary} variant="minimal" />
+            <Text style={[styles.chipName, isActive && { color: palette.accent }]}>{meta.name}</Text>
+          </View>
         </View>
         {isActive && (
           <View style={[styles.chipCheck, { backgroundColor: palette.accent }]}>
-            <Text style={styles.chipCheckText}>✓</Text>
+            <GameIcon name="check" size={14} color={palette.background} variant="minimal" animated={false} />
           </View>
         )}
       </TouchableOpacity>
@@ -59,18 +60,18 @@ export default function SettingsScreen() {
         <Text style={styles.title}>Settings</Text>
 
         {/* ── Tactical Themes ── */}
-        <SectionHeader title="Tactical Themes" icon="🎯" />
+        <SectionHeader title="Tactical Themes" icon="theme" />
         <View style={styles.themeGrid}>
           {tacticalThemes.map(renderThemeChip)}
         </View>
 
         {/* ── Branch Themes ── */}
-        <SectionHeader title="Rep Your Branch" icon="🇺🇸" subtitle="US Military" />
+        <SectionHeader title="Rep Your Branch" icon="program" subtitle="US Military" />
         <View style={styles.themeGrid}>
           {branchThemes.map(renderThemeChip)}
         </View>
 
-        <SectionHeader title="Preferences" icon="⚙️" />
+        <SectionHeader title="Preferences" icon="settings" />
         <Card style={styles.section}>
           <View style={styles.settingRow}>
             <View>
@@ -98,29 +99,6 @@ export default function SettingsScreen() {
               onValueChange={(v) => { hapticLight(); setImperialUnits(v); }}
               trackColor={{ false: colors.backgroundSecondary, true: colors.accent }}
               thumbColor={colors.textPrimary}
-            />
-          </View>
-          <View style={styles.settingRow}>
-            <View>
-              <Text style={styles.settingLabel}>Health Sync</Text>
-              <Text style={styles.settingDesc}>
-                {healthAvailable ? 'Sync workouts to Apple Health / Health Connect' : 'Requires development build'}
-              </Text>
-            </View>
-            <Switch
-              value={healthSyncEnabled}
-              disabled={!healthAvailable}
-              onValueChange={async (v) => {
-                hapticLight();
-                if (v) {
-                  const status = await requestHealthPermissions();
-                  setHealthSyncEnabled(status.granted);
-                } else {
-                  setHealthSyncEnabled(false);
-                }
-              }}
-              trackColor={{ false: colors.backgroundSecondary, true: colors.accent }}
-              thumbColor={healthAvailable ? colors.textPrimary : colors.textMuted}
             />
           </View>
         </Card>
@@ -226,6 +204,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   chipTextWrap: {
     flex: 1,
   },
+  chipNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   chipName: {
     fontSize: 12,
     fontWeight: '700',
@@ -239,10 +222,5 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 4,
-  },
-  chipCheckText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.background,
   },
 });

@@ -12,6 +12,7 @@ import { getProgramById } from '../data/programs';
 import { useProgramStore } from '../store/useProgramStore';
 import type { HomeStackParamList } from '../types/navigation';
 import type { ProgramPhase, ProgramId } from '../types';
+import { GameIcon } from '../components/GameIcon';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'ProgramDetail'>;
 type Route = RouteProp<HomeStackParamList, 'ProgramDetail'>;
@@ -56,7 +57,7 @@ export default function ProgramDetailScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Hero */}
         <Animated.View style={[styles.hero, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
-          <Text style={styles.heroIcon}>{program.icon}</Text>
+          <GameIcon name={program.icon} size={72} color={accentColor} style={styles.heroIcon} />
           <Text style={styles.heroName} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{program.name}</Text>
           <Text style={[styles.heroSub, { color: accentColor }]} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{program.subtitle}</Text>
         </Animated.View>
@@ -100,7 +101,7 @@ export default function ProgramDetailScreen() {
         <Text style={styles.sectionTitle}>EQUIPMENT NEEDED</Text>
         {program.equipment_needed.map((item) => (
           <View key={item} style={styles.equipRow}>
-            <Text style={styles.equipDot}>•</Text>
+            <View style={styles.equipDot} />
             <Text style={styles.equipText}>{item}</Text>
           </View>
         ))}
@@ -109,7 +110,7 @@ export default function ProgramDetailScreen() {
         <Text style={styles.sectionTitle}>PREREQUISITES</Text>
         {program.prerequisites.map((item) => (
           <View key={item} style={styles.equipRow}>
-            <Text style={[styles.equipDot, { color: colors.accentGold }]}>✦</Text>
+            <View style={[styles.equipDot, styles.prereqDot, { backgroundColor: colors.accentGold }]} />
             <Text style={styles.equipText}>{item}</Text>
           </View>
         ))}
@@ -159,7 +160,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   scroll: { flex: 1 },
   content: { padding: spacing.md, paddingBottom: 180 },
   hero: { alignItems: 'center', marginBottom: spacing.lg, marginTop: spacing.md },
-  heroIcon: { fontSize: 56, marginBottom: spacing.sm },
+  heroIcon: { marginBottom: spacing.sm },
   heroName: { fontSize: 28, fontWeight: '900', color: colors.textPrimary },
   heroSub: { fontSize: 14, fontWeight: '700', letterSpacing: 1.5, marginTop: 4 },
   statsBar: {
@@ -203,7 +204,18 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   chipText: { fontSize: 12, fontWeight: '700' },
   equipRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  equipDot: { fontSize: 14, color: colors.textMuted, marginRight: spacing.sm },
+  equipDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.textMuted,
+    marginRight: spacing.sm,
+  },
+  prereqDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 2,
+  },
   equipText: { fontSize: 14, color: colors.textSecondary },
   bottomBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,

@@ -57,7 +57,7 @@ export async function scheduleDailyReminder(hour: number, minute: number) {
 
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: '⚔️ GRUNTZ — Mission Awaits',
+      title: 'GRUNTZ — Mission Awaits',
       body: "Your daily mission is ready. Don't break the streak!",
       data: { type: 'daily-reminder' },
       ...(Platform.OS === 'android' && { channelId: 'daily-reminder' }),
@@ -92,7 +92,7 @@ export async function showWorkoutProgress(
   const pct = Math.round(progress * 100);
 
   const content: Notifications.NotificationContentInput = {
-    title: `💪 ${missionTitle}`,
+    title: missionTitle,
     body: `${exercisesDone}/${exercisesTotal} exercises complete (${pct}%)`,
     data: { type: 'workout-progress', exercisesDone, exercisesTotal },
     sticky: true,
@@ -122,8 +122,8 @@ export async function showWorkoutComplete(xpEarned: number, streakDays: number) 
 
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: '✅ Mission Complete!',
-      body: `+${xpEarned} XP earned${streakDays > 1 ? ` • 🔥 ${streakDays}-day streak` : ''}`,
+      title: 'Mission Complete',
+      body: `+${xpEarned} XP earned${streakDays > 1 ? ` • ${streakDays}-day streak` : ''}`,
       data: { type: 'workout-complete' },
       ...(Platform.OS === 'android' && { channelId: 'workout-progress' }),
     },
@@ -133,11 +133,11 @@ export async function showWorkoutComplete(xpEarned: number, streakDays: number) 
 
 // ─── Achievement Notifications ──────────────────────────────────
 
-export async function showAchievementUnlocked(achievementName: string, icon: string) {
+export async function showAchievementUnlocked(achievementName: string, _icon: string) {
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: `🏆 Achievement Unlocked!`,
-      body: `${icon} ${achievementName}`,
+      title: 'Achievement Unlocked',
+      body: achievementName,
       data: { type: 'achievement' },
       ...(Platform.OS === 'android' && { channelId: 'achievements' }),
     },
@@ -150,7 +150,7 @@ export async function showAchievementUnlocked(achievementName: string, icon: str
 export async function showStreakWarning(streakDays: number) {
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: '🔥 Streak at Risk!',
+      title: 'Streak At Risk',
       body: `Your ${streakDays}-day streak expires at midnight. Get a mission in!`,
       data: { type: 'streak-warning' },
       ...(Platform.OS === 'android' && { channelId: 'daily-reminder' }),

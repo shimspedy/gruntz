@@ -259,15 +259,15 @@ export const palettes: Record<ThemeId, ThemeColors> = {
 
 export const themeMetas: ThemeMeta[] = [
   // Tactical themes
-  { id: 'nightOps', name: 'Night Ops', icon: '🌿', description: 'Terminal green', group: 'tactical' },
-  { id: 'desertStorm', name: 'Desert Storm', icon: '🏜️', description: 'Tactical amber', group: 'tactical' },
-  { id: 'arcticRecon', name: 'Arctic Recon', icon: '🧊', description: 'Icy cyan', group: 'tactical' },
-  { id: 'crimsonShadow', name: 'Crimson Shadow', icon: '🔴', description: 'Blood red ops', group: 'tactical' },
+  { id: 'nightOps', name: 'Night Ops', icon: 'theme', description: 'Terminal green', group: 'tactical' },
+  { id: 'desertStorm', name: 'Desert Storm', icon: 'theme', description: 'Tactical amber', group: 'tactical' },
+  { id: 'arcticRecon', name: 'Arctic Recon', icon: 'theme', description: 'Icy cyan', group: 'tactical' },
+  { id: 'crimsonShadow', name: 'Crimson Shadow', icon: 'theme', description: 'Blood red ops', group: 'tactical' },
   // US Military branch themes
-  { id: 'usArmy', name: 'Army', icon: '⭐', description: 'Black & gold', group: 'branch' },
-  { id: 'usNavy', name: 'Navy', icon: '⚓', description: 'Navy & gold', group: 'branch' },
-  { id: 'usMarines', name: 'Marines', icon: '🦅', description: 'Scarlet & gold', group: 'branch' },
-  { id: 'usAirForce', name: 'Air Force', icon: '✈️', description: 'Blue & silver', group: 'branch' },
-  { id: 'usCoastGuard', name: 'Coast Guard', icon: '🚢', description: 'Blue & orange', group: 'branch' },
-  { id: 'usSpaceForce', name: 'Space Force', icon: '🚀', description: 'Dark blue & silver', group: 'branch' },
+  { id: 'usArmy', name: 'Army', icon: 'army', description: 'Black & gold', group: 'branch' },
+  { id: 'usNavy', name: 'Navy', icon: 'navy', description: 'Navy & gold', group: 'branch' },
+  { id: 'usMarines', name: 'Marines', icon: 'marines', description: 'Scarlet & gold', group: 'branch' },
+  { id: 'usAirForce', name: 'Air Force', icon: 'airforce', description: 'Blue & silver', group: 'branch' },
+  { id: 'usCoastGuard', name: 'Coast Guard', icon: 'coastguard', description: 'Blue & orange', group: 'branch' },
+  { id: 'usSpaceForce', name: 'Space Force', icon: 'spaceforce', description: 'Dark blue & silver', group: 'branch' },
 ];

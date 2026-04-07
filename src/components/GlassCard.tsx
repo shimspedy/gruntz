@@ -57,10 +57,15 @@ export function GlassCard({ children, style, intensity = 30, accentColor, noPadd
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
   outerWrap: {
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: `${colors.accent}18`,
+    shadowColor: colors.background,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.16,
+    shadowRadius: 22,
+    elevation: 4,
   },
   blurFill: {
     // Removed flex: 1 — must wrap content, not expand in ScrollView

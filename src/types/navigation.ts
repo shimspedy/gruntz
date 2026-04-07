@@ -12,17 +12,12 @@ export type HomeStackParamList = {
   DailyMission: { missionDate?: string };
   MissionComplete: { xpEarned: number; coinsEarned: number; leveledUp: boolean; newRank?: string };
   ExerciseDetail: { exerciseId: string };
-  CoachChat: undefined;
-  PlanGenerator: undefined;
-  FormAnalysis: undefined;
   RunTracker: undefined;
-  RepCounter: undefined;
 };
 
 export type MissionsStackParamList = {
-  Challenges: undefined;
-  Achievements: undefined;
   WorkoutCards: undefined;
+  Achievements: undefined;
   CardDetail: { cardId: string };
   ExerciseDetail: { exerciseId: string };
 };
@@ -34,8 +29,7 @@ export type ProgressStackParamList = {
 export type ProfileStackParamList = {
   Profile: undefined;
   Settings: undefined;
-  Avatar: undefined;
-  Recovery: undefined;
+  Achievements: undefined;
   ProgramSelect: undefined;
   ProgramDetail: { programId: string };
 };

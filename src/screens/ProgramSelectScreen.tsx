@@ -9,6 +9,7 @@ import { PROGRAMS } from '../data/programs';
 import { hapticLight } from '../utils/haptics';
 import type { HomeStackParamList } from '../types/navigation';
 import type { TrainingProgram } from '../types';
+import { GameIcon } from '../components/GameIcon';
 
 const { width } = Dimensions.get('window');
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'ProgramSelect'>;
@@ -51,7 +52,7 @@ function ProgramCard({ program, onPress, colors, styles }: { program: TrainingPr
   return (
     <TouchableOpacity style={[styles.card, { borderColor: accentColor }]} onPress={() => { hapticLight(); onPress(); }} activeOpacity={0.85}>
       <View style={styles.cardHeader}>
-        <Text style={styles.cardIcon}>{program.icon}</Text>
+        <GameIcon name={program.icon} size={44} color={accentColor} style={styles.cardIcon} />
         <View style={styles.cardDiffBadge}>
           <Text style={[styles.cardDiffText, { color: accentColor }]}>{program.difficulty.toUpperCase()}</Text>
         </View>
@@ -114,7 +115,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   cardHeader: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md,
   },
-  cardIcon: { fontSize: 40 },
+  cardIcon: {},
   cardDiffBadge: {
     backgroundColor: colors.backgroundSecondary, borderRadius: 2,
     paddingHorizontal: spacing.sm, paddingVertical: 4,

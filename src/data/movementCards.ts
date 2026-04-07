@@ -19,7 +19,7 @@ export const movementCards: MovementCard[] = [
     difficulty: 'intermediate',
     estimated_duration: 35,
     target_muscle_groups: ['core', 'shoulders', 'back', 'hip flexors'],
-    icon: '🔥',
+    icon: 'core',
     total_rounds: 10,
     sections: [
       {
@@ -73,7 +73,7 @@ export const movementCards: MovementCard[] = [
     difficulty: 'advanced',
     estimated_duration: 45,
     target_muscle_groups: ['legs', 'back', 'core', 'shoulders', 'grip'],
-    icon: '🎒',
+    icon: 'ruck',
     total_rounds: 16,
     sections: [
       {
@@ -143,7 +143,7 @@ export const movementCards: MovementCard[] = [
     difficulty: 'intermediate',
     estimated_duration: 30,
     target_muscle_groups: ['chest', 'back', 'core', 'shoulders'],
-    icon: '📋',
+    icon: 'test',
     total_rounds: 7,
     sections: [
       {
@@ -196,7 +196,7 @@ export const movementCards: MovementCard[] = [
     difficulty: 'advanced',
     estimated_duration: 40,
     target_muscle_groups: ['legs', 'glutes', 'shoulders', 'core', 'back'],
-    icon: '🏋️',
+    icon: 'strength',
     total_rounds: 7,
     sections: [
       {
@@ -239,7 +239,7 @@ export const movementCards: MovementCard[] = [
     difficulty: 'advanced',
     estimated_duration: 50,
     target_muscle_groups: ['chest', 'back', 'legs', 'core', 'shoulders', 'grip'],
-    icon: '💪',
+    icon: 'strength',
     total_rounds: 20,
     sections: [
       {
@@ -303,7 +303,7 @@ export const movementCards: MovementCard[] = [
     difficulty: 'advanced',
     estimated_duration: 40,
     target_muscle_groups: ['core', 'legs', 'back', 'shoulders'],
-    icon: '🎯',
+    icon: 'target',
     total_rounds: 11,
     sections: [
       {
@@ -355,7 +355,7 @@ export const movementCards: MovementCard[] = [
     difficulty: 'beginner',
     estimated_duration: 60,
     target_muscle_groups: ['shoulders', 'back', 'core', 'legs'],
-    icon: '🏊',
+    icon: 'swim',
     total_rounds: 8,
     sections: [
       {
@@ -426,7 +426,7 @@ export const movementCards: MovementCard[] = [
     difficulty: 'intermediate',
     estimated_duration: 70,
     target_muscle_groups: ['shoulders', 'back', 'core', 'legs', 'cardiovascular'],
-    icon: '🌊',
+    icon: 'swim',
     total_rounds: 7,
     sections: [
       {
@@ -505,7 +505,7 @@ export const movementCards: MovementCard[] = [
     difficulty: 'intermediate',
     estimated_duration: 75,
     target_muscle_groups: ['shoulders', 'back', 'core', 'legs', 'chest'],
-    icon: '💧',
+    icon: 'swim',
     total_rounds: 8,
     sections: [
       {
@@ -575,7 +575,7 @@ export const movementCards: MovementCard[] = [
     difficulty: 'advanced',
     estimated_duration: 80,
     target_muscle_groups: ['shoulders', 'back', 'core', 'legs', 'cardiovascular'],
-    icon: '⚓',
+    icon: 'swim',
     total_rounds: 9,
     sections: [
       {
@@ -654,7 +654,7 @@ export const movementCards: MovementCard[] = [
     difficulty: 'advanced',
     estimated_duration: 85,
     target_muscle_groups: ['full body', 'cardiovascular', 'mental toughness'],
-    icon: '🦈',
+    icon: 'swim',
     total_rounds: 7,
     sections: [
       {

@@ -8,6 +8,7 @@ import { useFadeInUp } from '../utils/animations';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
+import { GameIcon } from '../components/GameIcon';
 import { XPBar } from '../components/XPBar';
 import { useUserStore } from '../store/useUserStore';
 import { useProgramStore } from '../store/useProgramStore';
@@ -34,10 +35,9 @@ export default function ProfileScreen() {
   const activeProgram = selectedProgram ? getProgramById(selectedProgram) : null;
 
   const menuItems = [
-    { label: activeProgram ? `Program: ${activeProgram.name}` : 'Choose Program', icon: 'shield-outline' as const, screen: 'ProgramSelect' as const },
-    { label: 'Avatar & Gear', icon: 'person-outline' as const, screen: 'Avatar' as const },
-    { label: 'Recovery Hub', icon: 'fitness-outline' as const, screen: 'Recovery' as const },
-    { label: 'Settings', icon: 'settings-outline' as const, screen: 'Settings' as const },
+    { label: activeProgram ? `Program: ${activeProgram.name}` : 'Choose Program', icon: 'program', screen: 'ProgramSelect' as const },
+    { label: 'Achievements', icon: 'achievement', screen: 'Achievements' as const },
+    { label: 'Settings', icon: 'settings', screen: 'Settings' as const },
   ];
 
   return (
@@ -46,11 +46,14 @@ export default function ProfileScreen() {
         {/* Profile Header */}
         <Animated.View style={[styles.header, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
           <View style={styles.avatarCircle}>
-            <Text style={styles.avatarEmoji}>{rankInfo?.icon || '🔰'}</Text>
+            <GameIcon name={rankInfo?.icon || 'rank'} size={68} color={colors.accent} style={styles.avatarEmoji} />
           </View>
           <Text style={styles.displayName} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{profile?.display_name || 'Warrior'}</Text>
           <Text style={styles.rankText}>{progress.current_rank} • Level {progress.current_level}</Text>
-          <Text style={styles.streakBadge}>🔥 {progress.streak_days}-day streak</Text>
+          <View style={styles.streakBadge}>
+            <GameIcon name="streak" size={20} color={colors.streakFire} variant="minimal" />
+            <Text style={styles.streakText}>{progress.streak_days}-day streak</Text>
+          </View>
         </Animated.View>
 
         {/* XP Bar */}
@@ -110,7 +113,7 @@ export default function ProfileScreen() {
             activeOpacity={0.7}
           >
             <View style={styles.menuLeft}>
-              <Ionicons name={item.icon} size={22} color={colors.textSecondary} />
+              <GameIcon name={item.icon} size={24} color={colors.textSecondary} variant="minimal" animated={false} />
               <Text style={styles.menuLabel}>{item.label}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
@@ -150,7 +153,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: spacing.md,
   },
   avatarEmoji: {
-    fontSize: 44,
   },
   displayName: {
     fontSize: 28,
@@ -163,15 +165,20 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginTop: 6,
   },
   streakBadge: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.streakFire,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     marginTop: spacing.sm,
     backgroundColor: colors.card,
     paddingHorizontal: spacing.md,
     paddingVertical: 6,
     borderRadius: 20,
     overflow: 'hidden',
+  },
+  streakText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.streakFire,
   },
   section: {
     marginBottom: spacing.lg,

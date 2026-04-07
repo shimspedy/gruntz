@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { AppTabs } from './AppTabs';
 import OnboardingScreen from '../screens/OnboardingScreen';
@@ -9,9 +10,17 @@ import { useColors } from '../theme';
 export function RootNavigator() {
   const colors = useColors();
   const isOnboarded = useUserStore((s) => s.isOnboarded);
-  const [onboarded, setOnboarded] = useState(isOnboarded);
+  const hasHydrated = useUserStore((s) => s.hasHydrated);
   const loadTheme = useThemeStore(s => s.loadPersistedTheme);
   useEffect(() => { loadTheme(); }, []);
+
+  if (!hasHydrated) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="small" color={colors.accent} />
+      </View>
+    );
+  }
 
   return (
     <NavigationContainer
@@ -33,10 +42,10 @@ export function RootNavigator() {
         },
       }}
     >
-      {onboarded ? (
+      {isOnboarded ? (
         <AppTabs />
       ) : (
-        <OnboardingScreen onComplete={() => setOnboarded(true)} />
+        <OnboardingScreen onComplete={() => {}} />
       )}
     </NavigationContainer>
   );

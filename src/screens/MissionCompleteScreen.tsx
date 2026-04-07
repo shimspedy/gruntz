@@ -6,6 +6,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { MissionButton } from '../components/MissionButton';
+import { GameIcon } from '../components/GameIcon';
 import { hapticSuccess, hapticLevelUp, hapticHeartbeat } from '../utils/haptics';
 import { useBounceIn, useFadeInUp, useFadeInDown, useZoomIn } from '../utils/animations';
 import type { HomeStackParamList } from '../types/navigation';
@@ -40,18 +41,20 @@ export default function MissionCompleteScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
-        <Animated.Text style={[styles.checkmark, { opacity: checkAnim.opacity, transform: checkAnim.transform }]}>✅</Animated.Text>
+        <Animated.View style={[styles.checkmark, { opacity: checkAnim.opacity, transform: checkAnim.transform }]}>
+          <GameIcon name="check" size={90} color={colors.accentGreen} />
+        </Animated.View>
         <Animated.Text style={[styles.title, { opacity: titleAnim.opacity, transform: titleAnim.transform }]} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>MISSION COMPLETE</Animated.Text>
         <Animated.Text style={[styles.subtitle, { opacity: subtitleAnim.opacity, transform: subtitleAnim.transform }]}>Outstanding work, warrior.</Animated.Text>
 
         <Animated.View style={[styles.rewardsContainer, { opacity: rewardsAnim.opacity, transform: rewardsAnim.transform }]}>
           <View style={styles.rewardItem}>
-            <Text style={styles.rewardIcon}>⭐</Text>
+            <GameIcon name="xp" size={42} color={colors.accentGold} style={styles.rewardIcon} />
             <Text style={styles.rewardValue} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>+{xpEarned}</Text>
             <Text style={styles.rewardLabel}>XP EARNED</Text>
           </View>
           <View style={styles.rewardItem}>
-            <Text style={styles.rewardIcon}>🪙</Text>
+            <GameIcon name="coin" size={42} color={colors.accentGold} style={styles.rewardIcon} />
             <Text style={styles.rewardValue} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>+{coinsEarned}</Text>
             <Text style={styles.rewardLabel}>COINS</Text>
           </View>
@@ -59,13 +62,19 @@ export default function MissionCompleteScreen() {
 
         {leveledUp && (
           <Animated.View style={[styles.levelUpBanner, { opacity: levelUpAnim.opacity, transform: levelUpAnim.transform }]}>
-            <Text style={styles.levelUpText}>🎉 LEVEL UP!</Text>
+            <View style={styles.bannerRow}>
+              <GameIcon name="level" size={28} color={colors.background} animated={false} variant="minimal" />
+              <Text style={styles.levelUpText}>LEVEL UP!</Text>
+            </View>
           </Animated.View>
         )}
 
         {newRank && (
           <Animated.View style={[styles.rankBanner, { opacity: rankAnim.opacity, transform: rankAnim.transform }]}>
-            <Text style={styles.rankText}>🎖️ NEW RANK: {newRank.toUpperCase()}</Text>
+            <View style={styles.bannerRow}>
+              <GameIcon name="rank" size={28} color={colors.background} animated={false} variant="minimal" />
+              <Text style={styles.rankText}>NEW RANK: {newRank.toUpperCase()}</Text>
+            </View>
           </Animated.View>
         )}
 
@@ -93,7 +102,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     padding: spacing.xl,
   },
   checkmark: {
-    fontSize: 64,
     marginBottom: spacing.lg,
   },
   title: {
@@ -117,7 +125,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
   },
   rewardIcon: {
-    fontSize: 32,
     marginBottom: spacing.xs,
   },
   rewardValue: {
@@ -138,6 +145,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: 2,
     marginBottom: spacing.md,
+  },
+  bannerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   levelUpText: {
     fontSize: 18,

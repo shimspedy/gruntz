@@ -352,65 +352,59 @@ const MUSCLE_GROUPS: Record<string, string[]> = {
   conditioning_flush: ['cardiovascular', 'recovery'],
 };
 
-const ILLUSTRATIONS: Record<string, string> = {
-  // Warmup
-  ankles_hips_shoulders: '🔄', hip_bridge: '🌉', elbow_pushups: '💪', bird_dog: '🐕',
-  frog_squat_warmup: '🐸', worlds_greatest_stretch: '🌍', inchworm: '🐛',
-  walking_high_knees: '🦵', walking_quads_pulls: '🦿', cradles: '🤱',
-  backwards_hamstring: '🔙', high_knees: '⬆️', butt_kicks: '👢',
-  // Core
-  forward_plank: '🧱', side_plank: '📐', flutter_kicks: '🦋',
-  knees_to_elbows: '🧲', usmc_crunches: '💫', mountain_climbers: '⛰️',
-  // Calisthenics
-  pushups: '🫸', hand_release_pushups: '✋', lunges_counter_rotation: '🔁',
-  frog_squats: '🐸', ammo_can_push_press: '📦', ammo_can_thruster: '🚀',
-  ammo_can_front_squats: '🏋️', air_squats: '⬇️', burpees: '💥',
-  skaters: '⛸️', dumbbell_getups: '🆙', sandbag_getups: '🎒',
-  tire_flips: '🛞', high_crawl: '🐊', pullups: '💪', chinups: '🤙',
-  farmers_carry: '🧑‍🌾', partner_drags: '🤝', walking_ammo_can_lunge: '🚶',
-  broad_jumps: '🦘', walking_lunges: '🚶‍♂️',
-  // Running
-  run_1_5mi: '🏃', run_3mi: '🏃‍♂️', sprint_200m: '⚡', sprint_400m: '⚡',
-  sprint_800m: '🏃‍♀️', jog_100_200m: '🚶‍♂️', pft_run: '🎖️',
-  // Swimming
-  swim_25m: '🏊', swim_50m: '🏊', swim_100m: '🏊‍♂️', swim_200m: '🌊',
-  swim_300m: '🌊', swim_500m: '🦈', swim_800m: '🐋',
-  tread_water: '🧘‍♂️', tread_hands_up: '🙌', underwater_swim: '🤿', float_4min: '🛟',
-  // Rucking
-  ruck_1_2mi: '🎒', ruck_4mi: '🎒', ruck_5mi: '🎒', ruck_6mi: '🎒',
-  ruck_7mi: '🎒', ruck_8mi: '🎒', ruck_9mi: '🎒', ruck_10mi: '🎒', ruck_12mi: '🎒',
-  // Recovery
-  ais_calf: '🧘', ais_hamstring: '🧘', ais_it_band: '🧘', ais_groin: '🧘',
-  ais_quads: '🧘', ais_rotator_cuff: '🧘', ais_thoracic: '🧘',
-  ais_middle_back: '🧘', ais_triceps: '🧘', roller_full: '🧴',
-  // Gym
-  bench_press: '🏋️', overhead_press: '🏋️‍♂️', barbell_thruster: '🏋️',
-  barbell_front_squat: '🏋️', goblet_squat: '🏋️', lat_pulldown: '🏋️',
-  deadlift: '🏋️‍♀️', barbell_lunge: '🏋️', turkish_getup: '🏋️',
-  sled_drag: '🛷', hanging_leg_raises: '🪜',
-  // Recon Prep
-  back_squat: '🏋️', rdl: '🏋️‍♀️', weighted_step_up: '🪜', kb_swings: '🔔',
-  lateral_lunge: '↔️', strict_pullup: '💪', bent_over_rows: '🚣',
-  close_grip_pushups: '🫸', bent_over_reverse_flys: '🦅',
-  weighted_rear_lunges: '🦵', split_squats: '🦿', hip_thrusts: '🍑',
-  single_leg_rdl: '🦩', strict_standing_press: '🏋️‍♂️', inverted_rows: '🔄',
-  dips: '⬇️', face_pulls: '🎯', strict_situps: '💫', strict_chinups: '💪',
-  strict_pushups: '🫸', straight_arm_pulls: '↔️', thoracic_rotations: '🔄',
-  lat_hang_stretch: '🧘', db_curl_to_press: '💪', light_bent_over_row: '🚣',
-  light_overhead_press: '🏋️', light_squat: '🏋️', rear_lunge_warmup: '🦵',
-  bodyweight_hip_thrusts: '🍑', run_400m_repeats: '🏃', run_800m_repeats: '🏃',
-  run_1600m_repeats: '🏃', run_1000m_repeats: '🏃', tempo_run_short: '🏃‍♂️',
-  tempo_run_mid: '🏃‍♂️', easy_pace_run: '🏃‍♀️', pyramid_track: '🏃',
-  ruck_4mi_35: '🎒', ruck_5mi_35: '🎒', ruck_6mi_35: '🎒',
-  ruck_3mi_heavy: '🎒', ruck_2mi_heavy: '🎒', ruck_4mi_35_fast: '🎒',
-  sled_pull_backwards: '🛷', sled_push_quick: '🛷', pinch_grip_plate_carry: '🤏',
-  gorilla_rows: '🦍', running_buildups: '🏃', carry_choice_50m: '🏋️',
-  sled_drag_choice_50m: '🛷', locomotive_choice_50m: '🐊',
-  recovery_swim: '🏊', conditioning_sprint_interval: '⚡',
-  conditioning_flush: '🌊',
-  // Utility
-  rest_2min: '⏸️', assess_feet_gear: '🦶',
+const ILLUSTRATION_OVERRIDES: Record<string, string> = {
+  rest_2min: 'time',
+  assess_feet_gear: 'gear',
+  forward_plank: 'core',
+  side_plank: 'core',
+  flutter_kicks: 'core',
+  knees_to_elbows: 'core',
+  usmc_crunches: 'core',
+  hanging_leg_raises: 'core',
+  strict_situps: 'core',
+  tread_water: 'swim',
+  tread_hands_up: 'swim',
+  underwater_swim: 'swim',
+  float_4min: 'swim',
+  farmers_carry: 'ruck',
+  partner_drags: 'ruck',
+  walking_ammo_can_lunge: 'ruck',
+  sandbag_getups: 'ruck',
+  high_crawl: 'mission',
+  locomotive_choice_50m: 'mission',
 };
+
+function getIllustrationForExercise(exercise: Exercise): string {
+  if (ILLUSTRATION_OVERRIDES[exercise.id]) {
+    return ILLUSTRATION_OVERRIDES[exercise.id];
+  }
+
+  const id = exercise.id;
+
+  switch (exercise.category) {
+    case 'warmup':
+      return /(knee|quad|lunge|squat|hamstring|cradle|butt)/.test(id) ? 'lower' : 'warmup';
+    case 'core':
+      return 'core';
+    case 'running':
+      return 'run';
+    case 'swimming':
+      return 'swim';
+    case 'rucking':
+      return 'ruck';
+    case 'recovery':
+      return 'recovery';
+    case 'strength':
+      return /(lunge|squat|step)/.test(id) ? 'lower' : 'strength';
+    case 'calisthenics':
+      if (/(lunge|squat|step|skater|jump|knee)/.test(id)) return 'lower';
+      if (/(carry|drag|crawl|getup|sandbag)/.test(id)) return 'ruck';
+      if (/(push|pull|chin|dip|row|press|thruster|deadlift|swing|curl)/.test(id)) return 'strength';
+      return 'mission';
+    default:
+      return 'mission';
+  }
+}
 
 const EXERCISE_STEPS: Record<string, string[]> = {
   pushups: [
@@ -504,7 +498,7 @@ const EXERCISE_STEPS: Record<string, string[]> = {
 // Apply enrichment data to exercises
 exercises.forEach(ex => {
   if (MUSCLE_GROUPS[ex.id]) ex.muscle_groups = MUSCLE_GROUPS[ex.id];
-  if (ILLUSTRATIONS[ex.id]) ex.illustration = ILLUSTRATIONS[ex.id];
+  ex.illustration = getIllustrationForExercise(ex);
   if (EXERCISE_STEPS[ex.id]) ex.steps = EXERCISE_STEPS[ex.id];
 });
 
