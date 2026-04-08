@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
@@ -33,6 +34,8 @@ export default function HomeScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const heroAnim = useFadeInUp(500);
   const { contentMaxWidth, horizontalPadding } = useAdaptiveLayout();
+  const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<Nav>();
   const progress = useUserStore((s) => s.progress);
   const todaysMission = useMissionStore((s) => s.todaysMission);
@@ -79,10 +82,22 @@ export default function HomeScreen() {
   const trialDaysRemaining = getTrialDaysRemaining(trialStartedAt);
   const trainingUnlocked = hasTrainingAccess({ trialStartedAt, entitlementActive });
   const monthlyPrice = getDisplayedMonthlyPrice(currentOffering);
+  const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { maxWidth: contentMaxWidth, alignSelf: 'center', paddingHorizontal: horizontalPadding }]}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.content,
+          {
+            maxWidth: contentMaxWidth,
+            alignSelf: 'center',
+            paddingHorizontal: horizontalPadding,
+            paddingBottom: bottomContentPadding,
+          },
+        ]}
+      >
         {/* Header */}
         <Animated.View style={[styles.header, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
           <View style={styles.headerMain}>
@@ -318,7 +333,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   content: {
     paddingVertical: spacing.md,
-    paddingBottom: spacing.xxl,
   },
   header: {
     flexDirection: 'row',

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -28,6 +29,8 @@ export default function ProfileScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const heroAnim = useFadeInUp(500);
   const { contentMaxWidth, horizontalPadding } = useAdaptiveLayout();
+  const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<Nav>();
   const { progress, profile } = useUserStore();
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
@@ -39,6 +42,7 @@ export default function ProfileScreen() {
   const accessState = getAccessState({ trialStartedAt, entitlementActive });
   const trialDaysRemaining = getTrialDaysRemaining(trialStartedAt);
   const monthlyPrice = getDisplayedMonthlyPrice(currentOffering);
+  const bottomContentPadding = Math.max(120, tabBarHeight + insets.bottom + spacing.lg);
 
   const { selectedProgram } = useProgramStore();
   const activeProgram = selectedProgram ? getProgramById(selectedProgram) : null;
@@ -62,7 +66,18 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { maxWidth: contentMaxWidth, alignSelf: 'center', paddingHorizontal: horizontalPadding }]}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.content,
+          {
+            maxWidth: contentMaxWidth,
+            alignSelf: 'center',
+            paddingHorizontal: horizontalPadding,
+            paddingBottom: bottomContentPadding,
+          },
+        ]}
+      >
         {/* Profile Header */}
         <Animated.View style={[styles.header, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
           <View style={styles.avatarCircle}>
@@ -179,7 +194,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   content: {
     padding: spacing.lg,
-    paddingBottom: 120,
   },
   header: {
     alignItems: 'center',

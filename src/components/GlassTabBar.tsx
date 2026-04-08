@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, Platform, Pressable } from 'react-native';
 import { BlurView } from 'expo-blur';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useColors } from '../theme';
@@ -38,12 +38,18 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
           <View key={route.key} style={styles.tab}>
             <View
               style={[styles.tabButton, isFocused && { backgroundColor: `${colors.accent}15` }]}
-              // Using onTouchEnd for simplicity; tab press handled via parent
             >
-              <View onTouchEnd={onPress} style={styles.touchTarget}>
+              <Pressable
+                onPress={onPress}
+                style={styles.touchTarget}
+                accessibilityRole="button"
+                accessibilityLabel={typeof label === 'string' ? label : route.name}
+                accessibilityState={{ selected: isFocused }}
+                hitSlop={8}
+              >
                 {icon}
                 <View style={[styles.indicator, isFocused && { backgroundColor: colors.accent }]} />
-              </View>
+              </Pressable>
             </View>
           </View>
         );

@@ -9,6 +9,7 @@
 - Keep the app feeling game-like, sharp, and tactical rather than casual fitness.
 - The mission flow is the product. Supporting screens should reinforce it, not compete with it.
 - Avoid blank-screen `return null` behavior for broken route params or missing content. Prefer explicit fallback states with a recovery action.
+- For tab-root screens, bottom scroll padding must account for the real tab bar height and safe-area inset. Do not rely on small fixed padding values under an absolute tab bar.
 - For exercises with sets and rest, behave like a gym app:
   - log one set at a time
   - rest between sets
@@ -52,6 +53,7 @@
   - entitlement: `pro`
   - offering: `default`
   - App Store product: `monthly`
+- Apple-side iOS subscription setup has already been handled by the user. When iOS billing issues come up, first verify app-side env values and RevenueCat product/offering mapping before re-explaining App Store Connect key setup.
 - Keep secrets out of repo files; `.env` stays local.
 
 ## Release And Platform Notes
@@ -59,6 +61,7 @@
 - Expo/React Native iOS builds commonly show Hermes script warnings; these are noise unless accompanied by real build errors.
 - RevenueCat helper methods should fail to an unavailable/fallback path if native configure or URL-opening calls reject.
 - Haptic calls should fail closed too. Never allow `expo-haptics` promise rejections to show up as unhandled runtime noise.
+- Custom tab-bar interactions should use proper `Pressable`/button semantics, not raw touch-end handlers on plain views, especially for Android reliability and accessibility.
 - Invalid detail screens should always offer a recovery action instead of plain dead-end text.
 - Every achievement condition type present in `src/data/achievements.ts` must be implemented in `useUserStore.checkAchievements`, and condition ids must match real exercise ids.
 

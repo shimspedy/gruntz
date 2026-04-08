@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
@@ -38,8 +39,10 @@ export default function ProgressScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   const progress = useUserStore((s) => s.progress);
   const xpInfo = getXPToNextLevel(progress.current_xp);
+  const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
 
   const skillCategories = [
     { name: 'Strength', score: progress.strength_score, color: colors.accentRed },
@@ -67,7 +70,13 @@ export default function ProgressScreen() {
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.md }]}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: insets.top + spacing.md,
+            paddingBottom: bottomContentPadding,
+          },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.inner}>
@@ -214,7 +223,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   content: {
     paddingVertical: spacing.md,
-    paddingBottom: spacing.xxl,
   },
   inner: {
     width: '100%',

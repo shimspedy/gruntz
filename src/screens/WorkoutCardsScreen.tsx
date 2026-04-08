@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,6 +25,8 @@ type Nav = NativeStackNavigationProp<MissionsStackParamList, 'WorkoutCards'>;
 export default function WorkoutCardsScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<Nav>();
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
   const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
@@ -91,6 +94,7 @@ export default function WorkoutCardsScreen() {
 
   const recMap = new Map<string, WorkoutRecommendation>();
   recommendations.forEach(r => recMap.set(r.card_id, r));
+  const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
 
   const movCards = getAllMovementCards();
   const swimCards = getAllSwimCards();
@@ -98,7 +102,10 @@ export default function WorkoutCardsScreen() {
   if (!trainingUnlocked) {
     return (
       <SafeAreaView style={styles.safe}>
-        <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[styles.content, { paddingBottom: bottomContentPadding }]}
+        >
           <Card style={styles.lockedCard}>
             <GameIcon name="mission" size={44} color={colors.accentGold} style={styles.lockedIcon} />
             <Text style={styles.lockedTitle}>Training cards are part of Gruntz Pro</Text>
@@ -118,7 +125,10 @@ export default function WorkoutCardsScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.content, { paddingBottom: bottomContentPadding }]}
+      >
         <TouchableOpacity
           style={styles.achievementsBanner}
           activeOpacity={0.8}
@@ -194,7 +204,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   content: {
     padding: spacing.md,
-    paddingBottom: spacing.xxl,
   },
   achievementsBanner: {
     flexDirection: 'row',
