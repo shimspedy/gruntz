@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
@@ -7,27 +8,44 @@ import { hapticSuccess, hapticLight, hapticSelection } from '../utils/haptics';
 
 interface RestTimerProps {
   seconds: number;
+  exerciseName?: string;
+  loggedSummary?: string | null;
   onComplete: () => void;
   onSkip?: () => void;
 }
 
-export function RestTimer({ seconds, onComplete, onSkip }: RestTimerProps) {
+export function RestTimer({
+  seconds,
+  exerciseName,
+  loggedSummary,
+  onComplete,
+  onSkip,
+}: RestTimerProps) {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  const [remaining, setRemaining] = useState(seconds);
+  const safeSeconds = Math.max(1, seconds);
+  const [remaining, setRemaining] = useState(safeSeconds);
   const [isPaused, setIsPaused] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const isPausedRef = useRef(isPaused);
-  isPausedRef.current = isPaused;
   const onCompleteRef = useRef(onComplete);
+
+  isPausedRef.current = isPaused;
   onCompleteRef.current = onComplete;
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (isPausedRef.current) return;
+    setRemaining(safeSeconds);
+    setIsPaused(false);
+  }, [safeSeconds]);
 
-      setRemaining(prev => {
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isPausedRef.current) {
+        return;
+      }
+
+      setRemaining((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
           hapticSuccess();
@@ -42,122 +60,184 @@ export function RestTimer({ seconds, onComplete, onSkip }: RestTimerProps) {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [seconds]);
+  }, [safeSeconds]);
 
   useEffect(() => {
     if (remaining <= 5 && remaining > 0) {
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.15, duration: 200, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1.12, duration: 180, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 180, useNativeDriver: true }),
       ]).start();
     }
-  }, [remaining]);
+  }, [pulseAnim, remaining]);
 
   const formatTime = useCallback((secs: number) => {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return m > 0 ? `${m}:${s.toString().padStart(2, '0')}` : `${s}s`;
+    const minutes = Math.floor(secs / 60);
+    const secsOnly = secs % 60;
+    return minutes > 0 ? `${minutes}:${secsOnly.toString().padStart(2, '0')}` : `${secs}s`;
   }, []);
 
-  const progress = (seconds - remaining) / seconds;
+  const progress = Math.min(1, Math.max(0, (safeSeconds - remaining) / safeSeconds));
 
   return (
-    <View style={styles.container}>
-      <View style={styles.timerCard}>
-        <Text style={styles.label}>REST</Text>
-        <Animated.Text style={[styles.time, { transform: [{ scale: pulseAnim }] }]} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
-          {formatTime(remaining)}
-        </Animated.Text>
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+    <Modal visible transparent animationType="fade" statusBarTranslucent>
+      <BlurView intensity={30} tint="dark" style={styles.overlay}>
+        <View style={styles.scrim} />
+        <View style={styles.centerWrap}>
+          <Animated.View style={[styles.card, { transform: [{ scale: pulseAnim }] }]}>
+            <Text style={styles.label}>REST TIMER</Text>
+            {exerciseName ? <Text style={styles.exerciseName}>{exerciseName}</Text> : null}
+            {loggedSummary ? <Text style={styles.loggedSummary}>{loggedSummary}</Text> : null}
+            <Animated.Text style={styles.time} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
+              {formatTime(remaining)}
+            </Animated.Text>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+            </View>
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={styles.controlBtn}
+                onPress={() => {
+                  hapticSelection();
+                  setIsPaused((prev) => !prev);
+                }}
+                activeOpacity={0.85}
+              >
+                <Ionicons name={isPaused ? 'play' : 'pause'} size={18} color={colors.textPrimary} />
+                <Text style={styles.controlText}>{isPaused ? 'Resume' : 'Pause'}</Text>
+              </TouchableOpacity>
+              {onSkip ? (
+                <TouchableOpacity
+                  style={styles.skipBtn}
+                  onPress={() => {
+                    hapticLight();
+                    onSkip();
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.skipText}>Skip</Text>
+                  <Ionicons name="play-forward" size={16} color={colors.accent} />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </Animated.View>
         </View>
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={styles.controlBtn}
-            onPress={() => { hapticSelection(); setIsPaused(p => !p); }}
-          >
-            <Ionicons name={isPaused ? 'play' : 'pause'} size={20} color={colors.textPrimary} />
-          </TouchableOpacity>
-          {onSkip && (
-            <TouchableOpacity style={styles.skipBtn} onPress={() => { hapticLight(); onSkip(); }}>
-              <Text style={styles.skipText}>SKIP REST</Text>
-              <Ionicons name="play-forward" size={16} color={colors.accent} />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-    </View>
+      </BlurView>
+    </Modal>
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  container: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.sm,
-  },
-  timerCard: {
-    backgroundColor: colors.card,
-    borderRadius: 2,
-    borderWidth: 1,
-    borderColor: colors.accent,
-    borderLeftWidth: 3,
-    padding: spacing.lg,
-    alignItems: 'center',
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.accent,
-    letterSpacing: 3,
-    marginBottom: spacing.sm,
-  },
-  time: {
-    fontSize: 56,
-    fontWeight: '800',
-    color: colors.textPrimary,
-    fontVariant: ['tabular-nums'],
-  },
-  progressTrack: {
-    width: '100%',
-    height: 4,
-    backgroundColor: colors.cardBorder,
-    borderRadius: 2,
-    marginTop: spacing.md,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: colors.accent,
-    borderRadius: 2,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.lg,
-    marginTop: spacing.md,
-  },
-  controlBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 3,
-    backgroundColor: colors.cardBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  skipBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.accent,
-  },
-  skipText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.accent,
-    letterSpacing: 1,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+    },
+    scrim: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(5, 9, 6, 0.68)',
+    },
+    centerWrap: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.lg,
+    },
+    card: {
+      width: '100%',
+      maxWidth: 380,
+      backgroundColor: 'rgba(11, 18, 12, 0.92)',
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.accent,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.xl,
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOpacity: 0.28,
+      shadowRadius: 18,
+      shadowOffset: { width: 0, height: 12 },
+      elevation: 10,
+    },
+    label: {
+      fontSize: 12,
+      fontWeight: '800',
+      color: colors.accent,
+      letterSpacing: 3,
+      marginBottom: spacing.xs,
+    },
+    exerciseName: {
+      fontSize: 22,
+      fontWeight: '800',
+      color: colors.textPrimary,
+      textAlign: 'center',
+    },
+    loggedSummary: {
+      marginTop: spacing.xs,
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.textMuted,
+      textAlign: 'center',
+    },
+    time: {
+      marginTop: spacing.lg,
+      fontSize: 64,
+      fontWeight: '900',
+      color: colors.textPrimary,
+      fontVariant: ['tabular-nums'],
+    },
+    progressTrack: {
+      width: '100%',
+      height: 6,
+      backgroundColor: colors.cardBorder,
+      borderRadius: 999,
+      marginTop: spacing.md,
+      overflow: 'hidden',
+    },
+    progressFill: {
+      height: '100%',
+      backgroundColor: colors.accent,
+      borderRadius: 999,
+    },
+    buttonRow: {
+      width: '100%',
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: spacing.sm,
+      marginTop: spacing.lg,
+    },
+    controlBtn: {
+      minWidth: 112,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      backgroundColor: colors.cardBorder,
+      borderRadius: 12,
+    },
+    controlText: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    skipBtn: {
+      minWidth: 112,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.accent,
+      backgroundColor: colors.backgroundSecondary,
+    },
+    skipText: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.accent,
+      letterSpacing: 0.5,
+    },
+  });

@@ -81,27 +81,44 @@ export function useBarometerAltitude() {
     });
   }, []);
 
-  const start = useCallback(async () => {
-    const available = await Barometer.isAvailableAsync();
-    if (!available) return;
+  const beginListening = useCallback(async (reset: boolean) => {
+    try {
+      const available = await Barometer.isAvailableAsync();
+      if (!available) return false;
 
-    gainRef.current = 0;
-    lossRef.current = 0;
-    lastAltRef.current = null;
-    startAltRef.current = null;
+      subscriptionRef.current?.remove();
+      subscriptionRef.current = null;
 
-    Barometer.setUpdateInterval(2000); // 2 sec is plenty for altitude
-    subscriptionRef.current = Barometer.addListener(handleData);
+      if (reset) {
+        gainRef.current = 0;
+        lossRef.current = 0;
+        lastAltRef.current = null;
+        startAltRef.current = null;
+      }
 
-    setState({
-      isActive: true,
-      currentPressure: null,
-      currentAltitudeFt: null,
-      elevationGainFt: 0,
-      elevationLossFt: 0,
-      startAltitudeFt: null,
-    });
+      Barometer.setUpdateInterval(2000); // 2 sec is plenty for altitude
+      subscriptionRef.current = Barometer.addListener(handleData);
+
+      setState((prev) => ({
+        isActive: true,
+        currentPressure: reset ? null : prev.currentPressure,
+        currentAltitudeFt: reset ? null : prev.currentAltitudeFt,
+        elevationGainFt: reset ? 0 : prev.elevationGainFt,
+        elevationLossFt: reset ? 0 : prev.elevationLossFt,
+        startAltitudeFt: reset ? null : prev.startAltitudeFt,
+      }));
+      return true;
+    } catch {
+      subscriptionRef.current?.remove();
+      subscriptionRef.current = null;
+      setState((prev) => ({ ...prev, isActive: false }));
+      return false;
+    }
   }, [handleData]);
+
+  const start = useCallback(async () => beginListening(true), [beginListening]);
+
+  const resume = useCallback(async () => beginListening(false), [beginListening]);
 
   const stop = useCallback(() => {
     subscriptionRef.current?.remove();
@@ -128,5 +145,5 @@ export function useBarometerAltitude() {
     };
   }, []);
 
-  return { ...state, start, stop, reset };
+  return { ...state, start, resume, stop, reset };
 }

@@ -21,8 +21,12 @@ function formatDuration(ms: number): string {
 
 function formatPace(minPerMile: number | null): string {
   if (minPerMile == null || minPerMile <= 0 || minPerMile > 60) return '--:--';
-  const mins = Math.floor(minPerMile);
-  const secs = Math.round((minPerMile - mins) * 60);
+  let mins = Math.floor(minPerMile);
+  let secs = Math.round((minPerMile - mins) * 60);
+  if (secs === 60) {
+    mins += 1;
+    secs = 0;
+  }
   return `${mins}:${String(secs).padStart(2, '0')}`;
 }
 
@@ -34,19 +38,39 @@ export default function RunTrackerScreen() {
 
   const handleStart = useCallback(async () => {
     hapticMedium();
-    await tracker.start();
+    const started = await tracker.start();
+    if (!started) {
+      Alert.alert(
+        'Location required',
+        'Allow location access to track your run, distance, pace, and route.'
+      );
+      return;
+    }
     await baro.start();
   }, [tracker, baro]);
 
   const handlePause = useCallback(() => {
     hapticLight();
     tracker.pause();
-  }, [tracker]);
+    baro.stop();
+  }, [tracker, baro]);
 
   const handleResume = useCallback(async () => {
     hapticLight();
-    await tracker.resume();
-  }, [tracker]);
+    const resumed = await tracker.resume();
+    if (!resumed) {
+      Alert.alert(
+        'Unable to resume',
+        'Check location access and try again.'
+      );
+      return;
+    }
+
+    const barometerResumed = await baro.resume();
+    if (!barometerResumed) {
+      // GPS tracker remains active; altitude will fall back to GPS gain only.
+    }
+  }, [tracker, baro]);
 
   const handleStop = useCallback(() => {
     Alert.alert('End Run?', 'This will stop tracking your run.', [

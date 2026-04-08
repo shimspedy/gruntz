@@ -14,9 +14,10 @@ interface ExerciseRowProps {
   restSeconds?: number;
   illustration?: string;
   onInfo?: () => void;
+  loggedSummary?: string | null;
 }
 
-export function ExerciseRow({ name, detail, completed, onToggle, restSeconds, illustration, onInfo }: ExerciseRowProps) {
+export function ExerciseRow({ name, detail, completed, onToggle, restSeconds, illustration, onInfo, loggedSummary }: ExerciseRowProps) {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -30,35 +31,46 @@ export function ExerciseRow({ name, detail, completed, onToggle, restSeconds, il
   }, [onToggle, completed]);
 
   return (
-    <TouchableOpacity style={styles.row} onPress={handleToggle} activeOpacity={0.7}>
-      <View style={[styles.checkbox, completed && styles.checkboxCompleted]}>
-        {completed && <Ionicons name="checkmark" size={16} color={colors.background} />}
-      </View>
-      {illustration ? <GameIcon name={illustration} size={26} style={styles.illustration} /> : null}
-      <View style={styles.info}>
-        <Text style={[styles.name, completed && styles.nameCompleted]} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{name}</Text>
-        <View style={styles.detailRow}>
-          <Text style={styles.detail}>{detail}</Text>
-          {restSeconds && restSeconds > 0 ? (
-            <View style={styles.restWrap}>
-              <GameIcon name="time" size={16} color={colors.accent} variant="minimal" />
-              <Text style={styles.restLabel}>{restSeconds}s</Text>
-            </View>
+    <View style={styles.row}>
+      <TouchableOpacity style={styles.mainAction} onPress={handleToggle} activeOpacity={0.7}>
+        <View style={[styles.checkbox, completed && styles.checkboxCompleted]}>
+          {completed && <Ionicons name="checkmark" size={16} color={colors.background} />}
+        </View>
+        {illustration ? <GameIcon name={illustration} size={26} style={styles.illustration} /> : null}
+        <View style={styles.info}>
+          <Text style={[styles.name, completed && styles.nameCompleted]} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{name}</Text>
+          <View style={styles.detailRow}>
+            <Text style={styles.detail}>{detail}</Text>
+            {restSeconds && restSeconds > 0 ? (
+              <View style={styles.restWrap}>
+                <GameIcon name="time" size={16} color={colors.accent} variant="minimal" />
+                <Text style={styles.restLabel}>{restSeconds}s</Text>
+              </View>
+            ) : null}
+          </View>
+          {loggedSummary ? (
+            <Text style={[styles.loggedSummary, completed ? styles.loggedSummaryComplete : styles.loggedSummaryPartial]}>
+              {loggedSummary}
+            </Text>
           ) : null}
         </View>
-      </View>
-      {completed && (
-        <View style={styles.xpBadge}>
-          <GameIcon name="xp" size={16} color={colors.accentGold} variant="minimal" animated={false} />
-          <Text style={styles.xpBadgeText}>+XP</Text>
-        </View>
-      )}
-      {onInfo && (
-        <TouchableOpacity onPress={onInfo} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        {completed ? (
+          <View style={styles.xpBadge}>
+            <GameIcon name="xp" size={16} color={colors.accentGold} variant="minimal" animated={false} />
+            <Text style={styles.xpBadgeText}>+XP</Text>
+          </View>
+        ) : null}
+      </TouchableOpacity>
+      {onInfo ? (
+        <TouchableOpacity
+          style={styles.infoButton}
+          onPress={onInfo}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
           <Ionicons name="information-circle-outline" size={22} color={colors.textMuted} />
         </TouchableOpacity>
-      )}
-    </TouchableOpacity>
+      ) : null}
+    </View>
   );
 }
 
@@ -69,6 +81,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.cardBorder,
+  },
+  mainAction: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   checkbox: {
     width: 28,
@@ -109,6 +126,17 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 13,
     color: colors.textMuted,
   },
+  loggedSummary: {
+    marginTop: 4,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  loggedSummaryPartial: {
+    color: colors.accent,
+  },
+  loggedSummaryComplete: {
+    color: colors.accentGreen,
+  },
   restWrap: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -133,5 +161,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: colors.accentGold,
+  },
+  infoButton: {
+    marginLeft: spacing.sm,
+    paddingVertical: spacing.xs,
   },
 });

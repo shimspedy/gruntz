@@ -3,6 +3,8 @@ import { DailyMission, CompletedExercise, WorkoutDay } from '../types';
 import { allWorkoutDays, REST_DAYS, getWorkoutDaysForWeek } from '../data/workouts';
 import { reconWorkouts, getReconWeek } from '../data/reconWorkouts';
 import { useProgramStore } from './useProgramStore';
+import { useUserStore } from './useUserStore';
+import { getLocalDateKey } from '../utils/dateKey';
 
 interface MissionState {
   todaysMission: DailyMission | null;
@@ -88,10 +90,22 @@ export const useMissionStore = create<MissionState>((set, get) => ({
     const programWeek = useProgramStore.getState().currentWeek;
     const activeWeek = selectedProgram ? programWeek : currentWeek;
 
+    if (!selectedProgram) {
+      set({
+        todaysMission: null,
+        isRestDay: false,
+        nextWorkout: null,
+        completedExercises: [],
+        currentExerciseIndex: 0,
+        isActive: false,
+      });
+      return;
+    }
+
     const workoutDay = selectedProgram === 'recon'
       ? getReconWorkoutDay(activeWeek)
       : getRaiderWorkoutDay(activeWeek);
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateKey();
 
     if (!workoutDay) {
       // Rest day — find next upcoming workout
@@ -99,6 +113,9 @@ export const useMissionStore = create<MissionState>((set, get) => ({
       set({ todaysMission: null, isRestDay: true, nextWorkout: next, completedExercises: [], currentExerciseIndex: 0, isActive: false });
       return;
     }
+
+    const claimKey = `${today}:${workoutDay.id}`;
+    const isCompleted = useUserStore.getState().progress.claimed_missions.has(claimKey);
 
     const mission: DailyMission = {
       date: today,
@@ -108,9 +125,16 @@ export const useMissionStore = create<MissionState>((set, get) => ({
       bonus_objectives: ['Complete all exercises', 'Record your times'],
       reward_xp: workoutDay.rewards.xp,
       reward_coins: workoutDay.rewards.coins,
-      completed: false,
+      completed: isCompleted,
     };
-    set({ todaysMission: mission, isRestDay: false, nextWorkout: null, completedExercises: [], currentExerciseIndex: 0, isActive: false });
+    set({
+      todaysMission: mission,
+      isRestDay: false,
+      nextWorkout: null,
+      completedExercises: [],
+      currentExerciseIndex: 0,
+      isActive: false,
+    });
   },
 
   startMission: () => {

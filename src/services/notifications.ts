@@ -5,7 +5,6 @@ import { Platform } from 'react-native';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
     shouldPlaySound: false,
     shouldSetBadge: false,
     shouldShowBanner: true,
@@ -13,13 +12,34 @@ Notifications.setNotificationHandler({
   }),
 });
 
+async function withNotificationGuard<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await fn();
+  } catch {
+    return fallback;
+  }
+}
+
+async function dismissPresentedNotificationsByType(type: string) {
+  await withNotificationGuard(async () => {
+    const presented = await Notifications.getPresentedNotificationsAsync();
+    await Promise.all(
+      presented
+        .filter((notification) => notification.request.content.data?.type === type)
+        .map((notification) => Notifications.dismissNotificationAsync(notification.request.identifier))
+    );
+  }, undefined);
+}
+
 // ─── Permission ─────────────────────────────────────────────────
 
 export async function requestNotificationPermission(): Promise<boolean> {
-  const { status: existing } = await Notifications.getPermissionsAsync();
-  if (existing === 'granted') return true;
-  const { status } = await Notifications.requestPermissionsAsync();
-  return status === 'granted';
+  return withNotificationGuard(async () => {
+    const { status: existing } = await Notifications.getPermissionsAsync();
+    if (existing === 'granted') return true;
+    const { status } = await Notifications.requestPermissionsAsync();
+    return status === 'granted';
+  }, false);
 }
 
 // ─── Channels (Android 16) ──────────────────────────────────────
@@ -27,26 +47,28 @@ export async function requestNotificationPermission(): Promise<boolean> {
 export async function setupNotificationChannels() {
   if (Platform.OS !== 'android') return;
 
-  await Notifications.setNotificationChannelAsync('workout-progress', {
-    name: 'Workout Progress',
-    importance: Notifications.AndroidImportance.HIGH,
-    sound: undefined,
-    vibrationPattern: [0, 100, 50, 100],
-    lightColor: '#00FF41',
-  });
+  await withNotificationGuard(async () => {
+    await Notifications.setNotificationChannelAsync('workout-progress', {
+      name: 'Workout Progress',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: undefined,
+      vibrationPattern: [0, 100, 50, 100],
+      lightColor: '#00FF41',
+    });
 
-  await Notifications.setNotificationChannelAsync('daily-reminder', {
-    name: 'Daily Mission Reminder',
-    importance: Notifications.AndroidImportance.DEFAULT,
-    sound: 'default',
-  });
+    await Notifications.setNotificationChannelAsync('daily-reminder', {
+      name: 'Daily Mission Reminder',
+      importance: Notifications.AndroidImportance.DEFAULT,
+      sound: 'default',
+    });
 
-  await Notifications.setNotificationChannelAsync('achievements', {
-    name: 'Achievements & Milestones',
-    importance: Notifications.AndroidImportance.HIGH,
-    sound: 'default',
-    lightColor: '#FFB800',
-  });
+    await Notifications.setNotificationChannelAsync('achievements', {
+      name: 'Achievements & Milestones',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'default',
+      lightColor: '#FFB800',
+    });
+  }, undefined);
 }
 
 // ─── Daily Mission Reminder ─────────────────────────────────────
@@ -55,28 +77,32 @@ export async function scheduleDailyReminder(hour: number, minute: number) {
   // Cancel existing daily reminders first
   await cancelDailyReminder();
 
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: 'GRUNTZ — Mission Awaits',
-      body: "Your daily mission is ready. Don't break the streak!",
-      data: { type: 'daily-reminder' },
-      ...(Platform.OS === 'android' && { channelId: 'daily-reminder' }),
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DAILY,
-      hour,
-      minute,
-    },
-  });
+  await withNotificationGuard(async () => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'GRUNTZ — Mission Awaits',
+        body: "Your daily mission is ready. Don't break the streak!",
+        data: { type: 'daily-reminder' },
+        ...(Platform.OS === 'android' && { channelId: 'daily-reminder' }),
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour,
+        minute,
+      },
+    });
+  }, undefined);
 }
 
 export async function cancelDailyReminder() {
-  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-  for (const notif of scheduled) {
-    if (notif.content.data?.type === 'daily-reminder') {
-      await Notifications.cancelScheduledNotificationAsync(notif.identifier);
+  await withNotificationGuard(async () => {
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    for (const notif of scheduled) {
+      if (notif.content.data?.type === 'daily-reminder') {
+        await Notifications.cancelScheduledNotificationAsync(notif.identifier);
+      }
     }
-  }
+  }, undefined);
 }
 
 // ─── Workout Progress (Android 16 Progress-Centric) ─────────────
@@ -99,62 +125,73 @@ export async function showWorkoutProgress(
     ...(Platform.OS === 'android' && { channelId: 'workout-progress' }),
   };
 
-  if (activeProgressId) {
-    // Update existing notification
-    await Notifications.dismissNotificationAsync(activeProgressId);
-  }
+  await withNotificationGuard(async () => {
+    if (activeProgressId) {
+      await Notifications.dismissNotificationAsync(activeProgressId);
+    }
+    await dismissPresentedNotificationsByType('workout-progress');
 
-  activeProgressId = await Notifications.scheduleNotificationAsync({
-    content,
-    trigger: null, // Immediate
-  });
+    activeProgressId = await Notifications.scheduleNotificationAsync({
+      content,
+      trigger: null, // Immediate
+    });
+  }, undefined);
 }
 
 export async function clearWorkoutProgress() {
-  if (activeProgressId) {
-    await Notifications.dismissNotificationAsync(activeProgressId);
-    activeProgressId = null;
-  }
+  await withNotificationGuard(async () => {
+    if (activeProgressId) {
+      await Notifications.dismissNotificationAsync(activeProgressId);
+      activeProgressId = null;
+    }
+    await dismissPresentedNotificationsByType('workout-progress');
+  }, undefined);
 }
 
 export async function showWorkoutComplete(xpEarned: number, streakDays: number) {
   await clearWorkoutProgress();
 
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: 'Mission Complete',
-      body: `+${xpEarned} XP earned${streakDays > 1 ? ` • ${streakDays}-day streak` : ''}`,
-      data: { type: 'workout-complete' },
-      ...(Platform.OS === 'android' && { channelId: 'workout-progress' }),
-    },
-    trigger: null,
-  });
+  await withNotificationGuard(async () => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Mission Complete',
+        body: `+${xpEarned} XP earned${streakDays > 1 ? ` • ${streakDays}-day streak` : ''}`,
+        data: { type: 'workout-complete' },
+        ...(Platform.OS === 'android' && { channelId: 'workout-progress' }),
+      },
+      trigger: null,
+    });
+  }, undefined);
 }
 
 // ─── Achievement Notifications ──────────────────────────────────
 
 export async function showAchievementUnlocked(achievementName: string, _icon: string) {
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: 'Achievement Unlocked',
-      body: achievementName,
-      data: { type: 'achievement' },
-      ...(Platform.OS === 'android' && { channelId: 'achievements' }),
-    },
-    trigger: null,
-  });
+  await withNotificationGuard(async () => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Achievement Unlocked',
+        body: achievementName,
+        data: { type: 'achievement' },
+        ...(Platform.OS === 'android' && { channelId: 'achievements' }),
+      },
+      trigger: null,
+    });
+  }, undefined);
 }
 
 // ─── Streak Warning ─────────────────────────────────────────────
 
 export async function showStreakWarning(streakDays: number) {
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: 'Streak At Risk',
-      body: `Your ${streakDays}-day streak expires at midnight. Get a mission in!`,
-      data: { type: 'streak-warning' },
-      ...(Platform.OS === 'android' && { channelId: 'daily-reminder' }),
-    },
-    trigger: null,
-  });
+  await withNotificationGuard(async () => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Streak At Risk',
+        body: `Your ${streakDays}-day streak expires at midnight. Get a mission in!`,
+        data: { type: 'streak-warning' },
+        ...(Platform.OS === 'android' && { channelId: 'daily-reminder' }),
+      },
+      trigger: null,
+    });
+  }, undefined);
 }

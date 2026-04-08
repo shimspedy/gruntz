@@ -128,7 +128,7 @@ export const achievements: Achievement[] = [
     icon: 'strength',
     category: 'workout',
     xp_reward: 75,
-    condition_type: 'exercise_total_pushup_standard',
+    condition_type: 'exercise_total_pushups',
     condition_value: 100,
   },
   {
@@ -138,7 +138,7 @@ export const achievements: Achievement[] = [
     icon: 'strength',
     category: 'workout',
     xp_reward: 250,
-    condition_type: 'exercise_total_pushup_standard',
+    condition_type: 'exercise_total_pushups',
     condition_value: 500,
   },
 ];

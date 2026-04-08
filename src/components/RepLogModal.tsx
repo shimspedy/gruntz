@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, ScrollView, Animated } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,60 +12,98 @@ import { GameIcon } from './GameIcon';
 interface RepLogModalProps {
   visible: boolean;
   exercise: Exercise;
-  onSave: (sets: SetLog[]) => void;
+  existingSets?: SetLog[];
+  onSave: (set: SetLog) => void;
+  onRemoveLast?: () => void;
   onClose: () => void;
 }
 
-export function RepLogModal({ visible, exercise, onSave, onClose }: RepLogModalProps) {
+type DraftSet = {
+  reps_completed?: number;
+  weight_used?: number;
+  duration_seconds?: number;
+  distance?: string;
+};
+
+export function RepLogModal({
+  visible,
+  exercise,
+  existingSets = [],
+  onSave,
+  onRemoveLast,
+  onClose,
+}: RepLogModalProps) {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const fadeIn = useFadeInDown(300);
 
   const targetSets = exercise.sets || 1;
-  const [sets, setSets] = useState<SetLog[]>(
-    Array.from({ length: targetSets }, (_, i) => ({
-      set_number: i + 1,
+  const currentSetNumber = Math.min(existingSets.length + 1, targetSets);
+  const isFinalSet = currentSetNumber >= targetSets;
+  const hasLoggedSets = existingSets.length > 0;
+  const [draftSet, setDraftSet] = useState<DraftSet>({
+    reps_completed: exercise.reps || undefined,
+    duration_seconds: exercise.duration_seconds || undefined,
+    distance: exercise.distance || undefined,
+  });
+  const [rpe, setRpe] = useState(7);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setDraftSet({
       reps_completed: exercise.reps || undefined,
       duration_seconds: exercise.duration_seconds || undefined,
       distance: exercise.distance || undefined,
-    }))
-  );
-  const [rpe, setRpe] = useState(7);
+    });
+    setRpe(existingSets.at(-1)?.rpe ?? 7);
+    setValidationError(null);
+  }, [exercise.id, existingSets.length, visible, exercise.reps, exercise.duration_seconds, exercise.distance]);
 
-  const updateSet = (index: number, field: keyof SetLog, value: string) => {
-    setSets(prev => {
-      const updated = [...prev];
-      const numValue = parseInt(value, 10);
+  const updateDraft = (field: keyof DraftSet, value: string) => {
+    setValidationError(null);
+    setDraftSet((prev) => {
       if (field === 'distance') {
-        updated[index] = { ...updated[index], distance: value };
-      } else if (!isNaN(numValue) && numValue >= 0) {
-        updated[index] = { ...updated[index], [field]: numValue };
+        return { ...prev, distance: value };
       }
-      return updated;
+
+      if (value.trim() === '') {
+        return { ...prev, [field]: undefined };
+      }
+
+      const numValue = parseInt(value, 10);
+      if (!isNaN(numValue) && numValue >= 0) {
+        return { ...prev, [field]: numValue };
+      }
+      return prev;
     });
   };
 
-  const addSet = () => {
-    hapticLight();
-    setSets(prev => [...prev, {
-      set_number: prev.length + 1,
-      reps_completed: exercise.reps || undefined,
-      duration_seconds: exercise.duration_seconds || undefined,
-    }]);
-  };
-
-  const removeSet = (index: number) => {
-    if (sets.length <= 1) return;
-    setSets(prev => prev.filter((_, i) => i !== index).map((s, i) => ({ ...s, set_number: i + 1 })));
-  };
-
   const handleSave = () => {
+    if (exercise.reps !== undefined && (!draftSet.reps_completed || draftSet.reps_completed <= 0)) {
+      setValidationError('Enter reps for this set.');
+      return;
+    }
+    if (isTimeExercise && (!draftSet.duration_seconds || draftSet.duration_seconds <= 0)) {
+      setValidationError('Enter seconds for this set.');
+      return;
+    }
+    if (isDistanceExercise && !draftSet.distance?.trim()) {
+      setValidationError('Enter a distance for this set.');
+      return;
+    }
+
+    setValidationError(null);
     hapticSuccess();
-    onSave(sets.map(s => ({ ...s, rpe })));
+    onSave({
+      set_number: currentSetNumber,
+      ...draftSet,
+      rpe,
+    });
   };
 
   const isTimeExercise = !!exercise.duration_seconds && !exercise.reps;
   const isDistanceExercise = !!exercise.distance && !exercise.reps && !exercise.duration_seconds;
+  const saveLabel = exercise.rest_seconds > 0 && !isFinalSet ? 'LOG SET & START REST' : isFinalSet ? 'LOG FINAL SET' : `LOG SET ${currentSetNumber}`;
 
   return (
     <Modal visible={visible} animationType="fade" transparent>
@@ -92,6 +130,11 @@ export function RepLogModal({ visible, exercise, onSave, onClose }: RepLogModalP
               {exercise.duration_seconds ? `${exercise.duration_seconds}s` : ''}
               {exercise.distance ? ` ${exercise.distance}` : ''}
             </Text>
+            <View style={styles.progressBadge}>
+              <Text style={styles.progressBadgeText}>
+                SET {currentSetNumber}/{targetSets}
+              </Text>
+            </View>
             {exercise.rest_seconds > 0 && (
               <View style={styles.restWrap}>
                 <GameIcon name="time" size={16} color={colors.accent} variant="minimal" />
@@ -101,10 +144,45 @@ export function RepLogModal({ visible, exercise, onSave, onClose }: RepLogModalP
           </View>
 
           <ScrollView style={styles.setsList} showsVerticalScrollIndicator={false}>
-            {sets.map((set, i) => (
-              <View key={i} style={styles.setRow}>
+            {hasLoggedSets ? (
+              <View style={styles.loggedBlock}>
+                <View style={styles.loggedHeader}>
+                  <Text style={styles.loggedTitle}>LOGGED SETS</Text>
+                  {onRemoveLast ? (
+                    <TouchableOpacity
+                      style={styles.removeLastBtn}
+                      onPress={() => {
+                        hapticLight();
+                        onRemoveLast();
+                      }}
+                    >
+                      <Ionicons name="arrow-undo" size={14} color={colors.textMuted} />
+                      <Text style={styles.removeLastText}>REMOVE LAST</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+                {existingSets.map((set) => (
+                  <View key={set.set_number} style={styles.loggedSetRow}>
+                    <View style={styles.loggedSetBadge}>
+                      <Text style={styles.loggedSetBadgeText}>#{set.set_number}</Text>
+                    </View>
+                    <Text style={styles.loggedSetText}>
+                      {exercise.reps !== undefined ? `${set.reps_completed ?? exercise.reps} reps` : ''}
+                      {isTimeExercise ? `${set.duration_seconds ?? exercise.duration_seconds}s` : ''}
+                      {isDistanceExercise ? set.distance || exercise.distance || 'Distance logged' : ''}
+                      {set.weight_used ? ` • ${set.weight_used} lb` : ''}
+                      {set.rpe ? ` • RPE ${set.rpe}` : ''}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+
+            <View style={styles.currentSetCard}>
+              <Text style={styles.currentSetLabel}>CURRENT SET</Text>
+              <View style={styles.setRow}>
                 <View style={styles.setNumber}>
-                  <Text style={styles.setNumberText}>{set.set_number}</Text>
+                  <Text style={styles.setNumberText}>{currentSetNumber}</Text>
                 </View>
                 {exercise.reps !== undefined && (
                   <View style={styles.inputGroup}>
@@ -112,8 +190,8 @@ export function RepLogModal({ visible, exercise, onSave, onClose }: RepLogModalP
                     <TextInput
                       style={styles.input}
                       keyboardType="number-pad"
-                      value={String(set.reps_completed || '')}
-                      onChangeText={v => updateSet(i, 'reps_completed', v)}
+                      value={draftSet.reps_completed ? String(draftSet.reps_completed) : ''}
+                      onChangeText={(v) => updateDraft('reps_completed', v)}
                       placeholder={String(exercise.reps)}
                       placeholderTextColor={colors.textMuted}
                     />
@@ -125,8 +203,8 @@ export function RepLogModal({ visible, exercise, onSave, onClose }: RepLogModalP
                     <TextInput
                       style={styles.input}
                       keyboardType="number-pad"
-                      value={String(set.duration_seconds || '')}
-                      onChangeText={v => updateSet(i, 'duration_seconds', v)}
+                      value={draftSet.duration_seconds ? String(draftSet.duration_seconds) : ''}
+                      onChangeText={(v) => updateDraft('duration_seconds', v)}
                       placeholder={String(exercise.duration_seconds)}
                       placeholderTextColor={colors.textMuted}
                     />
@@ -137,8 +215,8 @@ export function RepLogModal({ visible, exercise, onSave, onClose }: RepLogModalP
                     <Text style={styles.inputLabel}>DISTANCE</Text>
                     <TextInput
                       style={styles.input}
-                      value={set.distance || ''}
-                      onChangeText={v => updateSet(i, 'distance', v)}
+                      value={draftSet.distance || ''}
+                      onChangeText={(v) => updateDraft('distance', v)}
                       placeholder={exercise.distance}
                       placeholderTextColor={colors.textMuted}
                     />
@@ -149,25 +227,15 @@ export function RepLogModal({ visible, exercise, onSave, onClose }: RepLogModalP
                   <TextInput
                     style={styles.input}
                     keyboardType="number-pad"
-                    value={set.weight_used ? String(set.weight_used) : ''}
-                    onChangeText={v => updateSet(i, 'weight_used', v)}
+                    value={draftSet.weight_used ? String(draftSet.weight_used) : ''}
+                    onChangeText={(v) => updateDraft('weight_used', v)}
                     placeholder="—"
                     placeholderTextColor={colors.textMuted}
                   />
                 </View>
-                {sets.length > 1 && (
-                  <TouchableOpacity onPress={() => removeSet(i)} style={styles.removeBtn}>
-                    <Ionicons name="trash-outline" size={18} color={colors.textMuted} />
-                  </TouchableOpacity>
-                )}
               </View>
-            ))}
+            </View>
           </ScrollView>
-
-          <TouchableOpacity style={styles.addSetBtn} onPress={addSet}>
-            <Ionicons name="add-circle-outline" size={20} color={colors.accent} />
-            <Text style={styles.addSetText}>ADD SET</Text>
-          </TouchableOpacity>
 
           {/* RPE Selector */}
           <View style={styles.rpeSection}>
@@ -188,8 +256,12 @@ export function RepLogModal({ visible, exercise, onSave, onClose }: RepLogModalP
             </Text>
           </View>
 
+          {validationError ? <Text style={styles.validationError}>{validationError}</Text> : null}
+
           <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-            <Text style={styles.saveBtnText} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>LOG EXERCISE</Text>
+            <Text style={styles.saveBtnText} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
+              {saveLabel}
+            </Text>
           </TouchableOpacity>
         </Animated.View>
       </BlurView>
@@ -264,6 +336,19 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontWeight: '600',
     color: colors.textPrimary,
   },
+  progressBadge: {
+    marginLeft: 'auto',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    backgroundColor: colors.cardBorder,
+    borderRadius: 999,
+  },
+  progressBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    letterSpacing: 1,
+  },
   restLabel: {
     fontSize: 12,
     color: colors.accent,
@@ -275,7 +360,77 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: 4,
   },
   setsList: {
-    maxHeight: 200,
+    maxHeight: 280,
+  },
+  loggedBlock: {
+    marginBottom: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+  },
+  loggedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  loggedTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.textMuted,
+    letterSpacing: 1.4,
+  },
+  removeLastBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  removeLastText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMuted,
+    letterSpacing: 0.8,
+  },
+  loggedSetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  loggedSetBadge: {
+    minWidth: 32,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: colors.cardBorder,
+  },
+  loggedSetBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    textAlign: 'center',
+  },
+  loggedSetText: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontWeight: '600',
+  },
+  currentSetCard: {
+    padding: spacing.md,
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+  },
+  currentSetLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.accent,
+    letterSpacing: 1.4,
+    marginBottom: spacing.sm,
   },
   setRow: {
     flexDirection: 'row',
@@ -320,23 +475,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.cardBorder,
   },
-  removeBtn: {
-    padding: spacing.xs,
-  },
-  addSetBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  addSetText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.accent,
-    letterSpacing: 1,
-  },
   rpeSection: {
     alignItems: 'center',
     marginBottom: spacing.lg,
@@ -375,6 +513,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     marginTop: spacing.xs,
+  },
+  validationError: {
+    marginBottom: spacing.md,
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.accentRed,
+    textAlign: 'center',
   },
   saveBtn: {
     backgroundColor: colors.accent,

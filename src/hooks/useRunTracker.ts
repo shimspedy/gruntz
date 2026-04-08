@@ -93,12 +93,114 @@ export function useRunTracker() {
   const routeRef = useRef<RoutePoint[]>([]);
   const stepsRef = useRef(0);
 
-  const start = useCallback(async () => {
+  const attachPedometer = useCallback(async () => {
+    try {
+      const pedoAvailable = await Pedometer.isAvailableAsync();
+      if (!pedoAvailable) {
+        internals.current.pedometerSub?.remove();
+        internals.current.pedometerSub = null;
+        return false;
+      }
+
+      internals.current.pedometerSub?.remove();
+      internals.current.pedometerSub = Pedometer.watchStepCount((result) => {
+        stepsRef.current = result.steps;
+        setState((prev) => ({ ...prev, steps: result.steps }));
+      });
+      return true;
+    } catch {
+      internals.current.pedometerSub?.remove();
+      internals.current.pedometerSub = null;
+      return false;
+    }
+  }, []);
+
+  const attachLocationWatcher = useCallback(async () => {
+    try {
+      internals.current.locationSub?.remove();
+      internals.current.locationSub = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.BestForNavigation,
+          timeInterval: 2000,
+          distanceInterval: 3, // meters
+        },
+        (location) => {
+          const point: RoutePoint = {
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+            altitude: location.coords.altitude,
+            timestamp: location.timestamp,
+            speed: location.coords.speed,
+          };
+
+          const prev = routeRef.current[routeRef.current.length - 1];
+          if (prev) {
+            const dist = haversineMeters(prev.latitude, prev.longitude, point.latitude, point.longitude);
+            if (dist > 2 && dist < 100) {
+              distanceRef.current += dist * METERS_TO_MILES;
+            }
+          }
+
+          if (point.altitude != null) {
+            if (internals.current.lastAltitude != null) {
+              const gain = point.altitude - internals.current.lastAltitude;
+              if (gain > 0) elevationRef.current += gain * METERS_TO_FEET;
+            }
+            internals.current.lastAltitude = point.altitude;
+          }
+
+          routeRef.current.push(point);
+
+          setState((prev) => ({
+            ...prev,
+            distanceMiles: Math.round(distanceRef.current * 100) / 100,
+            elevationGainFt: Math.round(elevationRef.current),
+            currentSpeedMph: point.speed != null ? Math.round(point.speed * MPS_TO_MPH * 10) / 10 : null,
+            route: [...routeRef.current],
+            caloriesEstimate: estimateCalories(distanceRef.current),
+          }));
+        },
+      );
+      return true;
+    } catch {
+      internals.current.locationSub?.remove();
+      internals.current.locationSub = null;
+      return false;
+    }
+  }, []);
+
+  const attachTimer = useCallback(() => {
+    if (internals.current.timerInterval) {
+      clearInterval(internals.current.timerInterval);
+    }
+
+    internals.current.timerInterval = setInterval(() => {
+      const elapsed = Date.now() - internals.current.startTime - internals.current.pausedDuration;
+      const distMiles = distanceRef.current;
+      const elapsedMin = elapsed / 60000;
+      const pace = distMiles > 0.05 ? elapsedMin / distMiles : null;
+
+      setState((prev) => ({
+        ...prev,
+        durationMs: elapsed,
+        paceMinPerMile: pace ? Math.round(pace * 10) / 10 : null,
+      }));
+    }, 1000);
+  }, []);
+
+  const start = useCallback(async (): Promise<boolean> => {
+    if (internals.current.locationSub || internals.current.timerInterval) {
+      internals.current.locationSub?.remove();
+      internals.current.pedometerSub?.remove();
+      if (internals.current.timerInterval) clearInterval(internals.current.timerInterval);
+      internals.current.locationSub = null;
+      internals.current.pedometerSub = null;
+      internals.current.timerInterval = null;
+    }
+
     // Request permissions
     const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') return;
-
-    const pedoAvailable = await Pedometer.isAvailableAsync();
+    if (status !== 'granted') return false;
 
     // Reset refs
     distanceRef.current = 0;
@@ -110,143 +212,50 @@ export function useRunTracker() {
     internals.current.pauseStart = null;
     internals.current.lastAltitude = null;
 
-    // GPS subscription
-    internals.current.locationSub = await Location.watchPositionAsync(
-      {
-        accuracy: Location.Accuracy.BestForNavigation,
-        timeInterval: 2000,
-        distanceInterval: 3, // meters
-      },
-      (location) => {
-        const point: RoutePoint = {
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-          altitude: location.coords.altitude,
-          timestamp: location.timestamp,
-          speed: location.coords.speed,
-        };
-
-        // Calculate distance from previous point
-        const prev = routeRef.current[routeRef.current.length - 1];
-        if (prev) {
-          const dist = haversineMeters(prev.latitude, prev.longitude, point.latitude, point.longitude);
-          // Filter out GPS jitter (ignore jumps < 2m)
-          if (dist > 2 && dist < 100) {
-            distanceRef.current += dist * METERS_TO_MILES;
-          }
-        }
-
-        // Elevation gain
-        if (point.altitude != null) {
-          if (internals.current.lastAltitude != null) {
-            const gain = point.altitude - internals.current.lastAltitude;
-            if (gain > 0) elevationRef.current += gain * METERS_TO_FEET;
-          }
-          internals.current.lastAltitude = point.altitude;
-        }
-
-        routeRef.current.push(point);
-
-        setState((prev) => ({
-          ...prev,
-          distanceMiles: Math.round(distanceRef.current * 100) / 100,
-          elevationGainFt: Math.round(elevationRef.current),
-          currentSpeedMph: point.speed != null ? Math.round(point.speed * MPS_TO_MPH * 10) / 10 : null,
-          route: [...routeRef.current],
-          caloriesEstimate: estimateCalories(distanceRef.current),
-        }));
-      },
-    );
-
-    // Pedometer subscription
-    if (pedoAvailable) {
-      internals.current.pedometerSub = Pedometer.watchStepCount((result) => {
-        stepsRef.current = result.steps;
-        setState((prev) => ({ ...prev, steps: result.steps }));
-      });
+    const locationAttached = await attachLocationWatcher();
+    if (!locationAttached) {
+      setState((prev) => ({ ...prev, isTracking: false, isPaused: false, currentSpeedMph: null }));
+      return false;
     }
 
-    // Timer
-    internals.current.timerInterval = setInterval(() => {
-      const elapsed = Date.now() - internals.current.startTime - internals.current.pausedDuration;
-      const distMiles = distanceRef.current;
-      const elapsedMin = elapsed / 60000;
-      const pace = distMiles > 0.05 ? elapsedMin / distMiles : null;
-
-      setState((prev) => ({
-        ...prev,
-        durationMs: elapsed,
-        paceMinPerMile: pace ? Math.round(pace * 10) / 10 : null,
-      }));
-    }, 1000);
+    await attachPedometer();
+    attachTimer();
 
     setState((prev) => ({ ...prev, isTracking: true, isPaused: false }));
-  }, []);
+    return true;
+  }, [attachLocationWatcher, attachPedometer, attachTimer]);
 
   const pause = useCallback(() => {
     internals.current.pauseStart = Date.now();
     if (internals.current.timerInterval) clearInterval(internals.current.timerInterval);
     internals.current.locationSub?.remove();
+    internals.current.pedometerSub?.remove();
     internals.current.locationSub = null;
-    setState((prev) => ({ ...prev, isPaused: true }));
+    internals.current.pedometerSub = null;
+    setState((prev) => ({ ...prev, isPaused: true, currentSpeedMph: null }));
   }, []);
 
-  const resume = useCallback(async () => {
+  const resume = useCallback(async (): Promise<boolean> => {
+    if (!state.isTracking || !state.isPaused) {
+      return false;
+    }
     if (internals.current.pauseStart) {
       internals.current.pausedDuration += Date.now() - internals.current.pauseStart;
       internals.current.pauseStart = null;
     }
-    // Restart GPS
-    const sub = await Location.watchPositionAsync(
-      { accuracy: Location.Accuracy.BestForNavigation, timeInterval: 2000, distanceInterval: 3 },
-      (location) => {
-        const point: RoutePoint = {
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-          altitude: location.coords.altitude,
-          timestamp: location.timestamp,
-          speed: location.coords.speed,
-        };
-        const prev = routeRef.current[routeRef.current.length - 1];
-        if (prev) {
-          const dist = haversineMeters(prev.latitude, prev.longitude, point.latitude, point.longitude);
-          if (dist > 2 && dist < 100) distanceRef.current += dist * METERS_TO_MILES;
-        }
-        if (point.altitude != null) {
-          if (internals.current.lastAltitude != null) {
-            const gain = point.altitude - internals.current.lastAltitude;
-            if (gain > 0) elevationRef.current += gain * METERS_TO_FEET;
-          }
-          internals.current.lastAltitude = point.altitude;
-        }
-        routeRef.current.push(point);
-        setState((prev) => ({
-          ...prev,
-          distanceMiles: Math.round(distanceRef.current * 100) / 100,
-          elevationGainFt: Math.round(elevationRef.current),
-          currentSpeedMph: point.speed != null ? Math.round(point.speed * MPS_TO_MPH * 10) / 10 : null,
-          route: [...routeRef.current],
-          caloriesEstimate: estimateCalories(distanceRef.current),
-        }));
-      },
-    );
-    internals.current.locationSub = sub;
 
-    // Restart timer
-    internals.current.timerInterval = setInterval(() => {
-      const elapsed = Date.now() - internals.current.startTime - internals.current.pausedDuration;
-      const distMiles = distanceRef.current;
-      const elapsedMin = elapsed / 60000;
-      const pace = distMiles > 0.05 ? elapsedMin / distMiles : null;
-      setState((prev) => ({
-        ...prev,
-        durationMs: elapsed,
-        paceMinPerMile: pace ? Math.round(pace * 10) / 10 : null,
-      }));
-    }, 1000);
+    const locationAttached = await attachLocationWatcher();
+    if (!locationAttached) {
+      setState((prev) => ({ ...prev, isPaused: true, currentSpeedMph: null }));
+      return false;
+    }
+
+    await attachPedometer();
+    attachTimer();
 
     setState((prev) => ({ ...prev, isPaused: false }));
-  }, []);
+    return true;
+  }, [attachLocationWatcher, attachPedometer, attachTimer, state.isPaused, state.isTracking]);
 
   const stop = useCallback((): RunTrackerState => {
     internals.current.locationSub?.remove();

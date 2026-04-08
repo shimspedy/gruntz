@@ -34,7 +34,28 @@ export default function ProgramDetailScreen() {
   const currentOffering = useSubscriptionStore((s) => s.currentOffering);
 
   const program = getProgramById(route.params.programId);
-  if (!program) return null;
+  if (!program) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['bottom']}>
+        <View style={styles.emptyContainer}>
+          <GameIcon name="warning" size={44} color={colors.accentGold} style={styles.emptyIcon} />
+          <Text style={styles.emptyTitle}>Program unavailable</Text>
+          <Text style={styles.emptyText}>
+            This training block could not be loaded. Go back and choose a valid program.
+          </Text>
+          <TouchableOpacity
+            style={[styles.startButton, { backgroundColor: colors.accent }]}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.startButtonText} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
+              GO BACK
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const accentColor = program.id === 'raider' ? colors.accent : colors.accentOrange;
   const trainingUnlocked = hasTrainingAccess({ trialStartedAt, entitlementActive });
@@ -177,6 +198,29 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
   content: { padding: spacing.md, paddingBottom: 180 },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.xl,
+  },
+  emptyIcon: {
+    marginBottom: spacing.md,
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+  },
+  emptyText: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.xl,
+    maxWidth: 320,
+  },
   hero: { alignItems: 'center', marginBottom: spacing.lg, marginTop: spacing.md },
   heroIcon: { marginBottom: spacing.sm },
   heroName: { fontSize: 28, fontWeight: '900', color: colors.textPrimary },

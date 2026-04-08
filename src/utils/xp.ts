@@ -1,4 +1,5 @@
 import { Rank, CompletedMission, UserProgress } from '../types';
+import { getLocalDayDiffFromToday } from './dateKey';
 
 const STREAK_MILESTONES = [3, 7, 14, 21, 30, 60, 100];
 
@@ -58,11 +59,7 @@ export function calculateStreakBonus(streakDays: number): number {
 }
 
 export function isStreakAlive(lastWorkoutDate: string): boolean {
-  const last = new Date(lastWorkoutDate);
-  const now = new Date();
-  const diffMs = now.getTime() - last.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  return diffDays <= 1;
+  return getLocalDayDiffFromToday(lastWorkoutDate) <= 1;
 }
 
 export function getDefaultProgress(userId: string): UserProgress {

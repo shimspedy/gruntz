@@ -1,9 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { UserProgress, UserProfile, Rank, CompletedMission, UserAchievement } from '../types';
+import { UserProgress, UserProfile, Rank, CompletedMission, UserAchievement, UserSettings } from '../types';
 import { getLevelForXP, getRank, getXPToNextLevel, calculateStreakBonus, isStreakAlive, getDefaultProgress } from '../utils/xp';
 import { achievements } from '../data/achievements';
+import { getReconWeek } from '../data/reconWorkouts';
+import { getWorkoutDaysForWeek } from '../data/workouts';
+import { getLocalDateKey } from '../utils/dateKey';
 
 interface UserState {
   profile: UserProfile | null;
@@ -14,6 +17,7 @@ interface UserState {
   hasHydrated: boolean;
 
   setProfile: (profile: UserProfile) => void;
+  updateSettings: (settings: Partial<UserSettings>) => void;
   setOnboarded: (onboarded: boolean) => void;
   setHydrated: (hydrated: boolean) => void;
   addXP: (amount: number) => void;
@@ -25,6 +29,25 @@ interface UserState {
 
 const initialProgress = getDefaultProgress('local');
 const STORAGE_KEY = '@gruntz_user';
+const EXERCISE_TOTAL_ALIASES: Record<string, string[]> = {
+  pushups: ['pushups', 'strict_pushups', 'close_grip_pushups'],
+};
+
+function getClaimedWorkoutIds(claimedMissions: Set<string>) {
+  return new Set(
+    Array.from(claimedMissions)
+      .map((claimKey) => claimKey.split(':').slice(1).join(':'))
+      .filter(Boolean)
+  );
+}
+
+function hasCompletedProgramWeek(claimedWorkoutIds: Set<string>, week: number) {
+  const raiderIds = getWorkoutDaysForWeek(week).map((day) => day.id);
+  const reconIds = getReconWeek(week).map((day) => day.id);
+
+  const hasAll = (ids: string[]) => ids.length > 0 && ids.every((id) => claimedWorkoutIds.has(id));
+  return hasAll(raiderIds) || hasAll(reconIds);
+}
 
 export const useUserStore = create<UserState>()(
   persist(
@@ -37,6 +60,22 @@ export const useUserStore = create<UserState>()(
       hasHydrated: false,
 
       setProfile: (profile) => set({ profile }),
+      updateSettings: (settings) =>
+        set((state) => {
+          if (!state.profile) {
+            return state;
+          }
+
+          return {
+            profile: {
+              ...state.profile,
+              settings: {
+                ...state.profile.settings,
+                ...settings,
+              },
+            },
+          };
+        }),
 
       setOnboarded: (onboarded) => set({ isOnboarded: onboarded }),
       setHydrated: (hydrated) => set({ hasHydrated: hydrated }),
@@ -65,7 +104,7 @@ export const useUserStore = create<UserState>()(
             return state;
           }
 
-          const today = new Date().toISOString().split('T')[0];
+          const today = mission.mission_date || getLocalDateKey();
           const wasStreakAlive = state.progress.last_workout_date
             ? isStreakAlive(state.progress.last_workout_date)
             : false;
@@ -123,6 +162,7 @@ export const useUserStore = create<UserState>()(
         const state = get();
         const newUnlocks: string[] = [];
         const currentAchievements = [...state.achievements];
+        const claimedWorkoutIds = getClaimedWorkoutIds(state.progress.claimed_missions);
 
         achievements.forEach((achievement) => {
           const existing = currentAchievements.find((a) => a.achievement_id === achievement.id);
@@ -142,10 +182,17 @@ export const useUserStore = create<UserState>()(
             case 'level':
               unlocked = state.progress.current_level >= achievement.condition_value;
               break;
+            case 'week_completed':
+              unlocked = hasCompletedProgramWeek(claimedWorkoutIds, achievement.condition_value);
+              break;
             default:
               if (achievement.condition_type.startsWith('exercise_total_')) {
                 const exerciseId = achievement.condition_type.replace('exercise_total_', '');
-                const total = state.progress.exercises_completed[exerciseId] || 0;
+                const relatedExerciseIds = EXERCISE_TOTAL_ALIASES[exerciseId] ?? [exerciseId];
+                const total = relatedExerciseIds.reduce(
+                  (sum, id) => sum + (state.progress.exercises_completed[id] || 0),
+                  0
+                );
                 unlocked = total >= achievement.condition_value;
               }
           }

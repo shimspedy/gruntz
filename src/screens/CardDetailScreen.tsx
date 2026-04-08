@@ -11,6 +11,7 @@ import { useFadeInUp } from '../utils/animations';
 import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 import { GameIcon } from '../components/GameIcon';
+import { MissionButton } from '../components/MissionButton';
 import { getMovementCard } from '../data/movementCards';
 import { getExerciseById } from '../data/exercises';
 import type { MissionsStackParamList } from '../types/navigation';
@@ -29,7 +30,13 @@ export default function CardDetailScreen() {
   if (!card) {
     return (
       <SafeAreaView style={styles.safe}>
-        <Text style={styles.errorText}>Card not found.</Text>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.errorTitle}>Card unavailable</Text>
+          <Text style={styles.errorText}>
+            This training card could not be loaded. Go back to the card library and reopen it.
+          </Text>
+          <MissionButton title="BACK TO CARDS" onPress={() => navigation.navigate('WorkoutCards')} style={styles.errorButton} />
+        </View>
       </SafeAreaView>
     );
   }
@@ -155,11 +162,30 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     padding: spacing.md,
     paddingBottom: spacing.xxl,
   },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
+    gap: spacing.sm,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    textAlign: 'center',
+  },
   errorText: {
     color: colors.textMuted,
     textAlign: 'center',
-    marginTop: 100,
     fontSize: 16,
+    lineHeight: 22,
+    maxWidth: 320,
+  },
+  errorButton: {
+    width: '100%',
+    maxWidth: 320,
+    marginTop: spacing.md,
   },
   hero: {
     alignItems: 'center',

@@ -106,12 +106,19 @@ export async function configureRevenueCat() {
     return true;
   }
 
-  await purchasesModule.default.setLogLevel(
-    __DEV__ ? purchasesModule.LOG_LEVEL.DEBUG : purchasesModule.LOG_LEVEL.WARN
-  );
-  purchasesModule.default.configure({ apiKey });
-  didConfigurePurchases = true;
-  return true;
+  try {
+    await purchasesModule.default.setLogLevel(
+      __DEV__ ? purchasesModule.LOG_LEVEL.DEBUG : purchasesModule.LOG_LEVEL.WARN
+    );
+    purchasesModule.default.configure({ apiKey });
+    didConfigurePurchases = true;
+    return true;
+  } catch {
+    didConfigurePurchases = false;
+    cachedPackage = null;
+    cachedOffering = null;
+    return false;
+  }
 }
 
 export async function addRevenueCatCustomerInfoListener(
@@ -382,10 +389,14 @@ export async function openManagementUrl(url: string | null) {
   if (!url) {
     return false;
   }
-  const supported = await Linking.canOpenURL(url);
-  if (!supported) {
+  try {
+    const supported = await Linking.canOpenURL(url);
+    if (!supported) {
+      return false;
+    }
+    await Linking.openURL(url);
+    return true;
+  } catch {
     return false;
   }
-  await Linking.openURL(url);
-  return true;
 }

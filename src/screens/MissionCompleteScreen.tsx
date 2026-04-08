@@ -22,13 +22,21 @@ export default function MissionCompleteScreen() {
   const { xpEarned, coinsEarned, leveledUp, newRank } = route.params;
 
   useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
     if (leveledUp || newRank) {
       hapticLevelUp();
     } else {
       hapticSuccess();
-      setTimeout(() => hapticHeartbeat(), 600);
+      timeoutId = setTimeout(() => hapticHeartbeat(), 600);
     }
-  }, []);
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [leveledUp, newRank]);
 
   const checkAnim = useBounceIn(600, 200);
   const titleAnim = useFadeInUp(500, 400);

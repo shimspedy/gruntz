@@ -1,22 +1,26 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, Switch, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Switch, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColors, spacing, themeMetas, palettes, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors, ThemeId } from '../theme';
 import { useThemeStore } from '../store/useThemeStore';
+import { useUserStore } from '../store/useUserStore';
 import { Card } from '../components/Card';
 import { GameIcon } from '../components/GameIcon';
 import { SectionHeader } from '../components/SectionHeader';
 import { hapticSelection, hapticLight } from '../utils/haptics';
-import { scheduleDailyReminder, cancelDailyReminder } from '../services/notifications';
+import { requestNotificationPermission, scheduleDailyReminder, cancelDailyReminder, setupNotificationChannels } from '../services/notifications';
 
 export default function SettingsScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
-  const [imperialUnits, setImperialUnits] = React.useState(true);
   const themeId = useThemeStore((s) => s.themeId);
   const setTheme = useThemeStore((s) => s.setTheme);
+  const profile = useUserStore((s) => s.profile);
+  const updateSettings = useUserStore((s) => s.updateSettings);
+
+  const notificationsEnabled = profile?.settings.notifications_enabled ?? true;
+  const imperialUnits = (profile?.settings.units ?? 'imperial') === 'imperial';
 
   const tacticalThemes = themeMetas.filter((m) => m.group === 'tactical');
   const branchThemes = themeMetas.filter((m) => m.group === 'branch');
@@ -82,8 +86,27 @@ export default function SettingsScreen() {
               value={notificationsEnabled}
               onValueChange={(v) => {
                 hapticLight();
-                setNotificationsEnabled(v);
-                if (v) { scheduleDailyReminder(7, 0); } else { cancelDailyReminder(); }
+                void (async () => {
+                  if (v) {
+                    const granted = await requestNotificationPermission();
+                    if (!granted) {
+                      updateSettings({ notifications_enabled: false });
+                      Alert.alert(
+                        'Notifications unavailable',
+                        'Enable notifications in system settings if you want daily mission reminders.'
+                      );
+                      return;
+                    }
+
+                    await setupNotificationChannels();
+                    await scheduleDailyReminder(7, 0);
+                    updateSettings({ notifications_enabled: true, reminder_time: '07:00' });
+                    return;
+                  }
+
+                  await cancelDailyReminder();
+                  updateSettings({ notifications_enabled: false });
+                })();
               }}
               trackColor={{ false: colors.backgroundSecondary, true: colors.accent }}
               thumbColor={colors.textPrimary}
@@ -96,7 +119,10 @@ export default function SettingsScreen() {
             </View>
             <Switch
               value={imperialUnits}
-              onValueChange={(v) => { hapticLight(); setImperialUnits(v); }}
+              onValueChange={(v) => {
+                hapticLight();
+                updateSettings({ units: v ? 'imperial' : 'metric' });
+              }}
               trackColor={{ false: colors.backgroundSecondary, true: colors.accent }}
               thumbColor={colors.textPrimary}
             />

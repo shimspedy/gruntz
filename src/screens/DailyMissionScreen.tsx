@@ -19,12 +19,13 @@ import { useUserStore } from '../store/useUserStore';
 import { getWorkoutDay } from '../data/workouts';
 import { getReconWorkoutDay } from '../data/reconWorkouts';
 import { getExerciseById } from '../data/exercises';
+import { achievements } from '../data/achievements';
 import { getDisplayedMonthlyPrice } from '../config/monetization';
 import { hapticMedium } from '../utils/haptics';
-import { showWorkoutProgress, clearWorkoutProgress, showWorkoutComplete } from '../services/notifications';
+import { showWorkoutProgress, clearWorkoutProgress, showWorkoutComplete, showAchievementUnlocked } from '../services/notifications';
 import { useAdaptiveLayout } from '../hooks/useAdaptiveLayout';
 import { hasTrainingAccess, useSubscriptionStore } from '../store/useSubscriptionStore';
-import type { CompletedExercise, CompletedMission, Exercise } from '../types';
+import type { CompletedExercise, CompletedMission, Exercise, SetLog } from '../types';
 import type { HomeStackParamList } from '../types/navigation';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'DailyMission'>;
@@ -64,11 +65,11 @@ export default function DailyMissionScreen() {
   const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
   const currentOffering = useSubscriptionStore((s) => s.currentOffering);
 
-  const [completedKeys, setCompletedKeys] = useState<Set<string>>(new Set());
   const [started, setStarted] = useState(false);
   const [missionStartTime] = useState(() => new Date());
   const [restExerciseKey, setRestExerciseKey] = useState<string | null>(null);
   const [logTarget, setLogTarget] = useState<ExerciseInstance | null>(null);
+  const [loggedSetsByKey, setLoggedSetsByKey] = useState<Record<string, SetLog[]>>({});
   const [isHydrating, setIsHydrating] = useState(true);
 
   const workoutDay = todaysMission
@@ -117,9 +118,47 @@ export default function DailyMissionScreen() {
     () => new Map(allExerciseInstances.map((instance) => [instance.instanceKey, instance])),
     [allExerciseInstances]
   );
+  const getRequiredSets = (instance: ExerciseInstance) => Math.max(1, instance.exercise.sets || 1);
+  const isExerciseComplete = (instanceKey: string) => {
+    const instance = exerciseInstanceMap.get(instanceKey);
+    if (!instance) {
+      return false;
+    }
+    return (loggedSetsByKey[instanceKey]?.length || 0) >= getRequiredSets(instance);
+  };
   const totalExercises = allExerciseInstances.length;
-  const completedCount = completedKeys.size;
+  const completedCount = allExerciseInstances.filter((instance) => isExerciseComplete(instance.instanceKey)).length;
   const isPerfect = completedCount === totalExercises;
+  const restExercise = restExerciseKey ? exerciseInstanceMap.get(restExerciseKey) ?? null : null;
+
+  const getLoggedSummary = (instanceKey: string) => {
+    const instance = exerciseInstanceMap.get(instanceKey);
+    const loggedSets = loggedSetsByKey[instanceKey];
+    if (!instance || !loggedSets || loggedSets.length === 0) {
+      return null;
+    }
+
+    const requiredSets = getRequiredSets(instance);
+    const totalReps = loggedSets.reduce((sum, set) => sum + (set.reps_completed ?? 0), 0);
+    const totalDuration = loggedSets.reduce((sum, set) => sum + (set.duration_seconds ?? 0), 0);
+    const distanceEntries = loggedSets
+      .map((set) => set.distance?.trim())
+      .filter((value): value is string => Boolean(value));
+
+    const parts = [
+      `${loggedSets.length}/${requiredSets} set${requiredSets === 1 ? '' : 's'} logged`,
+    ];
+    if (totalReps > 0) {
+      parts.push(`${totalReps} reps`);
+    }
+    if (totalDuration > 0) {
+      parts.push(`${totalDuration}s total`);
+    }
+    if (distanceEntries.length > 0) {
+      parts.push(distanceEntries.length === 1 ? distanceEntries[0] : `${distanceEntries.length} distance entries`);
+    }
+    return parts.join(' · ');
+  };
 
   useEffect(() => {
     let active = true;
@@ -137,12 +176,28 @@ export default function DailyMissionScreen() {
     };
   }, [loadPersistedState, loadTodaysMission]);
 
+  useEffect(() => {
+    setStarted(false);
+    setRestExerciseKey(null);
+    setLogTarget(null);
+    setLoggedSetsByKey({});
+  }, [todaysMission?.date, todaysMission?.workout_day_id]);
+
   // Live workout progress notification
   useEffect(() => {
     if (started && totalExercises > 0 && completedCount > 0) {
       showWorkoutProgress(completedCount, totalExercises, workoutDay?.title ?? 'Mission');
+      return;
     }
-  }, [started, completedCount, totalExercises]);
+
+    clearWorkoutProgress();
+  }, [started, completedCount, totalExercises, workoutDay?.title]);
+
+  useEffect(() => {
+    return () => {
+      clearWorkoutProgress();
+    };
+  }, []);
 
   const handleStart = () => {
     hapticMedium();
@@ -151,34 +206,92 @@ export default function DailyMissionScreen() {
   };
 
   const toggleExercise = (instance: ExerciseInstance) => {
-    if (!completedKeys.has(instance.instanceKey)) {
-      // Opening rep log modal for logging
+    if (!isExerciseComplete(instance.instanceKey)) {
       setLogTarget(instance);
       return;
     }
-    // Un-toggle
-    setCompletedKeys((prev) => {
-      const next = new Set(prev);
-      next.delete(instance.instanceKey);
-      return next;
+    Alert.alert(
+      'Reset exercise?',
+      'This will remove all logged sets for this exercise so you can record it again.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: () => {
+            setLoggedSetsByKey((prev) => {
+              if (!prev[instance.instanceKey]) {
+                return prev;
+              }
+              const next = { ...prev };
+              delete next[instance.instanceKey];
+              return next;
+            });
+            if (restExerciseKey === instance.instanceKey) {
+              setRestExerciseKey(null);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleRemoveLastLoggedSet = (instance: ExerciseInstance) => {
+    setLoggedSetsByKey((prev) => {
+      const current = prev[instance.instanceKey];
+      if (!current || current.length === 0) {
+        return prev;
+      }
+      const nextSets = current.slice(0, -1);
+      if (nextSets.length === 0) {
+        const next = { ...prev };
+        delete next[instance.instanceKey];
+        return next;
+      }
+      return {
+        ...prev,
+        [instance.instanceKey]: nextSets,
+      };
     });
   };
 
-  const handleLogSave = (instance: ExerciseInstance) => {
-    setCompletedKeys((prev) => {
-      const next = new Set(prev);
-      next.add(instance.instanceKey);
-      return next;
-    });
-    setLogTarget(null);
-    // Start rest timer if exercise has rest
-    if (instance.exercise.rest_seconds > 0) {
-      setRestExerciseKey(instance.instanceKey);
+  const handleLogSave = (instance: ExerciseInstance, setLog: SetLog) => {
+    const currentSets = loggedSetsByKey[instance.instanceKey] || [];
+    const nextSets = [...currentSets, setLog];
+    const requiredSets = getRequiredSets(instance);
+    const hasMoreSets = nextSets.length < requiredSets;
+
+    setLoggedSetsByKey((prev) => ({
+      ...prev,
+      [instance.instanceKey]: nextSets,
+    }));
+
+    if (!hasMoreSets) {
+      setLogTarget(null);
+      setRestExerciseKey(null);
+      return;
     }
+
+    if (instance.exercise.rest_seconds > 0) {
+      setLogTarget(null);
+      setRestExerciseKey(instance.instanceKey);
+      return;
+    }
+
+    setLogTarget(instance);
   };
 
   const handleRestComplete = () => {
+    if (!restExerciseKey) {
+      return;
+    }
+
+    const instance = exerciseInstanceMap.get(restExerciseKey) ?? null;
     setRestExerciseKey(null);
+
+    if (instance && !isExerciseComplete(instance.instanceKey)) {
+      setLogTarget(instance);
+    }
   };
 
   const handleExerciseInfo = (exerciseId: string) => {
@@ -192,18 +305,41 @@ export default function DailyMissionScreen() {
       return;
     }
 
-    const exercises: CompletedExercise[] = Array.from(completedKeys).reduce<CompletedExercise[]>(
-      (acc, instanceKey) => {
-        const instance = exerciseInstanceMap.get(instanceKey);
+    const exercises: CompletedExercise[] = allExerciseInstances.reduce<CompletedExercise[]>(
+      (acc, instance) => {
+        if (!isExerciseComplete(instance.instanceKey)) {
+          return acc;
+        }
+        const instanceKey = instance.instanceKey;
         if (!instance) {
           return acc;
         }
         const ex = instance.exercise;
+        const loggedSets = loggedSetsByKey[instanceKey];
+        const completedReps =
+          loggedSets && loggedSets.some((set) => typeof set.reps_completed === 'number')
+            ? loggedSets.reduce((sum, set) => sum + (set.reps_completed ?? 0), 0)
+            : ex.reps;
+        const completedSets = loggedSets?.length || ex.sets;
+        const completedDuration =
+          loggedSets && loggedSets.some((set) => typeof set.duration_seconds === 'number')
+            ? loggedSets.reduce((sum, set) => sum + (set.duration_seconds ?? 0), 0)
+            : ex.duration_seconds;
+        const loggedDistances = loggedSets
+          ?.map((set) => set.distance?.trim())
+          .filter((value): value is string => Boolean(value));
+
         acc.push({
           exercise_id: instance.exerciseId,
-          completed_reps: ex.reps,
-          completed_sets: ex.sets,
-          completed_duration_seconds: ex.duration_seconds,
+          completed_reps: completedReps,
+          completed_sets: completedSets,
+          completed_duration_seconds: completedDuration,
+          completed_distance:
+            loggedDistances && loggedDistances.length > 0
+              ? loggedDistances.length === 1
+                ? loggedDistances[0]
+                : loggedDistances.join(', ')
+              : ex.distance,
           xp_earned: ex.xp_value || 0,
           is_personal_record: false,
         });
@@ -231,9 +367,17 @@ export default function DailyMissionScreen() {
     completeMission(mission);
     finishMission();
     clearWorkoutProgress();
-    showWorkoutComplete(totalExXP + completionBonus, 0);
+    const updatedProgress = useUserStore.getState().progress;
+    void showWorkoutComplete(totalExXP + completionBonus, updatedProgress.streak_days);
 
-    const newAchievements = checkAchievements();
+    const newAchievementIds = checkAchievements();
+    newAchievementIds.forEach((achievementId) => {
+      const achievement = achievements.find((item) => item.id === achievementId);
+      if (!achievement) {
+        return;
+      }
+      void showAchievementUnlocked(achievement.name, achievement.icon);
+    });
 
     navigation.navigate('MissionComplete', {
       xpEarned: totalExXP + completionBonus,
@@ -348,6 +492,23 @@ export default function DailyMissionScreen() {
     );
   }
 
+  if (todaysMission.completed && !started) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.emptyContainer}>
+          <GameIcon name="check" size={48} color={colors.accentGreen} style={styles.lockedIcon} />
+          <Text style={styles.emptyTitle}>Mission already completed</Text>
+          <Text style={styles.emptySubtext}>
+            You already cleared today&apos;s training block. Recover, review your progress, or come back tomorrow.
+          </Text>
+          <View style={styles.emptyActions}>
+            <MissionButton title="BACK TO HOME" onPress={() => navigation.navigate('Home')} />
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView
@@ -414,11 +575,12 @@ export default function DailyMissionScreen() {
                         key={instance.instanceKey}
                         name={instance.exercise.name}
                         detail={instance.detail}
-                        completed={completedKeys.has(instance.instanceKey)}
+                        completed={isExerciseComplete(instance.instanceKey)}
                         onToggle={() => toggleExercise(instance)}
                         restSeconds={instance.exercise.rest_seconds}
                         illustration={instance.exercise.illustration}
                         onInfo={() => handleExerciseInfo(instance.exerciseId)}
+                        loggedSummary={getLoggedSummary(instance.instanceKey)}
                       />
                     );
                   })}
@@ -441,7 +603,9 @@ export default function DailyMissionScreen() {
         {/* Rest Timer Overlay */}
         {restExerciseKey && (
           <RestTimer
-            seconds={exerciseInstanceMap.get(restExerciseKey)?.exercise.rest_seconds || 60}
+            seconds={restExercise?.exercise.rest_seconds || 60}
+            exerciseName={restExercise?.exercise.name}
+            loggedSummary={restExercise ? getLoggedSummary(restExercise.instanceKey) : null}
             onComplete={handleRestComplete}
             onSkip={handleRestComplete}
           />
@@ -452,8 +616,14 @@ export default function DailyMissionScreen() {
           <RepLogModal
             exercise={logTarget.exercise}
             visible={!!logTarget}
+            existingSets={loggedSetsByKey[logTarget.instanceKey] || []}
             onClose={() => setLogTarget(null)}
-            onSave={() => handleLogSave(logTarget)}
+            onRemoveLast={
+              (loggedSetsByKey[logTarget.instanceKey] || []).length > 0
+                ? () => handleRemoveLastLoggedSet(logTarget)
+                : undefined
+            }
+            onSave={(setLog) => handleLogSave(logTarget, setLog)}
           />
         )}
       </ScrollView>

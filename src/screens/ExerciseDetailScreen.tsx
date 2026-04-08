@@ -11,6 +11,7 @@ import { useFadeInUp } from '../utils/animations';
 import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 import { GameIcon } from '../components/GameIcon';
+import { MissionButton } from '../components/MissionButton';
 import { RepLogModal } from '../components/RepLogModal';
 import { getExerciseById } from '../data/exercises';
 import type { HomeStackParamList } from '../types/navigation';
@@ -30,12 +31,18 @@ export default function ExerciseDetailScreen() {
   if (!exercise) {
     return (
       <SafeAreaView style={styles.safe}>
-        <Text style={styles.errorText}>Exercise not found.</Text>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.errorTitle}>Exercise unavailable</Text>
+          <Text style={styles.errorText}>
+            This exercise could not be loaded. Go back and reopen it from the mission or card list.
+          </Text>
+          <MissionButton title="GO BACK" onPress={() => navigation.goBack()} style={styles.errorButton} />
+        </View>
       </SafeAreaView>
     );
   }
 
-  const handleLog = (_sets: SetLog[]) => {
+  const handleLog = (_set: SetLog) => {
     setShowLogModal(false);
   };
 
@@ -191,11 +198,30 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     padding: spacing.md,
     paddingBottom: spacing.xxl,
   },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
+    gap: spacing.sm,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    textAlign: 'center',
+  },
   errorText: {
     color: colors.textMuted,
     textAlign: 'center',
-    marginTop: 100,
     fontSize: 16,
+    lineHeight: 22,
+    maxWidth: 320,
+  },
+  errorButton: {
+    width: '100%',
+    maxWidth: 320,
+    marginTop: spacing.md,
   },
   hero: {
     alignItems: 'center',

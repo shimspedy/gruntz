@@ -51,17 +51,25 @@ export default function HomeScreen() {
   const [hydrated, setHydrated] = React.useState(false);
 
   useEffect(() => {
+    let active = true;
+
     loadPersistedState().then(() => {
-      setHydrated(true);
+      if (active) {
+        setHydrated(true);
+      }
     });
-  }, []);
+
+    return () => {
+      active = false;
+    };
+  }, [loadPersistedState]);
 
   // Load mission only after hydration, and when program/week changes
   useEffect(() => {
     if (hydrated) {
       loadTodaysMission();
     }
-  }, [hydrated, selectedProgram, currentWeek]);
+  }, [hydrated, selectedProgram, currentWeek, loadTodaysMission]);
 
   const xpInfo = getXPToNextLevel(progress.current_xp);
   const rankInfo = getRankInfo(progress.current_rank);
