@@ -50,7 +50,8 @@
           "locationAlwaysAndWhenInUsePermission": "Gruntz uses your location to track runs and rucks.",
           "locationWhenInUsePermission": "Gruntz uses your location to track runs and rucks."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "extra": {
       "eas": {
