@@ -28,6 +28,7 @@
 - Repeated exercises inside a workout need unique instance keys; never use raw exercise IDs as React keys in mission lists.
 - If no program is selected, do not synthesize a default mission. The app should stay in an explicit "choose a program" state.
 - User settings that affect UX, permissions, or units should be stored in the persisted profile, not local screen state.
+- Streak decay must be applied on app hydration and foreground, not only when a mission completes.
 
 ## Notification Rules
 - Workout-progress notifications must be cleared when mission tracking stops, the screen unmounts, or the mission completes.
@@ -41,6 +42,8 @@
 - If location permission is denied, the app should surface that to the user instead of failing silently.
 - Native sensor/location watcher setup should fail closed: return a safe false/error state, clean up listeners, and keep the app usable instead of throwing.
 - Pace formatting should normalize rounded seconds so the UI never renders impossible times like `12:60`.
+- Starting a new run must immediately clear stale distance, time, step, and route UI before the first fresh sensor update arrives.
+- Only show live barometer altitude UI while the barometer hook is active; do not render stale altitude after stop/pause/failure.
 
 ## Monetization Rules
 - The app uses a 15-day app-level free access window for new users.

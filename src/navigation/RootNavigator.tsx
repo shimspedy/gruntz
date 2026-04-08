@@ -12,15 +12,17 @@ export function RootNavigator() {
   const colors = useColors();
   const isOnboarded = useUserStore((s) => s.isOnboarded);
   const hasHydrated = useUserStore((s) => s.hasHydrated);
+  const updateStreak = useUserStore((s) => s.updateStreak);
   const subscriptionHydrated = useSubscriptionStore((s) => s.hasHydrated);
   const initializeSubscription = useSubscriptionStore((s) => s.initialize);
   const loadTheme = useThemeStore(s => s.loadPersistedTheme);
   useEffect(() => { loadTheme(); }, []);
   useEffect(() => {
     if (hasHydrated && subscriptionHydrated) {
+      updateStreak();
       initializeSubscription();
     }
-  }, [hasHydrated, subscriptionHydrated, isOnboarded, initializeSubscription]);
+  }, [hasHydrated, subscriptionHydrated, isOnboarded, initializeSubscription, updateStreak]);
 
   useEffect(() => {
     if (!hasHydrated || !subscriptionHydrated) {
@@ -29,6 +31,7 @@ export function RootNavigator() {
 
     const subscription = AppState.addEventListener('change', (nextState) => {
       if (nextState === 'active') {
+        updateStreak();
         initializeSubscription();
       }
     });
@@ -36,7 +39,7 @@ export function RootNavigator() {
     return () => {
       subscription.remove();
     };
-  }, [hasHydrated, subscriptionHydrated, initializeSubscription]);
+  }, [hasHydrated, subscriptionHydrated, initializeSubscription, updateStreak]);
 
   if (!hasHydrated || !subscriptionHydrated) {
     return (

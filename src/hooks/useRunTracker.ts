@@ -66,6 +66,22 @@ function estimateCalories(distanceMiles: number, weightLbs: number = 160): numbe
 }
 
 export function useRunTracker() {
+  const getInitialState = useCallback(
+    (): RunTrackerState => ({
+      isTracking: false,
+      isPaused: false,
+      distanceMiles: 0,
+      durationMs: 0,
+      paceMinPerMile: null,
+      currentSpeedMph: null,
+      steps: 0,
+      elevationGainFt: 0,
+      route: [],
+      caloriesEstimate: 0,
+    }),
+    []
+  );
+
   const [state, setState] = useState<RunTrackerState>({
     isTracking: false,
     isPaused: false,
@@ -211,10 +227,11 @@ export function useRunTracker() {
     internals.current.pausedDuration = 0;
     internals.current.pauseStart = null;
     internals.current.lastAltitude = null;
+    setState(getInitialState());
 
     const locationAttached = await attachLocationWatcher();
     if (!locationAttached) {
-      setState((prev) => ({ ...prev, isTracking: false, isPaused: false, currentSpeedMph: null }));
+      setState(getInitialState());
       return false;
     }
 
@@ -223,7 +240,7 @@ export function useRunTracker() {
 
     setState((prev) => ({ ...prev, isTracking: true, isPaused: false }));
     return true;
-  }, [attachLocationWatcher, attachPedometer, attachTimer]);
+  }, [attachLocationWatcher, attachPedometer, attachTimer, getInitialState]);
 
   const pause = useCallback(() => {
     internals.current.pauseStart = Date.now();

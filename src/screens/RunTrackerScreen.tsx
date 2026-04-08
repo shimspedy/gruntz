@@ -137,7 +137,7 @@ export default function RunTrackerScreen() {
         </View>
 
         {/* Barometer altitude */}
-        {baro.currentAltitudeFt != null && (
+        {baro.isActive && baro.currentAltitudeFt != null && (
           <View style={styles.altCard}>
             <Ionicons name="analytics-outline" size={18} color={colors.textMuted} />
             <Text style={styles.altText}>
