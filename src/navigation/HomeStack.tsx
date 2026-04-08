@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from '../screens/HomeScreen';
 import ProgramSelectScreen from '../screens/ProgramSelectScreen';
 import ProgramDetailScreen from '../screens/ProgramDetailScreen';
+import PaywallScreen from '../screens/PaywallScreen';
 import DailyMissionScreen from '../screens/DailyMissionScreen';
 import MissionCompleteScreen from '../screens/MissionCompleteScreen';
 import ExerciseDetailScreen from '../screens/ExerciseDetailScreen';
@@ -33,6 +34,11 @@ export function HomeStack() {
         name="ProgramDetail"
         component={ProgramDetailScreen}
         options={{ title: 'Program Details', headerBackTitle: 'Back' }}
+      />
+      <Stack.Screen
+        name="Paywall"
+        component={PaywallScreen}
+        options={{ title: 'Gruntz Pro', headerBackTitle: 'Back' }}
       />
       <Stack.Screen
         name="DailyMission"

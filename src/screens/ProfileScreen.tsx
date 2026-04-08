@@ -15,8 +15,10 @@ import { useProgramStore } from '../store/useProgramStore';
 import { getXPToNextLevel } from '../utils/xp';
 import { getRankInfo } from '../data/ranks';
 import { getProgramById } from '../data/programs';
+import { GRUNTZ_MONTHLY_PRICE_FALLBACK } from '../config/monetization';
 import { hapticLight } from '../utils/haptics';
 import { useAdaptiveLayout } from '../hooks/useAdaptiveLayout';
+import { getAccessState, getTrialDaysRemaining, useSubscriptionStore } from '../store/useSubscriptionStore';
 import type { ProfileStackParamList } from '../types/navigation';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
@@ -28,13 +30,31 @@ export default function ProfileScreen() {
   const { contentMaxWidth, horizontalPadding } = useAdaptiveLayout();
   const navigation = useNavigation<Nav>();
   const { progress, profile } = useUserStore();
+  const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
+  const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
+  const currentOffering = useSubscriptionStore((s) => s.currentOffering);
+  const openCustomerCenter = useSubscriptionStore((s) => s.openCustomerCenter);
   const xpInfo = getXPToNextLevel(progress.current_xp);
   const rankInfo = getRankInfo(progress.current_rank);
+  const accessState = getAccessState({ trialStartedAt, entitlementActive });
+  const trialDaysRemaining = getTrialDaysRemaining(trialStartedAt);
+  const monthlyPrice = currentOffering?.priceString ?? GRUNTZ_MONTHLY_PRICE_FALLBACK;
 
   const { selectedProgram } = useProgramStore();
   const activeProgram = selectedProgram ? getProgramById(selectedProgram) : null;
 
   const menuItems = [
+    {
+      label: accessState === 'subscriber' ? 'Manage Gruntz Pro' : 'Gruntz Pro',
+      icon: 'rank',
+      onPress: async () => {
+        if (accessState === 'subscriber') {
+          await openCustomerCenter();
+          return;
+        }
+        navigation.navigate('Paywall');
+      },
+    },
     { label: activeProgram ? `Program: ${activeProgram.name}` : 'Choose Program', icon: 'program', screen: 'ProgramSelect' as const },
     { label: 'Achievements', icon: 'achievement', screen: 'Achievements' as const },
     { label: 'Settings', icon: 'settings', screen: 'Settings' as const },
@@ -60,6 +80,24 @@ export default function ProfileScreen() {
         <Card style={styles.section}>
           <XPBar current={xpInfo.current} required={xpInfo.required} level={progress.current_level} />
           <Text style={styles.totalXP}>{progress.current_xp.toLocaleString()} Total XP</Text>
+        </Card>
+
+        <Card style={styles.section}>
+          <Text style={styles.membershipLabel}>MEMBERSHIP</Text>
+          <Text style={styles.membershipTitle}>
+            {accessState === 'subscriber'
+              ? 'Gruntz Pro Active'
+              : accessState === 'trial'
+                ? `${trialDaysRemaining} day${trialDaysRemaining === 1 ? '' : 's'} left in free access`
+                : 'Unlock Gruntz Pro'}
+          </Text>
+          <Text style={styles.membershipText}>
+            {accessState === 'subscriber'
+              ? 'Full programs and daily missions are unlocked.'
+              : accessState === 'trial'
+                ? `Your free access is active. Membership continues at ${monthlyPrice}.`
+                : `Subscribe for ${monthlyPrice} to keep training after your free access ends.`}
+          </Text>
         </Card>
 
         {/* Fitness Scores */}
@@ -109,7 +147,14 @@ export default function ProfileScreen() {
           <TouchableOpacity
             key={item.label}
             style={styles.menuItem}
-            onPress={() => { hapticLight(); navigation.navigate(item.screen); }}
+            onPress={() => {
+              hapticLight();
+              if (typeof item.onPress === 'function') {
+                void item.onPress();
+                return;
+              }
+              navigation.navigate(item.screen);
+            }}
             activeOpacity={0.7}
           >
             <View style={styles.menuLeft}>
@@ -188,6 +233,24 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.textMuted,
     textAlign: 'center',
     marginTop: spacing.sm,
+  },
+  membershipLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.accent,
+    letterSpacing: 1.6,
+    marginBottom: spacing.xs,
+  },
+  membershipTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
+  membershipText: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: colors.textSecondary,
   },
   scoreGrid: {
     flexDirection: 'row',

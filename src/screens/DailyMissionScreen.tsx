@@ -19,9 +19,11 @@ import { useUserStore } from '../store/useUserStore';
 import { getWorkoutDay } from '../data/workouts';
 import { getReconWorkoutDay } from '../data/reconWorkouts';
 import { getExerciseById } from '../data/exercises';
+import { GRUNTZ_MONTHLY_PRICE_FALLBACK } from '../config/monetization';
 import { hapticMedium } from '../utils/haptics';
 import { showWorkoutProgress, clearWorkoutProgress, showWorkoutComplete } from '../services/notifications';
 import { useAdaptiveLayout } from '../hooks/useAdaptiveLayout';
+import { hasTrainingAccess, useSubscriptionStore } from '../store/useSubscriptionStore';
 import type { CompletedExercise, CompletedMission, Exercise } from '../types';
 import type { HomeStackParamList } from '../types/navigation';
 
@@ -58,6 +60,9 @@ export default function DailyMissionScreen() {
   const checkAchievements = useUserStore((s) => s.checkAchievements);
   const selectedProgram = useProgramStore((s) => s.selectedProgram);
   const loadPersistedState = useProgramStore((s) => s.loadPersistedState);
+  const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
+  const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
+  const currentOffering = useSubscriptionStore((s) => s.currentOffering);
 
   const [completedKeys, setCompletedKeys] = useState<Set<string>>(new Set());
   const [started, setStarted] = useState(false);
@@ -106,6 +111,8 @@ export default function DailyMissionScreen() {
     () => sectionInstances.flatMap((section) => section.exerciseInstances),
     [sectionInstances]
   );
+  const trainingUnlocked = hasTrainingAccess({ trialStartedAt, entitlementActive });
+  const monthlyPrice = currentOffering?.priceString ?? GRUNTZ_MONTHLY_PRICE_FALLBACK;
   const exerciseInstanceMap = useMemo(
     () => new Map(allExerciseInstances.map((instance) => [instance.instanceKey, instance])),
     [allExerciseInstances]
@@ -258,6 +265,30 @@ export default function DailyMissionScreen() {
           </Text>
           <View style={styles.emptyActions}>
             <MissionButton title="CHOOSE PROGRAM" onPress={() => navigation.replace('ProgramSelect')} />
+            <TouchableOpacity
+              style={styles.secondaryAction}
+              onPress={() => navigation.navigate('Home')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.secondaryActionText}>Back to Home</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!trainingUnlocked) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.emptyContainer}>
+          <GameIcon name="warning" size={48} color={colors.accentGold} style={styles.lockedIcon} />
+          <Text style={styles.emptyTitle}>Training locked</Text>
+          <Text style={styles.emptySubtext}>
+            Your free access window has ended. Subscribe for {monthlyPrice} to keep running daily missions.
+          </Text>
+          <View style={styles.emptyActions}>
+            <MissionButton title="UNLOCK GRUNTZ PRO" onPress={() => navigation.navigate('Paywall')} />
             <TouchableOpacity
               style={styles.secondaryAction}
               onPress={() => navigation.navigate('Home')}
@@ -521,6 +552,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontWeight: '800',
     color: colors.textPrimary,
     textAlign: 'center',
+  },
+  lockedIcon: {
+    marginBottom: spacing.xs,
   },
   emptySubtext: {
     fontSize: 14,

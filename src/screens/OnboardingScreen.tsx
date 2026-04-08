@@ -8,6 +8,7 @@ import { MissionButton } from '../components/MissionButton';
 import { Card } from '../components/Card';
 import { GameIcon } from '../components/GameIcon';
 import { useUserStore } from '../store/useUserStore';
+import { useSubscriptionStore } from '../store/useSubscriptionStore';
 import { hapticLight, hapticSelection, hapticSuccess } from '../utils/haptics';
 import type { UserProfile } from '../types';
 
@@ -26,6 +27,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   const titleAnim = useFadeInUp(600, 200);
   const subtitleAnim = useFadeInUp(600, 400);
   const { setProfile, setOnboarded } = useUserStore();
+  const startTrialIfNeeded = useSubscriptionStore((s) => s.startTrialIfNeeded);
   const [step, setStep] = useState(0);
   const [fitnessLevel, setFitnessLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner');
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
@@ -64,6 +66,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
     };
     setProfile(profile);
     setOnboarded(true);
+    startTrialIfNeeded();
     onComplete();
   };
 

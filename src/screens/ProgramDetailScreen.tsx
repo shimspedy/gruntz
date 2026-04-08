@@ -9,7 +9,9 @@ import { hapticMedium } from '../utils/haptics';
 import { useFadeInUp } from '../utils/animations';
 import type { ThemeColors } from '../theme';
 import { getProgramById } from '../data/programs';
+import { GRUNTZ_MONTHLY_PRICE_FALLBACK } from '../config/monetization';
 import { useProgramStore } from '../store/useProgramStore';
+import { hasTrainingAccess, useSubscriptionStore } from '../store/useSubscriptionStore';
 import type { HomeStackParamList } from '../types/navigation';
 import type { ProgramPhase, ProgramId } from '../types';
 import { GameIcon } from '../components/GameIcon';
@@ -27,14 +29,23 @@ export default function ProgramDetailScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const { selectProgram, setHasSeenProgramSelect } = useProgramStore();
+  const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
+  const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
+  const currentOffering = useSubscriptionStore((s) => s.currentOffering);
 
   const program = getProgramById(route.params.programId);
   if (!program) return null;
 
   const accentColor = program.id === 'raider' ? colors.accent : colors.accentOrange;
+  const trainingUnlocked = hasTrainingAccess({ trialStartedAt, entitlementActive });
+  const membershipPrice = currentOffering?.priceString ?? GRUNTZ_MONTHLY_PRICE_FALLBACK;
 
   const handleStart = () => {
     hapticMedium();
+    if (!trainingUnlocked) {
+      navigation.navigate('Paywall');
+      return;
+    }
     Alert.alert(
       `Start ${program.name}?`,
       `This will set your active program to ${program.name}. You can switch anytime.`,
@@ -120,12 +131,19 @@ export default function ProgramDetailScreen() {
 
       {/* Fixed bottom button — above glass tab bar */}
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + TAB_BAR_HEIGHT }]}>
+        {!trainingUnlocked ? (
+          <Text style={styles.lockedNotice}>
+            Subscribe for {membershipPrice} to unlock this program and every future training block.
+          </Text>
+        ) : null}
         <TouchableOpacity
           style={[styles.startButton, { backgroundColor: accentColor }]}
           onPress={handleStart}
           activeOpacity={0.85}
         >
-          <Text style={styles.startButtonText} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>START {program.name.toUpperCase()}</Text>
+          <Text style={styles.startButtonText} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
+            {trainingUnlocked ? `START ${program.name.toUpperCase()}` : 'UNLOCK GRUNTZ PRO'}
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -221,6 +239,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     position: 'absolute', bottom: 0, left: 0, right: 0,
     backgroundColor: colors.background, padding: spacing.md,
     borderTopWidth: 1, borderTopColor: colors.cardBorder,
+  },
+  lockedNotice: {
+    fontSize: 12,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+    lineHeight: 18,
   },
   startButton: {
     borderRadius: 2, paddingVertical: 16, alignItems: 'center',

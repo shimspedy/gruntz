@@ -9,6 +9,7 @@ export type HomeStackParamList = {
   Home: undefined;
   ProgramSelect: undefined;
   ProgramDetail: { programId: string };
+  Paywall: undefined;
   DailyMission: { missionDate?: string };
   MissionComplete: { xpEarned: number; coinsEarned: number; leveledUp: boolean; newRank?: string };
   ExerciseDetail: { exerciseId: string };
@@ -18,6 +19,7 @@ export type HomeStackParamList = {
 export type MissionsStackParamList = {
   WorkoutCards: undefined;
   Achievements: undefined;
+  Paywall: undefined;
   CardDetail: { cardId: string };
   ExerciseDetail: { exerciseId: string };
 };
@@ -32,6 +34,7 @@ export type ProfileStackParamList = {
   Achievements: undefined;
   ProgramSelect: undefined;
   ProgramDetail: { programId: string };
+  Paywall: undefined;
 };
 
 export type AuthStackParamList = {

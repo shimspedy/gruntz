@@ -20,8 +20,10 @@ import { generateCoachMessage } from '../utils/adaptive';
 import { getTopInsights, CoachInsight } from '../services/coach';
 import { getRankInfo } from '../data/ranks';
 import { getProgramById } from '../data/programs';
+import { GRUNTZ_MONTHLY_PRICE_FALLBACK } from '../config/monetization';
 import { hapticLight } from '../utils/haptics';
 import { useAdaptiveLayout } from '../hooks/useAdaptiveLayout';
+import { getAccessState, getTrialDaysRemaining, hasTrainingAccess, useSubscriptionStore } from '../store/useSubscriptionStore';
 import type { HomeStackParamList } from '../types/navigation';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
@@ -40,6 +42,9 @@ export default function HomeScreen() {
   const selectedProgram = useProgramStore((s) => s.selectedProgram);
   const currentWeek = useProgramStore((s) => s.currentWeek);
   const loadPersistedState = useProgramStore((s) => s.loadPersistedState);
+  const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
+  const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
+  const currentOffering = useSubscriptionStore((s) => s.currentOffering);
 
   const program = selectedProgram ? getProgramById(selectedProgram) : null;
 
@@ -62,6 +67,10 @@ export default function HomeScreen() {
   const rankInfo = getRankInfo(progress.current_rank);
   const coachMessage = generateCoachMessage(progress);
   const coachInsights = getTopInsights(progress);
+  const accessState = getAccessState({ trialStartedAt, entitlementActive });
+  const trialDaysRemaining = getTrialDaysRemaining(trialStartedAt);
+  const trainingUnlocked = hasTrainingAccess({ trialStartedAt, entitlementActive });
+  const monthlyPrice = currentOffering?.priceString ?? GRUNTZ_MONTHLY_PRICE_FALLBACK;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -93,6 +102,43 @@ export default function HomeScreen() {
             </View>
           </View>
         </Animated.View>
+
+        <TouchableOpacity
+          style={[
+            styles.membershipBanner,
+            accessState === 'locked' && styles.membershipBannerLocked,
+          ]}
+          onPress={() => navigation.navigate('Paywall')}
+          activeOpacity={accessState === 'subscriber' ? 1 : 0.85}
+          disabled={accessState === 'subscriber'}
+        >
+          <GameIcon
+            name={accessState === 'subscriber' ? 'rank' : accessState === 'trial' ? 'badge' : 'warning'}
+            size={26}
+            color={accessState === 'locked' ? colors.accentGold : colors.accent}
+            variant="minimal"
+            animated={accessState !== 'subscriber'}
+          />
+          <View style={styles.membershipBannerBody}>
+            <Text style={styles.membershipBannerTitle}>
+              {accessState === 'subscriber'
+                ? 'GRUNTZ PRO ACTIVE'
+                : accessState === 'trial'
+                  ? `${trialDaysRemaining} DAY${trialDaysRemaining === 1 ? '' : 'S'} LEFT IN FREE ACCESS`
+                  : 'TRIAL ENDED'}
+            </Text>
+            <Text style={styles.membershipBannerText}>
+              {accessState === 'subscriber'
+                ? 'Full programs and missions unlocked.'
+                : accessState === 'trial'
+                  ? `You have full access right now. Membership continues at ${monthlyPrice}.`
+                  : `Subscribe for ${monthlyPrice} to keep running missions and full programs.`}
+            </Text>
+          </View>
+          {accessState !== 'subscriber' ? (
+            <Text style={styles.membershipBannerAction}>VIEW</Text>
+          ) : null}
+        </TouchableOpacity>
 
         {/* Choose Program (only shown when no program selected) */}
         {!program && (
@@ -139,8 +185,20 @@ export default function HomeScreen() {
               </View>
             </View>
             <MissionButton
-              title={todaysMission.completed ? 'MISSION COMPLETE' : 'START MISSION'}
-              onPress={() => navigation.navigate('DailyMission', {})}
+              title={
+                todaysMission.completed
+                  ? 'MISSION COMPLETE'
+                  : trainingUnlocked
+                    ? 'START MISSION'
+                    : 'UNLOCK GRUNTZ PRO'
+              }
+              onPress={() => {
+                if (trainingUnlocked) {
+                  navigation.navigate('DailyMission', {});
+                  return;
+                }
+                navigation.navigate('Paywall');
+              }}
               variant={todaysMission.completed ? 'success' : 'primary'}
               disabled={todaysMission.completed}
               style={{ marginTop: spacing.md }}
@@ -207,7 +265,14 @@ export default function HomeScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.aiToolCard}
-            onPress={() => { hapticLight(); navigation.navigate('RunTracker'); }}
+            onPress={() => {
+              hapticLight();
+              if (trainingUnlocked) {
+                navigation.navigate('RunTracker');
+                return;
+              }
+              navigation.navigate('Paywall');
+            }}
             activeOpacity={0.7}
           >
             <GameIcon name="run" size={28} color={colors.accent} style={styles.aiToolIcon} />
@@ -305,6 +370,42 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontWeight: '800',
     color: colors.textMuted,
     letterSpacing: 1.1,
+  },
+  membershipBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.card,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  membershipBannerLocked: {
+    borderColor: colors.accentGold,
+  },
+  membershipBannerBody: {
+    flex: 1,
+  },
+  membershipBannerTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    letterSpacing: 1.1,
+    marginBottom: 2,
+  },
+  membershipBannerText: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: colors.textSecondary,
+  },
+  membershipBannerAction: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.accent,
+    letterSpacing: 1.2,
   },
   xpContainer: {
     marginBottom: spacing.lg,

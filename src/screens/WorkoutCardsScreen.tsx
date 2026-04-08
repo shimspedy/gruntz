@@ -9,8 +9,11 @@ import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 import { GameIcon } from '../components/GameIcon';
 import { SectionHeader } from '../components/SectionHeader';
+import { MissionButton } from '../components/MissionButton';
+import { GRUNTZ_MONTHLY_PRICE_FALLBACK } from '../config/monetization';
 import { movementCards, getAllMovementCards, getAllSwimCards } from '../data/movementCards';
 import { useUserStore } from '../store/useUserStore';
+import { hasTrainingAccess, useSubscriptionStore } from '../store/useSubscriptionStore';
 import { getTopRecommendations, getStrengthProfile } from '../utils/recommendations';
 import { hapticLight } from '../utils/haptics';
 import type { MovementCard, WorkoutRecommendation } from '../types';
@@ -22,6 +25,9 @@ export default function WorkoutCardsScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const navigation = useNavigation<Nav>();
+  const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
+  const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
+  const currentOffering = useSubscriptionStore((s) => s.currentOffering);
 
   function DifficultyBadge({ level }: { level: string }) {
     const colorMap: Record<string, string> = {
@@ -80,12 +86,35 @@ export default function WorkoutCardsScreen() {
   const unlockedCount = useUserStore((s) => s.achievements.filter((a) => a.unlocked).length);
   const recommendations = getTopRecommendations(progress, 11);
   const profile = getStrengthProfile(progress);
+  const trainingUnlocked = hasTrainingAccess({ trialStartedAt, entitlementActive });
+  const monthlyPrice = currentOffering?.priceString ?? GRUNTZ_MONTHLY_PRICE_FALLBACK;
 
   const recMap = new Map<string, WorkoutRecommendation>();
   recommendations.forEach(r => recMap.set(r.card_id, r));
 
   const movCards = getAllMovementCards();
   const swimCards = getAllSwimCards();
+
+  if (!trainingUnlocked) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+          <Card style={styles.lockedCard}>
+            <GameIcon name="mission" size={44} color={colors.accentGold} style={styles.lockedIcon} />
+            <Text style={styles.lockedTitle}>Training cards are part of Gruntz Pro</Text>
+            <Text style={styles.lockedText}>
+              Subscribe for {monthlyPrice} to unlock movement cards, swim cards, and the full training library.
+            </Text>
+            <MissionButton
+              title="UNLOCK GRUNTZ PRO"
+              onPress={() => navigation.navigate('Paywall')}
+              style={styles.lockedButton}
+            />
+          </Card>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -243,6 +272,30 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.textPrimary,
     width: 35,
     textAlign: 'right',
+  },
+  lockedCard: {
+    alignItems: 'center',
+    marginTop: spacing.xl,
+  },
+  lockedIcon: {
+    marginBottom: spacing.md,
+  },
+  lockedTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+  lockedText: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  lockedButton: {
+    marginTop: spacing.sm,
   },
   cardItem: {
     backgroundColor: colors.card,
