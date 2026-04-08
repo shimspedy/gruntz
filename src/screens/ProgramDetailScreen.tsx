@@ -9,7 +9,7 @@ import { hapticMedium } from '../utils/haptics';
 import { useFadeInUp } from '../utils/animations';
 import type { ThemeColors } from '../theme';
 import { getProgramById } from '../data/programs';
-import { GRUNTZ_MONTHLY_PRICE_FALLBACK } from '../config/monetization';
+import { getDisplayedMonthlyPrice } from '../config/monetization';
 import { useProgramStore } from '../store/useProgramStore';
 import { hasTrainingAccess, useSubscriptionStore } from '../store/useSubscriptionStore';
 import type { HomeStackParamList } from '../types/navigation';
@@ -38,7 +38,7 @@ export default function ProgramDetailScreen() {
 
   const accentColor = program.id === 'raider' ? colors.accent : colors.accentOrange;
   const trainingUnlocked = hasTrainingAccess({ trialStartedAt, entitlementActive });
-  const membershipPrice = currentOffering?.priceString ?? GRUNTZ_MONTHLY_PRICE_FALLBACK;
+  const membershipPrice = getDisplayedMonthlyPrice(currentOffering);
 
   const handleStart = () => {
     hapticMedium();

@@ -20,7 +20,7 @@ import { generateCoachMessage } from '../utils/adaptive';
 import { getTopInsights, CoachInsight } from '../services/coach';
 import { getRankInfo } from '../data/ranks';
 import { getProgramById } from '../data/programs';
-import { GRUNTZ_MONTHLY_PRICE_FALLBACK } from '../config/monetization';
+import { getDisplayedMonthlyPrice } from '../config/monetization';
 import { hapticLight } from '../utils/haptics';
 import { useAdaptiveLayout } from '../hooks/useAdaptiveLayout';
 import { getAccessState, getTrialDaysRemaining, hasTrainingAccess, useSubscriptionStore } from '../store/useSubscriptionStore';
@@ -70,7 +70,7 @@ export default function HomeScreen() {
   const accessState = getAccessState({ trialStartedAt, entitlementActive });
   const trialDaysRemaining = getTrialDaysRemaining(trialStartedAt);
   const trainingUnlocked = hasTrainingAccess({ trialStartedAt, entitlementActive });
-  const monthlyPrice = currentOffering?.priceString ?? GRUNTZ_MONTHLY_PRICE_FALLBACK;
+  const monthlyPrice = getDisplayedMonthlyPrice(currentOffering);
 
   return (
     <SafeAreaView style={styles.safe}>

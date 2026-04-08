@@ -35,6 +35,7 @@ interface SubscriptionState {
   startTrialIfNeeded: (startAt?: string) => void;
   initialize: () => Promise<void>;
   refresh: () => Promise<void>;
+  loadOffering: () => Promise<void>;
   purchaseMonthly: () => Promise<'purchased' | 'cancelled' | 'unavailable' | 'error'>;
   restoreAccess: () => Promise<'restored' | 'unavailable' | 'error'>;
   openCustomerCenter: () => Promise<'presented' | 'unavailable' | 'error'>;
@@ -121,14 +122,20 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
         set({ isLoading: true, lastError: null, isConfigured: isRevenueCatAvailable() });
 
+        const shouldDeferBillingSync =
+          hasTrialAccess(get().trialStartedAt) && !get().entitlementActive;
+        if (shouldDeferBillingSync) {
+          set({ isLoading: false, isConfigured: isRevenueCatAvailable() });
+          return;
+        }
+
         try {
           await addRevenueCatCustomerInfoListener((customerInfo) => {
             syncEntitlementState(set, customerInfo);
           });
-          const state = await loadRevenueCatState();
+          const state = await loadRevenueCatState({ includeOfferings: false });
           syncEntitlementState(set, state.customerInfo);
           set({
-            currentOffering: state.currentOffering,
             isConfigured: state.configured,
           });
         } catch (error) {
@@ -144,6 +151,27 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
       refresh: async () => {
         await get().initialize();
+      },
+
+      loadOffering: async () => {
+        set({ isLoading: true, lastError: null });
+
+        try {
+          const state = await loadRevenueCatState({ includeOfferings: true });
+          syncEntitlementState(set, state.customerInfo);
+          set({
+            currentOffering: state.currentOffering,
+            isConfigured: state.configured,
+          });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Unable to load subscription options.';
+          set({
+            lastError: message,
+            isConfigured: isRevenueCatAvailable(),
+          });
+        } finally {
+          set({ isLoading: false });
+        }
       },
 
       purchaseMonthly: async () => {

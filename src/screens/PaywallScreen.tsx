@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -11,6 +11,8 @@ import {
   GRUNTZ_MONTHLY_PRICE_FALLBACK,
   GRUNTZ_PRO_LABEL,
   GRUNTZ_TRIAL_DAYS,
+  getDisplayedMonthlyPrice,
+  hasRevenueCatPricingMismatch,
 } from '../config/monetization';
 import {
   getAccessState,
@@ -36,6 +38,7 @@ export default function PaywallScreen() {
   const isConfigured = useSubscriptionStore((s) => s.isConfigured);
   const isLoading = useSubscriptionStore((s) => s.isLoading);
   const lastError = useSubscriptionStore((s) => s.lastError);
+  const loadOffering = useSubscriptionStore((s) => s.loadOffering);
   const purchaseMonthly = useSubscriptionStore((s) => s.purchaseMonthly);
   const restoreAccess = useSubscriptionStore((s) => s.restoreAccess);
   const openCustomerCenter = useSubscriptionStore((s) => s.openCustomerCenter);
@@ -43,8 +46,17 @@ export default function PaywallScreen() {
 
   const accessState = getAccessState({ trialStartedAt, entitlementActive });
   const trialDaysRemaining = getTrialDaysRemaining(trialStartedAt);
-  const priceLabel = currentOffering?.priceString ?? GRUNTZ_MONTHLY_PRICE_FALLBACK;
+  const priceLabel = getDisplayedMonthlyPrice(currentOffering);
   const productTitle = currentOffering?.title || `${GRUNTZ_PRO_LABEL} Monthly`;
+  const pricingMismatch = hasRevenueCatPricingMismatch(currentOffering);
+  const livePriceLabel = currentOffering?.priceString ?? null;
+
+  useEffect(() => {
+    if (!isConfigured || accessState === 'subscriber') {
+      return;
+    }
+    loadOffering();
+  }, [accessState, isConfigured, loadOffering]);
 
   const handlePrimary = async () => {
     if (accessState === 'subscriber') {
@@ -138,6 +150,15 @@ export default function PaywallScreen() {
           </Card>
         ) : null}
 
+        {pricingMismatch && accessState !== 'subscriber' ? (
+          <Card style={styles.warningCard}>
+            <Text style={styles.warningTitle}>Pricing mismatch detected</Text>
+            <Text style={styles.warningText}>
+              RevenueCat is currently returning {livePriceLabel ?? 'an unexpected live price'} for this product. Gruntz should launch at {GRUNTZ_MONTHLY_PRICE_FALLBACK}. Fix the App Store Connect product `monthly` and RevenueCat offering `default` before enabling purchases.
+            </Text>
+          </Card>
+        ) : null}
+
         {isConfigured ? (
           <Card style={styles.infoCard}>
             <Text style={styles.infoTitle}>
@@ -167,7 +188,7 @@ export default function PaywallScreen() {
                 : 'BILLING UNAVAILABLE'
           }
           onPress={handlePrimary}
-          disabled={isLoading || (!isConfigured && accessState !== 'subscriber')}
+          disabled={isLoading || pricingMismatch || (!isConfigured && accessState !== 'subscriber')}
           style={styles.primaryButton}
         />
 

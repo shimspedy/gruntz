@@ -10,7 +10,7 @@ import { Card } from '../components/Card';
 import { GameIcon } from '../components/GameIcon';
 import { SectionHeader } from '../components/SectionHeader';
 import { MissionButton } from '../components/MissionButton';
-import { GRUNTZ_MONTHLY_PRICE_FALLBACK } from '../config/monetization';
+import { getDisplayedMonthlyPrice } from '../config/monetization';
 import { movementCards, getAllMovementCards, getAllSwimCards } from '../data/movementCards';
 import { useUserStore } from '../store/useUserStore';
 import { hasTrainingAccess, useSubscriptionStore } from '../store/useSubscriptionStore';
@@ -87,7 +87,7 @@ export default function WorkoutCardsScreen() {
   const recommendations = getTopRecommendations(progress, 11);
   const profile = getStrengthProfile(progress);
   const trainingUnlocked = hasTrainingAccess({ trialStartedAt, entitlementActive });
-  const monthlyPrice = currentOffering?.priceString ?? GRUNTZ_MONTHLY_PRICE_FALLBACK;
+  const monthlyPrice = getDisplayedMonthlyPrice(currentOffering);
 
   const recMap = new Map<string, WorkoutRecommendation>();
   recommendations.forEach(r => recMap.set(r.card_id, r));

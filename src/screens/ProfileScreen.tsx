@@ -15,7 +15,7 @@ import { useProgramStore } from '../store/useProgramStore';
 import { getXPToNextLevel } from '../utils/xp';
 import { getRankInfo } from '../data/ranks';
 import { getProgramById } from '../data/programs';
-import { GRUNTZ_MONTHLY_PRICE_FALLBACK } from '../config/monetization';
+import { getDisplayedMonthlyPrice } from '../config/monetization';
 import { hapticLight } from '../utils/haptics';
 import { useAdaptiveLayout } from '../hooks/useAdaptiveLayout';
 import { getAccessState, getTrialDaysRemaining, useSubscriptionStore } from '../store/useSubscriptionStore';
@@ -38,7 +38,7 @@ export default function ProfileScreen() {
   const rankInfo = getRankInfo(progress.current_rank);
   const accessState = getAccessState({ trialStartedAt, entitlementActive });
   const trialDaysRemaining = getTrialDaysRemaining(trialStartedAt);
-  const monthlyPrice = currentOffering?.priceString ?? GRUNTZ_MONTHLY_PRICE_FALLBACK;
+  const monthlyPrice = getDisplayedMonthlyPrice(currentOffering);
 
   const { selectedProgram } = useProgramStore();
   const activeProgram = selectedProgram ? getProgramById(selectedProgram) : null;

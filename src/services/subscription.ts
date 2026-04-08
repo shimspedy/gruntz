@@ -168,28 +168,45 @@ function snapshotFromOffering(offering: PurchasesOffering | null, pkg: Purchases
   };
 }
 
-export async function loadRevenueCatState(): Promise<{
+export async function loadRevenueCatState(options?: {
+  includeOfferings?: boolean;
+}): Promise<{
   currentOffering: OfferingSnapshot | null;
   customerInfo: CustomerInfo | null;
   configured: boolean;
 }> {
+  const includeOfferings = options?.includeOfferings ?? true;
   const configured = await configureRevenueCat();
   if (!configured) {
-    cachedPackage = null;
-    cachedOffering = null;
+    if (includeOfferings) {
+      cachedPackage = null;
+      cachedOffering = null;
+    }
     return { currentOffering: null, customerInfo: null, configured: false };
   }
 
   const purchasesModule = await getPurchasesModule();
   if (!purchasesModule) {
-    cachedPackage = null;
-    cachedOffering = null;
+    if (includeOfferings) {
+      cachedPackage = null;
+      cachedOffering = null;
+    }
     return { currentOffering: null, customerInfo: null, configured: false };
+  }
+
+  const customerInfoPromise = purchasesModule.default.getCustomerInfo();
+
+  if (!includeOfferings) {
+    return {
+      currentOffering: snapshotFromOffering(cachedOffering, cachedPackage),
+      customerInfo: await customerInfoPromise,
+      configured: true,
+    };
   }
 
   const [offerings, customerInfo] = await Promise.all([
     purchasesModule.default.getOfferings(),
-    purchasesModule.default.getCustomerInfo(),
+    customerInfoPromise,
   ]);
 
   const currentOffering = chooseOffering(offerings);

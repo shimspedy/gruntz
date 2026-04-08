@@ -19,7 +19,7 @@ import { useUserStore } from '../store/useUserStore';
 import { getWorkoutDay } from '../data/workouts';
 import { getReconWorkoutDay } from '../data/reconWorkouts';
 import { getExerciseById } from '../data/exercises';
-import { GRUNTZ_MONTHLY_PRICE_FALLBACK } from '../config/monetization';
+import { getDisplayedMonthlyPrice } from '../config/monetization';
 import { hapticMedium } from '../utils/haptics';
 import { showWorkoutProgress, clearWorkoutProgress, showWorkoutComplete } from '../services/notifications';
 import { useAdaptiveLayout } from '../hooks/useAdaptiveLayout';
@@ -112,7 +112,7 @@ export default function DailyMissionScreen() {
     [sectionInstances]
   );
   const trainingUnlocked = hasTrainingAccess({ trialStartedAt, entitlementActive });
-  const monthlyPrice = currentOffering?.priceString ?? GRUNTZ_MONTHLY_PRICE_FALLBACK;
+  const monthlyPrice = getDisplayedMonthlyPrice(currentOffering);
   const exerciseInstanceMap = useMemo(
     () => new Map(allExerciseInstances.map((instance) => [instance.instanceKey, instance])),
     [allExerciseInstances]
