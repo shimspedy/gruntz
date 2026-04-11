@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -17,7 +17,7 @@ interface LottieRewardProps {
   onComplete?: () => void;
 }
 
-const ANIMATION_DURATION = 2000; // 2 seconds
+const ANIMATION_DURATION = 2000;
 
 /**
  * Celebratory reward animation component
@@ -32,52 +32,34 @@ export function LottieReward({ type, value, visible, onComplete }: LottieRewardP
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  // Animation values
-  const fadeAnim = new Animated.Value(0);
-  const scaleAnim = new Animated.Value(0);
-  const translateYAnim = new Animated.Value(0);
-  const glowAnim = new Animated.Value(0);
+  // Persist Animated.Values across renders with useRef
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const translateYAnim = useRef(new Animated.Value(0)).current;
+  const glowAnim = useRef(new Animated.Value(0)).current;
 
   // Particle animations (for confetti/xp effect)
-  const particles = useMemo(
-    () =>
-      Array.from({ length: 8 }).map(() => ({
-        translateX: new Animated.Value(0),
-        translateY: new Animated.Value(0),
-        opacity: new Animated.Value(0),
-      })),
-    []
-  );
+  const particles = useRef(
+    Array.from({ length: 8 }).map(() => ({
+      translateX: new Animated.Value(0),
+      translateY: new Animated.Value(0),
+      opacity: new Animated.Value(0),
+    })),
+  ).current;
 
-  useEffect(() => {
-    if (!visible) {
-      return;
-    }
+  const resetAnimations = useCallback(() => {
+    fadeAnim.setValue(0);
+    scaleAnim.setValue(0);
+    translateYAnim.setValue(0);
+    glowAnim.setValue(0);
+    particles.forEach((p) => {
+      p.translateX.setValue(0);
+      p.translateY.setValue(0);
+      p.opacity.setValue(0);
+    });
+  }, [fadeAnim, scaleAnim, translateYAnim, glowAnim, particles]);
 
-    // Start animations
-    if (type === 'xp_gain') {
-      animateXPGain();
-    } else if (type === 'exercise_complete') {
-      animateExerciseComplete();
-    } else if (type === 'streak') {
-      animateStreak();
-    } else if (type === 'level_up') {
-      animateLevelUp();
-    } else if (type === 'mission_complete') {
-      animateMissionComplete();
-    }
-
-    // Auto-hide after animation
-    const timeout = setTimeout(() => {
-      hideAnimation();
-      onComplete?.();
-    }, ANIMATION_DURATION);
-
-    return () => clearTimeout(timeout);
-  }, [visible, type]);
-
-  const animateXPGain = () => {
-    // Main text floats up and fades
+  const animateXPGain = useCallback(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -98,7 +80,6 @@ export function LottieReward({ type, value, visible, onComplete }: LottieRewardP
       }),
     ]).start();
 
-    // Particle effects
     particles.forEach((particle, index) => {
       const angle = (index / particles.length) * Math.PI * 2;
       const distance = 60;
@@ -131,10 +112,9 @@ export function LottieReward({ type, value, visible, onComplete }: LottieRewardP
         }),
       ]).start();
     });
-  };
+  }, [fadeAnim, translateYAnim, particles]);
 
-  const animateExerciseComplete = () => {
-    // Scale checkmark in with bounce
+  const animateExerciseComplete = useCallback(() => {
     Animated.sequence([
       Animated.timing(scaleAnim, {
         toValue: 1.2,
@@ -150,7 +130,6 @@ export function LottieReward({ type, value, visible, onComplete }: LottieRewardP
       }),
     ]).start();
 
-    // Glow pulse
     Animated.sequence([
       Animated.timing(glowAnim, {
         toValue: 1,
@@ -173,10 +152,9 @@ export function LottieReward({ type, value, visible, onComplete }: LottieRewardP
         useNativeDriver: true,
       }),
     ]).start();
-  };
+  }, [scaleAnim, glowAnim]);
 
-  const animateStreak = () => {
-    // Fire bounces
+  const animateStreak = useCallback(() => {
     Animated.sequence([
       Animated.timing(translateYAnim, {
         toValue: -30,
@@ -204,7 +182,6 @@ export function LottieReward({ type, value, visible, onComplete }: LottieRewardP
       }),
     ]).start();
 
-    // Glow pulse throughout
     Animated.loop(
       Animated.sequence([
         Animated.timing(glowAnim, {
@@ -218,12 +195,11 @@ export function LottieReward({ type, value, visible, onComplete }: LottieRewardP
           useNativeDriver: true,
         }),
       ]),
-      { iterations: 2 }
+      { iterations: 2 },
     ).start();
-  };
+  }, [translateYAnim, glowAnim]);
 
-  const animateLevelUp = () => {
-    // Scale up dramatically
+  const animateLevelUp = useCallback(() => {
     Animated.sequence([
       Animated.timing(scaleAnim, {
         toValue: 0,
@@ -244,7 +220,6 @@ export function LottieReward({ type, value, visible, onComplete }: LottieRewardP
       }),
     ]).start();
 
-    // Strong glow pulse
     Animated.sequence([
       Animated.timing(glowAnim, {
         toValue: 1,
@@ -257,10 +232,9 @@ export function LottieReward({ type, value, visible, onComplete }: LottieRewardP
         useNativeDriver: true,
       }),
     ]).start();
-  };
+  }, [scaleAnim, glowAnim]);
 
-  const animateMissionComplete = () => {
-    // Particles fall with rotation
+  const animateMissionComplete = useCallback(() => {
     particles.forEach((particle, index) => {
       const randomX = (Math.random() - 0.5) * 200;
       const delay = (index / particles.length) * 200;
@@ -293,7 +267,6 @@ export function LottieReward({ type, value, visible, onComplete }: LottieRewardP
       ]).start();
     });
 
-    // Main container fades in and out
     Animated.sequence([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -307,14 +280,36 @@ export function LottieReward({ type, value, visible, onComplete }: LottieRewardP
         useNativeDriver: true,
       }),
     ]).start();
-  };
+  }, [fadeAnim, particles]);
 
-  const hideAnimation = () => {
-    fadeAnim.setValue(0);
-    scaleAnim.setValue(0);
-  };
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
 
-  // Don't render if not visible
+    // Reset all values before starting new animations
+    resetAnimations();
+
+    if (type === 'xp_gain') {
+      animateXPGain();
+    } else if (type === 'exercise_complete') {
+      animateExerciseComplete();
+    } else if (type === 'streak') {
+      animateStreak();
+    } else if (type === 'level_up') {
+      animateLevelUp();
+    } else if (type === 'mission_complete') {
+      animateMissionComplete();
+    }
+
+    const timeout = setTimeout(() => {
+      resetAnimations();
+      onComplete?.();
+    }, ANIMATION_DURATION);
+
+    return () => clearTimeout(timeout);
+  }, [visible, type, resetAnimations, animateXPGain, animateExerciseComplete, animateStreak, animateLevelUp, animateMissionComplete, onComplete]);
+
   if (!visible) {
     return null;
   }
@@ -336,7 +331,6 @@ export function LottieReward({ type, value, visible, onComplete }: LottieRewardP
             <Text style={styles.xpValue}>+{value || 0} XP</Text>
           </Animated.View>
 
-          {/* Particles */}
           {particles.map((particle, index) => (
             <Animated.View
               key={`particle-${index}`}
@@ -385,7 +379,7 @@ export function LottieReward({ type, value, visible, onComplete }: LottieRewardP
             },
           ]}
         >
-          <View
+          <Animated.View
             style={[
               styles.glowCircle,
               {
@@ -417,7 +411,7 @@ export function LottieReward({ type, value, visible, onComplete }: LottieRewardP
           <View style={styles.levelUpInner}>
             <Text style={styles.levelUpText}>LEVEL UP!</Text>
           </View>
-          <View
+          <Animated.View
             style={[
               styles.glowCircleLarge,
               {
@@ -431,7 +425,7 @@ export function LottieReward({ type, value, visible, onComplete }: LottieRewardP
       {/* Mission Complete - Confetti particles */}
       {type === 'mission_complete' && (
         <>
-          <View
+          <Animated.View
             style={[
               styles.confettiContainer,
               {
@@ -440,16 +434,16 @@ export function LottieReward({ type, value, visible, onComplete }: LottieRewardP
             ]}
           >
             <Text style={styles.missionText}>MISSION COMPLETE!</Text>
-          </View>
+          </Animated.View>
 
           {particles.map((particle, index) => {
-            const colors_arr = [
+            const colorsArr = [
               colors.accent,
               colors.accentGold,
               colors.accentGreen,
               colors.accentRed,
             ];
-            const color = colors_arr[index % colors_arr.length];
+            const color = colorsArr[index % colorsArr.length];
 
             return (
               <Animated.View
@@ -475,8 +469,6 @@ export function LottieReward({ type, value, visible, onComplete }: LottieRewardP
 }
 
 const createStyles = (colors: ThemeColors) => {
-  const screenWidth = Dimensions.get('window').width;
-
   return StyleSheet.create({
     container: {
       position: 'absolute',
