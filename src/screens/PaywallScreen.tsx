@@ -164,42 +164,29 @@ export default function PaywallScreen() {
           ))}
         </GlassCard>
 
-        {/* Warning Cards */}
-        {!isConfigured && accessState !== 'subscriber' ? (
-          <GlassCard style={styles.warningCard}>
-            <View style={styles.warningHeader}>
-              <GameIcon name="warning" size={20} color={colors.accentOrange} variant="minimal" animated={false} />
-              <Text style={styles.warningTitle}>Billing not configured</Text>
-            </View>
-            <Text style={styles.warningText}>
-              RevenueCat keys are missing. The purchase button will be disabled until billing is set up.
-            </Text>
-          </GlassCard>
-        ) : null}
-
-        {isConfigured ? (
+        {/* Status info — only show when there's no error */}
+        {isConfigured && !lastError && accessState === 'subscriber' ? (
           <GlassCard style={styles.infoCard}>
             <View style={styles.infoHeader}>
               <GameIcon name="info" size={18} color={colors.accent} variant="minimal" animated={false} />
-              <Text style={styles.infoTitle}>
-                {accessState === 'subscriber' ? 'Customer Portal Active' : 'RevenueCat Paywall Active'}
-              </Text>
+              <Text style={styles.infoTitle}>Customer Portal Active</Text>
             </View>
             <Text style={styles.infoText}>
-              {accessState === 'subscriber'
-                ? 'Manage your membership through RevenueCat Customer Center.'
-                : 'Purchases are powered by RevenueCat for secure, flexible billing.'}
+              Manage your membership through the button below.
             </Text>
           </GlassCard>
         ) : null}
 
-        {lastError ? (
+        {/* User-friendly error — only show for non-subscribers */}
+        {lastError && accessState !== 'subscriber' ? (
           <GlassCard style={styles.warningCard}>
             <View style={styles.warningHeader}>
-              <GameIcon name="warning" size={20} color={colors.accentRed} variant="minimal" animated={false} />
-              <Text style={styles.warningTitle}>Purchase error</Text>
+              <GameIcon name="warning" size={20} color={colors.accentOrange} variant="minimal" animated={false} />
+              <Text style={styles.warningTitle}>Subscription temporarily unavailable</Text>
             </View>
-            <Text style={styles.warningText}>{lastError}</Text>
+            <Text style={styles.warningText}>
+              We are having trouble connecting to the App Store. Please check your connection and try again in a moment.
+            </Text>
           </GlassCard>
         ) : null}
 

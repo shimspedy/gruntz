@@ -84,6 +84,19 @@ export function getAccessState(state: Pick<SubscriptionState, 'trialStartedAt' |
   return 'locked';
 }
 
+/** Convert raw SDK error messages into clean, user-facing text. */
+function userFacingError(raw: string | undefined | null, fallback: string): string {
+  if (!raw) return fallback;
+  // Strip SDK noise — keep it simple for the user
+  if (raw.includes('configuration') || raw.includes('products registered'))
+    return 'Subscription is temporarily unavailable. Please try again later.';
+  if (raw.includes('network') || raw.includes('NSURLError') || raw.includes('internet'))
+    return 'Unable to reach the App Store. Check your connection and try again.';
+  if (raw.includes('paywall') || raw.includes('not_presented'))
+    return 'Subscription setup is in progress. Please try again shortly.';
+  return fallback;
+}
+
 function syncEntitlementState(set: (partial: Partial<SubscriptionState>) => void, customerInfo: Awaited<ReturnType<typeof loadRevenueCatState>>['customerInfo']) {
   const entitlement = getEntitlementAccess(customerInfo);
   set({
@@ -144,9 +157,11 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             isConfigured: state.configured,
           });
         } catch (error) {
-          const message = error instanceof Error ? error.message : 'Unable to sync billing state.';
           set({
-            lastError: message,
+            lastError: userFacingError(
+              error instanceof Error ? error.message : null,
+              'Unable to connect to billing. Your trial access is unaffected.',
+            ),
             isConfigured: isRevenueCatAvailable(),
           });
         } finally {
@@ -169,9 +184,11 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             isConfigured: state.configured,
           });
         } catch (error) {
-          const message = error instanceof Error ? error.message : 'Unable to load subscription options.';
           set({
-            lastError: message,
+            lastError: userFacingError(
+              error instanceof Error ? error.message : null,
+              'Subscription is temporarily unavailable. Please try again later.',
+            ),
             isConfigured: isRevenueCatAvailable(),
           });
         } finally {
@@ -195,8 +212,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             set({
               isLoading: false,
               isConfigured: configured,
-              lastError:
-                'No hosted paywall is configured for the current offering yet. Finish the RevenueCat paywall setup in the dashboard and try again.',
+              lastError: userFacingError(result.message, 'Subscription setup is in progress. Please try again shortly.'),
             });
             return 'unavailable';
           }
@@ -205,7 +221,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             set({
               isLoading: false,
               isConfigured: configured,
-              lastError: result.message ?? 'Subscription is unavailable right now.',
+              lastError: userFacingError(result.message, 'Subscription is temporarily unavailable. Please try again later.'),
             });
             return result.status === 'error' ? 'error' : 'unavailable';
           }
@@ -228,7 +244,10 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           set({
             isLoading: false,
             isConfigured: isRevenueCatAvailable(),
-            lastError: error instanceof Error ? error.message : 'Purchase failed unexpectedly.',
+            lastError: userFacingError(
+              error instanceof Error ? error.message : null,
+              'Something went wrong with your purchase. Please try again.',
+            ),
           });
           return 'error';
         }
@@ -250,7 +269,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             set({
               isLoading: false,
               isConfigured: configured,
-              lastError: result.message ?? 'Restore is unavailable right now.',
+              lastError: userFacingError(result.message, 'Unable to restore purchases right now. Please try again.'),
             });
           } else {
             set({ isLoading: false, isConfigured: configured, lastError: null });
@@ -265,7 +284,10 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           set({
             isLoading: false,
             isConfigured: isRevenueCatAvailable(),
-            lastError: error instanceof Error ? error.message : 'Restore failed unexpectedly.',
+            lastError: userFacingError(
+              error instanceof Error ? error.message : null,
+              'Unable to restore purchases right now. Please try again.',
+            ),
           });
           return 'error';
         }
@@ -283,9 +305,10 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           const fallbackOpened = await openManagementUrl(get().managementUrl);
           if (!fallbackOpened) {
             set({
-              lastError:
-                result.message ??
-                'Customer Center is unavailable right now.',
+              lastError: userFacingError(
+                result.message,
+                'Unable to open subscription management right now.',
+              ),
             });
           } else {
             set({ lastError: null });
