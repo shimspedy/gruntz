@@ -16,258 +16,44 @@ export interface ThemeColors {
   streakFire: string;
   cyberYellow: string;
   borderGlow: string;
+  glassBackground: string;
+  glassBorder: string;
+  glassHighlight: string;
+  glassShadow: string;
 }
 
-export type ThemeId =
-  | 'nightOps' | 'desertStorm' | 'arcticRecon' | 'crimsonShadow'
-  | 'usArmy' | 'usNavy' | 'usMarines' | 'usAirForce' | 'usCoastGuard' | 'usSpaceForce';
+/** Single unified theme — Matte Black + Electric Lime */
+export const gruntzTheme: ThemeColors = {
+  // Deep matte black base
+  background: '#0A0A0A',
+  backgroundSecondary: '#141414',
+  card: '#1A1A1A',
+  cardBorder: '#2A2A2A',
 
-export interface ThemeMeta {
-  id: ThemeId;
-  name: string;
-  icon: string;
-  description: string;
-  group: 'tactical' | 'branch';
-}
-
-// ── Night Ops — Terminal green military (default) ──
-export const nightOps: ThemeColors = {
-  background: '#080C08',
-  backgroundSecondary: '#0F170F',
-  card: '#141E14',
-  cardBorder: '#1E3A1E',
-  accent: '#00FF41',
-  accentGold: '#FFB800',
-  accentGreen: '#00FF88',
-  accentRed: '#FF003C',
-  accentOrange: '#FF8C00',
-  textPrimary: '#E0EDE0',
-  textSecondary: '#8A9F8A',
-  textMuted: '#4A6B4A',
-  xpBar: '#00FF41',
-  healthBar: '#00FF88',
-  streakFire: '#FF6B35',
-  cyberYellow: '#F9F002',
-  borderGlow: '#3AFF6E',
-};
-
-// ── Desert Storm — Tactical amber / sand ──
-export const desertStorm: ThemeColors = {
-  background: '#0C0A06',
-  backgroundSecondary: '#16130C',
-  card: '#1E1A10',
-  cardBorder: '#3A3420',
-  accent: '#FFB800',
-  accentGold: '#FFB800',
-  accentGreen: '#8BC34A',
-  accentRed: '#FF5722',
-  accentOrange: '#FF8C00',
-  textPrimary: '#EDE8D8',
-  textSecondary: '#9F9578',
-  textMuted: '#6B6040',
-  xpBar: '#FFB800',
-  healthBar: '#8BC34A',
-  streakFire: '#FF6B35',
-  cyberYellow: '#F9F002',
-  borderGlow: '#FFD54F',
-};
-
-// ── Arctic Recon — Icy cyan / deep navy ──
-export const arcticRecon: ThemeColors = {
-  background: '#06080C',
-  backgroundSecondary: '#0C1017',
-  card: '#101825',
-  cardBorder: '#1E2A3E',
-  accent: '#00D9FF',
+  // Electric lime accent system
+  accent: '#AAFF00',
   accentGold: '#FFD700',
   accentGreen: '#00FF88',
-  accentRed: '#FF003C',
-  accentOrange: '#FF8C00',
-  textPrimary: '#E0E8F0',
-  textSecondary: '#8A9AB0',
-  textMuted: '#4A5A70',
-  xpBar: '#00D9FF',
+  accentRed: '#FF3B5C',
+  accentOrange: '#FF8800',
+
+  // Clean text hierarchy
+  textPrimary: '#FFFFFF',
+  textSecondary: '#A0A0A0',
+  textMuted: '#666666',
+
+  // Gamification
+  xpBar: '#AAFF00',
   healthBar: '#00FF88',
-  streakFire: '#FF6B35',
-  cyberYellow: '#F9F002',
-  borderGlow: '#3AE8FF',
+  streakFire: '#FF6B2C',
+
+  // UI accents
+  cyberYellow: '#FFE600',
+  borderGlow: '#AAFF00',
+
+  // Liquid glass tokens
+  glassBackground: 'rgba(255,255,255,0.06)',
+  glassBorder: 'rgba(255,255,255,0.12)',
+  glassHighlight: 'rgba(255,255,255,0.2)',
+  glassShadow: 'rgba(0,0,0,0.5)',
 };
-
-// ── Crimson Shadow — Red ops / dark red-brown ──
-export const crimsonShadow: ThemeColors = {
-  background: '#0A0608',
-  backgroundSecondary: '#140F12',
-  card: '#1E1418',
-  cardBorder: '#3A1E28',
-  accent: '#FF003C',
-  accentGold: '#FFB800',
-  accentGreen: '#00FF88',
-  accentRed: '#FF003C',
-  accentOrange: '#FF6B35',
-  textPrimary: '#F0E0E4',
-  textSecondary: '#B08A95',
-  textMuted: '#6B4A55',
-  xpBar: '#FF003C',
-  healthBar: '#00FF88',
-  streakFire: '#FF6B35',
-  cyberYellow: '#F9F002',
-  borderGlow: '#FF3A6E',
-};
-
-// ═══════════════════════════════════════════
-// US MILITARY BRANCH THEMES
-// ═══════════════════════════════════════════
-
-// ── US Army — Black & Gold ──
-export const usArmy: ThemeColors = {
-  background: '#08080A',
-  backgroundSecondary: '#111114',
-  card: '#1A1A1E',
-  cardBorder: '#2E2E34',
-  accent: '#FFD700',
-  accentGold: '#FFD700',
-  accentGreen: '#4B5320',
-  accentRed: '#FF003C',
-  accentOrange: '#FF8C00',
-  textPrimary: '#EEEEE8',
-  textSecondary: '#9E9E96',
-  textMuted: '#5E5E56',
-  xpBar: '#FFD700',
-  healthBar: '#4B5320',
-  streakFire: '#FF6B35',
-  cyberYellow: '#FFD700',
-  borderGlow: '#FFE44D',
-};
-
-// ── US Navy — Navy blue & Gold ──
-export const usNavy: ThemeColors = {
-  background: '#04060C',
-  backgroundSecondary: '#0A0E18',
-  card: '#101828',
-  cardBorder: '#1E2A42',
-  accent: '#FFD700',
-  accentGold: '#FFD700',
-  accentGreen: '#00FF88',
-  accentRed: '#FF003C',
-  accentOrange: '#FF8C00',
-  textPrimary: '#E0E4F0',
-  textSecondary: '#8A90B0',
-  textMuted: '#4A5070',
-  xpBar: '#FFD700',
-  healthBar: '#00FF88',
-  streakFire: '#FF6B35',
-  cyberYellow: '#FFD700',
-  borderGlow: '#FFE44D',
-};
-
-// ── US Marines — Scarlet & Gold ──
-export const usMarines: ThemeColors = {
-  background: '#0A0606',
-  backgroundSecondary: '#160E0E',
-  card: '#201414',
-  cardBorder: '#3C2020',
-  accent: '#CC0000',
-  accentGold: '#FFD700',
-  accentGreen: '#00CC66',
-  accentRed: '#CC0000',
-  accentOrange: '#FF6B35',
-  textPrimary: '#F0E4E4',
-  textSecondary: '#B08888',
-  textMuted: '#6B4848',
-  xpBar: '#CC0000',
-  healthBar: '#00CC66',
-  streakFire: '#FF6B35',
-  cyberYellow: '#FFD700',
-  borderGlow: '#FF3333',
-};
-
-// ── US Air Force — Ultramarine blue & Silver ──
-export const usAirForce: ThemeColors = {
-  background: '#06080E',
-  backgroundSecondary: '#0C1018',
-  card: '#121A2A',
-  cardBorder: '#1E2C48',
-  accent: '#00308F',
-  accentGold: '#C0C0C0',
-  accentGreen: '#00CC88',
-  accentRed: '#FF003C',
-  accentOrange: '#FF8C00',
-  textPrimary: '#E0E6F2',
-  textSecondary: '#8894B8',
-  textMuted: '#485878',
-  xpBar: '#4169E1',
-  healthBar: '#00CC88',
-  streakFire: '#FF6B35',
-  cyberYellow: '#C0C0C0',
-  borderGlow: '#6688FF',
-};
-
-// ── US Coast Guard — Racing stripe blue & Orange ──
-export const usCoastGuard: ThemeColors = {
-  background: '#06080C',
-  backgroundSecondary: '#0C1016',
-  card: '#101824',
-  cardBorder: '#1E2A3C',
-  accent: '#FF6600',
-  accentGold: '#FF6600',
-  accentGreen: '#00CC88',
-  accentRed: '#FF003C',
-  accentOrange: '#FF6600',
-  textPrimary: '#E4E8F0',
-  textSecondary: '#8A94B0',
-  textMuted: '#4A5470',
-  xpBar: '#FF6600',
-  healthBar: '#00CC88',
-  streakFire: '#FF6B35',
-  cyberYellow: '#FF9933',
-  borderGlow: '#FF8833',
-};
-
-// ── US Space Force — Deep space blue & Silver ──
-export const usSpaceForce: ThemeColors = {
-  background: '#040610',
-  backgroundSecondary: '#0A0E1C',
-  card: '#10162A',
-  cardBorder: '#1C2644',
-  accent: '#C0C0C0',
-  accentGold: '#C0C0C0',
-  accentGreen: '#00FF88',
-  accentRed: '#FF003C',
-  accentOrange: '#FF8C00',
-  textPrimary: '#E4E8F4',
-  textSecondary: '#8890B4',
-  textMuted: '#484E74',
-  xpBar: '#C0C0C0',
-  healthBar: '#00FF88',
-  streakFire: '#FF6B35',
-  cyberYellow: '#E0E0E0',
-  borderGlow: '#D4D4F0',
-};
-
-export const palettes: Record<ThemeId, ThemeColors> = {
-  nightOps,
-  desertStorm,
-  arcticRecon,
-  crimsonShadow,
-  usArmy,
-  usNavy,
-  usMarines,
-  usAirForce,
-  usCoastGuard,
-  usSpaceForce,
-};
-
-export const themeMetas: ThemeMeta[] = [
-  // Tactical themes
-  { id: 'nightOps', name: 'Night Ops', icon: 'theme', description: 'Terminal green', group: 'tactical' },
-  { id: 'desertStorm', name: 'Desert Storm', icon: 'theme', description: 'Tactical amber', group: 'tactical' },
-  { id: 'arcticRecon', name: 'Arctic Recon', icon: 'theme', description: 'Icy cyan', group: 'tactical' },
-  { id: 'crimsonShadow', name: 'Crimson Shadow', icon: 'theme', description: 'Blood red ops', group: 'tactical' },
-  // US Military branch themes
-  { id: 'usArmy', name: 'Army', icon: 'army', description: 'Black & gold', group: 'branch' },
-  { id: 'usNavy', name: 'Navy', icon: 'navy', description: 'Navy & gold', group: 'branch' },
-  { id: 'usMarines', name: 'Marines', icon: 'marines', description: 'Scarlet & gold', group: 'branch' },
-  { id: 'usAirForce', name: 'Air Force', icon: 'airforce', description: 'Blue & silver', group: 'branch' },
-  { id: 'usCoastGuard', name: 'Coast Guard', icon: 'coastguard', description: 'Blue & orange', group: 'branch' },
-  { id: 'usSpaceForce', name: 'Space Force', icon: 'spaceforce', description: 'Dark blue & silver', group: 'branch' },
-];

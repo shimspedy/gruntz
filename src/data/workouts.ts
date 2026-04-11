@@ -254,12 +254,6 @@ export function getWorkoutDaysForWeek(week: number): WorkoutDay[] {
   return allWorkoutDays.filter(d => d.week === week);
 }
 
-export function getCurrentWeekDay(weekNumber: number, dayOfWeek: number): WorkoutDay | undefined {
-  // dayOfWeek: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
-  const weekDays = getWorkoutDaysForWeek(weekNumber);
-  const dayMap: Record<number, number> = { 1: 1, 2: 2, 4: 4, 5: 5, 6: 6 };
-  return weekDays.find(d => d.day === dayMap[dayOfWeek]);
-}
 
 export const TOTAL_WEEKS = 10;
 export const REST_DAYS = [0, 3]; // Sunday and Wednesday are always rest days

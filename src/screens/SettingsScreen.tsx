@@ -1,121 +1,85 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, Switch, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Switch, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useColors, spacing, themeMetas, palettes, MAX_FONT_MULTIPLIER } from '../theme';
-import type { ThemeColors, ThemeId } from '../theme';
-import { useThemeStore } from '../store/useThemeStore';
+import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
+import type { ThemeColors } from '../theme';
 import { useUserStore } from '../store/useUserStore';
 import { Card } from '../components/Card';
+import { GlassCard } from '../components/GlassCard';
 import { GameIcon } from '../components/GameIcon';
-import { SectionHeader } from '../components/SectionHeader';
-import { hapticSelection, hapticLight } from '../utils/haptics';
+import { hapticLight } from '../utils/haptics';
 import { requestNotificationPermission, scheduleDailyReminder, cancelDailyReminder, setupNotificationChannels } from '../services/notifications';
 
 export default function SettingsScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const themeId = useThemeStore((s) => s.themeId);
-  const setTheme = useThemeStore((s) => s.setTheme);
   const profile = useUserStore((s) => s.profile);
   const updateSettings = useUserStore((s) => s.updateSettings);
 
   const notificationsEnabled = profile?.settings.notifications_enabled ?? true;
   const imperialUnits = (profile?.settings.units ?? 'imperial') === 'imperial';
 
-  const tacticalThemes = themeMetas.filter((m) => m.group === 'tactical');
-  const branchThemes = themeMetas.filter((m) => m.group === 'branch');
-
-  const renderThemeChip = (meta: typeof themeMetas[0]) => {
-    const isActive = meta.id === themeId;
-    const palette = palettes[meta.id];
-    return (
-      <TouchableOpacity
-        key={meta.id}
-        style={[
-          styles.themeChip,
-          { borderColor: isActive ? palette.accent : colors.cardBorder },
-          isActive && { borderWidth: 2 },
-        ]}
-        onPress={() => { hapticSelection(); setTheme(meta.id); }}
-        activeOpacity={0.7}
-      >
-        <View style={[styles.chipAccent, { backgroundColor: palette.accent }]} />
-        <View style={[styles.chipSwatch, { backgroundColor: palette.background }]}>
-          <View style={[styles.chipDot, { backgroundColor: palette.accent }]} />
-        </View>
-        <View style={styles.chipTextWrap}>
-          <View style={styles.chipNameRow}>
-            <GameIcon name={meta.icon} size={18} color={isActive ? palette.accent : colors.textPrimary} variant="minimal" />
-            <Text style={[styles.chipName, isActive && { color: palette.accent }]}>{meta.name}</Text>
-          </View>
-        </View>
-        {isActive && (
-          <View style={[styles.chipCheck, { backgroundColor: palette.accent }]}>
-            <GameIcon name="check" size={14} color={palette.background} variant="minimal" animated={false} />
-          </View>
-        )}
-      </TouchableOpacity>
-    );
-  };
-
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Settings</Text>
+        <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>Settings</Text>
 
-        {/* ── Tactical Themes ── */}
-        <SectionHeader title="Tactical Themes" icon="theme" />
-        <View style={styles.themeGrid}>
-          {tacticalThemes.map(renderThemeChip)}
-        </View>
+        {/* Preferences */}
+        <GlassCard style={styles.section}>
+          <Text style={styles.sectionLabel}>PREFERENCES</Text>
 
-        {/* ── Branch Themes ── */}
-        <SectionHeader title="Rep Your Branch" icon="program" subtitle="US Military" />
-        <View style={styles.themeGrid}>
-          {branchThemes.map(renderThemeChip)}
-        </View>
-
-        <SectionHeader title="Preferences" icon="settings" />
-        <Card style={styles.section}>
           <View style={styles.settingRow}>
-            <View>
-              <Text style={styles.settingLabel}>Push Notifications</Text>
-              <Text style={styles.settingDesc}>Daily mission reminders</Text>
+            <View style={styles.settingLeft}>
+              <View style={styles.settingIcon}>
+                <GameIcon name="badge" size={20} color={colors.accent} variant="minimal" />
+              </View>
+              <View>
+                <Text style={styles.settingLabel}>Push Notifications</Text>
+                <Text style={styles.settingDesc}>Daily mission reminders</Text>
+              </View>
             </View>
             <Switch
               value={notificationsEnabled}
               onValueChange={(v) => {
                 hapticLight();
                 void (async () => {
-                  if (v) {
-                    const granted = await requestNotificationPermission();
-                    if (!granted) {
-                      updateSettings({ notifications_enabled: false });
-                      Alert.alert(
-                        'Notifications unavailable',
-                        'Enable notifications in system settings if you want daily mission reminders.'
-                      );
+                  try {
+                    if (v) {
+                      const granted = await requestNotificationPermission();
+                      if (!granted) {
+                        updateSettings({ notifications_enabled: false });
+                        Alert.alert(
+                          'Notifications unavailable',
+                          'Enable notifications in system settings if you want daily mission reminders.'
+                        );
+                        return;
+                      }
+                      await setupNotificationChannels();
+                      await scheduleDailyReminder(7, 0);
+                      updateSettings({ notifications_enabled: true, reminder_time: '07:00' });
                       return;
                     }
-
-                    await setupNotificationChannels();
-                    await scheduleDailyReminder(7, 0);
-                    updateSettings({ notifications_enabled: true, reminder_time: '07:00' });
-                    return;
+                    await cancelDailyReminder();
+                    updateSettings({ notifications_enabled: false });
+                  } catch {
+                    Alert.alert('Error', 'Could not update notification settings. Try again.');
                   }
-
-                  await cancelDailyReminder();
-                  updateSettings({ notifications_enabled: false });
                 })();
               }}
-              trackColor={{ false: colors.backgroundSecondary, true: colors.accent }}
-              thumbColor={colors.textPrimary}
+              trackColor={{ false: colors.cardBorder, true: colors.accent }}
+              thumbColor="#FFFFFF"
             />
           </View>
-          <View style={styles.settingRow}>
-            <View>
-              <Text style={styles.settingLabel}>Imperial Units</Text>
-              <Text style={styles.settingDesc}>Miles, pounds, feet</Text>
+
+          <View style={[styles.settingRow, { borderBottomWidth: 0 }]}>
+            <View style={styles.settingLeft}>
+              <View style={styles.settingIcon}>
+                <GameIcon name="stats" size={20} color={colors.accent} variant="minimal" />
+              </View>
+              <View>
+                <Text style={styles.settingLabel}>Imperial Units</Text>
+                <Text style={styles.settingDesc}>Miles, pounds, feet</Text>
+              </View>
             </View>
             <Switch
               value={imperialUnits}
@@ -123,16 +87,18 @@ export default function SettingsScreen() {
                 hapticLight();
                 updateSettings({ units: v ? 'imperial' : 'metric' });
               }}
-              trackColor={{ false: colors.backgroundSecondary, true: colors.accent }}
-              thumbColor={colors.textPrimary}
+              trackColor={{ false: colors.cardBorder, true: colors.accent }}
+              thumbColor="#FFFFFF"
             />
           </View>
-        </Card>
+        </GlassCard>
 
-        <Card title="About" style={styles.section}>
+        {/* About */}
+        <GlassCard style={styles.section}>
+          <Text style={styles.sectionLabel}>ABOUT</Text>
           <Text style={styles.aboutText}>Gruntz — Military Fitness App</Text>
-          <Text style={styles.versionText}>Version 1.0.0 (MVP)</Text>
-        </Card>
+          <Text style={styles.versionText}>Version 1.0.0</Text>
+        </GlassCard>
       </ScrollView>
     </SafeAreaView>
   );
@@ -151,12 +117,19 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingBottom: spacing.xxl,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '800',
+    fontSize: 30,
+    fontWeight: '900',
     color: colors.textPrimary,
     marginBottom: spacing.lg,
   },
   section: {
+    marginBottom: spacing.md,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.accent,
+    letterSpacing: 1.5,
     marginBottom: spacing.md,
   },
   settingRow: {
@@ -166,6 +139,20 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.cardBorder,
+  },
+  settingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    flex: 1,
+  },
+  settingIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
+    backgroundColor: `${colors.accent}15`,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   settingLabel: {
     fontSize: 16,
@@ -186,67 +173,5 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 13,
     color: colors.textMuted,
     marginTop: 4,
-  },
-  themeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  themeChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: 2,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    paddingRight: 12,
-    overflow: 'hidden',
-    width: '47%',
-  },
-  chipAccent: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 3,
-  },
-  chipSwatch: {
-    width: 24,
-    height: 24,
-    borderRadius: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
-    marginLeft: 4,
-  },
-  chipDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  chipTextWrap: {
-    flex: 1,
-  },
-  chipNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  chipName: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    letterSpacing: 0.3,
-  },
-  chipCheck: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 4,
   },
 });

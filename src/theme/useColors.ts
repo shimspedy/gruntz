@@ -1,8 +1,7 @@
-import { useThemeStore } from '../store/useThemeStore';
-import { palettes } from './palettes';
+import { gruntzTheme } from './palettes';
 import type { ThemeColors } from './palettes';
 
+/** Returns the app's color palette. Single unified theme — no switching. */
 export function useColors(): ThemeColors {
-  const themeId = useThemeStore((s) => s.themeId);
-  return palettes[themeId];
+  return gruntzTheme;
 }

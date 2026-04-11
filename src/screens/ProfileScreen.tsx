@@ -6,9 +6,9 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useFadeInUp } from '../utils/animations';
-import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
+import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
-import { Card } from '../components/Card';
+import { GlassCard } from '../components/GlassCard';
 import { GameIcon } from '../components/GameIcon';
 import { XPBar } from '../components/XPBar';
 import { useUserStore } from '../store/useUserStore';
@@ -49,7 +49,7 @@ export default function ProfileScreen() {
 
   const menuItems = [
     {
-      label: accessState === 'subscriber' ? 'Manage Gruntz Pro' : 'Gruntz Pro',
+      label: accessState === 'subscriber' ? 'Manage Gruntz Pro' : 'Upgrade to Pro',
       icon: 'rank',
       onPress: async () => {
         if (accessState === 'subscriber') {
@@ -81,42 +81,58 @@ export default function ProfileScreen() {
         {/* Profile Header */}
         <Animated.View style={[styles.header, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
           <View style={styles.avatarCircle}>
-            <GameIcon name={rankInfo?.icon || 'rank'} size={68} color={colors.accent} style={styles.avatarEmoji} />
+            <View style={styles.avatarGlow} />
+            <GameIcon name={rankInfo?.icon || 'rank'} size={60} color={colors.accent} style={styles.avatarEmoji} />
           </View>
           <Text style={styles.displayName} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{profile?.display_name || 'Warrior'}</Text>
-          <Text style={styles.rankText}>{progress.current_rank} • Level {progress.current_level}</Text>
+          <Text style={styles.rankText}>{progress.current_rank}</Text>
+          <Text style={styles.levelText}>Level {progress.current_level}</Text>
           <View style={styles.streakBadge}>
-            <GameIcon name="streak" size={20} color={colors.streakFire} variant="minimal" />
+            <GameIcon name="streak" size={18} color={colors.streakFire} variant="minimal" />
             <Text style={styles.streakText}>{progress.streak_days}-day streak</Text>
           </View>
         </Animated.View>
 
-        {/* XP Bar */}
-        <Card style={styles.section}>
+        {/* XP Card */}
+        <GlassCard style={styles.section}>
           <XPBar current={xpInfo.current} required={xpInfo.required} level={progress.current_level} />
           <Text style={styles.totalXP}>{progress.current_xp.toLocaleString()} Total XP</Text>
-        </Card>
+        </GlassCard>
 
-        <Card style={styles.section}>
-          <Text style={styles.membershipLabel}>MEMBERSHIP</Text>
+        {/* Membership Card */}
+        <GlassCard style={styles.section} variant={accessState === 'subscriber' ? 'default' : 'accent'}>
+          <View style={styles.membershipBadge}>
+            {accessState === 'subscriber' ? (
+              <>
+                <GameIcon name="check" size={16} color={colors.accentGreen} variant="minimal" animated={false} />
+                <Text style={[styles.membershipBadgeText, { color: colors.accentGreen }]}>PRO</Text>
+              </>
+            ) : (
+              <>
+                <GameIcon name="lock" size={16} color={colors.accent} variant="minimal" animated={false} />
+                <Text style={styles.membershipBadgeText}>FREE</Text>
+              </>
+            )}
+          </View>
           <Text style={styles.membershipTitle}>
             {accessState === 'subscriber'
-              ? 'Gruntz Pro Active'
+              ? 'Pro Member'
               : accessState === 'trial'
-                ? `${trialDaysRemaining} day${trialDaysRemaining === 1 ? '' : 's'} left in free access`
-                : 'Unlock Gruntz Pro'}
+                ? `${trialDaysRemaining} Days Remaining`
+                : 'Upgrade Required'}
           </Text>
           <Text style={styles.membershipText}>
             {accessState === 'subscriber'
-              ? 'Full programs and daily missions are unlocked.'
+              ? 'All programs and daily missions unlocked.'
               : accessState === 'trial'
-                ? `Your free access is active. Membership continues at ${monthlyPrice}.`
-                : `Subscribe for ${monthlyPrice} to keep training after your free access ends.`}
+                ? `Free access active. Continues at ${monthlyPrice}/month.`
+                : `Subscribe for ${monthlyPrice} to unlock all training.`}
           </Text>
-        </Card>
+        </GlassCard>
 
         {/* Fitness Scores */}
-        <Card title="Fitness Scores" style={styles.section}>
+        <GlassCard style={styles.section}>
+          <Text style={styles.sectionLabel}>Fitness Scores</Text>
           <View style={styles.scoreGrid}>
             <View style={styles.scoreItem}>
               <Text style={[styles.scoreValue, { color: colors.accent }]}>{progress.strength_score}</Text>
@@ -135,10 +151,11 @@ export default function ProfileScreen() {
               <Text style={styles.scoreLabel}>Consistency</Text>
             </View>
           </View>
-        </Card>
+        </GlassCard>
 
         {/* Stats */}
-        <Card title="Overall Stats" style={styles.section}>
+        <GlassCard style={styles.section}>
+          <Text style={styles.sectionLabel}>Overall Stats</Text>
           <View style={styles.statRow}>
             <Text style={styles.statLabel}>Missions Completed</Text>
             <Text style={styles.statValue}>{progress.workouts_completed}</Text>
@@ -151,11 +168,11 @@ export default function ProfileScreen() {
             <Text style={styles.statLabel}>Total Reps</Text>
             <Text style={styles.statValue}>{progress.total_reps.toLocaleString()}</Text>
           </View>
-          <View style={styles.statRow}>
+          <View style={[styles.statRow, { borderBottomWidth: 0 }]}>
             <Text style={styles.statLabel}>Total Distance</Text>
             <Text style={styles.statValue}>{progress.total_distance_miles} mi</Text>
           </View>
-        </Card>
+        </GlassCard>
 
         {/* Menu Items */}
         {menuItems.map((item) => (
@@ -173,10 +190,12 @@ export default function ProfileScreen() {
             activeOpacity={0.7}
           >
             <View style={styles.menuLeft}>
-              <GameIcon name={item.icon} size={24} color={colors.textSecondary} variant="minimal" animated={false} />
+              <View style={styles.menuIcon}>
+                <GameIcon name={item.icon} size={20} color={colors.accent} variant="minimal" animated={false} />
+              </View>
               <Text style={styles.menuLabel}>{item.label}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -197,63 +216,96 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginTop: spacing.lg,
+    marginTop: spacing.md,
     marginBottom: spacing.xl,
   },
   avatarCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: colors.card,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: colors.accent,
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
+    position: 'relative',
+  },
+  avatarGlow: {
+    position: 'absolute',
+    width: 104,
+    height: 104,
+    borderRadius: 52,
+    backgroundColor: colors.accent,
+    opacity: 0.12,
   },
   avatarEmoji: {
   },
   displayName: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '900',
     color: colors.textPrimary,
+    marginBottom: spacing.xs,
   },
   rankText: {
-    fontSize: 15,
+    fontSize: 16,
+    fontWeight: '800',
+    color: colors.accent,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  levelText: {
+    fontSize: 13,
     color: colors.textSecondary,
-    marginTop: 6,
+    marginTop: spacing.xs,
   },
   streakBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginTop: spacing.sm,
-    backgroundColor: colors.card,
+    gap: spacing.xs,
+    marginTop: spacing.md,
+    backgroundColor: `${colors.streakFire}12`,
     paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    borderRadius: 20,
-    overflow: 'hidden',
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
   },
   streakText: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '800',
     color: colors.streakFire,
+    letterSpacing: 0.5,
   },
   section: {
     marginBottom: spacing.lg,
+  },
+  sectionLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: colors.accent,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: spacing.md,
   },
   totalXP: {
     fontSize: 13,
     color: colors.textMuted,
     textAlign: 'center',
     marginTop: spacing.sm,
+    fontVariant: ['tabular-nums'],
   },
-  membershipLabel: {
-    fontSize: 11,
+  membershipBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    alignSelf: 'flex-start',
+    backgroundColor: `${colors.accent}15`,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: borderRadius.full,
+    marginBottom: spacing.md,
+  },
+  membershipBadgeText: {
+    fontSize: 10,
     fontWeight: '800',
     color: colors.accent,
-    letterSpacing: 1.6,
-    marginBottom: spacing.xs,
+    letterSpacing: 1,
   },
   membershipTitle: {
     fontSize: 20,
@@ -277,50 +329,63 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingVertical: spacing.md,
   },
   scoreValue: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '900',
   },
   scoreLabel: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
     color: colors.textMuted,
-    marginTop: 4,
+    marginTop: spacing.xs,
     letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   statRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 14,
+    alignItems: 'center',
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.cardBorder,
+    borderBottomColor: `${colors.textPrimary}08`,
   },
   statLabel: {
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textSecondary,
+    fontWeight: '500',
   },
   statValue: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '800',
     color: colors.textPrimary,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: spacing.lg,
+    backgroundColor: `${colors.textPrimary}04`,
+    borderRadius: borderRadius.xl,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: `${colors.textPrimary}08`,
   },
   menuLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+    flex: 1,
+  },
+  menuIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.md,
+    backgroundColor: `${colors.accent}10`,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   menuLabel: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: colors.textPrimary,
   },

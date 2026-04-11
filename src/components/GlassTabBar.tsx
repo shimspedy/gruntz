@@ -2,12 +2,13 @@ import React from 'react';
 import { View, StyleSheet, Platform, Pressable } from 'react-native';
 import { BlurView } from 'expo-blur';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { useColors } from '../theme';
+import { useColors, spacing, borderRadius } from '../theme';
+import { hapticLight } from '../utils/haptics';
 
 /**
- * Liquid Glass–styled tab bar.
- * iOS: frosted blur with translucent accent border.
- * Android: semi-transparent dark surface.
+ * Premium liquid glass tab bar with floating style.
+ * Features: floating design, pill-shaped container, frosted blur,
+ * subtle filled pill indicator for active tab, and smooth animations.
  */
 export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const colors = useColors();
@@ -22,7 +23,12 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
           : options.title ?? route.name;
 
         const onPress = () => {
-          const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+          hapticLight();
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          });
           if (!isFocused && !event.defaultPrevented) {
             navigation.navigate(route.name);
           }
@@ -30,27 +36,39 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
 
         const icon = options.tabBarIcon?.({
           focused: isFocused,
-          color: isFocused ? colors.accent : colors.textMuted,
-          size: 24,
+          color: isFocused ? colors.accent : colors.textSecondary,
+          size: 28,
         });
 
         return (
-          <View key={route.key} style={styles.tab}>
-            <View
-              style={[styles.tabButton, isFocused && { backgroundColor: `${colors.accent}15` }]}
+          <View key={route.key} style={styles.tabContainer}>
+            {/* Filled pill background for active tab */}
+            {isFocused && (
+              <View
+                style={[
+                  styles.activeIndicatorBg,
+                  {
+                    backgroundColor: `${colors.accent}20`,
+                    borderColor: colors.accent,
+                  },
+                ]}
+              />
+            )}
+
+            <Pressable
+              onPress={onPress}
+              style={styles.touchTarget}
+              accessibilityRole="button"
+              accessibilityLabel={typeof label === 'string' ? label : route.name}
+              accessibilityState={{ selected: isFocused }}
+              hitSlop={12}
             >
-              <Pressable
-                onPress={onPress}
-                style={styles.touchTarget}
-                accessibilityRole="button"
-                accessibilityLabel={typeof label === 'string' ? label : route.name}
-                accessibilityState={{ selected: isFocused }}
-                hitSlop={8}
-              >
-                {icon}
-                <View style={[styles.indicator, isFocused && { backgroundColor: colors.accent }]} />
-              </Pressable>
-            </View>
+              {/* Icon */}
+              <View style={styles.iconWrapper}>{icon}</View>
+
+              {/* Dot indicator below icon */}
+              {isFocused && <View style={[styles.dotIndicator, { backgroundColor: colors.accent }]} />}
+            </Pressable>
           </View>
         );
       })}
@@ -59,9 +77,17 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
 
   if (Platform.OS === 'ios') {
     return (
-      <View style={[styles.container, { borderTopColor: `${colors.accent}18` }]}>
-        <BlurView intensity={40} tint="dark" style={styles.blur}>
-          <View style={[styles.overlay, { backgroundColor: `${colors.background}88` }]}>
+      <View style={styles.iosContainer}>
+        <BlurView intensity={50} tint="dark" style={styles.blurView}>
+          <View
+            style={[
+              styles.overlay,
+              {
+                backgroundColor: colors.glassBackground,
+                borderColor: colors.glassBorder,
+              },
+            ]}
+          >
             {content}
           </View>
         </BlurView>
@@ -69,55 +95,90 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
     );
   }
 
+  // Android fallback
   return (
-    <View style={[styles.container, styles.androidContainer, { backgroundColor: `${colors.background}EE`, borderTopColor: colors.cardBorder }]}>
+    <View style={[styles.androidContainer, { backgroundColor: `${colors.background}F0` }]}>
       {content}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  // iOS floating style
+  iosContainer: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    borderTopWidth: 1,
+    bottom: spacing.lg,
+    left: spacing.lg,
+    right: spacing.lg,
+    borderRadius: borderRadius.xxl,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 8,
   },
-  androidContainer: {
-    paddingBottom: 24,
-  },
-  blur: {
+  blurView: {
     flex: 1,
   },
   overlay: {
     flex: 1,
-    paddingBottom: 28,
+    borderWidth: 1,
+    borderRadius: borderRadius.xxl,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
   },
+  // Android fallback
+  androidContainer: {
+    position: 'absolute',
+    bottom: spacing.lg,
+    left: spacing.lg,
+    right: spacing.lg,
+    borderRadius: borderRadius.xxl,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  // Tab layout
   row: {
     flexDirection: 'row',
-    paddingTop: 8,
-    paddingHorizontal: 8,
-  },
-  tab: {
-    flex: 1,
+    justifyContent: 'space-around',
     alignItems: 'center',
   },
-  tabButton: {
-    borderRadius: 12,
-    paddingVertical: 6,
-    paddingHorizontal: 16,
+  tabContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+  },
+  activeIndicatorBg: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: '10%',
+    right: '10%',
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
   },
   touchTarget: {
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 36,
+    paddingHorizontal: spacing.md,
+    zIndex: 10,
   },
-  indicator: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    marginTop: 4,
-    backgroundColor: 'transparent',
+  iconWrapper: {
+    marginBottom: spacing.xs,
+  },
+  dotIndicator: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginTop: spacing.xs,
   },
 });

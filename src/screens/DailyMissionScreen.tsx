@@ -4,11 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFadeInUp } from '../utils/animations';
-import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
+import { useColors, spacing, MAX_FONT_MULTIPLIER, borderRadius } from '../theme';
 import type { ThemeColors } from '../theme';
-import { Card } from '../components/Card';
-import { ExerciseRow } from '../components/ExerciseRow';
-import { SectionHeader } from '../components/SectionHeader';
+import { GlassCard } from '../components/GlassCard';
 import { MissionButton } from '../components/MissionButton';
 import { GameIcon } from '../components/GameIcon';
 import { RestTimer } from '../components/RestTimer';
@@ -523,36 +521,56 @@ export default function DailyMissionScreen() {
           },
         ]}
       >
-        {/* Mission Header */}
-        <Animated.View style={[styles.header, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
-          <Text style={styles.missionLabel}>TODAY'S MISSION</Text>
-          <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{workoutDay.title}</Text>
-          <Text style={styles.objective}>{workoutDay.objective}</Text>
-          <View style={styles.metaRow}>
-            <View style={styles.metaChip}>
-              <GameIcon name="time" size={18} color={colors.accent} variant="minimal" />
-              <Text style={styles.metaText}>{workoutDay.estimated_duration} min</Text>
-            </View>
-            <View style={styles.metaChip}>
-              <GameIcon name="xp" size={18} color={colors.accentGold} variant="minimal" />
-              <Text style={styles.metaText}>{workoutDay.rewards.xp} XP</Text>
-            </View>
-            <View style={styles.metaChip}>
-              <GameIcon name="check" size={18} color={colors.accentGreen} variant="minimal" />
-              <Text style={styles.metaText}>{completedCount}/{totalExercises}</Text>
-            </View>
-          </View>
-        </Animated.View>
+        {/* Pre-Start: Mission Header & Preview */}
+        {!started && (
+          <Animated.View style={[styles.heroSection, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
+            <Text style={styles.missionLabel}>TODAY'S MISSION</Text>
+            <Text style={styles.heroTitle} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{workoutDay.title}</Text>
+            <Text style={styles.heroObjective}>{workoutDay.objective}</Text>
 
-        {/* Progress Bar */}
-        <View style={styles.progressTrack}>
-          <View
-            style={[
-              styles.progressFill,
-              { width: `${totalExercises > 0 ? (completedCount / totalExercises) * 100 : 0}%` },
-            ]}
-          />
-        </View>
+            {/* Mission Stats */}
+            <View style={styles.statsGrid}>
+              <View style={styles.statCard}>
+                <GameIcon name="time" size={24} color={colors.accent} variant="minimal" />
+                <Text style={styles.statValue}>{workoutDay.estimated_duration}</Text>
+                <Text style={styles.statLabel}>minutes</Text>
+              </View>
+              <View style={styles.statCard}>
+                <GameIcon name="xp" size={24} color={colors.accentGold} variant="minimal" />
+                <Text style={styles.statValue}>{workoutDay.rewards.xp}</Text>
+                <Text style={styles.statLabel}>XP</Text>
+              </View>
+              <View style={styles.statCard}>
+                <GameIcon name="strength" size={24} color={colors.accent} variant="minimal" />
+                <Text style={styles.statValue}>{totalExercises}</Text>
+                <Text style={styles.statLabel}>exercises</Text>
+              </View>
+            </View>
+          </Animated.View>
+        )}
+
+        {/* Active Workout: Progress Bar */}
+        {started && (
+          <>
+            <View style={styles.progressSection}>
+              <View style={styles.progressHeader}>
+                <Text style={styles.progressLabel}>WORKOUT PROGRESS</Text>
+                <Text style={styles.progressPercent}>{Math.round((completedCount / totalExercises) * 100)}%</Text>
+              </View>
+              <View style={styles.progressTrack}>
+                <Animated.View
+                  style={[
+                    styles.progressFill,
+                    { width: `${totalExercises > 0 ? (completedCount / totalExercises) * 100 : 0}%` },
+                  ]}
+                />
+              </View>
+              <Text style={styles.progressCounter}>
+                {completedCount} of {totalExercises} exercises
+              </Text>
+            </View>
+          </>
+        )}
 
         {!started ? (
           <View style={styles.actionWrap}>
@@ -560,31 +578,65 @@ export default function DailyMissionScreen() {
           </View>
         ) : (
           <>
-            {/* Sections */}
+            {/* Sections with Glass Cards */}
             {sectionInstances.map((section) => (
               <View key={section.id} style={styles.sectionBlock}>
-                <SectionHeader
-                  title={section.title}
-                  subtitle={section.instructions}
-                  icon={sectionIcons[section.type]}
-                />
-                <Card style={styles.sectionCard}>
+                <View style={styles.sectionTitleRow}>
+                  <GameIcon name={sectionIcons[section.type]} size={20} color={colors.accent} variant="minimal" />
+                  <View style={styles.sectionTextWrap}>
+                    <Text style={styles.sectionTitle}>{section.title}</Text>
+                    <Text style={styles.sectionInstruction}>{section.instructions}</Text>
+                  </View>
+                </View>
+
+                {/* Exercise Glass Cards */}
+                <View style={styles.exercisesContainer}>
                   {section.exerciseInstances.map((instance) => {
+                    const isComplete = isExerciseComplete(instance.instanceKey);
                     return (
-                      <ExerciseRow
+                      <TouchableOpacity
                         key={instance.instanceKey}
-                        name={instance.exercise.name}
-                        detail={instance.detail}
-                        completed={isExerciseComplete(instance.instanceKey)}
-                        onToggle={() => toggleExercise(instance)}
-                        restSeconds={instance.exercise.rest_seconds}
-                        illustration={instance.exercise.illustration}
-                        onInfo={() => handleExerciseInfo(instance.exerciseId)}
-                        loggedSummary={getLoggedSummary(instance.instanceKey)}
-                      />
+                        onPress={() => toggleExercise(instance)}
+                        activeOpacity={0.8}
+                        style={styles.exerciseCardTouchable}
+                      >
+                        <View style={[styles.exerciseCard, isComplete && styles.exerciseCardComplete]}>
+                          {/* Left: Icon */}
+                          <View style={styles.exerciseIconWrap}>
+                            <GameIcon
+                              name={sectionIcons[section.type]}
+                              size={32}
+                              color={isComplete ? colors.accentGreen : colors.accent}
+                              variant="minimal"
+                            />
+                          </View>
+
+                          {/* Middle: Details */}
+                          <View style={styles.exerciseDetailsWrap}>
+                            <Text style={styles.exerciseName}>{instance.exercise.name}</Text>
+                            <Text style={styles.exerciseDetail}>{instance.detail}</Text>
+                            {getLoggedSummary(instance.instanceKey) && (
+                              <Text style={styles.loggedSummary}>
+                                {getLoggedSummary(instance.instanceKey)}
+                              </Text>
+                            )}
+                          </View>
+
+                          {/* Right: Completion Indicator */}
+                          <View style={styles.completionIndicator}>
+                            {isComplete ? (
+                              <View style={styles.completedCheckCircle}>
+                                <GameIcon name="check" size={20} color={colors.background} variant="minimal" />
+                              </View>
+                            ) : (
+                              <View style={styles.incompleteCircle} />
+                            )}
+                          </View>
+                        </View>
+                      </TouchableOpacity>
                     );
                   })}
-                </Card>
+                </View>
               </View>
             ))}
 
@@ -594,7 +646,7 @@ export default function DailyMissionScreen() {
                 title={isPerfect ? 'FINISH — PERFECT' : 'FINISH MISSION'}
                 onPress={handleFinish}
                 variant={isPerfect ? 'success' : 'primary'}
-                style={{ marginTop: spacing.xl }}
+                style={{ marginTop: spacing.xl, marginBottom: spacing.xl }}
               />
             </View>
           </>
@@ -644,72 +696,218 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     padding: spacing.md,
     paddingBottom: spacing.xxl,
   },
-  header: {
+  /* === HERO SECTION (Pre-Start) === */
+  heroSection: {
     width: '100%',
-    marginBottom: spacing.md,
+    marginBottom: spacing.xl,
   },
   missionLabel: {
     fontSize: 11,
     fontWeight: '700',
     color: colors.accent,
-    letterSpacing: 2,
+    letterSpacing: 2.5,
     marginBottom: spacing.xs,
+    textTransform: 'uppercase',
   },
-  title: {
-    fontSize: 26,
+  heroTitle: {
+    fontSize: 32,
     fontWeight: '800',
     color: colors.textPrimary,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
+    lineHeight: 40,
   },
-  objective: {
+  heroObjective: {
     fontSize: 15,
     color: colors.textSecondary,
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
+    lineHeight: 22,
   },
-  metaRow: {
+  statsGrid: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    flexWrap: 'wrap',
+    gap: spacing.md,
+    justifyContent: 'space-between',
   },
-  metaChip: {
-    flexDirection: 'row',
+  statCard: {
+    flex: 1,
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: colors.card,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    backgroundColor: `${colors.background}80`,
     borderWidth: 1,
     borderColor: colors.cardBorder,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    borderRadius: 16,
   },
-  metaText: {
-    fontSize: 13,
-    fontWeight: '600',
+  statValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: colors.accent,
+    marginTop: spacing.xs,
+  },
+  statLabel: {
+    fontSize: 12,
     color: colors.textMuted,
+    fontWeight: '600',
+    marginTop: 4,
+    textTransform: 'lowercase',
+  },
+
+  /* === PROGRESS SECTION (Active) === */
+  progressSection: {
+    width: '100%',
+    marginBottom: spacing.lg,
+    padding: spacing.lg,
+    backgroundColor: `${colors.card}60`,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  progressLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.accent,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
+  progressPercent: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: colors.accent,
   },
   progressTrack: {
     width: '100%',
-    height: 6,
+    height: 8,
     backgroundColor: colors.backgroundSecondary,
-    borderRadius: 3,
+    borderRadius: 4,
     overflow: 'hidden',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
+  progressFill: {
+    height: '100%',
+    backgroundColor: colors.accent,
+    borderRadius: 4,
+  },
+  progressCounter: {
+    fontSize: 13,
+    color: colors.textMuted,
+    fontWeight: '600',
+  },
+
+  /* === SECTION BLOCK === */
   sectionBlock: {
     width: '100%',
     marginBottom: spacing.lg,
   },
-  sectionCard: {
-    width: '100%',
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
   },
+  sectionTextWrap: {
+    flex: 1,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    marginBottom: 2,
+  },
+  sectionInstruction: {
+    fontSize: 13,
+    color: colors.textMuted,
+    fontWeight: '500',
+    lineHeight: 18,
+  },
+
+  /* === EXERCISE CARDS === */
+  exercisesContainer: {
+    gap: spacing.md,
+  },
+  exerciseCardTouchable: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  exerciseCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: `${colors.card}80`,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    borderRadius: 16,
+    minHeight: 100,
+  },
+  exerciseCardComplete: {
+    backgroundColor: `${colors.accentGreen}15`,
+    borderColor: colors.accentGreen,
+  },
+  exerciseIconWrap: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: 12,
+  },
+  exerciseDetailsWrap: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  exerciseName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: 4,
+  },
+  exerciseDetail: {
+    fontSize: 14,
+    color: colors.textMuted,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  loggedSummary: {
+    fontSize: 12,
+    color: colors.accent,
+    fontWeight: '600',
+    fontStyle: 'italic',
+  },
+  completionIndicator: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  completedCheckCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: colors.accentGreen,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  incompleteCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 2,
+    borderColor: colors.cardBorder,
+    backgroundColor: 'transparent',
+  },
+
+  /* === ACTION BUTTON === */
   actionWrap: {
     width: '100%',
   },
-  progressFill: {
-    height: '100%',
-    backgroundColor: colors.accentGreen,
-    borderRadius: 3,
-  },
+
+  /* === EMPTY STATES === */
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
@@ -746,6 +944,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.cardBorder,
     backgroundColor: colors.card,
+    borderRadius: 12,
   },
   secondaryActionText: {
     color: colors.textSecondary,
@@ -761,6 +960,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.cardBorder,
     backgroundColor: colors.card,
+    borderRadius: 16,
   },
   nextWorkoutLabel: {
     color: colors.accent,
@@ -768,6 +968,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.8,
     marginBottom: spacing.xs,
+    textTransform: 'uppercase',
   },
   nextWorkoutTitle: {
     color: colors.textPrimary,

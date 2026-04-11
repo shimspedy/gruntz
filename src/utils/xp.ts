@@ -8,9 +8,11 @@ export function getXPForLevel(level: number): number {
   return Math.floor(100 * Math.pow(level - 1, 1.5));
 }
 
+const MAX_LEVEL = 999;
+
 export function getLevelForXP(xp: number): number {
   let level = 1;
-  while (getXPForLevel(level + 1) <= xp) {
+  while (level < MAX_LEVEL && getXPForLevel(level + 1) <= xp) {
     level++;
   }
   return level;

@@ -2,9 +2,9 @@ import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
+import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
-import { Card } from '../components/Card';
+import { GlassCard } from '../components/GlassCard';
 import { SectionHeader } from '../components/SectionHeader';
 import { StatCard } from '../components/StatCard';
 import { XPBar } from '../components/XPBar';
@@ -80,50 +80,41 @@ export default function ProgressScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.inner}>
+          {/* Header */}
           <View style={styles.header}>
             <View style={styles.titleWrap}>
               <Text style={styles.kicker}>MISSION INTEL</Text>
               <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>Progress</Text>
               <Text style={styles.subtitle}>
                 {xpRemaining > 0
-                  ? `${xpRemaining} XP until your next level.`
+                  ? `${xpRemaining} XP until Level ${progress.current_level + 1}`
                   : 'Level complete. Keep stacking missions.'}
               </Text>
             </View>
             <View style={styles.rankChip}>
-              <GameIcon name="rank" size={24} color={colors.accentGold} variant="minimal" />
               <Text style={styles.rankChipText}>{progress.current_rank}</Text>
             </View>
           </View>
 
-          {/* Level & XP */}
-          <Card style={styles.section}>
+          {/* XP Overview */}
+          <GlassCard style={styles.section}>
             <XPBar current={xpInfo.current} required={xpInfo.required} level={progress.current_level} />
             <View style={styles.xpDetails}>
-              <Text style={styles.totalXP}>{progress.current_xp.toLocaleString()} Total XP</Text>
-              <Text style={styles.rankBadge}>{progress.current_rank}</Text>
-            </View>
-            <View style={styles.heroMetaRow}>
-              <View style={styles.heroMetaPill}>
-                <GameIcon name="xp" size={16} color={colors.accentGold} variant="minimal" animated={false} />
-                <Text style={styles.heroMetaLabel}>NEXT</Text>
-                <Text style={styles.heroMetaValue}>{xpRemaining}</Text>
-              </View>
-              <View style={styles.heroMetaPill}>
-                <GameIcon name={getSkillIcon(strongestSkill.name)} size={16} color={strongestSkill.color} variant="minimal" animated={false} />
-                <Text style={styles.heroMetaLabel}>STRONGEST</Text>
-                <Text style={[styles.heroMetaValue, { color: strongestSkill.color }]}>{strongestSkill.name}</Text>
-              </View>
-              <View style={styles.heroMetaPill}>
-                <GameIcon name={getSkillIcon(focusSkill.name)} size={16} color={focusSkill.color} variant="minimal" animated={false} />
-                <Text style={styles.heroMetaLabel}>FOCUS</Text>
-                <Text style={[styles.heroMetaValue, { color: focusSkill.color }]}>{focusSkill.name}</Text>
+              <Text style={styles.totalXP}>{progress.current_xp.toLocaleString()} XP</Text>
+              <View style={styles.skillHighlights}>
+                <View style={styles.skillHighlight}>
+                  <Text style={styles.skillHighlightLabel}>TOP SKILL</Text>
+                  <Text style={[styles.skillHighlightValue, { color: strongestSkill.color }]}>{strongestSkill.name}</Text>
+                </View>
+                <View style={styles.skillHighlight}>
+                  <Text style={styles.skillHighlightLabel}>FOCUS</Text>
+                  <Text style={[styles.skillHighlightValue, { color: focusSkill.color }]}>{focusSkill.name}</Text>
+                </View>
               </View>
             </View>
-          </Card>
+          </GlassCard>
 
           {/* Stats Grid */}
-          <SectionHeader title="Mission Totals" subtitle="Core numbers that move rank and streak." icon="mission" />
           <View style={styles.statsGrid}>
             <StatCard icon="mission" value={progress.workouts_completed} label="Missions" color={colors.accent} />
             <StatCard icon="streak" value={progress.streak_days} label="Streak" color={colors.streakFire} />
@@ -133,38 +124,33 @@ export default function ProgressScreen() {
             <StatCard icon="run" value={`${progress.total_distance_miles}`} label="Miles" color={colors.accentOrange} />
           </View>
 
-          {/* Skill Categories */}
+          {/* Operator Profile */}
           <SectionHeader title="Operator Profile" subtitle="Strengths and gaps from completed work." icon="stats" />
-          <Card title="Skill Categories" style={styles.section}>
-            <View style={styles.skillHighlights}>
-              <View style={styles.skillHighlight}>
-                <Text style={styles.skillHighlightLabel}>TOP</Text>
-                <Text style={[styles.skillHighlightValue, { color: strongestSkill.color }]}>{strongestSkill.name}</Text>
-              </View>
-              <View style={styles.skillHighlight}>
-                <Text style={styles.skillHighlightLabel}>TRAIN NEXT</Text>
-                <Text style={[styles.skillHighlightValue, { color: focusSkill.color }]}>{focusSkill.name}</Text>
-              </View>
-            </View>
+          <GlassCard style={styles.section}>
             {skillCategories.map((cat) => (
               <View key={cat.name} style={styles.skillRow}>
-                <Text style={styles.skillName}>{cat.name}</Text>
+                <View style={styles.skillNameWrap}>
+                  <GameIcon name={getSkillIcon(cat.name)} size={16} color={cat.color} variant="minimal" animated={false} />
+                  <Text style={styles.skillName}>{cat.name}</Text>
+                </View>
                 <View style={styles.skillBarTrack}>
                   <View style={[styles.skillBarFill, { width: `${cat.score}%`, backgroundColor: cat.color }]} />
                 </View>
                 <Text style={[styles.skillScore, { color: cat.color }]}>{cat.score}</Text>
               </View>
             ))}
-          </Card>
+          </GlassCard>
 
           {/* Personal Records */}
           <SectionHeader title="Records" subtitle="Best logged efforts across run, ruck, and swim." icon="achievement" />
-          <Card title="Personal Records" style={styles.section}>
+          <GlassCard style={styles.section}>
             {records.length > 0 ? (
               records.slice(0, 8).map((record) => (
                 <View key={record.label} style={styles.prRow}>
                   <View style={styles.recordLabelWrap}>
-                    <GameIcon name={record.icon} size={18} color={colors.textSecondary} variant="minimal" animated={false} />
+                    <View style={[styles.recordIcon, { backgroundColor: `${colors.accent}12` }]}>
+                      <GameIcon name={record.icon} size={16} color={colors.accent} variant="minimal" animated={false} />
+                    </View>
                     <Text style={styles.prLabel}>{record.label}</Text>
                   </View>
                   <Text style={styles.prValue}>{formatDurationLabel(record.value)}</Text>
@@ -172,26 +158,26 @@ export default function ProgressScreen() {
               ))
             ) : (
               <View style={styles.emptyState}>
-                <GameIcon name="achievement" size={26} color={colors.textMuted} variant="minimal" animated={false} />
+                <GameIcon name="achievement" size={32} color={colors.textMuted} variant="minimal" animated={false} />
                 <Text style={styles.emptyTitle}>No records logged yet</Text>
                 <Text style={styles.emptyText}>Complete timed missions and tracked runs to populate your board.</Text>
               </View>
             )}
-          </Card>
+          </GlassCard>
 
-          {/* Exercise Totals */}
+          {/* Top Movements */}
           <SectionHeader title="Top Movements" subtitle="Your most repeated exercises so far." icon="strength" />
-          <Card title="Exercise Totals" style={styles.section}>
+          <GlassCard style={styles.section}>
             {topExercises.length > 0 ? (
-              topExercises.map((exercise) => (
-                <View key={exercise.id} style={styles.prRow}>
+              topExercises.map((exercise, index) => (
+                <View key={exercise.id} style={[styles.prRow, index === topExercises.length - 1 && { borderBottomWidth: 0 }]}>
                   <View style={styles.exerciseInfo}>
                     <Text style={styles.prLabel}>{exercise.id.replace(/_/g, ' ')}</Text>
                     <View style={styles.exerciseBarTrack}>
                       <View
                         style={[
                           styles.exerciseBarFill,
-                          { width: `${Math.max((exercise.count / topExerciseMax) * 100, 10)}%` },
+                          { width: `${Math.max((exercise.count / topExerciseMax) * 100, 10)}%`, backgroundColor: colors.accent },
                         ]}
                       />
                     </View>
@@ -201,12 +187,12 @@ export default function ProgressScreen() {
               ))
             ) : (
               <View style={styles.emptyState}>
-                <GameIcon name="strength" size={26} color={colors.textMuted} variant="minimal" animated={false} />
+                <GameIcon name="strength" size={32} color={colors.textMuted} variant="minimal" animated={false} />
                 <Text style={styles.emptyTitle}>Movement log is empty</Text>
                 <Text style={styles.emptyText}>Your most-used exercises will show up here once you finish missions.</Text>
               </View>
             )}
-          </Card>
+          </GlassCard>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -231,7 +217,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: spacing.md,
     marginBottom: spacing.lg,
   },
@@ -240,127 +226,94 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   kicker: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '800',
     color: colors.accent,
-    letterSpacing: 1.8,
-    marginBottom: 4,
+    letterSpacing: 2,
+    marginBottom: spacing.xs,
+    textTransform: 'uppercase',
   },
   title: {
-    fontSize: 30,
+    fontSize: 32,
     fontWeight: '900',
     color: colors.textPrimary,
   },
   subtitle: {
-    marginTop: 4,
+    marginTop: spacing.xs,
     fontSize: 13,
     color: colors.textSecondary,
     lineHeight: 18,
   },
   rankChip: {
-    flexDirection: 'row',
+    backgroundColor: `${colors.accent}15`,
+    borderRadius: borderRadius.xl,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    minWidth: 80,
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    maxWidth: '42%',
   },
   rankChipText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
-    letterSpacing: 0.9,
-    color: colors.accentGold,
-    flexShrink: 1,
+    letterSpacing: 1,
+    color: colors.accent,
+    textTransform: 'uppercase',
   },
   section: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   xpDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: spacing.md,
+    marginTop: spacing.lg,
+    gap: spacing.md,
   },
   totalXP: {
     fontSize: 14,
     fontWeight: '600',
     color: colors.textSecondary,
+    fontVariant: ['tabular-nums'],
   },
-  heroMetaRow: {
+  skillHighlights: {
     flexDirection: 'row',
     gap: spacing.sm,
-    marginTop: spacing.md,
   },
-  heroMetaPill: {
+  skillHighlight: {
     flex: 1,
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: 14,
+    backgroundColor: `${colors.textPrimary}04`,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: `${colors.textPrimary}08`,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
-    gap: 3,
   },
-  heroMetaLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.9,
+  skillHighlightLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1,
     color: colors.textMuted,
+    marginBottom: 4,
+    textTransform: 'uppercase',
   },
-  heroMetaValue: {
+  skillHighlightValue: {
     fontSize: 13,
     fontWeight: '800',
-    color: colors.textPrimary,
-  },
-  rankBadge: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.accentGold,
-    backgroundColor: colors.backgroundSecondary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: 999,
   },
   statsGrid: {
     flexDirection: 'row',
     gap: spacing.sm,
     marginBottom: spacing.sm,
   },
-  skillHighlights: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  skillHighlight: {
-    flex: 1,
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-  },
-  skillHighlightLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.9,
-    color: colors.textMuted,
-    marginBottom: 4,
-  },
-  skillHighlightValue: {
-    fontSize: 14,
-    fontWeight: '800',
-  },
   skillRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  skillNameWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    width: 100,
   },
   skillName: {
-    width: 90,
     fontSize: 13,
     fontWeight: '600',
     color: colors.textSecondary,
@@ -368,17 +321,16 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   skillBarTrack: {
     flex: 1,
     height: 8,
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: 4,
+    backgroundColor: `${colors.textPrimary}08`,
+    borderRadius: borderRadius.full,
     overflow: 'hidden',
-    marginHorizontal: spacing.sm,
   },
   skillBarFill: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: borderRadius.full,
   },
   skillScore: {
-    width: 30,
+    width: 32,
     fontSize: 13,
     fontWeight: '700',
     textAlign: 'right',
@@ -387,52 +339,62 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.cardBorder,
+    borderBottomColor: `${colors.textPrimary}08`,
   },
   recordLabelWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: spacing.sm,
     flex: 1,
     paddingRight: spacing.sm,
+  },
+  recordIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
   exerciseInfo: {
     flex: 1,
     paddingRight: spacing.md,
   },
   exerciseBarTrack: {
-    marginTop: 6,
+    marginTop: spacing.xs,
     height: 6,
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: 999,
+    backgroundColor: `${colors.textPrimary}08`,
+    borderRadius: borderRadius.full,
     overflow: 'hidden',
   },
   exerciseBarFill: {
     height: '100%',
-    borderRadius: 999,
-    backgroundColor: colors.accent,
+    borderRadius: borderRadius.full,
   },
   prLabel: {
     fontSize: 14,
     color: colors.textSecondary,
+    fontWeight: '500',
     textTransform: 'capitalize',
   },
   prValue: {
     fontSize: 14,
     fontWeight: '700',
     color: colors.textPrimary,
+    fontVariant: ['tabular-nums'],
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textMuted,
     lineHeight: 20,
+    textAlign: 'center',
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: spacing.md,
-    gap: spacing.xs,
+    paddingVertical: spacing.lg,
+    gap: spacing.sm,
   },
   emptyTitle: {
     fontSize: 14,

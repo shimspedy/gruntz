@@ -1,33 +1,31 @@
 import React, { useMemo } from 'react';
 import { View, StyleSheet, StyleProp, ViewStyle, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { useColors, spacing } from '../theme';
+import { useColors, spacing, borderRadius } from '../theme';
 import type { ThemeColors } from '../theme';
 
 interface GlassCardProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
-  intensity?: number;
-  accentColor?: string;
-  /** Remove default padding */
+  variant?: 'default' | 'elevated' | 'accent';
   noPadding?: boolean;
 }
 
 /**
- * Liquid Glass–inspired card component.
- * Uses BlurView on iOS for real frosted-glass effect,
- * falls back to a semi-transparent dark surface on Android.
+ * Premium liquid glass card with frosted blur effect,
+ * animated gradient border glow, and inner highlight.
+ * iOS: real frosted glass via BlurView.
+ * Android: semi-transparent fallback with glow effect.
  */
-export function GlassCard({ children, style, intensity = 30, accentColor, noPadding }: GlassCardProps) {
+export function GlassCard({ children, style, variant = 'default', noPadding }: GlassCardProps) {
   const colors = useColors();
-  const resolvedAccent = accentColor ?? colors.accent;
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors, variant), [colors, variant]);
 
   const inner = (
     <>
-      {/* Top lensing edge highlight */}
-      <View style={[styles.edgeHighlight, { backgroundColor: resolvedAccent }]} />
-      {/* Bottom subtle shadow edge */}
+      {/* Inner top edge highlight - thicker and more visible */}
+      <View style={styles.edgeHighlight} />
+      {/* Subtle bottom shadow edge */}
       <View style={styles.edgeShadow} />
       <View style={noPadding ? undefined : styles.contentPadding}>
         {children}
@@ -38,7 +36,7 @@ export function GlassCard({ children, style, intensity = 30, accentColor, noPadd
   if (Platform.OS === 'ios') {
     return (
       <View style={[styles.outerWrap, style]}>
-        <BlurView intensity={intensity} tint="dark" style={styles.blurFill}>
+        <BlurView intensity={50} tint="dark" style={styles.blurFill}>
           <View style={styles.glassOverlay}>
             {inner}
           </View>
@@ -47,7 +45,7 @@ export function GlassCard({ children, style, intensity = 30, accentColor, noPadd
     );
   }
 
-  // Android fallback — semi-transparent card
+  // Android fallback — semi-transparent card with glow
   return (
     <View style={[styles.outerWrap, styles.androidFallback, style]}>
       {inner}
@@ -55,46 +53,59 @@ export function GlassCard({ children, style, intensity = 30, accentColor, noPadd
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  outerWrap: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: `${colors.accent}18`,
-    shadowColor: colors.background,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.16,
-    shadowRadius: 22,
-    elevation: 4,
-  },
-  blurFill: {
-    // Removed flex: 1 — must wrap content, not expand in ScrollView
-  },
-  glassOverlay: {
-    backgroundColor: `${colors.card}66`, // 40% opacity overlay for depth
-  },
-  edgeHighlight: {
-    position: 'absolute',
-    top: 0,
-    left: 16,
-    right: 16,
-    height: 1,
-    opacity: 0.35,
-    borderRadius: 1,
-  },
-  edgeShadow: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: '#000',
-    opacity: 0.3,
-  },
-  contentPadding: {
-    padding: spacing.lg,
-  },
-  androidFallback: {
-    backgroundColor: `${colors.card}CC`, // 80% opacity
-  },
-});
+const createStyles = (colors: ThemeColors, variant: 'default' | 'elevated' | 'accent') => {
+  const getBorderColor = () => {
+    if (variant === 'accent') return colors.accent;
+    return colors.glassBorder;
+  };
+
+  const getGlowColor = () => {
+    if (variant === 'accent') return colors.accent;
+    return colors.glassHighlight;
+  };
+
+  return StyleSheet.create({
+    outerWrap: {
+      borderRadius: borderRadius.xl,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: getBorderColor(),
+      shadowColor: getGlowColor(),
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: variant === 'accent' ? 0.24 : 0.12,
+      shadowRadius: 16,
+      elevation: variant === 'elevated' ? 8 : 4,
+    },
+    blurFill: {
+      // BlurView fills the container
+    },
+    glassOverlay: {
+      backgroundColor: colors.glassBackground,
+    },
+    edgeHighlight: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 2,
+      backgroundColor: colors.glassHighlight,
+      opacity: 0.6,
+      borderRadius: 1,
+    },
+    edgeShadow: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: 1,
+      backgroundColor: colors.glassShadow,
+      opacity: 0.25,
+    },
+    contentPadding: {
+      padding: spacing.lg,
+    },
+    androidFallback: {
+      backgroundColor: `${colors.card}DD`,
+    },
+  });
+};

@@ -4,23 +4,26 @@ import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
+import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
 import { useFadeInUp } from '../utils/animations';
 import type { ThemeColors } from '../theme';
 import { XPBar } from '../components/XPBar';
 import { StatCard } from '../components/StatCard';
 import { MissionButton } from '../components/MissionButton';
-import { Card } from '../components/Card';
 import { GlassCard } from '../components/GlassCard';
 import { GameIcon } from '../components/GameIcon';
+import { MuscleBodyMap } from '../components/MuscleBodyMap';
 import { useUserStore } from '../store/useUserStore';
 import { useMissionStore } from '../store/useMissionStore';
 import { useProgramStore } from '../store/useProgramStore';
+import { useChallengeStore } from '../store/useChallengeStore';
 import { getXPToNextLevel } from '../utils/xp';
-import { generateCoachMessage } from '../utils/adaptive';
-import { getTopInsights, CoachInsight } from '../services/coach';
 import { getRankInfo } from '../data/ranks';
 import { getProgramById } from '../data/programs';
+import { getExerciseById } from '../data/exercises';
+import { getWorkoutDay } from '../data/workouts';
+import { getReconWorkoutDay } from '../data/reconWorkouts';
+import { getTodaysChallenge } from '../data/dailyChallenges';
 import { getDisplayedMonthlyPrice } from '../config/monetization';
 import { hapticLight } from '../utils/haptics';
 import { useAdaptiveLayout } from '../hooks/useAdaptiveLayout';
@@ -28,6 +31,34 @@ import { getAccessState, getTrialDaysRemaining, hasTrainingAccess, useSubscripti
 import type { HomeStackParamList } from '../types/navigation';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
+
+/**
+ * Get active muscle groups from today's mission by looking up the workout day data
+ */
+function getActiveMuscleGroups(
+  todaysMission: { workout_day_id: string } | null,
+  selectedProgram: string | null,
+): string[] {
+  if (!todaysMission || !selectedProgram) return [];
+
+  const workoutDay = selectedProgram === 'recon'
+    ? getReconWorkoutDay(todaysMission.workout_day_id)
+    : getWorkoutDay(todaysMission.workout_day_id);
+
+  if (!workoutDay) return [];
+
+  const muscleGroups = new Set<string>();
+  workoutDay.sections.forEach((section) => {
+    section.exercises.forEach((exerciseId: string) => {
+      const exercise = getExerciseById(exerciseId);
+      if (exercise?.muscle_groups && Array.isArray(exercise.muscle_groups)) {
+        exercise.muscle_groups.forEach((mg) => muscleGroups.add(mg));
+      }
+    });
+  });
+
+  return Array.from(muscleGroups);
+}
 
 export default function HomeScreen() {
   const colors = useColors();
@@ -37,52 +68,62 @@ export default function HomeScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<Nav>();
+
+  // User & progress
   const progress = useUserStore((s) => s.progress);
+
+  // Mission state
   const todaysMission = useMissionStore((s) => s.todaysMission);
   const isRestDay = useMissionStore((s) => s.isRestDay);
   const nextWorkout = useMissionStore((s) => s.nextWorkout);
   const loadTodaysMission = useMissionStore((s) => s.loadTodaysMission);
+
+  // Program state
   const selectedProgram = useProgramStore((s) => s.selectedProgram);
   const currentWeek = useProgramStore((s) => s.currentWeek);
   const loadPersistedState = useProgramStore((s) => s.loadPersistedState);
+
+  // Challenge state
+  const challengeProgress = useChallengeStore((s) => s.currentProgress);
+
+  // Subscription state
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
   const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
   const currentOffering = useSubscriptionStore((s) => s.currentOffering);
 
   const program = selectedProgram ? getProgramById(selectedProgram) : null;
-
   const [hydrated, setHydrated] = React.useState(false);
 
   useEffect(() => {
     let active = true;
-
     loadPersistedState().then(() => {
-      if (active) {
-        setHydrated(true);
-      }
+      if (active) setHydrated(true);
     });
-
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [loadPersistedState]);
 
-  // Load mission only after hydration, and when program/week changes
   useEffect(() => {
-    if (hydrated) {
-      loadTodaysMission();
-    }
+    if (hydrated) loadTodaysMission();
   }, [hydrated, selectedProgram, currentWeek, loadTodaysMission]);
 
+  // Computed values
   const xpInfo = getXPToNextLevel(progress.current_xp);
   const rankInfo = getRankInfo(progress.current_rank);
-  const coachMessage = generateCoachMessage(progress);
-  const coachInsights = getTopInsights(progress);
   const accessState = getAccessState({ trialStartedAt, entitlementActive });
   const trialDaysRemaining = getTrialDaysRemaining(trialStartedAt);
   const trainingUnlocked = hasTrainingAccess({ trialStartedAt, entitlementActive });
   const monthlyPrice = getDisplayedMonthlyPrice(currentOffering);
+  const todaysChallenge = getTodaysChallenge();
+  const activeMuscles = getActiveMuscleGroups(todaysMission, selectedProgram);
   const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
+
+  // Get greeting based on time of day
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -98,229 +139,270 @@ export default function HomeScreen() {
           },
         ]}
       >
-        {/* Header */}
+        {/* SECTION 1: Header */}
         <Animated.View style={[styles.header, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
-          <View style={styles.headerMain}>
-            <Text style={styles.greeting} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>READY FOR ACTION</Text>
-            <View style={styles.rankRow}>
-              <GameIcon name={rankInfo?.icon || 'rank'} size={34} color={colors.textPrimary} />
-              <Text style={styles.rankTitle} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
-                {progress.current_rank}
-              </Text>
-            </View>
-            {program && (
-              <View style={styles.programPill}>
-                <GameIcon name={program.icon} size={20} color={colors.accent} variant="minimal" />
-                <Text style={styles.programPillText}>
-                  {program.name} · Wk {currentWeek}/{program.duration_weeks}
-                </Text>
-              </View>
-            )}
+          <View style={styles.headerLeft}>
+            <Text style={styles.greetingText}>{getGreeting()}</Text>
+            <Text style={styles.rankText}>{progress.current_rank}</Text>
           </View>
-          <View style={styles.streakBadge}>
-            <GameIcon name="streak" size={26} color={colors.streakFire} />
-            <View style={styles.streakMeta}>
-              <Text style={styles.streakCount}>{progress.streak_days}</Text>
-              <Text style={styles.streakLabel}>STREAK</Text>
+          <GlassCard style={styles.streakPill} variant="default">
+            <View style={styles.streakPillContent}>
+              <GameIcon name="streak" size={18} color={colors.accent} />
+              <Text style={styles.streakPillText}>{progress.streak_days}</Text>
             </View>
-          </View>
+          </GlassCard>
         </Animated.View>
 
-        <TouchableOpacity
-          style={[
-            styles.membershipBanner,
-            accessState === 'locked' && styles.membershipBannerLocked,
-          ]}
-          onPress={() => navigation.navigate('Paywall')}
-          activeOpacity={accessState === 'subscriber' ? 1 : 0.85}
-          disabled={accessState === 'subscriber'}
-        >
-          <GameIcon
-            name={accessState === 'subscriber' ? 'rank' : accessState === 'trial' ? 'badge' : 'warning'}
-            size={26}
-            color={accessState === 'locked' ? colors.accentGold : colors.accent}
-            variant="minimal"
-            animated={accessState !== 'subscriber'}
-          />
-          <View style={styles.membershipBannerBody}>
-            <Text style={styles.membershipBannerTitle}>
-              {accessState === 'subscriber'
-                ? 'GRUNTZ PRO ACTIVE'
-                : accessState === 'trial'
-                  ? `${trialDaysRemaining} DAY${trialDaysRemaining === 1 ? '' : 'S'} LEFT IN FREE ACCESS`
-                  : 'TRIAL ENDED'}
-            </Text>
-            <Text style={styles.membershipBannerText}>
-              {accessState === 'subscriber'
-                ? 'Full programs and missions unlocked.'
-                : accessState === 'trial'
-                  ? `You have full access right now. Membership continues at ${monthlyPrice}.`
-                  : `Subscribe for ${monthlyPrice} to keep running missions and full programs.`}
-            </Text>
-          </View>
-          {accessState !== 'subscriber' ? (
-            <Text style={styles.membershipBannerAction}>VIEW</Text>
-          ) : null}
-        </TouchableOpacity>
-
-        {/* Choose Program (only shown when no program selected) */}
-        {!program && (
-          <TouchableOpacity
-            style={styles.noProgramBanner}
-            onPress={() => { hapticLight(); navigation.navigate('ProgramSelect'); }}
-            activeOpacity={0.85}
-          >
-            <GameIcon name="program" size={28} color={colors.accent} />
-            <View style={styles.programBannerText}>
-              <Text style={styles.noProgramTitle}>Choose Your Program</Text>
-              <Text style={styles.noProgramSub}>Raider or Recon — pick your path</Text>
-            </View>
-            <GameIcon name="target" size={20} color={colors.accent} variant="minimal" />
-          </TouchableOpacity>
-        )}
-
-        {/* XP Bar */}
-        <View style={styles.xpContainer}>
+        {/* SECTION 2: XP Bar */}
+        <View style={styles.xpSection}>
           <XPBar current={xpInfo.current} required={xpInfo.required} level={progress.current_level} />
         </View>
 
-        {/* Stats Row */}
-        <View style={styles.statsRow}>
-          <StatCard icon="level" value={progress.current_level} label="Level" color={colors.accent} />
-          <StatCard icon="streak" value={progress.streak_days} label="Streak" color={colors.streakFire} />
-          <StatCard icon="mission" value={progress.workouts_completed} label="Ops" color={colors.accentGreen} />
-        </View>
+        {/* SECTION 3: Muscle Body Map (Hero) */}
+        {program && (
+          <GlassCard style={styles.muscleMapCard} variant="default">
+            <View style={styles.muscleMapContainer}>
+              <MuscleBodyMap activeMuscles={activeMuscles} />
+              {activeMuscles.length > 0 && (
+                <View style={styles.muscleChips}>
+                  {activeMuscles.map((muscle) => (
+                    <View key={muscle} style={styles.muscleChip}>
+                      <Text style={styles.muscleChipText}>{muscle}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          </GlassCard>
+        )}
 
-        {/* Today's Mission Card */}
-        {todaysMission ? (
-          <Card style={styles.missionCard}>
-            <Text style={styles.missionLabel}>TODAY'S MISSION</Text>
+        {/* SECTION 4: Today's Mission Card */}
+        {todaysMission && !isRestDay && (
+          <GlassCard style={styles.missionSection} variant="accent">
+            <Text style={styles.sectionLabel}>TODAY'S MISSION</Text>
             <Text style={styles.missionTitle}>{todaysMission.mission_title}</Text>
             <Text style={styles.missionSummary}>{todaysMission.mission_summary}</Text>
-            <View style={styles.rewardRow}>
-              <View style={styles.rewardPill}>
-                <GameIcon name="xp" size={18} color={colors.accentGold} variant="minimal" />
-                <Text style={styles.rewardText}>{todaysMission.reward_xp} XP</Text>
+
+            {/* Mission info chips */}
+            <View style={styles.missionChips}>
+              <View style={styles.infoChip}>
+                <GameIcon name="timer" size={14} color={colors.accent} />
+                <Text style={styles.chipText}>~45 min</Text>
               </View>
-              <View style={styles.rewardPill}>
-                <GameIcon name="coin" size={18} color={colors.accentGold} variant="minimal" />
-                <Text style={styles.rewardText}>{todaysMission.reward_coins} Coins</Text>
+              <View style={styles.infoChip}>
+                <GameIcon name="xp" size={14} color={colors.accent} />
+                <Text style={styles.chipText}>{todaysMission.reward_xp} XP</Text>
+              </View>
+              <View style={styles.infoChip}>
+                <GameIcon name="mission" size={14} color={colors.accent} />
+                <Text style={styles.chipText}>
+                  {(() => {
+                    const wd = selectedProgram === 'recon'
+                      ? getReconWorkoutDay(todaysMission.workout_day_id)
+                      : getWorkoutDay(todaysMission.workout_day_id);
+                    return wd?.sections.reduce((sum, s) => sum + s.exercises.length, 0) || 0;
+                  })()} exercises
+                </Text>
               </View>
             </View>
+
             <MissionButton
               title={
                 todaysMission.completed
                   ? 'MISSION COMPLETE'
                   : trainingUnlocked
                     ? 'START MISSION'
-                    : 'UNLOCK GRUNTZ PRO'
+                    : 'UNLOCK PRO'
               }
               onPress={() => {
                 if (trainingUnlocked) {
                   navigation.navigate('DailyMission', {});
-                  return;
+                } else {
+                  navigation.navigate('Paywall');
                 }
-                navigation.navigate('Paywall');
               }}
               variant={todaysMission.completed ? 'success' : 'primary'}
               disabled={todaysMission.completed}
-              style={{ marginTop: spacing.md }}
+              style={{ marginTop: spacing.lg }}
             />
-          </Card>
-        ) : isRestDay ? (
-          <Card style={styles.restDayCard}>
-            <GameIcon name="rest" size={60} color={colors.accent} style={styles.restDayIcon} />
-            <Text style={styles.restDayTitle}>REST DAY</Text>
-            <Text style={styles.restDayMessage}>
-              Recovery is part of the mission. Hydrate, stretch, and prepare for tomorrow.
-            </Text>
+          </GlassCard>
+        )}
+
+        {/* Rest Day Card */}
+        {isRestDay && (
+          <GlassCard style={styles.restDaySection} variant="default">
+            <View style={styles.restDayContent}>
+              <GameIcon name="rest" size={48} color={colors.accent} />
+              <Text style={styles.restDayTitle}>REST & RECOVER</Text>
+              <Text style={styles.restDayMessage}>
+                Your body needs time to adapt. Hydrate, stretch, and prepare for tomorrow's mission.
+              </Text>
+            </View>
             {nextWorkout && (
-              <View style={styles.nextWorkoutPreview}>
-                <Text style={styles.nextWorkoutLabel}>TOMORROW'S MISSION</Text>
-                <Text style={styles.nextWorkoutTitle}>{nextWorkout.title}</Text>
-                <Text style={styles.nextWorkoutSummary}>{nextWorkout.objective}</Text>
-                <View style={styles.rewardRow}>
-                  <View style={styles.rewardPill}>
-                    <GameIcon name="xp" size={18} color={colors.accentGold} variant="minimal" />
-                    <Text style={styles.rewardText}>{nextWorkout.rewards.xp} XP</Text>
-                  </View>
-                  <View style={styles.rewardPill}>
-                    <GameIcon name="coin" size={18} color={colors.accentGold} variant="minimal" />
-                    <Text style={styles.rewardText}>{nextWorkout.rewards.coins} Coins</Text>
-                  </View>
-                </View>
+              <View style={styles.nextWorkoutBox}>
+                <Text style={styles.nextLabel}>TOMORROW'S MISSION</Text>
+                <Text style={styles.nextTitle}>{nextWorkout.title}</Text>
               </View>
             )}
-          </Card>
-        ) : null}
+          </GlassCard>
+        )}
 
-        {/* Coach Insights — Liquid Glass */}
-        <GlassCard style={styles.coachCard}>
-          <Text style={styles.coachLabel}>COACH NOTES</Text>
-          <Text style={styles.coachMessage}>{coachMessage}</Text>
-          {coachInsights.map((insight: CoachInsight, idx: number) => (
-            <View key={idx} style={styles.insightRow}>
-              <GameIcon name={insight.icon} size={24} color={colors.accent} style={styles.insightIcon} />
-              <View style={styles.insightContent}>
-                <Text style={styles.insightTitle}>{insight.title}</Text>
-                <Text style={styles.insightMessage}>{insight.message}</Text>
+        {/* No Program Selected */}
+        {!program && (
+          <GlassCard style={styles.noProgramSection} variant="accent">
+            <View style={styles.noProgramContent}>
+              <GameIcon name="program" size={40} color={colors.accent} />
+              <Text style={styles.noProgramTitle}>Select a Program</Text>
+              <Text style={styles.noProgramText}>Choose your path: Raider or Recon</Text>
+              <MissionButton
+                title="CHOOSE PROGRAM"
+                onPress={() => {
+                  hapticLight();
+                  navigation.navigate('ProgramSelect');
+                }}
+                variant="primary"
+                style={{ marginTop: spacing.md }}
+              />
+            </View>
+          </GlassCard>
+        )}
+
+        {/* SECTION 5: Daily Challenge Card */}
+        {todaysChallenge && (
+          <GlassCard style={styles.challengeSection} variant="default">
+            <View style={styles.challengeHeader}>
+              <GameIcon name={todaysChallenge.icon} size={28} color={colors.accent} />
+              <View style={styles.challengeTitleBox}>
+                <Text style={styles.sectionLabel}>DAILY CHALLENGE</Text>
+                <Text style={styles.challengeName}>{todaysChallenge.name}</Text>
               </View>
             </View>
-          ))}
-        </GlassCard>
 
-        {/* Quick Actions */}
-        <View style={styles.aiToolsRow}>
+            <Text style={styles.challengeDesc}>{todaysChallenge.description}</Text>
+
+            {/* Progress bar */}
+            <View style={styles.progressContainer}>
+              <View style={styles.progressTrack}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: `${Math.min((challengeProgress / todaysChallenge.target) * 100, 100)}%`,
+                      backgroundColor: colors.accent,
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={styles.progressText}>
+                {challengeProgress} / {todaysChallenge.target} {todaysChallenge.unit}
+              </Text>
+            </View>
+
+            {/* Difficulty & Reward row */}
+            <View style={styles.challengeFooter}>
+              <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(todaysChallenge.difficulty, colors) }]}>
+                <Text style={styles.difficultyText}>{todaysChallenge.difficulty.toUpperCase()}</Text>
+              </View>
+              <View style={styles.rewardBadge}>
+                <GameIcon name="xp" size={14} color={colors.accent} />
+                <Text style={styles.rewardBadgeText}>{todaysChallenge.xpReward} XP</Text>
+              </View>
+            </View>
+          </GlassCard>
+        )}
+
+        {/* SECTION 6: Quick Stats Row */}
+        <View style={styles.statsRow}>
+          <StatCard icon="level" value={progress.current_level} label="Level" color={colors.accent} />
+          <StatCard icon="streak" value={progress.streak_days} label="Streak" color={colors.streakFire} />
+          <StatCard icon="mission" value={progress.workouts_completed} label="Missions" color={colors.accentGreen} />
+        </View>
+
+        {/* SECTION 7: Quick Actions */}
+        <View style={styles.quickActionsRow}>
           <TouchableOpacity
-            style={styles.aiToolCard}
+            style={styles.quickActionCard}
             onPress={() => {
               hapticLight();
               if (program) {
                 navigation.navigate('ProgramDetail', { programId: program.id });
-                return;
+              } else {
+                navigation.navigate('ProgramSelect');
               }
-              navigation.navigate('ProgramSelect');
             }}
-            activeOpacity={0.7}
+            activeOpacity={0.85}
           >
-            <GameIcon name={program ? program.icon : 'program'} size={28} color={colors.accent} style={styles.aiToolIcon} />
-            <Text style={styles.aiToolLabel}>{program ? 'Program Details' : 'Choose Program'}</Text>
+            <View style={styles.qaIcon}>
+              <GameIcon name={program ? program.icon : 'program'} size={32} color={colors.accent} />
+            </View>
+            <Text style={styles.qaLabel}>Program</Text>
           </TouchableOpacity>
+
           <TouchableOpacity
-            style={styles.aiToolCard}
+            style={styles.quickActionCard}
             onPress={() => {
               hapticLight();
               if (trainingUnlocked) {
                 navigation.navigate('RunTracker');
-                return;
+              } else {
+                navigation.navigate('Paywall');
               }
-              navigation.navigate('Paywall');
             }}
-            activeOpacity={0.7}
+            activeOpacity={0.85}
           >
-            <GameIcon name="run" size={28} color={colors.accent} style={styles.aiToolIcon} />
-            <Text style={styles.aiToolLabel}>Run Tracker</Text>
+            <View style={styles.qaIcon}>
+              <GameIcon name="run" size={32} color={colors.accent} />
+            </View>
+            <Text style={styles.qaLabel}>Run Tracker</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Quick Stats */}
-        <Card title="Quick Stats">
-          <View style={styles.quickStatRow}>
-            <Text style={styles.quickStatLabel}>Total XP</Text>
-            <Text style={styles.quickStatValue}>{progress.current_xp.toLocaleString()}</Text>
-          </View>
-          <View style={styles.quickStatRow}>
-            <Text style={styles.quickStatLabel}>Total Reps</Text>
-            <Text style={styles.quickStatValue}>{progress.total_reps.toLocaleString()}</Text>
-          </View>
-          <View style={styles.quickStatRow}>
-            <Text style={styles.quickStatLabel}>Missions Done</Text>
-            <Text style={styles.quickStatValue}>{progress.workouts_completed}</Text>
-          </View>
-        </Card>
+        {/* SECTION 8: Membership Banner */}
+        {accessState !== 'subscriber' && (
+          <TouchableOpacity
+            style={styles.membershipBanner}
+            onPress={() => navigation.navigate('Paywall')}
+            activeOpacity={0.85}
+          >
+            <GameIcon
+              name={accessState === 'trial' ? 'badge' : 'warning'}
+              size={24}
+              color={colors.accent}
+            />
+            <View style={styles.membershipBody}>
+              <Text style={styles.membershipTitle}>
+                {accessState === 'trial'
+                  ? `${trialDaysRemaining} DAYS LEFT`
+                  : 'UPGRADE TO PRO'}
+              </Text>
+              <Text style={styles.membershipDesc}>
+                {accessState === 'trial'
+                  ? 'Full access to all programs'
+                  : 'Unlock premium features'}
+              </Text>
+            </View>
+            <GameIcon name="arrow" size={18} color={colors.accent} />
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+/**
+ * Get difficulty color for challenge badges
+ */
+function getDifficultyColor(difficulty: string, colors: ThemeColors): string {
+  switch (difficulty.toLowerCase()) {
+    case 'easy':
+      return colors.accentGreen + '30';
+    case 'medium':
+      return colors.accent + '30';
+    case 'hard':
+      return colors.accentRed + '30';
+    default:
+      return colors.accent + '30';
+  }
 }
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
@@ -334,6 +416,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   content: {
     paddingVertical: spacing.md,
   },
+
+  // HEADER
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -341,311 +425,320 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: spacing.lg,
     gap: spacing.md,
   },
-  headerMain: {
+  headerLeft: {
     flex: 1,
   },
-  greeting: {
+  greetingText: {
     fontSize: 12,
     fontWeight: '600',
     color: colors.textMuted,
-    letterSpacing: 2,
+    letterSpacing: 1.5,
+    marginBottom: spacing.xs,
   },
-  rankRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: 4,
-  },
-  rankTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: colors.textPrimary,
-  },
-  streakBadge: {
-    backgroundColor: colors.card,
-    borderRadius: 18,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 12,
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    minWidth: 96,
-    shadowColor: colors.background,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.14,
-    shadowRadius: 16,
-    elevation: 3,
-  },
-  streakMeta: {
-    alignItems: 'flex-start',
-  },
-  streakCount: {
-    fontSize: 22,
+  rankText: {
+    fontSize: 28,
     fontWeight: '900',
-    color: colors.streakFire,
-    lineHeight: 24,
-  },
-  streakLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.textMuted,
-    letterSpacing: 1.1,
-  },
-  membershipBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    backgroundColor: colors.card,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  membershipBannerLocked: {
-    borderColor: colors.accentGold,
-  },
-  membershipBannerBody: {
-    flex: 1,
-  },
-  membershipBannerTitle: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: colors.textPrimary,
-    letterSpacing: 1.1,
-    marginBottom: 2,
-  },
-  membershipBannerText: {
-    fontSize: 12,
-    lineHeight: 18,
-    color: colors.textSecondary,
-  },
-  membershipBannerAction: {
-    fontSize: 11,
-    fontWeight: '800',
     color: colors.accent,
-    letterSpacing: 1.2,
+    letterSpacing: 0.5,
   },
-  xpContainer: {
-    marginBottom: spacing.lg,
+  streakPill: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    minWidth: 72,
   },
-  statsRow: {
+  streakPillContent: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    alignItems: 'center',
+    gap: spacing.xs,
+    justifyContent: 'center',
+  },
+  streakPillText: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: colors.accent,
+  },
+
+  // XP SECTION
+  xpSection: {
     marginBottom: spacing.lg,
   },
-  missionCard: {
-    marginBottom: spacing.md,
+
+  // MUSCLE MAP
+  muscleMapCard: {
+    marginBottom: spacing.lg,
   },
-  restDayCard: {
-    marginBottom: spacing.md,
+  muscleMapContainer: {
     alignItems: 'center',
   },
-  restDayIcon: {
-    marginBottom: spacing.sm,
+  muscleChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.md,
   },
-  restDayTitle: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: colors.accentGold,
-    letterSpacing: 3,
-    marginBottom: spacing.sm,
+  muscleChip: {
+    backgroundColor: colors.accent + '20',
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
   },
-  restDayMessage: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: spacing.md,
+  muscleChipText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.accent,
+    letterSpacing: 0.5,
   },
-  nextWorkoutPreview: {
-    width: '100%',
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    padding: spacing.md,
-    marginTop: spacing.sm,
+
+  // MISSION SECTION
+  missionSection: {
+    marginBottom: spacing.lg,
   },
-  nextWorkoutLabel: {
+  sectionLabel: {
     fontSize: 10,
     fontWeight: '800',
     color: colors.accent,
     letterSpacing: 2,
     marginBottom: spacing.xs,
   },
-  nextWorkoutTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: colors.textPrimary,
-    marginBottom: 4,
-  },
-  nextWorkoutSummary: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 19,
-    marginBottom: spacing.sm,
-  },
-  missionLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.accent,
-    letterSpacing: 2,
-    marginBottom: spacing.sm,
-  },
   missionTitle: {
-    fontSize: 22,
-    fontWeight: '800',
+    fontSize: 20,
+    fontWeight: '900',
     color: colors.textPrimary,
     marginBottom: spacing.xs,
   },
   missionSummary: {
     fontSize: 14,
     color: colors.textSecondary,
+    lineHeight: 20,
     marginBottom: spacing.md,
   },
-  rewardRow: {
+  missionChips: {
     flexDirection: 'row',
     gap: spacing.sm,
     flexWrap: 'wrap',
+    marginBottom: spacing.lg,
   },
-  rewardPill: {
+  infoChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: colors.backgroundSecondary,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    gap: spacing.xs,
+    backgroundColor: colors.accent + '15',
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
   },
-  rewardText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.accentGold,
-  },
-  coachCard: {
-    marginBottom: spacing.md,
-  },
-  coachLabel: {
+  chipText: {
     fontSize: 12,
     fontWeight: '700',
-    color: colors.accent,
-    letterSpacing: 1.5,
-    marginBottom: spacing.sm,
-  },
-  coachMessage: {
-    fontSize: 15,
     color: colors.textSecondary,
-    lineHeight: 22,
-    marginBottom: spacing.sm,
   },
-  insightRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: spacing.xs,
-    borderTopWidth: 1,
-    borderTopColor: `${colors.cardBorder}66`,
+
+  // REST DAY
+  restDaySection: {
+    marginBottom: spacing.lg,
   },
-  insightIcon: {
-    marginRight: spacing.sm,
-    marginTop: 2,
+  restDayContent: {
+    alignItems: 'center',
+    marginBottom: spacing.lg,
   },
-  insightContent: {
-    flex: 1,
+  restDayTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: colors.textPrimary,
+    marginVertical: spacing.sm,
   },
-  insightTitle: {
-    fontSize: 11,
+  restDayMessage: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  nextWorkoutBox: {
+    backgroundColor: colors.accent + '10',
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.accent,
+  },
+  nextLabel: {
+    fontSize: 10,
     fontWeight: '800',
     color: colors.accent,
-    letterSpacing: 1,
-    marginBottom: 2,
+    letterSpacing: 1.5,
+    marginBottom: spacing.xs,
   },
-  insightMessage: {
+  nextTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: colors.textPrimary,
+  },
+
+  // NO PROGRAM
+  noProgramSection: {
+    marginBottom: spacing.lg,
+  },
+  noProgramContent: {
+    alignItems: 'center',
+  },
+  noProgramTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: colors.textPrimary,
+    marginVertical: spacing.sm,
+  },
+  noProgramText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+
+  // CHALLENGE SECTION
+  challengeSection: {
+    marginBottom: spacing.lg,
+  },
+  challengeHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+    marginBottom: spacing.md,
+  },
+  challengeTitleBox: {
+    flex: 1,
+  },
+  challengeName: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    marginTop: spacing.xs,
+  },
+  challengeDesc: {
     fontSize: 13,
     color: colors.textSecondary,
     lineHeight: 18,
-  },
-  quickStatRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.cardBorder,
-  },
-  quickStatLabel: {
-    fontSize: 14,
-    color: colors.textMuted,
-  },
-  quickStatValue: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  aiToolsRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
     marginBottom: spacing.md,
   },
-  aiToolCard: {
-    flex: 1,
-    backgroundColor: colors.card,
-    borderRadius: 18,
-    paddingVertical: 16,
+  progressContainer: {
+    marginBottom: spacing.md,
+  },
+  progressTrack: {
+    height: 6,
+    backgroundColor: colors.cardBorder,
+    borderRadius: borderRadius.full,
+    overflow: 'hidden',
+    marginBottom: spacing.xs,
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: borderRadius.full,
+  },
+  progressText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.textMuted,
+    textAlign: 'right',
+  },
+  challengeFooter: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
+  },
+  difficultyBadge: {
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  difficultyText: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: colors.textPrimary,
+    letterSpacing: 1,
+  },
+  rewardBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.accent + '15',
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    marginLeft: 'auto',
+  },
+  rewardBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.accent,
+  },
+
+  // STATS ROW
+  statsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+
+  // QUICK ACTIONS
+  quickActionsRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  quickActionCard: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
     borderColor: colors.cardBorder,
+    paddingVertical: spacing.lg,
     shadowColor: colors.background,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 2,
   },
-  aiToolIcon: {
-    marginBottom: 4,
+  qaIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.accent + '12',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
   },
-  aiToolLabel: {
-    fontSize: 11,
+  qaLabel: {
+    fontSize: 12,
     fontWeight: '700',
     color: colors.textPrimary,
     letterSpacing: 0.5,
   },
-  programPill: {
+
+  // MEMBERSHIP BANNER
+  membershipBanner: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.md,
     backgroundColor: colors.card,
-    borderRadius: 999,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginTop: 6,
-    alignSelf: 'flex-start',
-    gap: 6,
-  },
-  programPillText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.textMuted,
-    letterSpacing: 0.5,
-  },
-  programBannerText: { flex: 1 },
-  noProgramBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.accent,
-    padding: spacing.md,
+    borderColor: colors.accent + '40',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
     marginBottom: spacing.lg,
   },
-  noProgramIcon: { marginRight: spacing.sm },
-  noProgramTitle: { fontSize: 16, fontWeight: '800', color: colors.textPrimary },
-  noProgramSub: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
-  noProgramArrow: {},
+  membershipBody: {
+    flex: 1,
+  },
+  membershipTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: colors.accent,
+    letterSpacing: 1,
+    marginBottom: spacing.xs,
+  },
+  membershipDesc: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
 });

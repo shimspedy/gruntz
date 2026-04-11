@@ -1,28 +1,34 @@
 export const colors = {
-  // Military-Cyberpunk Dark Theme
-  background: '#080C08',
-  backgroundSecondary: '#0F170F',
-  card: '#141E14',
-  cardBorder: '#1E3A1E',
+  // Deep matte black base
+  background: '#0A0A0A',
+  backgroundSecondary: '#141414',
+  card: '#1A1A1A',
+  cardBorder: '#2A2A2A',
 
-  // Accent colors — tactical neon
-  accent: '#00FF41',           // Night-vision / terminal green
-  accentGold: '#FFB800',       // Tactical amber
-  accentGreen: '#00FF88',      // Bright ops green
-  accentRed: '#FF003C',        // Cyberpunk danger red
-  accentOrange: '#FF8C00',     // Warning orange
+  // Electric lime accent system
+  accent: '#AAFF00',           // Electric lime - primary
+  accentGold: '#FFD700',       // XP / reward gold
+  accentGreen: '#00FF88',      // Success / health
+  accentRed: '#FF3B5C',        // Danger / intensity
+  accentOrange: '#FF8800',     // Warning / fire
 
-  // Text — slight green tint for military feel
-  textPrimary: '#E0EDE0',
-  textSecondary: '#8A9F8A',
-  textMuted: '#4A6B4A',
+  // Clean text hierarchy
+  textPrimary: '#FFFFFF',
+  textSecondary: '#A0A0A0',
+  textMuted: '#666666',
 
-  // Progress & indicators
-  xpBar: '#00FF41',
+  // Gamification
+  xpBar: '#AAFF00',
   healthBar: '#00FF88',
-  streakFire: '#FF6B35',
+  streakFire: '#FF6B2C',
 
-  // Cyberpunk UI accents
-  cyberYellow: '#F9F002',      // Label highlights
-  borderGlow: '#3AFF6E',       // Neon glow accent
+  // UI accents
+  cyberYellow: '#FFE600',
+  borderGlow: '#AAFF00',
+
+  // Liquid glass tokens
+  glassBackground: 'rgba(255,255,255,0.06)',
+  glassBorder: 'rgba(255,255,255,0.12)',
+  glassHighlight: 'rgba(255,255,255,0.2)',
+  glassShadow: 'rgba(0,0,0,0.5)',
 };

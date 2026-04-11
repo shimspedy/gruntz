@@ -122,17 +122,22 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
         set({ isLoading: true, lastError: null, isConfigured: isRevenueCatAvailable() });
 
-        const shouldDeferBillingSync =
-          hasTrialAccess(get().trialStartedAt) && !get().entitlementActive;
-        if (shouldDeferBillingSync) {
-          set({ isLoading: false, isConfigured: isRevenueCatAvailable() });
-          return;
-        }
-
         try {
+          // Always attach the listener so mid-trial subscriptions are detected
           await addRevenueCatCustomerInfoListener((customerInfo) => {
             syncEntitlementState(set, customerInfo);
           });
+
+          // During an active trial (and not already a subscriber), defer the
+          // full offerings fetch for faster startup — the listener will catch
+          // any entitlement changes in real time.
+          const shouldDeferBillingSync =
+            hasTrialAccess(get().trialStartedAt) && !get().entitlementActive;
+          if (shouldDeferBillingSync) {
+            set({ isLoading: false, isConfigured: isRevenueCatAvailable() });
+            return;
+          }
+
           const state = await loadRevenueCatState({ includeOfferings: false });
           syncEntitlementState(set, state.customerInfo);
           set({
@@ -176,61 +181,94 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
       purchaseMonthly: async () => {
         set({ isLoading: true, lastError: null });
-        const result = await presentRevenueCatPaywall();
 
-        if (result.customerInfo) {
-          syncEntitlementState(set, result.customerInfo);
-        }
+        try {
+          const result = await presentRevenueCatPaywall();
 
-        if (result.status === 'error' || result.status === 'unavailable') {
-          set({ lastError: result.message ?? 'Subscription is unavailable right now.' });
-        }
+          if (result.customerInfo) {
+            syncEntitlementState(set, result.customerInfo);
+          }
 
-        if (result.status === 'not_presented' && !get().entitlementActive) {
+          const configured = isRevenueCatAvailable();
+
+          if (result.status === 'not_presented' && !get().entitlementActive) {
+            set({
+              isLoading: false,
+              isConfigured: configured,
+              lastError:
+                'No hosted paywall is configured for the current offering yet. Finish the RevenueCat paywall setup in the dashboard and try again.',
+            });
+            return 'unavailable';
+          }
+
+          if (result.status === 'error' || result.status === 'unavailable') {
+            set({
+              isLoading: false,
+              isConfigured: configured,
+              lastError: result.message ?? 'Subscription is unavailable right now.',
+            });
+            return result.status === 'error' ? 'error' : 'unavailable';
+          }
+
+          // Success paths — clear errors first, then refresh in background
+          set({ isLoading: false, isConfigured: configured, lastError: null });
+
+          if (result.status === 'purchased' || result.status === 'restored') {
+            // Refresh in background — don't block UI
+            get().refresh().catch(() => {});
+            return 'purchased';
+          }
+
+          if (result.status === 'not_presented') {
+            return get().entitlementActive ? 'purchased' : 'cancelled';
+          }
+
+          return 'cancelled';
+        } catch (error) {
           set({
-            lastError:
-              'No hosted paywall is configured for the current offering yet. Finish the RevenueCat paywall setup in the dashboard and try again.',
+            isLoading: false,
+            isConfigured: isRevenueCatAvailable(),
+            lastError: error instanceof Error ? error.message : 'Purchase failed unexpectedly.',
           });
-          set({ isLoading: false, isConfigured: isRevenueCatAvailable() });
-          return 'unavailable';
+          return 'error';
         }
-
-        if (result.status === 'purchased' || result.status === 'restored' || result.status === 'not_presented') {
-          set({ lastError: null });
-        }
-
-        set({ isLoading: false, isConfigured: isRevenueCatAvailable() });
-        if (result.status === 'purchased' || result.status === 'restored') {
-          await get().refresh();
-        }
-        if (result.status === 'restored') {
-          return 'purchased';
-        }
-        if (result.status === 'not_presented') {
-          return get().entitlementActive ? 'purchased' : 'cancelled';
-        }
-        return result.status;
       },
 
       restoreAccess: async () => {
         set({ isLoading: true, lastError: null });
-        const result = await restoreRevenueCatPurchases();
 
-        if (result.customerInfo) {
-          syncEntitlementState(set, result.customerInfo);
-        }
+        try {
+          const result = await restoreRevenueCatPurchases();
 
-        if (result.status === 'error' || result.status === 'unavailable') {
-          set({ lastError: result.message ?? 'Restore is unavailable right now.' });
-        } else {
-          set({ lastError: null });
-        }
+          if (result.customerInfo) {
+            syncEntitlementState(set, result.customerInfo);
+          }
 
-        set({ isLoading: false, isConfigured: isRevenueCatAvailable() });
-        if (result.status === 'restored') {
-          await get().refresh();
+          const configured = isRevenueCatAvailable();
+
+          if (result.status === 'error' || result.status === 'unavailable') {
+            set({
+              isLoading: false,
+              isConfigured: configured,
+              lastError: result.message ?? 'Restore is unavailable right now.',
+            });
+          } else {
+            set({ isLoading: false, isConfigured: configured, lastError: null });
+          }
+
+          if (result.status === 'restored') {
+            get().refresh().catch(() => {});
+          }
+
+          return result.status;
+        } catch (error) {
+          set({
+            isLoading: false,
+            isConfigured: isRevenueCatAvailable(),
+            lastError: error instanceof Error ? error.message : 'Restore failed unexpectedly.',
+          });
+          return 'error';
         }
-        return result.status;
       },
 
       openCustomerCenter: async () => {

@@ -5,7 +5,6 @@ import { AppTabs } from './AppTabs';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import { useUserStore } from '../store/useUserStore';
 import { useSubscriptionStore } from '../store/useSubscriptionStore';
-import { useThemeStore } from '../store/useThemeStore';
 import { useColors } from '../theme';
 
 export function RootNavigator() {
@@ -15,8 +14,6 @@ export function RootNavigator() {
   const updateStreak = useUserStore((s) => s.updateStreak);
   const subscriptionHydrated = useSubscriptionStore((s) => s.hasHydrated);
   const initializeSubscription = useSubscriptionStore((s) => s.initialize);
-  const loadTheme = useThemeStore(s => s.loadPersistedTheme);
-  useEffect(() => { loadTheme(); }, []);
   useEffect(() => {
     if (hasHydrated && subscriptionHydrated) {
       updateStreak();

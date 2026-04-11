@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
-import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
+import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { GameIcon } from './GameIcon';
 
@@ -12,74 +12,87 @@ interface StatCardProps {
   style?: ViewStyle;
 }
 
+/**
+ * Modern stat card with large icon area, bold value, and subtle gradient accent line.
+ */
 export function StatCard({ icon, value, label, color, style }: StatCardProps) {
   const colors = useColors();
   const resolvedColor = color ?? colors.accent;
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors, resolvedColor), [colors, resolvedColor]);
 
   return (
     <View style={[styles.card, style]}>
-      <View style={styles.headerRow}>
-        <GameIcon name={icon} size={28} color={resolvedColor} style={styles.iconWrap} />
-        <View style={[styles.signal, { backgroundColor: resolvedColor }]} />
+      {/* Icon area with subtle circular background */}
+      <View style={[styles.iconContainer, { backgroundColor: `${resolvedColor}15` }]}>
+        <GameIcon name={icon} size={36} color={resolvedColor} />
       </View>
-      <Text style={[styles.value, { color: resolvedColor }]} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{value}</Text>
+
+      {/* Value */}
+      <Text style={[styles.value, { color: resolvedColor }]} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
+        {value}
+      </Text>
+
+      {/* Label */}
       <Text
         style={styles.label}
         maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}
-        numberOfLines={1}
+        numberOfLines={2}
         adjustsFontSizeToFit
       >
         {label}
       </Text>
+
+      {/* Subtle gradient accent line at bottom */}
+      <View style={[styles.accentLine, { backgroundColor: resolvedColor }]} />
     </View>
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (colors: ThemeColors, accentColor: string) => StyleSheet.create({
   card: {
     backgroundColor: colors.card,
-    borderRadius: 18,
+    borderRadius: borderRadius.xl,
     borderWidth: 1,
     borderColor: colors.cardBorder,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.lg,
     alignItems: 'flex-start',
     flex: 1,
     overflow: 'hidden',
-    minHeight: 110,
+    minHeight: 120,
     shadowColor: colors.background,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.14,
+    shadowOpacity: 0.12,
     shadowRadius: 16,
     elevation: 3,
   },
-  headerRow: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  iconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: borderRadius.lg,
     alignItems: 'center',
-  },
-  iconWrap: {
+    justifyContent: 'center',
     marginBottom: spacing.sm,
   },
-  signal: {
-    width: 24,
-    height: 3,
-    borderRadius: 999,
-    opacity: 0.9,
-  },
   value: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '900',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   label: {
-    fontSize: 10,
-    fontWeight: '700',
+    fontSize: 11,
+    fontWeight: '600',
     color: colors.textMuted,
     textTransform: 'uppercase',
-    letterSpacing: 0.9,
+    letterSpacing: 0.8,
     width: '100%',
+  },
+  accentLine: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    opacity: 0.7,
   },
 });

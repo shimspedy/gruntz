@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -10,8 +10,6 @@ import { hapticLight } from '../utils/haptics';
 import type { HomeStackParamList } from '../types/navigation';
 import type { TrainingProgram } from '../types';
 import { GameIcon } from '../components/GameIcon';
-
-const { width } = Dimensions.get('window');
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'ProgramSelect'>;
 
 export default function ProgramSelectScreen() {

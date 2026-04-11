@@ -382,7 +382,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FF4444',
+    backgroundColor: colors.accentRed,
     borderRadius: 14,
     paddingVertical: 18,
     gap: spacing.sm,

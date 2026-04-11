@@ -20,26 +20,17 @@ type RevenueCatPriceCandidate = {
   priceString?: string | null;
 };
 
+/**
+ * Returns the live price from RevenueCat when available, falling back to
+ * the hardcoded default. Accepts any valid price string — never blocks
+ * purchases because the live price differs from the fallback.
+ */
 export function getDisplayedMonthlyPrice(offering?: RevenueCatPriceCandidate | null) {
   const livePrice = offering?.priceString?.trim();
   if (!livePrice) {
     return GRUNTZ_MONTHLY_PRICE_FALLBACK;
   }
 
-  if (livePrice.includes('4.99')) {
-    return livePrice.includes('/month') ? livePrice : `${livePrice}/month`;
-  }
-
-  return GRUNTZ_MONTHLY_PRICE_FALLBACK;
-}
-
-export function hasRevenueCatPricingMismatch(offering?: RevenueCatPriceCandidate | null) {
-  if (!offering?.priceString) {
-    return false;
-  }
-
-  const expectedProduct = !offering.productIdentifier || offering.productIdentifier === GRUNTZ_MONTHLY_PRODUCT_ID;
-  const expectedPrice = offering.priceString.includes('4.99');
-
-  return !(expectedProduct && expectedPrice);
+  // Use the live price from RevenueCat, appending "/month" when not present
+  return livePrice.includes('/') ? livePrice : `${livePrice}/month`;
 }

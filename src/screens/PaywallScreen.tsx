@@ -2,17 +2,15 @@ import React, { useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
+import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
-import { Card } from '../components/Card';
+import { GlassCard } from '../components/GlassCard';
 import { GameIcon } from '../components/GameIcon';
 import { MissionButton } from '../components/MissionButton';
 import {
-  GRUNTZ_MONTHLY_PRICE_FALLBACK,
   GRUNTZ_PRO_LABEL,
   GRUNTZ_TRIAL_DAYS,
   getDisplayedMonthlyPrice,
-  hasRevenueCatPricingMismatch,
 } from '../config/monetization';
 import {
   getAccessState,
@@ -25,6 +23,8 @@ const benefits = [
   'Unlimited daily mission access',
   'Workout cards, swim cards, and run support',
   'Progress, XP, streaks, and achievements',
+  'Apple Health sync',
+  'Exclusive daily challenges',
 ];
 
 export default function PaywallScreen() {
@@ -48,8 +48,6 @@ export default function PaywallScreen() {
   const trialDaysRemaining = getTrialDaysRemaining(trialStartedAt);
   const priceLabel = getDisplayedMonthlyPrice(currentOffering);
   const productTitle = currentOffering?.title || `${GRUNTZ_PRO_LABEL} Monthly`;
-  const pricingMismatch = hasRevenueCatPricingMismatch(currentOffering);
-  const livePriceLabel = currentOffering?.priceString ?? null;
 
   useEffect(() => {
     if (!isConfigured || accessState === 'subscriber') {
@@ -59,136 +57,163 @@ export default function PaywallScreen() {
   }, [accessState, isConfigured, loadOffering]);
 
   const handlePrimary = async () => {
-    if (accessState === 'subscriber') {
-      const result = await openCustomerCenter();
-      if (result === 'unavailable' || result === 'error') {
-        await openSubscriptionManagement();
+    try {
+      if (accessState === 'subscriber') {
+        const result = await openCustomerCenter();
+        if (result === 'unavailable' || result === 'error') {
+          await openSubscriptionManagement();
+        }
+        return;
       }
-      return;
-    }
 
-    const result = await purchaseMonthly();
-    if (result === 'purchased') {
-      navigation.goBack();
+      const result = await purchaseMonthly();
+      if (result === 'purchased') {
+        navigation.goBack();
+      }
+    } catch {
+      // Store already sets lastError — nothing extra needed here
     }
   };
 
   const handleRestore = async () => {
-    const result = await restoreAccess();
-    if (result === 'restored') {
-      navigation.goBack();
+    try {
+      const result = await restoreAccess();
+      if (result === 'restored') {
+        navigation.goBack();
+      }
+    } catch {
+      // Store already sets lastError
     }
   };
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+        {/* Hero Section */}
         <View style={styles.hero}>
           <View style={styles.heroBadge}>
-            <GameIcon name="rank" size={54} color={colors.accentGold} />
+            <View style={styles.heroBadgeGlow} />
+            <GameIcon name="rank" size={56} color={colors.accent} />
           </View>
-          <Text style={styles.eyebrow}>MEMBERSHIP</Text>
+          <Text style={styles.eyebrow}>BECOME ELITE</Text>
           <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
             {GRUNTZ_PRO_LABEL}
           </Text>
           <Text style={styles.subtitle}>
-            Keep the full tactical training loop unlocked.
+            Unlock the complete tactical training system.
           </Text>
         </View>
 
-        <Card style={styles.statusCard}>
+        {/* Status Card */}
+        <GlassCard style={styles.statusCard} variant={accessState === 'subscriber' ? 'default' : 'accent'}>
           {accessState === 'subscriber' ? (
             <>
-              <Text style={styles.statusLabel}>STATUS</Text>
-              <Text style={styles.statusTitle}>Active Member</Text>
+              <View style={styles.statusBadge}>
+                <GameIcon name="check" size={16} color={colors.accentGreen} variant="minimal" animated={false} />
+                <Text style={styles.statusBadgeText}>ACTIVE</Text>
+              </View>
+              <Text style={styles.statusTitle}>Member Unlocked</Text>
               <Text style={styles.statusBody}>
                 Your subscription is active. You have full access to every program and mission.
               </Text>
             </>
           ) : accessState === 'trial' ? (
             <>
-              <Text style={styles.statusLabel}>FREE ACCESS</Text>
+              <View style={styles.statusBadge}>
+                <GameIcon name="xp" size={16} color={colors.accent} variant="minimal" animated={false} />
+                <Text style={[styles.statusBadgeText, { color: colors.accent }]}>TRIAL</Text>
+              </View>
               <Text style={styles.statusTitle}>{trialDaysRemaining} day{trialDaysRemaining === 1 ? '' : 's'} left</Text>
               <Text style={styles.statusBody}>
-                Every new user gets {GRUNTZ_TRIAL_DAYS} days of full access. When that ends, subscribe to keep training.
+                Every recruit gets {GRUNTZ_TRIAL_DAYS} days free. When that ends, upgrade to Pro to keep training.
               </Text>
             </>
           ) : (
             <>
-              <Text style={styles.statusLabel}>ACCESS LOCKED</Text>
-              <Text style={styles.statusTitle}>Trial ended</Text>
+              <View style={styles.statusBadge}>
+                <GameIcon name="lock" size={16} color={colors.accentRed} variant="minimal" animated={false} />
+                <Text style={[styles.statusBadgeText, { color: colors.accentRed }]}>LOCKED</Text>
+              </View>
+              <Text style={styles.statusTitle}>Trial Expired</Text>
               <Text style={styles.statusBody}>
-                Subscribe to keep running missions, opening full programs, and building your streak.
+                Your free trial is over. Subscribe to unlock full programs, daily missions, and streaks.
               </Text>
             </>
           )}
-        </Card>
+        </GlassCard>
 
-        <Card style={styles.priceCard}>
+        {/* Price Card */}
+        <GlassCard style={styles.priceCard} variant="accent">
           <Text style={styles.priceLabel}>{productTitle}</Text>
           <Text style={styles.priceValue}>{priceLabel}</Text>
           <Text style={styles.priceSub}>
-            App access starts free for {GRUNTZ_TRIAL_DAYS} days, then continues with one simple monthly membership.
+            Start free for {GRUNTZ_TRIAL_DAYS} days, then {priceLabel}. Cancel anytime.
           </Text>
-        </Card>
+        </GlassCard>
 
-        <Card title="Included" style={styles.benefitsCard}>
-          {benefits.map((benefit) => (
-            <View key={benefit} style={styles.benefitRow}>
-              <GameIcon name="check" size={20} color={colors.accentGreen} variant="minimal" animated={false} />
+        {/* Benefits Card */}
+        <GlassCard style={styles.benefitsCard}>
+          <Text style={styles.benefitsTitle}>What's Included</Text>
+          {benefits.map((benefit, index) => (
+            <View key={`${benefit}-${index}`} style={styles.benefitRow}>
+              <View style={styles.benefitCheckbox}>
+                <GameIcon name="check" size={16} color={colors.accent} variant="minimal" animated={false} />
+              </View>
               <Text style={styles.benefitText}>{benefit}</Text>
             </View>
           ))}
-        </Card>
+        </GlassCard>
 
+        {/* Warning Cards */}
         {!isConfigured && accessState !== 'subscriber' ? (
-          <Card style={styles.warningCard}>
-            <Text style={styles.warningTitle}>Billing not configured yet</Text>
+          <GlassCard style={styles.warningCard}>
+            <View style={styles.warningHeader}>
+              <GameIcon name="warning" size={20} color={colors.accentOrange} variant="minimal" animated={false} />
+              <Text style={styles.warningTitle}>Billing not configured</Text>
+            </View>
             <Text style={styles.warningText}>
-              RevenueCat keys are still missing for this build, so the subscription button will stay disabled until billing is wired up.
+              RevenueCat keys are missing. The purchase button will be disabled until billing is set up.
             </Text>
-          </Card>
-        ) : null}
-
-        {pricingMismatch && accessState !== 'subscriber' ? (
-          <Card style={styles.warningCard}>
-            <Text style={styles.warningTitle}>Pricing mismatch detected</Text>
-            <Text style={styles.warningText}>
-              RevenueCat is currently returning {livePriceLabel ?? 'an unexpected live price'} for this product. Gruntz should launch at {GRUNTZ_MONTHLY_PRICE_FALLBACK}. Fix the App Store Connect product `monthly` and RevenueCat offering `default` before enabling purchases.
-            </Text>
-          </Card>
+          </GlassCard>
         ) : null}
 
         {isConfigured ? (
-          <Card style={styles.infoCard}>
-            <Text style={styles.infoTitle}>
-              {accessState === 'subscriber' ? 'Customer Center enabled' : 'Hosted RevenueCat paywall enabled'}
-            </Text>
+          <GlassCard style={styles.infoCard}>
+            <View style={styles.infoHeader}>
+              <GameIcon name="info" size={18} color={colors.accent} variant="minimal" animated={false} />
+              <Text style={styles.infoTitle}>
+                {accessState === 'subscriber' ? 'Customer Portal Active' : 'RevenueCat Paywall Active'}
+              </Text>
+            </View>
             <Text style={styles.infoText}>
               {accessState === 'subscriber'
-                ? 'Manage billing, restore purchases, and handle subscription actions through RevenueCat Customer Center.'
-                : 'The unlock button opens RevenueCat’s hosted paywall, so pricing, copy, and future experiments can be updated from the dashboard.'}
+                ? 'Manage your membership through RevenueCat Customer Center.'
+                : 'Purchases are powered by RevenueCat for secure, flexible billing.'}
             </Text>
-          </Card>
+          </GlassCard>
         ) : null}
 
         {lastError ? (
-          <Card style={styles.warningCard}>
-            <Text style={styles.warningTitle}>Purchase issue</Text>
+          <GlassCard style={styles.warningCard}>
+            <View style={styles.warningHeader}>
+              <GameIcon name="warning" size={20} color={colors.accentRed} variant="minimal" animated={false} />
+              <Text style={styles.warningTitle}>Purchase error</Text>
+            </View>
             <Text style={styles.warningText}>{lastError}</Text>
-          </Card>
+          </GlassCard>
         ) : null}
 
+        {/* CTAs */}
         <MissionButton
           title={
             accessState === 'subscriber'
-              ? 'OPEN CUSTOMER CENTER'
+              ? 'MANAGE MEMBERSHIP'
               : isConfigured
                 ? 'UNLOCK GRUNTZ PRO'
                 : 'BILLING UNAVAILABLE'
           }
           onPress={handlePrimary}
-          disabled={isLoading || pricingMismatch || (!isConfigured && accessState !== 'subscriber')}
+          disabled={isLoading || (!isConfigured && accessState !== 'subscriber')}
           style={styles.primaryButton}
         />
 
@@ -221,50 +246,68 @@ const createStyles = (colors: ThemeColors) =>
     },
     hero: {
       alignItems: 'center',
-      marginTop: spacing.md,
-      marginBottom: spacing.lg,
+      marginTop: spacing.sm,
+      marginBottom: spacing.xl,
     },
     heroBadge: {
-      width: 92,
-      height: 92,
-      borderRadius: 46,
+      width: 100,
+      height: 100,
+      borderRadius: 50,
       alignItems: 'center',
       justifyContent: 'center',
-      borderWidth: 1,
-      borderColor: colors.accentGold,
-      backgroundColor: colors.card,
-      marginBottom: spacing.md,
+      marginBottom: spacing.lg,
+      position: 'relative',
+    },
+    heroBadgeGlow: {
+      position: 'absolute',
+      width: 110,
+      height: 110,
+      borderRadius: 55,
+      backgroundColor: colors.accent,
+      opacity: 0.15,
     },
     eyebrow: {
       fontSize: 11,
       fontWeight: '800',
-      color: colors.accentGold,
+      color: colors.accent,
       letterSpacing: 3,
       marginBottom: spacing.xs,
     },
     title: {
-      fontSize: 30,
+      fontSize: 34,
       fontWeight: '900',
       color: colors.textPrimary,
+      textAlign: 'center',
     },
     subtitle: {
-      fontSize: 15,
+      fontSize: 16,
       color: colors.textSecondary,
       marginTop: spacing.sm,
       textAlign: 'center',
+      lineHeight: 22,
     },
     statusCard: {
       marginBottom: spacing.md,
     },
-    statusLabel: {
-      fontSize: 11,
+    statusBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      alignSelf: 'flex-start',
+      backgroundColor: `${colors.accent}15`,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+      borderRadius: borderRadius.full,
+      marginBottom: spacing.md,
+    },
+    statusBadgeText: {
+      fontSize: 10,
       fontWeight: '800',
       color: colors.accent,
-      letterSpacing: 2,
-      marginBottom: spacing.xs,
+      letterSpacing: 1,
     },
     statusTitle: {
-      fontSize: 24,
+      fontSize: 22,
       fontWeight: '900',
       color: colors.textPrimary,
       marginBottom: spacing.xs,
@@ -279,13 +322,15 @@ const createStyles = (colors: ThemeColors) =>
       alignItems: 'center',
     },
     priceLabel: {
-      fontSize: 14,
+      fontSize: 13,
       fontWeight: '700',
-      color: colors.textSecondary,
+      color: colors.textMuted,
       textAlign: 'center',
+      letterSpacing: 0.5,
+      marginBottom: spacing.xs,
     },
     priceValue: {
-      fontSize: 34,
+      fontSize: 40,
       fontWeight: '900',
       color: colors.accent,
       marginVertical: spacing.sm,
@@ -293,17 +338,34 @@ const createStyles = (colors: ThemeColors) =>
     priceSub: {
       fontSize: 13,
       lineHeight: 20,
-      color: colors.textMuted,
+      color: colors.textSecondary,
       textAlign: 'center',
     },
     benefitsCard: {
       marginBottom: spacing.md,
+    },
+    benefitsTitle: {
+      fontSize: 12,
+      fontWeight: '800',
+      color: colors.accent,
+      letterSpacing: 1,
+      marginBottom: spacing.md,
+      textTransform: 'uppercase',
     },
     benefitRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.sm,
       marginBottom: spacing.sm,
+    },
+    benefitCheckbox: {
+      width: 24,
+      height: 24,
+      borderRadius: borderRadius.sm,
+      backgroundColor: `${colors.accent}12`,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
     },
     benefitText: {
       flex: 1,
@@ -313,36 +375,47 @@ const createStyles = (colors: ThemeColors) =>
     },
     warningCard: {
       marginBottom: spacing.md,
-      borderColor: colors.accentGold,
+      borderColor: colors.accentOrange,
+      borderWidth: 1,
     },
-    infoCard: {
-      marginBottom: spacing.md,
-    },
-    infoTitle: {
-      fontSize: 14,
-      fontWeight: '800',
-      color: colors.textPrimary,
-      marginBottom: spacing.xs,
-    },
-    infoText: {
-      fontSize: 13,
-      lineHeight: 20,
-      color: colors.textSecondary,
+    warningHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginBottom: spacing.sm,
     },
     warningTitle: {
       fontSize: 13,
       fontWeight: '800',
-      color: colors.accentGold,
-      marginBottom: spacing.xs,
-      letterSpacing: 1,
+      color: colors.accentOrange,
+      letterSpacing: 0.5,
     },
     warningText: {
-      fontSize: 13,
+      fontSize: 12,
       color: colors.textSecondary,
-      lineHeight: 20,
+      lineHeight: 18,
+    },
+    infoCard: {
+      marginBottom: spacing.md,
+    },
+    infoHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginBottom: spacing.sm,
+    },
+    infoTitle: {
+      fontSize: 13,
+      fontWeight: '800',
+      color: colors.textPrimary,
+    },
+    infoText: {
+      fontSize: 12,
+      lineHeight: 18,
+      color: colors.textSecondary,
     },
     primaryButton: {
-      marginTop: spacing.sm,
+      marginTop: spacing.lg,
     },
     secondaryButton: {
       marginTop: spacing.sm,
