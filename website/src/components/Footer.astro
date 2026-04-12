@@ -1,0 +1,33 @@
+---
+import { site } from '../data/site';
+---
+
+<footer class="site-footer">
+  <div class="site-shell footer-grid">
+    <div class="footer-brand">
+      <a class="brand-lockup" href="/" aria-label="Gruntz home">
+        <img src="/brand/gruntz-icon.png" alt="" width="40" height="40" />
+        <span>
+          <strong>Gruntz</strong>
+          <small>{site.tagline}</small>
+        </span>
+      </a>
+      <p>
+        Standalone marketing and legal site for the Gruntz mobile app. Core product messaging,
+        privacy, support, and subscription terms live here for {site.domain}.
+      </p>
+    </div>
+
+    <div class="footer-links">
+      <a href="/privacy-policy">Privacy Policy</a>
+      <a href="/terms-of-use">Terms of Use</a>
+      <a href="/support">Support</a>
+      <a href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>
+    </div>
+  </div>
+
+  <div class="site-shell footer-meta">
+    <span>&copy; 2026 {site.name}. Last legal update {site.updated}.</span>
+    <span>{site.appIds.ios}</span>
+  </div>
+</footer>

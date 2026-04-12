@@ -1,0 +1,86 @@
+---
+import LegalLayout from '../layouts/LegalLayout.astro';
+import { site } from '../data/site';
+---
+
+<LegalLayout
+  title="Support"
+  description="Support information, contact details, and app-review friendly links for the Gruntz mobile app."
+  kicker="Support"
+>
+  <p>
+    If you need help with Gruntz, send a message to
+    <a href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>. Include your device type,
+    operating system version, app version, and a short description of the issue so we can reproduce
+    it faster.
+  </p>
+
+  <div class="legal-quick-links">
+    <a class="button button-primary" href={`mailto:${site.supportEmail}`}>Email support</a>
+    <a class="button button-secondary" href="/privacy-policy">Privacy policy</a>
+    <a class="button button-ghost" href="/terms-of-use">Terms of use</a>
+  </div>
+
+  <div class="support-grid">
+    <article class="panel support-card">
+      <span class="pricing-micro">Purchases</span>
+      <strong>Restore a subscription</strong>
+      <p>
+        Open the Gruntz membership area and use the restore flow. If the entitlement does not
+        return, contact support with the store account region and the device platform you used.
+      </p>
+    </article>
+
+    <article class="panel support-card">
+      <span class="pricing-micro">Billing</span>
+      <strong>Cancel or manage membership</strong>
+      <p>
+        Subscriptions are managed by Apple App Store or Google Play. Use your store subscription
+        settings to cancel, update billing, or review renewals.
+      </p>
+    </article>
+
+    <article class="panel support-card">
+      <span class="pricing-micro">Permissions</span>
+      <strong>Location, motion, or notifications</strong>
+      <p>
+        If run tracking or reminders are not working, check system permissions first. Location is
+        only needed for run or ruck tracking, and notifications are optional for reminders.
+      </p>
+    </article>
+
+    <article class="panel support-card">
+      <span class="pricing-micro">Data</span>
+      <strong>Delete local progress</strong>
+      <p>
+        The current app is primarily local-first. Removing the app or clearing device app data will
+        remove most locally stored progress and preferences from that device.
+      </p>
+    </article>
+  </div>
+
+  <h2>Useful Links</h2>
+  <ul>
+    <li>Marketing site: <a href={site.url}>{site.url}</a></li>
+    <li>Privacy policy: <a href="/privacy-policy">/privacy-policy</a></li>
+    <li>Terms of use: <a href="/terms-of-use">/terms-of-use</a></li>
+  </ul>
+
+  <h2>App Information</h2>
+  <ul>
+    <li>App name: {site.name}</li>
+    <li>Website: {site.domain}</li>
+    <li>iOS bundle identifier: {site.appIds.ios}</li>
+    <li>Android package: {site.appIds.android}</li>
+    <li>Support email: <a href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a></li>
+  </ul>
+
+  <h2>What To Include In A Support Request</h2>
+  <ul>
+    <li>Your device model and operating system version.</li>
+    <li>The app version you are using.</li>
+    <li>Whether the issue happened on iPhone or Android.</li>
+    <li>Any purchase or subscription context that matters to the problem.</li>
+    <li>Screenshots or short reproduction steps if available.</li>
+  </ul>
+</LegalLayout>

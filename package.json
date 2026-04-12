@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
+    "build": "npm --prefix website run build",
+    "site:dev": "npm --prefix website run dev",
+    "site:build": "npm --prefix website run build",
+    "site:preview": "npm --prefix website run preview",
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",

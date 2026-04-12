@@ -1,0 +1,65 @@
+---
+import { screenshotSlides } from '../data/site';
+---
+
+<div class="screenshot-carousel">
+  <swiper-container class="shot-swiper" init="false" aria-label="Gruntz app screenshots">
+    {screenshotSlides.map((shot) => (
+      <swiper-slide>
+        <figure class="phone-slide">
+          <div class="slide-meta">
+            <span>{shot.label}</span>
+            <span>Gruntz UI</span>
+          </div>
+          <div class="phone-frame">
+            <img src={shot.src} alt={shot.title} loading="lazy" />
+          </div>
+          <figcaption>
+            <h3>{shot.title}</h3>
+            <p>{shot.copy}</p>
+          </figcaption>
+        </figure>
+      </swiper-slide>
+    ))}
+  </swiper-container>
+</div>
+
+<script>
+  import { register } from 'swiper/element/bundle';
+
+  register();
+
+  const swiperEl = document.querySelector('.shot-swiper');
+
+  if (swiperEl instanceof HTMLElement && 'initialize' in swiperEl) {
+    Object.assign(swiperEl, {
+      slidesPerView: 1.06,
+      spaceBetween: 20,
+      speed: 700,
+      loop: true,
+      centeredSlides: false,
+      pagination: { clickable: true },
+      autoplay: {
+        delay: 3200,
+        disableOnInteraction: false,
+      },
+      breakpoints: {
+        640: {
+          slidesPerView: 1.35,
+          spaceBetween: 24,
+        },
+        900: {
+          slidesPerView: 1.8,
+          spaceBetween: 28,
+        },
+        1180: {
+          slidesPerView: 2.15,
+          spaceBetween: 30,
+        },
+      },
+    });
+
+    // @ts-expect-error Swiper custom element API is provided at runtime.
+    swiperEl.initialize();
+  }
+</script>

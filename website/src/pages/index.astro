@@ -1,0 +1,249 @@
+---
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import ScreenshotCarousel from '../components/ScreenshotCarousel.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import {
+  audienceCards,
+  faqItems,
+  featureCards,
+  missionSteps,
+  privacyHighlights,
+  site,
+  statChips,
+} from '../data/site';
+---
+
+<BaseLayout title={site.title} description={site.description}>
+  <Header />
+
+  <main>
+    <section class="hero">
+      <div class="site-shell hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">Daily tactical fitness, simplified</p>
+          <h1>One mission. One streak. No wasted motion.</h1>
+          <p>
+            Gruntz is a clean tactical training app for selection prep, readiness work, and hard
+            events. Open the app, see today’s mission, complete the work, stack XP, and come back
+            tomorrow.
+          </p>
+
+          <div class="hero-actions">
+            <a class="button button-primary" href="#screens">View the app screens</a>
+            <a class="button button-secondary" href="/privacy-policy">Read privacy policy</a>
+          </div>
+
+          <div class="tag-row">
+            {statChips.map((chip) => (
+              <span class="tag">{chip}</span>
+            ))}
+          </div>
+        </div>
+
+        <div class="hero-visual" aria-hidden="true">
+          <div class="hero-device">
+            <div class="hero-device-shell">
+              <img
+                src="/screenshots/01-home.png"
+                alt="Gruntz home screen with level progress and movement targets"
+              />
+            </div>
+          </div>
+
+          <div class="floating-card card-alpha">
+            <span>Mission Doctrine</span>
+            <strong>Show up today.</strong>
+            <p>Lead with adherence, progress, and tactical readiness instead of generic wellness.</p>
+          </div>
+
+          <div class="floating-card card-beta">
+            <span>Product Scope</span>
+            <strong>{site.trialDays} days free, then {site.price}</strong>
+            <p>One simple membership path with a focused product loop and no ad clutter.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="site-shell">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Built For</p>
+            <h2>Selection prep, readiness, and hard-event athletes.</h2>
+          </div>
+          <p>
+            The product positioning is narrow on purpose. Gruntz is not trying to be a broad
+            wellness platform. It is built to keep tactical-style training structured and visible.
+          </p>
+        </div>
+
+        <div class="audience-grid">
+          {audienceCards.map((card) => (
+            <article class="panel audience-card">
+              <span>{card.label}</span>
+              <h3>{card.title}</h3>
+              <p>{card.copy}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section id="mission-flow" class="section">
+      <div class="site-shell">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Mission Flow</p>
+            <h2>The app loop stays sharp.</h2>
+          </div>
+          <p>
+            Gruntz is strongest when it keeps the user inside a simple repeatable cycle: program,
+            mission, completion, progress, repeat.
+          </p>
+        </div>
+
+        <div class="mission-grid">
+          {missionSteps.map((item) => (
+            <article class="panel process-card">
+              <span class="process-step">{item.step}</span>
+              <strong>{item.title}</strong>
+              <p>{item.copy}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section id="screens" class="section">
+      <div class="site-shell">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">App Screens</p>
+            <h2>Real screenshots from the product.</h2>
+          </div>
+          <p>
+            The site uses actual app images from the current build so the marketing layer stays
+            grounded in the product instead of mockups or placeholder UI.
+          </p>
+        </div>
+
+        <ScreenshotCarousel />
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="site-shell">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Core Value</p>
+            <h2>Everything here supports the day’s work.</h2>
+          </div>
+          <p>
+            The design language follows the app: dark surfaces, high-contrast tactical accents, and
+            direct information hierarchy instead of decorative noise.
+          </p>
+        </div>
+
+        <div class="feature-grid">
+          {featureCards.map((card) => (
+            <article class="panel feature-card" data-tone={card.tone} data-size={card.size}>
+              <span>{card.eyebrow}</span>
+              <h3>{card.title}</h3>
+              <p>{card.copy}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section id="pricing" class="section">
+      <div class="site-shell pricing-grid">
+        <article class="panel pricing-card">
+          <span class="pricing-micro">Membership</span>
+          <h2>Simple pricing for launch.</h2>
+          <p>
+            New users get a full-access window first. After that, Gruntz Pro continues premium
+            training access through one monthly plan.
+          </p>
+
+          <div class="price-mark">
+            <strong>{site.price}</strong>
+            <small>after the {site.trialDays}-day app access window</small>
+          </div>
+
+          <ul class="check-list">
+            <li>Daily missions, streaks, XP, and progress intel</li>
+            <li>Workout cards, movement references, and premium program access</li>
+            <li>RevenueCat-backed subscription management through the app stores</li>
+          </ul>
+        </article>
+
+        <article class="panel link-card">
+          <span class="pricing-micro">App Review Links</span>
+          <h3>Everything needed for store-facing website fields lives here.</h3>
+          <p>
+            Use these routes for your marketing site, privacy policy, subscription terms, and
+            support URL requirements.
+          </p>
+
+          <div class="link-stack">
+            <a class="link-chip" href="/">
+              <span>Marketing site</span>
+              <span>/</span>
+            </a>
+            <a class="link-chip" href="/privacy-policy">
+              <span>Privacy policy</span>
+              <span>/privacy-policy</span>
+            </a>
+            <a class="link-chip" href="/terms-of-use">
+              <span>Terms of use</span>
+              <span>/terms-of-use</span>
+            </a>
+            <a class="link-chip" href="/support">
+              <span>Support</span>
+              <span>/support</span>
+            </a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="privacy" class="section">
+      <div class="site-shell privacy-grid">
+        <article class="panel privacy-card">
+          <p class="eyebrow">Privacy</p>
+          <h2>Local-first where it counts.</h2>
+          <p>
+            The current Gruntz app is designed so core training logic and saved progress stay close
+            to the device. External services are limited and directly tied to billing or platform
+            features.
+          </p>
+
+          <ul class="check-list">
+            {privacyHighlights.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+
+          <div class="hero-actions">
+            <a class="button button-primary" href="/privacy-policy">Full privacy policy</a>
+            <a class="button button-ghost" href="/support">Support contact</a>
+          </div>
+        </article>
+
+        <div class="faq-stack">
+          {faqItems.map((faq) => (
+            <details class="panel faq-card">
+              <summary>{faq.question}</summary>
+              <p>{faq.answer}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <Footer />
+</BaseLayout>

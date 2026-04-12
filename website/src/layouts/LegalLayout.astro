@@ -1,0 +1,37 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { site } from '../data/site';
+
+interface Props {
+  title: string;
+  description: string;
+  kicker?: string;
+}
+
+const { title, description, kicker = 'Legal' } = Astro.props as Props;
+---
+
+<BaseLayout title={`${title} | ${site.name}`} description={description}>
+  <Header />
+  <main>
+    <section class="legal-hero">
+      <div class="site-shell">
+        <p class="eyebrow">{kicker}</p>
+        <h1>{title}</h1>
+        <p class="legal-meta">Last updated {site.updated}</p>
+        <p class="legal-summary">{description}</p>
+      </div>
+    </section>
+
+    <section class="section legal-section">
+      <div class="site-shell">
+        <article class="legal-sheet">
+          <slot />
+        </article>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</BaseLayout>

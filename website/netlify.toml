@@ -1,0 +1,12 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22.12.0"
+
+[[redirects]]
+  from = "https://www.gruntzfit.com/*"
+  to = "https://gruntzfit.com/:splat"
+  status = 301
+  force = true

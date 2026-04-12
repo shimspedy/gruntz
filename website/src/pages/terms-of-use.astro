@@ -1,0 +1,113 @@
+---
+import LegalLayout from '../layouts/LegalLayout.astro';
+import { site } from '../data/site';
+---
+
+<LegalLayout
+  title="Terms of Use"
+  description="Terms that govern access to the Gruntz mobile app, paid membership, and use of the website at gruntzfit.com."
+  kicker="Terms of Use"
+>
+  <p>
+    These Terms of Use govern your use of the Gruntz mobile app, the website at {site.domain}, and
+    related support pages. By using the app or this website, you agree to these terms.
+  </p>
+
+  <div class="callout">
+    Effective date: {site.updated}. Support contact: <a href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>.
+  </div>
+
+  <h2>1. Product Scope</h2>
+  <p>
+    Gruntz is a fitness product designed to present tactical-style training missions, workout
+    references, progress metrics, and subscription-managed premium access. The product is intended
+    for training guidance and self-directed fitness use.
+  </p>
+
+  <h2>2. Not Medical Advice</h2>
+  <p>
+    Gruntz does not provide medical advice, diagnosis, or treatment. You are responsible for
+    determining whether any workout, mission, or training plan is appropriate for your condition,
+    skill level, and health status. Stop training and consult a qualified professional if you have
+    pain, injury concerns, or medical questions.
+  </p>
+
+  <h2>3. Eligibility and Safe Use</h2>
+  <ul>
+    <li>You are responsible for using the app safely and within your own limits.</li>
+    <li>You should follow local laws and safety rules when running, rucking, or training outdoors.</li>
+    <li>You are responsible for the accuracy of any information you choose to enter into the app.</li>
+  </ul>
+
+  <h2>4. Membership, Trial Access, and Billing</h2>
+  <p>
+    The current Gruntz launch model includes a {site.trialDays}-day app-level access window for new
+    users, followed by a premium membership path through Gruntz Pro at {site.price}.
+  </p>
+  <ul>
+    <li>Subscription availability, billing, renewal, and cancellation are handled by the app store.</li>
+    <li>
+      If you subscribe through Apple App Store or Google Play, those store rules control billing,
+      renewals, cancellations, and refunds.
+    </li>
+    <li>We may change pricing, trial structure, or package availability in a future release.</li>
+  </ul>
+
+  <h2>5. License and Acceptable Use</h2>
+  <p>
+    Subject to these terms, you receive a limited, non-exclusive, non-transferable license to use
+    Gruntz for personal, non-commercial use.
+  </p>
+  <ul>
+    <li>You may not reverse engineer, redistribute, resell, or exploit the app except as allowed by law.</li>
+    <li>You may not use the service to violate laws, abuse payment systems, or harm other users.</li>
+    <li>You may not remove branding, copyright notices, or legal notices from the product.</li>
+  </ul>
+
+  <h2>6. Intellectual Property</h2>
+  <p>
+    The Gruntz name, branding, app design, training structure, copy, and related content remain the
+    property of their respective owner unless otherwise stated. These terms do not transfer
+    ownership of the product or website content to you.
+  </p>
+
+  <h2>7. Third-Party Services</h2>
+  <p>
+    The app may rely on third-party providers such as RevenueCat, Apple App Store, and Google Play
+    for billing, entitlement, and platform-managed purchase flows. Your use of those services may
+    also be governed by their own policies and agreements.
+  </p>
+
+  <h2>8. Availability and Changes</h2>
+  <p>
+    We may modify, suspend, or discontinue features, content, pricing, or product functionality at
+    any time. We may also update these Terms of Use by posting a revised version on this site with a
+    new effective date.
+  </p>
+
+  <h2>9. Disclaimers</h2>
+  <p>
+    Gruntz and this website are provided on an “as is” and “as available” basis to the fullest
+    extent allowed by law. We do not guarantee uninterrupted availability, error-free operation, or
+    specific training results.
+  </p>
+
+  <h2>10. Limitation of Liability</h2>
+  <p>
+    To the fullest extent permitted by law, we are not liable for indirect, incidental, special,
+    consequential, or punitive damages arising from your use of Gruntz, including training injuries,
+    lost data, device issues, subscription disputes handled by the app stores, or downtime.
+  </p>
+
+  <h2>11. Termination</h2>
+  <p>
+    We may limit or terminate access to the website or app if use violates these terms, harms the
+    service, or creates legal or operational risk.
+  </p>
+
+  <h2>12. Contact</h2>
+  <p>
+    Questions about these terms or billing-related support can be sent to
+    <a href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>.
+  </p>
+</LegalLayout>

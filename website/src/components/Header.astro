@@ -1,0 +1,23 @@
+---
+import { navLinks } from '../data/site';
+---
+
+<header class="site-header">
+  <div class="site-shell header-inner">
+    <a class="brand-lockup" href="/" aria-label="Gruntz home">
+      <img src="/brand/gruntz-icon.png" alt="" width="44" height="44" />
+      <span>
+        <strong>Gruntz</strong>
+        <small>gruntzfit.com</small>
+      </span>
+    </a>
+
+    <nav class="site-nav" aria-label="Primary">
+      {navLinks.map((link) => (
+        <a href={link.href}>{link.label}</a>
+      ))}
+    </nav>
+
+    <a class="button button-ghost header-cta" href="/support">Support</a>
+  </div>
+</header>
