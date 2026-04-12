@@ -24,6 +24,22 @@ import type { ProfileStackParamList } from '../types/navigation';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
 
+function formatChallengeTime(seconds: number) {
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return '0m';
+  }
+
+  const totalMinutes = Math.round(seconds / 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours === 0) {
+    return `${minutes}m`;
+  }
+
+  return `${hours}h ${minutes}m`;
+}
+
 export default function ProfileScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -125,7 +141,7 @@ export default function ProfileScreen() {
             {accessState === 'subscriber'
               ? 'All programs and daily missions unlocked.'
               : accessState === 'trial'
-                ? `Free access active. Continues at ${monthlyPrice}/month.`
+                ? `Included access active. Subscription is only required when this window ends. Monthly plan: ${monthlyPrice}.`
                 : `Subscribe for ${monthlyPrice} to unlock all training.`}
           </Text>
         </GlassCard>
@@ -167,6 +183,22 @@ export default function ProfileScreen() {
           <View style={styles.statRow}>
             <Text style={styles.statLabel}>Total Reps</Text>
             <Text style={styles.statValue}>{progress.total_reps.toLocaleString()}</Text>
+          </View>
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>Daily Challenges</Text>
+            <Text style={styles.statValue}>{progress.challenges_completed}</Text>
+          </View>
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>Challenge Streak</Text>
+            <Text style={styles.statValue}>{progress.challenge_streak_days} days</Text>
+          </View>
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>Challenge XP Earned</Text>
+            <Text style={styles.statValue}>{progress.challenge_xp_earned.toLocaleString()}</Text>
+          </View>
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>Challenge Time Logged</Text>
+            <Text style={styles.statValue}>{formatChallengeTime(progress.challenge_time_seconds_logged)}</Text>
           </View>
           <View style={[styles.statRow, { borderBottomWidth: 0 }]}>
             <Text style={styles.statLabel}>Total Distance</Text>

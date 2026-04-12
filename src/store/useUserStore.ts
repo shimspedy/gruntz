@@ -1,12 +1,19 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import type { DailyChallenge } from '../data/dailyChallenges';
 import { UserProgress, UserProfile, Rank, CompletedMission, UserAchievement, UserSettings } from '../types';
 import { getLevelForXP, getRank, getXPToNextLevel, calculateStreakBonus, isStreakAlive, getDefaultProgress } from '../utils/xp';
 import { achievements } from '../data/achievements';
 import { getReconWeek } from '../data/reconWorkouts';
 import { getWorkoutDaysForWeek } from '../data/workouts';
 import { getLocalDateKey } from '../utils/dateKey';
+import {
+  getChallengeDistanceMiles,
+  getChallengeDurationSeconds,
+  getTrackedChallengeExerciseId,
+  summarizeChallengeHistory,
+} from '../utils/challengeStats';
 
 interface UserState {
   profile: UserProfile | null;
@@ -21,6 +28,13 @@ interface UserState {
   setOnboarded: (onboarded: boolean) => void;
   setHydrated: (hydrated: boolean) => void;
   addXP: (amount: number) => void;
+  recordChallengeActivity: (challenge: Pick<DailyChallenge, 'id' | 'type' | 'unit'>, amount: number) => void;
+  recordChallengeCompletion: (params: {
+    challengeDate: string;
+    xpAmount: number;
+    completedDates: string[];
+  }) => string[];
+  syncChallengeStats: (completedDates: string[]) => void;
   completeMission: (mission: CompletedMission) => void;
   updateStreak: () => void;
   checkAchievements: () => string[];
@@ -47,6 +61,22 @@ function hasCompletedProgramWeek(claimedWorkoutIds: Set<string>, week: number) {
 
   const hasAll = (ids: string[]) => ids.length > 0 && ids.every((id) => claimedWorkoutIds.has(id));
   return hasAll(raiderIds) || hasAll(reconIds);
+}
+
+function roundMetric(value: number) {
+  return Math.round(value * 100) / 100;
+}
+
+function applyXP(progress: UserProgress, amount: number): Pick<UserProgress, 'current_xp' | 'current_level' | 'current_rank'> {
+  const newXP = progress.current_xp + amount;
+  const newLevel = getLevelForXP(newXP);
+  const newRank = getRank(newLevel);
+
+  return {
+    current_xp: newXP,
+    current_level: newLevel,
+    current_rank: newRank,
+  };
 }
 
 export const useUserStore = create<UserState>()(
@@ -82,15 +112,104 @@ export const useUserStore = create<UserState>()(
 
       addXP: (amount) => {
         set((state) => {
-          const newXP = state.progress.current_xp + amount;
-          const newLevel = getLevelForXP(newXP);
-          const newRank = getRank(newLevel);
           return {
             progress: {
               ...state.progress,
-              current_xp: newXP,
-              current_level: newLevel,
-              current_rank: newRank,
+              ...applyXP(state.progress, amount),
+            },
+          };
+        });
+      },
+
+      recordChallengeActivity: (challenge, amount) => {
+        const safeAmount = roundMetric(Math.max(0, amount));
+        if (safeAmount <= 0) {
+          return;
+        }
+
+        set((state) => {
+          const nextExercisesCompleted = { ...state.progress.exercises_completed };
+          const trackedExerciseId = getTrackedChallengeExerciseId(challenge.id);
+
+          if (trackedExerciseId) {
+            nextExercisesCompleted[trackedExerciseId] = roundMetric(
+              (nextExercisesCompleted[trackedExerciseId] || 0) + safeAmount
+            );
+          }
+
+          const repGain = challenge.type === 'reps' ? safeAmount : 0;
+          const distanceGain = getChallengeDistanceMiles(challenge, safeAmount);
+          const timeGain = getChallengeDurationSeconds(challenge, safeAmount);
+
+          return {
+            progress: {
+              ...state.progress,
+              total_reps: roundMetric(state.progress.total_reps + repGain),
+              total_distance_miles: roundMetric(state.progress.total_distance_miles + distanceGain),
+              challenge_time_seconds_logged: roundMetric(state.progress.challenge_time_seconds_logged + timeGain),
+              exercises_completed: trackedExerciseId ? nextExercisesCompleted : state.progress.exercises_completed,
+            },
+          };
+        });
+      },
+
+      recordChallengeCompletion: ({ challengeDate, xpAmount, completedDates }) => {
+        const summary = summarizeChallengeHistory(completedDates);
+        const safeXP = Math.max(0, xpAmount);
+        let recordedNewCompletion = false;
+
+        set((state) => {
+          const duplicateCompletion =
+            challengeDate === state.progress.last_challenge_date &&
+            summary.challengesCompleted <= state.progress.challenges_completed;
+          const xpGain = duplicateCompletion ? 0 : safeXP;
+
+          if (xpGain > 0) {
+            recordedNewCompletion = true;
+          }
+
+          return {
+            progress: {
+              ...state.progress,
+              ...applyXP(state.progress, xpGain),
+              challenges_completed: summary.challengesCompleted,
+              challenge_streak_days: summary.challengeStreakDays,
+              challenge_xp_earned: Math.max(
+                roundMetric(state.progress.challenge_xp_earned + xpGain),
+                summary.challengeXpEarned
+              ),
+              last_challenge_date: summary.lastChallengeDate,
+            },
+          };
+        });
+
+        if (!recordedNewCompletion) {
+          return [];
+        }
+
+        return get().checkAchievements();
+      },
+
+      syncChallengeStats: (completedDates) => {
+        const summary = summarizeChallengeHistory(completedDates);
+
+        set((state) => {
+          if (
+            state.progress.challenges_completed === summary.challengesCompleted &&
+            state.progress.challenge_streak_days === summary.challengeStreakDays &&
+            state.progress.challenge_xp_earned === summary.challengeXpEarned &&
+            state.progress.last_challenge_date === summary.lastChallengeDate
+          ) {
+            return state;
+          }
+
+          return {
+            progress: {
+              ...state.progress,
+              challenges_completed: summary.challengesCompleted,
+              challenge_streak_days: summary.challengeStreakDays,
+              challenge_xp_earned: summary.challengeXpEarned,
+              last_challenge_date: summary.lastChallengeDate,
             },
           };
         });
@@ -112,9 +231,6 @@ export const useUserStore = create<UserState>()(
           const streakBonus = calculateStreakBonus(newStreak);
 
           const totalXP = mission.total_xp + mission.completion_bonus + mission.pr_bonus + streakBonus;
-          const newXP = state.progress.current_xp + totalXP;
-          const newLevel = getLevelForXP(newXP);
-          const newRank = getRank(newLevel);
 
           const newExercisesCompleted = { ...state.progress.exercises_completed };
           let totalNewReps = 0;
@@ -130,9 +246,7 @@ export const useUserStore = create<UserState>()(
           return {
             progress: {
               ...state.progress,
-              current_xp: newXP,
-              current_level: newLevel,
-              current_rank: newRank,
+              ...applyXP(state.progress, totalXP),
               streak_days: newStreak,
               last_workout_date: today,
               workouts_completed: state.progress.workouts_completed + 1,

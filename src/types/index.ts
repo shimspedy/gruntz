@@ -91,6 +91,11 @@ export interface UserProgress {
   mobility_score: number;
   consistency_score: number;
   recovery_score: number;
+  challenges_completed: number;
+  challenge_streak_days: number;
+  challenge_xp_earned: number;
+  challenge_time_seconds_logged: number;
+  last_challenge_date: string;
   exercises_completed: Record<string, number>;
   weekly_workouts: number[];
   claimed_missions: Set<string>;

@@ -123,6 +123,10 @@ export default function ProgressScreen() {
             <StatCard icon="reps" value={progress.total_reps.toLocaleString()} label="Total Reps" color={colors.accentGreen} />
             <StatCard icon="run" value={`${progress.total_distance_miles}`} label="Miles" color={colors.accentOrange} />
           </View>
+          <View style={styles.statsGrid}>
+            <StatCard icon="achievement" value={progress.challenges_completed} label="Challenges" color={colors.accentGold} />
+            <StatCard icon="xp" value={progress.challenge_xp_earned.toLocaleString()} label="Challenge XP" color={colors.accent} />
+          </View>
 
           {/* Operator Profile */}
           <SectionHeader title="Operator Profile" subtitle="Strengths and gaps from completed work." icon="stats" />

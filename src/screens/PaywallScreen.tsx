@@ -121,11 +121,11 @@ export default function PaywallScreen() {
             <>
               <View style={styles.statusBadge}>
                 <GameIcon name="xp" size={16} color={colors.accent} variant="minimal" animated={false} />
-                <Text style={[styles.statusBadgeText, { color: colors.accent }]}>TRIAL</Text>
+                <Text style={[styles.statusBadgeText, { color: colors.accent }]}>ACCESS</Text>
               </View>
               <Text style={styles.statusTitle}>{trialDaysRemaining} day{trialDaysRemaining === 1 ? '' : 's'} left</Text>
               <Text style={styles.statusBody}>
-                Every recruit gets {GRUNTZ_TRIAL_DAYS} days free. When that ends, upgrade to Pro to keep training.
+                Your first {GRUNTZ_TRIAL_DAYS} days include full app access. Subscribe anytime to keep training after that window ends.
               </Text>
             </>
           ) : (
@@ -134,9 +134,9 @@ export default function PaywallScreen() {
                 <GameIcon name="lock" size={16} color={colors.accentRed} variant="minimal" animated={false} />
                 <Text style={[styles.statusBadgeText, { color: colors.accentRed }]}>LOCKED</Text>
               </View>
-              <Text style={styles.statusTitle}>Trial Expired</Text>
+              <Text style={styles.statusTitle}>Access Ended</Text>
               <Text style={styles.statusBody}>
-                Your free trial is over. Subscribe to unlock full programs, daily missions, and streaks.
+                Your included access window has ended. Subscribe to unlock full programs, daily missions, and streaks.
               </Text>
             </>
           )}
@@ -147,7 +147,7 @@ export default function PaywallScreen() {
           <Text style={styles.priceLabel}>{productTitle}</Text>
           <Text style={styles.priceValue}>{priceLabel}</Text>
           <Text style={styles.priceSub}>
-            Start free for {GRUNTZ_TRIAL_DAYS} days, then {priceLabel}. Cancel anytime.
+            Monthly subscription. New accounts get {GRUNTZ_TRIAL_DAYS} days of app access before a subscription is required.
           </Text>
         </GlassCard>
 

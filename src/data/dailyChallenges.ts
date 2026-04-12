@@ -356,3 +356,30 @@ export function getChallengeForDate(date: Date): DailyChallenge {
 export function getAllChallenges(): DailyChallenge[] {
   return [...challenges];
 }
+
+export function formatChallengeAmount(
+  value: number,
+  challenge: Pick<DailyChallenge, 'type' | 'unit'>
+): string {
+  if (challenge.unit === 'seconds') {
+    const totalSeconds = Math.max(0, Math.round(value));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+
+    if (minutes > 0 && seconds > 0) {
+      return `${minutes}m ${seconds}s`;
+    }
+
+    if (minutes > 0) {
+      return `${minutes}m`;
+    }
+
+    return `${totalSeconds}s`;
+  }
+
+  if (Number.isInteger(value)) {
+    return String(value);
+  }
+
+  return value.toFixed(2).replace(/\.?0+$/, '');
+}

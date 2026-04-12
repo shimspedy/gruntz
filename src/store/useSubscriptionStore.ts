@@ -160,7 +160,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           set({
             lastError: userFacingError(
               error instanceof Error ? error.message : null,
-              'Unable to connect to billing. Your trial access is unaffected.',
+              'Unable to connect to billing. Your included access is unaffected.',
             ),
             isConfigured: isRevenueCatAvailable(),
           });

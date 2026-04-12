@@ -1,31 +1,34 @@
 import React, { useEffect, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated, AppState } from 'react-native';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
+import { useColors, spacing, borderRadius } from '../theme';
 import { useFadeInUp } from '../utils/animations';
 import type { ThemeColors } from '../theme';
 import { XPBar } from '../components/XPBar';
 import { StatCard } from '../components/StatCard';
 import { MissionButton } from '../components/MissionButton';
+import { ChallengeLogModal } from '../components/ChallengeLogModal';
 import { GlassCard } from '../components/GlassCard';
 import { GameIcon } from '../components/GameIcon';
 import { MuscleBodyMap } from '../components/MuscleBodyMap';
+import { achievements } from '../data/achievements';
+import type { DailyChallenge } from '../data/dailyChallenges';
 import { useUserStore } from '../store/useUserStore';
 import { useMissionStore } from '../store/useMissionStore';
 import { useProgramStore } from '../store/useProgramStore';
 import { useChallengeStore } from '../store/useChallengeStore';
 import { getXPToNextLevel } from '../utils/xp';
-import { getRankInfo } from '../data/ranks';
 import { getProgramById } from '../data/programs';
 import { getExerciseById } from '../data/exercises';
 import { getWorkoutDay } from '../data/workouts';
 import { getReconWorkoutDay } from '../data/reconWorkouts';
-import { getTodaysChallenge } from '../data/dailyChallenges';
+import { formatChallengeAmount, getTodaysChallenge } from '../data/dailyChallenges';
 import { getDisplayedMonthlyPrice } from '../config/monetization';
-import { hapticLight } from '../utils/haptics';
+import { showAchievementUnlocked } from '../services/notifications';
+import { hapticLight, hapticSuccess } from '../utils/haptics';
 import { useAdaptiveLayout } from '../hooks/useAdaptiveLayout';
 import { getAccessState, getTrialDaysRemaining, hasTrainingAccess, useSubscriptionStore } from '../store/useSubscriptionStore';
 import type { HomeStackParamList } from '../types/navigation';
@@ -85,6 +88,10 @@ export default function HomeScreen() {
 
   // Challenge state
   const challengeProgress = useChallengeStore((s) => s.currentProgress);
+  const challengeTodayCompleted = useChallengeStore((s) => s.todayCompleted);
+  const addChallengeProgress = useChallengeStore((s) => s.addProgress);
+  const completeDailyChallenge = useChallengeStore((s) => s.completeChallenge);
+  const resetDailyChallenge = useChallengeStore((s) => s.resetDaily);
 
   // Subscription state
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
@@ -93,6 +100,7 @@ export default function HomeScreen() {
 
   const program = selectedProgram ? getProgramById(selectedProgram) : null;
   const [hydrated, setHydrated] = React.useState(false);
+  const [challengeModalVisible, setChallengeModalVisible] = React.useState(false);
 
   useEffect(() => {
     let active = true;
@@ -106,14 +114,33 @@ export default function HomeScreen() {
     if (hydrated) loadTodaysMission();
   }, [hydrated, selectedProgram, currentWeek, loadTodaysMission]);
 
+  useEffect(() => {
+    resetDailyChallenge();
+
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        resetDailyChallenge();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [resetDailyChallenge]);
+
   // Computed values
   const xpInfo = getXPToNextLevel(progress.current_xp);
-  const rankInfo = getRankInfo(progress.current_rank);
   const accessState = getAccessState({ trialStartedAt, entitlementActive });
   const trialDaysRemaining = getTrialDaysRemaining(trialStartedAt);
   const trainingUnlocked = hasTrainingAccess({ trialStartedAt, entitlementActive });
   const monthlyPrice = getDisplayedMonthlyPrice(currentOffering);
   const todaysChallenge = getTodaysChallenge();
+  const displayedChallengeProgress = todaysChallenge
+    ? Math.min(challengeTodayCompleted ? todaysChallenge.target : challengeProgress, todaysChallenge.target)
+    : 0;
+  const challengeRemaining = todaysChallenge
+    ? Math.max(todaysChallenge.target - displayedChallengeProgress, 0)
+    : 0;
   const activeMuscles = getActiveMuscleGroups(todaysMission, selectedProgram);
   const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
 
@@ -123,6 +150,41 @@ export default function HomeScreen() {
     if (hour < 12) return 'Good morning';
     if (hour < 17) return 'Good afternoon';
     return 'Good evening';
+  };
+
+  const handleChallengeRewards = (achievementIds: string[]) => {
+    achievementIds.forEach((achievementId) => {
+      const achievement = achievements.find((item) => item.id === achievementId);
+      if (!achievement) {
+        return;
+      }
+
+      void showAchievementUnlocked(achievement.name, achievement.icon);
+    });
+  };
+
+  const handleAddChallengeProgress = (amount: number) => {
+    if (!todaysChallenge || amount <= 0) {
+      return;
+    }
+
+    const result = addChallengeProgress(amount, todaysChallenge);
+    if (result.completedNow) {
+      hapticSuccess();
+      handleChallengeRewards(result.unlockedAchievementIds);
+    }
+  };
+
+  const handleCompleteChallenge = () => {
+    if (!todaysChallenge) {
+      return;
+    }
+
+    const result = completeDailyChallenge(todaysChallenge);
+    if (result.completedNow) {
+      hapticSuccess();
+      handleChallengeRewards(result.unlockedAchievementIds);
+    }
   };
 
   return (
@@ -287,14 +349,14 @@ export default function HomeScreen() {
                   style={[
                     styles.progressFill,
                     {
-                      width: `${Math.min((challengeProgress / todaysChallenge.target) * 100, 100)}%`,
-                      backgroundColor: colors.accent,
+                      width: `${Math.min((displayedChallengeProgress / todaysChallenge.target) * 100, 100)}%`,
+                      backgroundColor: challengeTodayCompleted ? colors.accentGreen : colors.accent,
                     },
                   ]}
                 />
               </View>
               <Text style={styles.progressText}>
-                {challengeProgress} / {todaysChallenge.target} {todaysChallenge.unit}
+                {formatChallengeProgressLabel(displayedChallengeProgress, todaysChallenge)}
               </Text>
             </View>
 
@@ -308,6 +370,26 @@ export default function HomeScreen() {
                 <Text style={styles.rewardBadgeText}>{todaysChallenge.xpReward} XP</Text>
               </View>
             </View>
+
+            {challengeTodayCompleted ? (
+              <View style={styles.challengeStatusBanner}>
+                <GameIcon name="xp" size={16} color={colors.accentGreen} />
+                <Text style={styles.challengeStatusText}>
+                  Challenge complete. Today&apos;s XP is already added.
+                </Text>
+              </View>
+            ) : (
+              <Text style={styles.challengeRemainingText}>
+                {formatChallengeMetric(challengeRemaining, todaysChallenge)} left to earn {todaysChallenge.xpReward} XP.
+              </Text>
+            )}
+
+            <MissionButton
+              title={challengeTodayCompleted ? 'VIEW DETAILS' : 'LOG PROGRESS'}
+              onPress={() => setChallengeModalVisible(true)}
+              variant={challengeTodayCompleted ? 'secondary' : 'primary'}
+              style={styles.challengeButton}
+            />
           </GlassCard>
         )}
 
@@ -377,7 +459,7 @@ export default function HomeScreen() {
               </Text>
               <Text style={styles.membershipDesc}>
                 {accessState === 'trial'
-                  ? 'Full access to all programs'
+                  ? 'Included app access is active'
                   : 'Unlock premium features'}
               </Text>
             </View>
@@ -385,6 +467,15 @@ export default function HomeScreen() {
           </TouchableOpacity>
         )}
       </ScrollView>
+      <ChallengeLogModal
+        visible={challengeModalVisible}
+        challenge={todaysChallenge}
+        currentProgress={displayedChallengeProgress}
+        todayCompleted={challengeTodayCompleted}
+        onAddProgress={handleAddChallengeProgress}
+        onComplete={handleCompleteChallenge}
+        onClose={() => setChallengeModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -403,6 +494,22 @@ function getDifficultyColor(difficulty: string, colors: ThemeColors): string {
     default:
       return colors.accent + '30';
   }
+}
+
+function formatChallengeMetric(value: number, challenge: DailyChallenge): string {
+  if (challenge.unit === 'seconds') {
+    return formatChallengeAmount(value, challenge);
+  }
+
+  return `${formatChallengeAmount(value, challenge)} ${challenge.unit}`;
+}
+
+function formatChallengeProgressLabel(progress: number, challenge: DailyChallenge): string {
+  if (challenge.unit === 'seconds') {
+    return `${formatChallengeAmount(progress, challenge)} / ${formatChallengeAmount(challenge.target, challenge)}`;
+  }
+
+  return `${formatChallengeAmount(progress, challenge)} / ${formatChallengeAmount(challenge.target, challenge)} ${challenge.unit}`;
 }
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
@@ -642,6 +749,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   challengeFooter: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: spacing.sm,
   },
   difficultyBadge: {
@@ -669,6 +777,34 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: colors.accent,
+  },
+  challengeStatusBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.accentGreen + '14',
+    borderWidth: 1,
+    borderColor: colors.accentGreen + '30',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginTop: spacing.md,
+  },
+  challengeStatusText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.accentGreen,
+    lineHeight: 18,
+  },
+  challengeRemainingText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    lineHeight: 18,
+    marginTop: spacing.md,
+  },
+  challengeButton: {
+    marginTop: spacing.md,
   },
 
   // STATS ROW
