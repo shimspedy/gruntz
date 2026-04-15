@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { GlassCard } from '../components/GlassCard';
@@ -13,10 +14,15 @@ import {
   getDisplayedMonthlyPrice,
 } from '../config/monetization';
 import {
+  GRUNTZ_PRIVACY_POLICY_URL,
+  GRUNTZ_TERMS_OF_USE_URL,
+} from '../config/legal';
+import {
   getAccessState,
   getTrialDaysRemaining,
   useSubscriptionStore,
 } from '../store/useSubscriptionStore';
+import { openExternalUrl } from '../utils/externalLinks';
 
 const benefits = [
   'Full Raider and Recon programs',
@@ -48,6 +54,12 @@ export default function PaywallScreen() {
   const trialDaysRemaining = getTrialDaysRemaining(trialStartedAt);
   const priceLabel = getDisplayedMonthlyPrice(currentOffering);
   const productTitle = currentOffering?.title || `${GRUNTZ_PRO_LABEL} Monthly`;
+  const storeLabel =
+    Platform.OS === 'ios'
+      ? 'App Store'
+      : Platform.OS === 'android'
+        ? 'Google Play'
+        : 'app store';
 
   useEffect(() => {
     if (!isConfigured || accessState === 'subscriber') {
@@ -83,6 +95,13 @@ export default function PaywallScreen() {
       }
     } catch {
       // Store already sets lastError
+    }
+  };
+
+  const handleOpenLegalLink = async (url: string, label: string) => {
+    const opened = await openExternalUrl(url);
+    if (!opened) {
+      Alert.alert('Link unavailable', `Unable to open the ${label.toLowerCase()} right now.`);
     }
   };
 
@@ -189,6 +208,44 @@ export default function PaywallScreen() {
             </Text>
           </GlassCard>
         ) : null}
+
+        <GlassCard style={styles.legalCard}>
+          <Text style={styles.legalTitle}>Subscription Details</Text>
+          <Text style={styles.legalBody}>
+            {productTitle} is an auto-renewable monthly subscription billed at {priceLabel}. Payment
+            is charged to your {storeLabel} account at confirmation of purchase and renews
+            automatically unless it is canceled at least 24 hours before the end of the current
+            period.
+          </Text>
+          <Text style={styles.legalBody}>
+            Privacy Policy and Terms of Use are available below.
+          </Text>
+          <View style={styles.legalLinksRow}>
+            <TouchableOpacity
+              accessibilityRole="link"
+              activeOpacity={0.8}
+              onPress={() => {
+                void handleOpenLegalLink(GRUNTZ_PRIVACY_POLICY_URL, 'Privacy Policy');
+              }}
+              style={styles.legalLinkButton}
+            >
+              <Ionicons name="shield-checkmark-outline" size={16} color={colors.accent} />
+              <Text style={styles.legalLinkText}>Privacy Policy</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              accessibilityRole="link"
+              activeOpacity={0.8}
+              onPress={() => {
+                void handleOpenLegalLink(GRUNTZ_TERMS_OF_USE_URL, 'Terms of Use');
+              }}
+              style={styles.legalLinkButton}
+            >
+              <Ionicons name="document-text-outline" size={16} color={colors.accent} />
+              <Text style={styles.legalLinkText}>Terms of Use</Text>
+            </TouchableOpacity>
+          </View>
+        </GlassCard>
 
         {/* CTAs */}
         <MissionButton
@@ -406,5 +463,44 @@ const createStyles = (colors: ThemeColors) =>
     },
     secondaryButton: {
       marginTop: spacing.sm,
+    },
+    legalCard: {
+      marginTop: spacing.md,
+    },
+    legalTitle: {
+      fontSize: 13,
+      fontWeight: '800',
+      color: colors.textPrimary,
+      marginBottom: spacing.sm,
+      textTransform: 'uppercase',
+      letterSpacing: 0.8,
+    },
+    legalBody: {
+      fontSize: 12,
+      lineHeight: 18,
+      color: colors.textSecondary,
+      marginBottom: spacing.sm,
+    },
+    legalLinksRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+      marginTop: spacing.xs,
+    },
+    legalLinkButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      borderRadius: borderRadius.full,
+      borderWidth: 1,
+      borderColor: colors.glassBorder,
+      backgroundColor: `${colors.accent}10`,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+    },
+    legalLinkText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.textPrimary,
     },
   });

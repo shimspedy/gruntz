@@ -1,14 +1,20 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, Switch, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Switch, Alert, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { useUserStore } from '../store/useUserStore';
-import { Card } from '../components/Card';
 import { GlassCard } from '../components/GlassCard';
 import { GameIcon } from '../components/GameIcon';
 import { hapticLight } from '../utils/haptics';
 import { requestNotificationPermission, scheduleDailyReminder, cancelDailyReminder, setupNotificationChannels } from '../services/notifications';
+import {
+  GRUNTZ_PRIVACY_POLICY_URL,
+  GRUNTZ_SUPPORT_URL,
+  GRUNTZ_TERMS_OF_USE_URL,
+} from '../config/legal';
+import { openExternalUrl } from '../utils/externalLinks';
 
 export default function SettingsScreen() {
   const colors = useColors();
@@ -18,6 +24,13 @@ export default function SettingsScreen() {
 
   const notificationsEnabled = profile?.settings.notifications_enabled ?? true;
   const imperialUnits = (profile?.settings.units ?? 'imperial') === 'imperial';
+
+  const handleOpenLink = async (url: string, label: string) => {
+    const opened = await openExternalUrl(url);
+    if (!opened) {
+      Alert.alert('Link unavailable', `Unable to open ${label.toLowerCase()} right now.`);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -99,6 +112,70 @@ export default function SettingsScreen() {
           <Text style={styles.aboutText}>Gruntz — Military Fitness App</Text>
           <Text style={styles.versionText}>Version 1.0.0</Text>
         </GlassCard>
+
+        <GlassCard style={styles.section}>
+          <Text style={styles.sectionLabel}>LEGAL</Text>
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={styles.linkRow}
+            onPress={() => {
+              hapticLight();
+              void handleOpenLink(GRUNTZ_PRIVACY_POLICY_URL, 'Privacy Policy');
+            }}
+          >
+            <View style={styles.settingLeft}>
+              <View style={styles.settingIcon}>
+                <Ionicons name="shield-checkmark-outline" size={20} color={colors.accent} />
+              </View>
+              <View>
+                <Text style={styles.settingLabel}>Privacy Policy</Text>
+                <Text style={styles.settingDesc}>View how training and billing data are handled</Text>
+              </View>
+            </View>
+            <Ionicons name="open-outline" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={styles.linkRow}
+            onPress={() => {
+              hapticLight();
+              void handleOpenLink(GRUNTZ_TERMS_OF_USE_URL, 'Terms of Use');
+            }}
+          >
+            <View style={styles.settingLeft}>
+              <View style={styles.settingIcon}>
+                <Ionicons name="document-text-outline" size={20} color={colors.accent} />
+              </View>
+              <View>
+                <Text style={styles.settingLabel}>Terms of Use</Text>
+                <Text style={styles.settingDesc}>Open the Gruntz subscription and usage terms</Text>
+              </View>
+            </View>
+            <Ionicons name="open-outline" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={[styles.linkRow, { borderBottomWidth: 0 }]}
+            onPress={() => {
+              hapticLight();
+              void handleOpenLink(GRUNTZ_SUPPORT_URL, 'Support');
+            }}
+          >
+            <View style={styles.settingLeft}>
+              <View style={styles.settingIcon}>
+                <Ionicons name="mail-outline" size={20} color={colors.accent} />
+              </View>
+              <View>
+                <Text style={styles.settingLabel}>Support</Text>
+                <Text style={styles.settingDesc}>Contact support and subscription help</Text>
+              </View>
+            </View>
+            <Ionicons name="open-outline" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+        </GlassCard>
       </ScrollView>
     </SafeAreaView>
   );
@@ -133,6 +210,14 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: spacing.md,
   },
   settingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.cardBorder,
+  },
+  linkRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

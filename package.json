@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
+    "assets:promo-iap": "node scripts/generate_promoted_iap_image.js",
     "build": "npm --prefix website run build",
     "site:dev": "npm --prefix website run dev",
     "site:build": "npm --prefix website run build",

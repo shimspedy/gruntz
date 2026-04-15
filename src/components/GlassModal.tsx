@@ -45,7 +45,7 @@ export function GlassModal({ visible, onClose, children, intensity = 40 }: Glass
   ) : sheet;
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}
@@ -73,6 +73,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.6)',
   },
   sheetOuter: {
+    width: '100%',
+    alignSelf: 'stretch',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: 'hidden',
@@ -82,12 +84,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     maxHeight: '85%',
   },
   blurSheet: {
-    flex: 1,
+    width: '100%',
   },
   glassOverlay: {
-    flex: 1,
+    width: '100%',
   },
   sheet: {
+    width: '100%',
     backgroundColor: colors.card,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,

@@ -8,9 +8,9 @@ import {
   isRevenueCatAvailable,
   loadRevenueCatState,
   openManagementUrl,
+  purchaseCurrentRevenueCatPackage,
   type OfferingSnapshot,
   presentRevenueCatCustomerCenter,
-  presentRevenueCatPaywall,
   restoreRevenueCatPurchases,
 } from '../services/subscription';
 import { useUserStore } from './useUserStore';
@@ -200,22 +200,13 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         set({ isLoading: true, lastError: null });
 
         try {
-          const result = await presentRevenueCatPaywall();
+          const result = await purchaseCurrentRevenueCatPackage();
 
           if (result.customerInfo) {
             syncEntitlementState(set, result.customerInfo);
           }
 
           const configured = isRevenueCatAvailable();
-
-          if (result.status === 'not_presented' && !get().entitlementActive) {
-            set({
-              isLoading: false,
-              isConfigured: configured,
-              lastError: userFacingError(result.message, 'Subscription setup is in progress. Please try again shortly.'),
-            });
-            return 'unavailable';
-          }
 
           if (result.status === 'error' || result.status === 'unavailable') {
             set({
@@ -229,14 +220,10 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           // Success paths — clear errors first, then refresh in background
           set({ isLoading: false, isConfigured: configured, lastError: null });
 
-          if (result.status === 'purchased' || result.status === 'restored') {
+          if (result.status === 'purchased') {
             // Refresh in background — don't block UI
             get().refresh().catch(() => {});
             return 'purchased';
-          }
-
-          if (result.status === 'not_presented') {
-            return get().entitlementActive ? 'purchased' : 'cancelled';
           }
 
           return 'cancelled';

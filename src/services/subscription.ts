@@ -15,13 +15,6 @@ import type {
 
 export type PurchaseStatus = 'purchased' | 'cancelled' | 'unavailable' | 'error';
 export type RestoreStatus = 'restored' | 'unavailable' | 'error';
-export type HostedPaywallStatus =
-  | 'purchased'
-  | 'restored'
-  | 'cancelled'
-  | 'not_presented'
-  | 'unavailable'
-  | 'error';
 
 export interface OfferingSnapshot {
   offeringIdentifier: string;
@@ -261,66 +254,6 @@ export async function purchaseCurrentRevenueCatPackage(): Promise<{
       status: 'error',
       customerInfo: null,
       message: err.message || 'Purchase failed. Try again in a moment.',
-    };
-  }
-}
-
-function mapPaywallResult(
-  paywallResult: string
-): HostedPaywallStatus {
-  switch (paywallResult) {
-    case 'PURCHASED':
-      return 'purchased';
-    case 'RESTORED':
-      return 'restored';
-    case 'CANCELLED':
-      return 'cancelled';
-    case 'NOT_PRESENTED':
-      return 'not_presented';
-    case 'ERROR':
-    default:
-      return 'error';
-  }
-}
-
-export async function presentRevenueCatPaywall(): Promise<{
-  status: HostedPaywallStatus;
-  customerInfo: CustomerInfo | null;
-  message?: string;
-}> {
-  const configured = await configureRevenueCat();
-  if (!configured) {
-    return { status: 'unavailable', customerInfo: null, message: 'Billing is not configured yet.' };
-  }
-
-  const [purchasesModule, purchasesUiModule] = await Promise.all([
-    getPurchasesModule(),
-    getPurchasesUiModule(),
-  ]);
-  if (!purchasesModule || !purchasesUiModule) {
-    return { status: 'unavailable', customerInfo: null, message: 'Billing is not available on this platform.' };
-  }
-
-  try {
-    if (!cachedOffering) {
-      await loadRevenueCatState();
-    }
-    const paywallResult = await purchasesUiModule.default.presentPaywallIfNeeded({
-      requiredEntitlementIdentifier: REVENUECAT_ENTITLEMENT_ID,
-      offering: cachedOffering ?? undefined,
-      displayCloseButton: true,
-    });
-    const customerInfo = await purchasesModule.default.getCustomerInfo();
-    return {
-      status: mapPaywallResult(String(paywallResult)),
-      customerInfo,
-    };
-  } catch (error) {
-    const err = error as { message?: string };
-    return {
-      status: 'error',
-      customerInfo: null,
-      message: err.message || 'Unable to present the paywall right now.',
     };
   }
 }

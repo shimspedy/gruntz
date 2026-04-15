@@ -39,6 +39,9 @@ export type GameIconName =
   | 'distance'
   | 'reps'
   | 'target'
+  | 'lock'
+  | 'info'
+  | 'arrow'
   | 'badge'
   | 'gear'
   | 'outfit'
@@ -103,6 +106,9 @@ const iconSpecs: Record<GameIconName, IconSpec> = {
   distance: { family: 'ion', name: 'navigate-outline', variant: 'scan', scale: 0.54 },
   reps: { family: 'ion', name: 'repeat-outline', variant: 'pulse', scale: 0.54 },
   target: { family: 'ion', name: 'locate-outline', variant: 'scan', scale: 0.54 },
+  lock: { family: 'ion', name: 'lock-closed-outline', variant: 'pulse', scale: 0.54 },
+  info: { family: 'ion', name: 'information-circle-outline', variant: 'pulse', scale: 0.54 },
+  arrow: { family: 'ion', name: 'arrow-forward-outline', variant: 'scan', scale: 0.54 },
   badge: { family: 'mci', name: 'badge-account-horizontal-outline', variant: 'burst', scale: 0.56 },
   gear: { family: 'mci', name: 'toolbox-outline', variant: 'scan', scale: 0.56 },
   outfit: { family: 'mci', name: 'tshirt-crew-outline', variant: 'pulse', scale: 0.56 },
@@ -183,6 +189,15 @@ const aliasMap: Record<string, GameIconName> = {
   '⚙️': 'settings',
   'settings-outline': 'settings',
   settings: 'settings',
+  'ℹ️': 'info',
+  info: 'info',
+  lock: 'lock',
+  locked: 'lock',
+  timer: 'time',
+  clock: 'time',
+  arrow: 'arrow',
+  next: 'arrow',
+  forward: 'arrow',
   '🎯': 'target',
   target: 'target',
   badge: 'badge',
@@ -231,6 +246,10 @@ function normalizeName(name?: string | null): GameIconName {
   if (normalized.includes('recover') || normalized.includes('sleep') || normalized.includes('rest')) return 'recovery';
   if (normalized.includes('strength') || normalized.includes('dumbbell') || normalized.includes('press') || normalized.includes('pull')) return 'strength';
   if (normalized.includes('profile') || normalized.includes('operator')) return 'profile';
+  if (normalized.includes('lock') || normalized.includes('secure')) return 'lock';
+  if (normalized.includes('info')) return 'info';
+  if (normalized.includes('arrow') || normalized.includes('forward') || normalized.includes('next')) return 'arrow';
+  if (normalized.includes('timer') || normalized.includes('clock')) return 'time';
   if (normalized.includes('badge')) return 'badge';
   if (normalized.includes('outfit') || normalized.includes('uniform')) return 'outfit';
   if (normalized.includes('gear') || normalized.includes('watch') || normalized.includes('glove')) return 'gear';
@@ -246,6 +265,13 @@ function normalizeName(name?: string | null): GameIconName {
   if (normalized.includes('distance') || normalized.includes('mile')) return 'distance';
   if (normalized.includes('theme') || normalized.includes('branch')) return 'theme';
   if (normalized.includes('set') || normalized.includes('rep')) return 'reps';
+  if (normalized.includes('push') || normalized.includes('pull') || normalized.includes('dip') || normalized.includes('burpee')) return 'strength';
+  if (normalized.includes('squat') || normalized.includes('lunge')) return 'lower';
+  if (normalized.includes('situp') || normalized.includes('crunch') || normalized.includes('plank') || normalized.includes('hollow') || normalized.includes('lsit')) return 'core';
+  if (normalized.includes('handstand')) return 'warmup';
+  if (normalized.includes('climb')) return 'run';
+  if (normalized.includes('swimming')) return 'swim';
+  if (normalized.includes('running')) return 'run';
   return 'mission';
 }
 
