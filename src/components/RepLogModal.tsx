@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, ScrollView, Animated } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
-import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
+import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { hapticSuccess, hapticSelection, hapticLight } from '../utils/haptics';
 import { useFadeInDown } from '../utils/animations';
@@ -117,7 +117,13 @@ export function RepLogModal({
                 <Text style={styles.category}>{exercise.category.toUpperCase()}</Text>
               </View>
             </View>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+            <TouchableOpacity
+              onPress={onClose}
+              style={styles.closeBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Close set logger"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
               <Ionicons name="close" size={24} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
@@ -235,26 +241,30 @@ export function RepLogModal({
                 </View>
               </View>
             </View>
-          </ScrollView>
 
-          {/* RPE Selector */}
-          <View style={styles.rpeSection}>
-            <Text style={styles.rpeLabel}>EFFORT (RPE)</Text>
-            <View style={styles.rpeRow}>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(val => (
-                <TouchableOpacity
-                  key={val}
-                  style={[styles.rpeDot, rpe === val && styles.rpeDotActive]}
-                  onPress={() => { setRpe(val); hapticSelection(); }}
-                >
-                  <Text style={[styles.rpeDotText, rpe === val && styles.rpeDotTextActive]}>{val}</Text>
-                </TouchableOpacity>
-              ))}
+            {/* RPE Selector — scrollable so the save button below stays pinned */}
+            <View style={styles.rpeSection}>
+              <Text style={styles.rpeLabel}>EFFORT (RPE)</Text>
+              <View style={styles.rpeRow}>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(val => (
+                  <TouchableOpacity
+                    key={val}
+                    style={[styles.rpeDot, rpe === val && styles.rpeDotActive]}
+                    onPress={() => { setRpe(val); hapticSelection(); }}
+                    hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: rpe === val }}
+                    accessibilityLabel={`RPE ${val}`}
+                  >
+                    <Text style={[styles.rpeDotText, rpe === val && styles.rpeDotTextActive]}>{val}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={styles.rpeDesc}>
+                {rpe <= 3 ? 'Easy' : rpe <= 5 ? 'Moderate' : rpe <= 7 ? 'Hard' : rpe <= 9 ? 'Very Hard' : 'Max Effort'}
+              </Text>
             </View>
-            <Text style={styles.rpeDesc}>
-              {rpe <= 3 ? 'Easy' : rpe <= 5 ? 'Moderate' : rpe <= 7 ? 'Hard' : rpe <= 9 ? 'Very Hard' : 'Max Effort'}
-            </Text>
-          </View>
+          </ScrollView>
 
           {validationError ? <Text style={styles.validationError}>{validationError}</Text> : null}
 
@@ -276,13 +286,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   modal: {
     backgroundColor: colors.card,
-    borderTopLeftRadius: 2,
-    borderTopRightRadius: 2,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
     borderTopWidth: 2,
     borderTopColor: colors.accent,
     padding: spacing.lg,
-    paddingBottom: spacing.xxl,
-    maxHeight: '85%',
+    paddingBottom: spacing.xl,
+    maxHeight: '88%',
   },
   header: {
     flexDirection: 'row',
@@ -321,7 +331,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     backgroundColor: colors.background,
-    borderRadius: 2,
+    borderRadius: borderRadius.md,
     borderLeftWidth: 2,
     borderLeftColor: colors.accentGold,
   },
@@ -456,24 +466,25 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
   },
   inputLabel: {
-    fontSize: 9,
+    fontSize: 12,
     fontWeight: '700',
     color: colors.textMuted,
     letterSpacing: 1,
-    marginBottom: 2,
+    marginBottom: spacing.xs,
   },
   input: {
     backgroundColor: colors.background,
-    borderRadius: 2,
+    borderRadius: borderRadius.md,
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.sm,
     color: colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: '900',
     textAlign: 'center',
     width: '100%',
     borderWidth: 1,
     borderColor: colors.cardBorder,
+    fontVariant: ['tabular-nums'],
   },
   rpeSection: {
     alignItems: 'center',
@@ -523,7 +534,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   saveBtn: {
     backgroundColor: colors.accent,
-    borderRadius: 2,
+    borderRadius: borderRadius.md,
     paddingVertical: 16,
     alignItems: 'center',
   },

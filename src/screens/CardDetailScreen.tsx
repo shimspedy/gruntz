@@ -1,11 +1,12 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
+import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
 import { hapticLight } from '../utils/haptics';
 import { useFadeInUp } from '../utils/animations';
 import type { ThemeColors } from '../theme';
@@ -26,6 +27,9 @@ export default function CardDetailScreen() {
   const route = useRoute<CardDetailRoute>();
   const navigation = useNavigation<Nav>();
   const card = getMovementCard(route.params.cardId);
+  const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
+  const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
 
   if (!card) {
     return (
@@ -48,7 +52,7 @@ export default function CardDetailScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: bottomContentPadding }]}>
         {/* Hero */}
         <Animated.View style={[styles.hero, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
           <GameIcon name={card.icon} size={76} color={colors.accent} style={styles.icon} />
@@ -204,7 +208,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 28,
     fontWeight: '800',
     color: colors.textPrimary,
-    marginTop: 4,
+    marginTop: spacing.xs,
+    lineHeight: 34,
   },
   description: {
     fontSize: 14,
@@ -222,7 +227,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   statPill: {
     backgroundColor: colors.card,
-    borderRadius: 2,
+    borderRadius: borderRadius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     alignItems: 'center',
@@ -254,7 +259,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   musclePill: {
     backgroundColor: colors.cardBorder,
-    borderRadius: 2,
+    borderRadius: borderRadius.md,
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
   },

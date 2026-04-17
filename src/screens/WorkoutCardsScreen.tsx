@@ -5,7 +5,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
+import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 import { GameIcon } from '../components/GameIcon';
@@ -21,6 +21,75 @@ import type { MovementCard, WorkoutRecommendation } from '../types';
 import type { MissionsStackParamList } from '../types/navigation';
 
 type Nav = NativeStackNavigationProp<MissionsStackParamList, 'WorkoutCards'>;
+type Styles = ReturnType<typeof createStyles>;
+
+// Defined at module scope (not inside the screen) so React reuses the same
+// component instance across parent re-renders instead of remounting.
+const DifficultyBadge = React.memo(function DifficultyBadge({ level, colors, styles }: { level: string; colors: ThemeColors; styles: Styles }) {
+  const colorMap: Record<string, string> = {
+    beginner: colors.accentGreen,
+    intermediate: colors.accentGold,
+    advanced: colors.accentRed,
+  };
+  return (
+    <View style={[styles.diffBadge, { backgroundColor: colorMap[level] || colors.textMuted }]}>
+      <Text style={styles.diffBadgeText}>{level.toUpperCase()}</Text>
+    </View>
+  );
+});
+
+const CardItem = React.memo(function CardItem({
+  card,
+  onPress,
+  recommended,
+  colors,
+  styles,
+}: {
+  card: MovementCard;
+  onPress: (id: string) => void;
+  recommended?: WorkoutRecommendation;
+  colors: ThemeColors;
+  styles: Styles;
+}) {
+  return (
+    <TouchableOpacity activeOpacity={0.7} onPress={() => { hapticLight(); onPress(card.id); }}>
+      <View style={[styles.cardItem, recommended?.priority === 'high' && styles.cardItemHighlighted]}>
+        <View style={styles.cardHeader}>
+          <GameIcon name={card.icon} size={34} color={colors.accent} style={styles.cardIcon} />
+          <View style={styles.cardTitleArea}>
+            <Text style={styles.cardNumber}>CARD #{card.card_number}</Text>
+            <Text style={styles.cardName}>{card.name}</Text>
+          </View>
+          <DifficultyBadge level={card.difficulty} colors={colors} styles={styles} />
+        </View>
+        <Text style={styles.cardDesc} numberOfLines={2}>{card.description}</Text>
+        <View style={styles.cardMeta}>
+          <View style={styles.metaItem}>
+            <Ionicons name="time-outline" size={14} color={colors.textMuted} />
+            <Text style={styles.metaText}>{card.estimated_duration} min</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <Ionicons name="repeat-outline" size={14} color={colors.textMuted} />
+            <Text style={styles.metaText}>{card.total_rounds} rounds</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <Ionicons name="body-outline" size={14} color={colors.textMuted} />
+            <Text style={styles.metaText}>{card.target_muscle_groups.slice(0, 3).join(', ')}</Text>
+          </View>
+        </View>
+        {recommended && recommended.priority === 'high' && (
+          <View style={styles.recBadge}>
+            <Ionicons name="sparkles" size={14} color={colors.background} />
+            <Text style={styles.recBadgeText}>RECOMMENDED</Text>
+          </View>
+        )}
+        {recommended && (
+          <Text style={styles.recReason}>{recommended.reason}</Text>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+});
 
 export default function WorkoutCardsScreen() {
   const colors = useColors();
@@ -31,60 +100,10 @@ export default function WorkoutCardsScreen() {
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
   const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
   const currentOffering = useSubscriptionStore((s) => s.currentOffering);
-
-  function DifficultyBadge({ level }: { level: string }) {
-    const colorMap: Record<string, string> = {
-      beginner: colors.accentGreen,
-      intermediate: colors.accentGold,
-      advanced: colors.accentRed,
-    };
-    return (
-      <View style={[styles.diffBadge, { backgroundColor: colorMap[level] || colors.textMuted }]}>
-        <Text style={styles.diffBadgeText}>{level.toUpperCase()}</Text>
-      </View>
-    );
-  }
-
-  function CardItem({ card, onPress, recommended }: { card: MovementCard; onPress: () => void; recommended?: WorkoutRecommendation }) {
-    return (
-        <TouchableOpacity activeOpacity={0.7} onPress={() => { hapticLight(); onPress(); }}>
-        <View style={[styles.cardItem, recommended?.priority === 'high' && styles.cardItemHighlighted]}>
-          <View style={styles.cardHeader}>
-            <GameIcon name={card.icon} size={34} color={colors.accent} style={styles.cardIcon} />
-            <View style={styles.cardTitleArea}>
-              <Text style={styles.cardNumber}>CARD #{card.card_number}</Text>
-              <Text style={styles.cardName}>{card.name}</Text>
-            </View>
-            <DifficultyBadge level={card.difficulty} />
-          </View>
-          <Text style={styles.cardDesc} numberOfLines={2}>{card.description}</Text>
-          <View style={styles.cardMeta}>
-            <View style={styles.metaItem}>
-              <Ionicons name="time-outline" size={14} color={colors.textMuted} />
-              <Text style={styles.metaText}>{card.estimated_duration} min</Text>
-            </View>
-            <View style={styles.metaItem}>
-              <Ionicons name="repeat-outline" size={14} color={colors.textMuted} />
-              <Text style={styles.metaText}>{card.total_rounds} rounds</Text>
-            </View>
-            <View style={styles.metaItem}>
-              <Ionicons name="body-outline" size={14} color={colors.textMuted} />
-              <Text style={styles.metaText}>{card.target_muscle_groups.slice(0, 3).join(', ')}</Text>
-            </View>
-          </View>
-          {recommended && recommended.priority === 'high' && (
-            <View style={styles.recBadge}>
-              <Ionicons name="sparkles" size={14} color={colors.background} />
-              <Text style={styles.recBadgeText}>RECOMMENDED</Text>
-            </View>
-          )}
-          {recommended && (
-            <Text style={styles.recReason}>{recommended.reason}</Text>
-          )}
-        </View>
-      </TouchableOpacity>
-    );
-  }
+  const openCardDetail = React.useCallback(
+    (cardId: string) => navigation.navigate('CardDetail', { cardId }),
+    [navigation],
+  );
   const progress = useUserStore((s) => s.progress);
   const unlockedCount = useUserStore((s) => s.achievements.filter((a) => a.unlocked).length);
   const recommendations = getTopRecommendations(progress, 11);
@@ -92,12 +111,15 @@ export default function WorkoutCardsScreen() {
   const trainingUnlocked = hasTrainingAccess({ trialStartedAt, entitlementActive });
   const monthlyPrice = getDisplayedMonthlyPrice(currentOffering);
 
-  const recMap = new Map<string, WorkoutRecommendation>();
-  recommendations.forEach(r => recMap.set(r.card_id, r));
+  const recMap = useMemo(() => {
+    const map = new Map<string, WorkoutRecommendation>();
+    recommendations.forEach(r => map.set(r.card_id, r));
+    return map;
+  }, [recommendations]);
   const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
 
-  const movCards = getAllMovementCards();
-  const swimCards = getAllSwimCards();
+  const movCards = useMemo(() => getAllMovementCards(), []);
+  const swimCards = useMemo(() => getAllSwimCards(), []);
 
   if (!trainingUnlocked) {
     return (
@@ -175,7 +197,9 @@ export default function WorkoutCardsScreen() {
             key={card.id}
             card={card}
             recommended={recMap.get(card.id)}
-            onPress={() => navigation.navigate('CardDetail', { cardId: card.id })}
+            onPress={openCardDetail}
+            colors={colors}
+            styles={styles}
           />
         ))}
 
@@ -186,7 +210,9 @@ export default function WorkoutCardsScreen() {
             key={card.id}
             card={card}
             recommended={recMap.get(card.id)}
-            onPress={() => navigation.navigate('CardDetail', { cardId: card.id })}
+            onPress={openCardDetail}
+            colors={colors}
+            styles={styles}
           />
         ))}
       </ScrollView>
@@ -212,7 +238,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.accentGold,
-    borderRadius: 2,
+    borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
   },
@@ -308,7 +334,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   cardItem: {
     backgroundColor: colors.card,
-    borderRadius: 2,
+    borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
     borderWidth: 1,

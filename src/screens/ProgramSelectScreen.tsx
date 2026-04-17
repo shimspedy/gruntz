@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
+import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { PROGRAMS } from '../data/programs';
 import { hapticLight } from '../utils/haptics';
@@ -16,10 +17,13 @@ export default function ProgramSelectScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const navigation = useNavigation<Nav>();
+  const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
+  const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: bottomContentPadding }]}>
         <Text style={styles.headerLabel}>SELECT YOUR PROGRAM</Text>
         <Text style={styles.headerTitle}>Choose Your Path</Text>
         <Text style={styles.headerSub}>
@@ -107,7 +111,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 15, color: colors.textSecondary, marginBottom: spacing.xl, lineHeight: 22,
   },
   card: {
-    backgroundColor: colors.card, borderRadius: 2, borderWidth: 1,
+    backgroundColor: colors.card, borderRadius: borderRadius.md, borderWidth: 1,
     padding: spacing.lg, marginBottom: spacing.lg,
   },
   cardHeader: {
@@ -115,16 +119,16 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   cardIcon: {},
   cardDiffBadge: {
-    backgroundColor: colors.backgroundSecondary, borderRadius: 2,
+    backgroundColor: colors.backgroundSecondary, borderRadius: borderRadius.md,
     paddingHorizontal: spacing.sm, paddingVertical: 4,
   },
   cardDiffText: { fontSize: 10, fontWeight: '800', letterSpacing: 1.5 },
-  cardName: { fontSize: 24, fontWeight: '900', color: colors.textPrimary, marginBottom: 2 },
+  cardName: { fontSize: 24, fontWeight: '900', color: colors.textPrimary, marginBottom: spacing.xs, lineHeight: 30 },
   cardSubtitle: { fontSize: 13, fontWeight: '700', letterSpacing: 1, marginBottom: spacing.sm },
   cardDesc: { fontSize: 14, color: colors.textSecondary, lineHeight: 21, marginBottom: spacing.md },
   cardStats: {
     flexDirection: 'row', backgroundColor: colors.backgroundSecondary,
-    borderRadius: 2, padding: spacing.md, marginBottom: spacing.md,
+    borderRadius: borderRadius.md, padding: spacing.md, marginBottom: spacing.md,
     justifyContent: 'space-around', alignItems: 'center',
   },
   stat: { alignItems: 'center' },
@@ -133,12 +137,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   statDivider: { width: 1, height: 30, backgroundColor: colors.cardBorder },
   focusRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: spacing.md },
   focusChip: {
-    borderWidth: 1, borderRadius: 2,
+    borderWidth: 1, borderRadius: borderRadius.md,
     paddingHorizontal: 10, paddingVertical: 4,
   },
   focusChipText: { fontSize: 11, fontWeight: '700' },
   cardButton: {
-    borderRadius: 2, paddingVertical: 14, alignItems: 'center',
+    borderRadius: borderRadius.md, paddingVertical: 14, alignItems: 'center',
   },
   cardButtonText: {
     fontSize: 14, fontWeight: '800', color: colors.background, letterSpacing: 1,

@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
+import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
 import { hapticMedium } from '../utils/haptics';
 import { useFadeInUp } from '../utils/animations';
 import type { ThemeColors } from '../theme';
@@ -27,6 +28,9 @@ export default function ExerciseDetailScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const exercise = getExerciseById(route.params.exerciseId);
   const [showLogModal, setShowLogModal] = useState(false);
+  const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
+  const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
 
   if (!exercise) {
     return (
@@ -48,7 +52,7 @@ export default function ExerciseDetailScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: bottomContentPadding }]}>
         {/* Hero */}
         <Animated.View style={[styles.hero, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
           <GameIcon name={exercise.illustration || exercise.category} size={84} color={colors.accent} style={styles.illustration} />
@@ -252,7 +256,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   statPill: {
     backgroundColor: colors.card,
-    borderRadius: 2,
+    borderRadius: borderRadius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     alignItems: 'center',
@@ -292,7 +296,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   stepNumber: {
     width: 28,
     height: 28,
-    borderRadius: 2,
+    borderRadius: borderRadius.md,
     backgroundColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
@@ -326,7 +330,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   musclePill: {
     backgroundColor: colors.cardBorder,
-    borderRadius: 2,
+    borderRadius: borderRadius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
   },
@@ -343,7 +347,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   logBtn: {
     backgroundColor: colors.accent,
-    borderRadius: 2,
+    borderRadius: borderRadius.md,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: spacing.lg,

@@ -40,7 +40,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-dev-client",
+      "./plugins/withReactCorePrebuiltEmbedFix",
       "expo-notifications",
       "expo-secure-store",
       "expo-sensors",

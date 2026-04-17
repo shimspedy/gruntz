@@ -201,6 +201,7 @@ export const useChallengeStore = create<ChallengeState>()(
     }),
     {
       name: STORAGE_KEY,
+      version: 1,
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         currentProgress: state.currentProgress,

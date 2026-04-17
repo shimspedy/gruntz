@@ -4,11 +4,13 @@ import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
+import { useNavigation, CommonActions } from '@react-navigation/native';
 import { GlassCard } from '../components/GlassCard';
 import { SectionHeader } from '../components/SectionHeader';
 import { StatCard } from '../components/StatCard';
 import { XPBar } from '../components/XPBar';
 import { GameIcon } from '../components/GameIcon';
+import { MissionButton } from '../components/MissionButton';
 import { useUserStore } from '../store/useUserStore';
 import { getXPToNextLevel } from '../utils/xp';
 
@@ -40,9 +42,13 @@ export default function ProgressScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
+  const navigation = useNavigation();
   const progress = useUserStore((s) => s.progress);
   const xpInfo = getXPToNextLevel(progress.current_xp);
   const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
+  const hasAnyActivity = progress.workouts_completed > 0 || progress.total_reps > 0;
+  const goToHome = () =>
+    navigation.dispatch(CommonActions.navigate({ name: 'HomeTab' as never }));
 
   const skillCategories = [
     { name: 'Strength', score: progress.strength_score, color: colors.accentRed },
@@ -114,18 +120,27 @@ export default function ProgressScreen() {
             </View>
           </GlassCard>
 
-          {/* Stats Grid */}
+          {/* Stats Grid — hero: Missions */}
+          <View style={styles.heroStatRow}>
+            <StatCard
+              icon="mission"
+              value={progress.workouts_completed}
+              label="Missions Completed"
+              color={colors.accent}
+              hero
+            />
+          </View>
           <View style={styles.statsGrid}>
-            <StatCard icon="mission" value={progress.workouts_completed} label="Missions" color={colors.accent} />
-            <StatCard icon="streak" value={progress.streak_days} label="Streak" color={colors.streakFire} />
+            <StatCard icon="streak" value={progress.streak_days} label="Day Streak" color={colors.streakFire} />
+            <StatCard icon="xp" value={progress.challenge_xp_earned.toLocaleString()} label="Challenge XP" color={colors.accentGold} />
           </View>
           <View style={styles.statsGrid}>
             <StatCard icon="reps" value={progress.total_reps.toLocaleString()} label="Total Reps" color={colors.accentGreen} />
             <StatCard icon="run" value={`${progress.total_distance_miles}`} label="Miles" color={colors.accentOrange} />
           </View>
           <View style={styles.statsGrid}>
-            <StatCard icon="achievement" value={progress.challenges_completed} label="Challenges" color={colors.accentGold} />
-            <StatCard icon="xp" value={progress.challenge_xp_earned.toLocaleString()} label="Challenge XP" color={colors.accent} />
+            <StatCard icon="achievement" value={progress.challenges_completed} label="Challenges" color={colors.accent} />
+            <StatCard icon="mission" value={progress.current_level} label="Level" color={colors.accent} />
           </View>
 
           {/* Operator Profile */}
@@ -162,9 +177,19 @@ export default function ProgressScreen() {
               ))
             ) : (
               <View style={styles.emptyState}>
-                <GameIcon name="achievement" size={32} color={colors.textMuted} variant="minimal" animated={false} />
+                <View style={styles.emptyIllustration}>
+                  <GameIcon name="achievement" size={48} color={colors.accentGold} variant="minimal" animated={false} />
+                </View>
                 <Text style={styles.emptyTitle}>No records logged yet</Text>
                 <Text style={styles.emptyText}>Complete timed missions and tracked runs to populate your board.</Text>
+                {!hasAnyActivity && (
+                  <MissionButton
+                    title="START FIRST MISSION"
+                    onPress={goToHome}
+                    variant="primary"
+                    style={{ marginTop: spacing.md }}
+                  />
+                )}
               </View>
             )}
           </GlassCard>
@@ -191,9 +216,19 @@ export default function ProgressScreen() {
               ))
             ) : (
               <View style={styles.emptyState}>
-                <GameIcon name="strength" size={32} color={colors.textMuted} variant="minimal" animated={false} />
+                <View style={styles.emptyIllustration}>
+                  <GameIcon name="strength" size={48} color={colors.accent} variant="minimal" animated={false} />
+                </View>
                 <Text style={styles.emptyTitle}>Movement log is empty</Text>
                 <Text style={styles.emptyText}>Your most-used exercises will show up here once you finish missions.</Text>
+                {!hasAnyActivity && (
+                  <MissionButton
+                    title="START FIRST MISSION"
+                    onPress={goToHome}
+                    variant="primary"
+                    style={{ marginTop: spacing.md }}
+                  />
+                )}
               </View>
             )}
           </GlassCard>
@@ -300,6 +335,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
   },
+  heroStatRow: {
+    flexDirection: 'row',
+    marginBottom: spacing.sm,
+  },
   statsGrid: {
     flexDirection: 'row',
     gap: spacing.sm,
@@ -400,8 +439,17 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingVertical: spacing.lg,
     gap: spacing.sm,
   },
+  emptyIllustration: {
+    width: 88,
+    height: 88,
+    borderRadius: borderRadius.full,
+    backgroundColor: `${colors.accent}10`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
   emptyTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '800',
     color: colors.textPrimary,
   },

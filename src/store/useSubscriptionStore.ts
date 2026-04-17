@@ -317,6 +317,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
     }),
     {
       name: STORAGE_KEY,
+      version: 1,
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         trialStartedAt: state.trialStartedAt,

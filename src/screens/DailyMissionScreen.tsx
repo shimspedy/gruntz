@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, Alert, Animated, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFadeInUp } from '../utils/animations';
@@ -11,6 +12,7 @@ import { MissionButton } from '../components/MissionButton';
 import { GameIcon } from '../components/GameIcon';
 import { RestTimer } from '../components/RestTimer';
 import { RepLogModal } from '../components/RepLogModal';
+import { LottieReward } from '../components/LottieReward';
 import { useMissionStore } from '../store/useMissionStore';
 import { useProgramStore } from '../store/useProgramStore';
 import { useUserStore } from '../store/useUserStore';
@@ -19,7 +21,7 @@ import { getReconWorkoutDay } from '../data/reconWorkouts';
 import { getExerciseById } from '../data/exercises';
 import { achievements } from '../data/achievements';
 import { getDisplayedMonthlyPrice } from '../config/monetization';
-import { hapticMedium } from '../utils/haptics';
+import { hapticMedium, hapticLevelUp } from '../utils/haptics';
 import { showWorkoutProgress, clearWorkoutProgress, showWorkoutComplete, showAchievementUnlocked } from '../services/notifications';
 import { useAdaptiveLayout } from '../hooks/useAdaptiveLayout';
 import { hasTrainingAccess, useSubscriptionStore } from '../store/useSubscriptionStore';
@@ -48,6 +50,9 @@ export default function DailyMissionScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const heroAnim = useFadeInUp(500);
   const { contentMaxWidth, horizontalPadding } = useAdaptiveLayout();
+  const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
+  const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
   const navigation = useNavigation<Nav>();
   const todaysMission = useMissionStore((s) => s.todaysMission);
   const isRestDay = useMissionStore((s) => s.isRestDay);
@@ -69,6 +74,13 @@ export default function DailyMissionScreen() {
   const [logTarget, setLogTarget] = useState<ExerciseInstance | null>(null);
   const [loggedSetsByKey, setLoggedSetsByKey] = useState<Record<string, SetLog[]>>({});
   const [isHydrating, setIsHydrating] = useState(true);
+  const [missionCompleteVisible, setMissionCompleteVisible] = useState(false);
+  const pendingMissionCompleteParams = useRef<{
+    xpEarned: number;
+    coinsEarned: number;
+    leveledUp: boolean;
+    newRank?: string;
+  } | null>(null);
 
   const workoutDay = todaysMission
     ? selectedProgram === 'recon'
@@ -377,12 +389,26 @@ export default function DailyMissionScreen() {
       void showAchievementUnlocked(achievement.name, achievement.icon);
     });
 
-    navigation.navigate('MissionComplete', {
+    // Celebratory dwell before navigation — confetti + haptic cascade.
+    // Navigation is driven by LottieReward's onComplete so reduce-motion
+    // users don't wait the full animation window unnecessarily.
+    pendingMissionCompleteParams.current = {
       xpEarned: totalExXP + completionBonus,
       coinsEarned: workoutDay.rewards.coins,
       leveledUp: false,
       newRank: undefined,
-    });
+    };
+    setMissionCompleteVisible(true);
+    void hapticLevelUp();
+  };
+
+  const handleMissionCompleteDone = () => {
+    const params = pendingMissionCompleteParams.current;
+    pendingMissionCompleteParams.current = null;
+    setMissionCompleteVisible(false);
+    if (params) {
+      navigation.navigate('MissionComplete', params);
+    }
   };
 
   if (isHydrating) {
@@ -509,6 +535,7 @@ export default function DailyMissionScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <LottieReward type="mission_complete" visible={missionCompleteVisible} onComplete={handleMissionCompleteDone} />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[
@@ -518,6 +545,7 @@ export default function DailyMissionScreen() {
             maxWidth: contentMaxWidth,
             alignSelf: 'center',
             paddingHorizontal: horizontalPadding,
+            paddingBottom: bottomContentPadding,
           },
         ]}
       >

@@ -7,6 +7,7 @@ import {
   ScrollView,
   Animated,
   Easing,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFadeInUp } from '../utils/animations';
@@ -48,7 +49,7 @@ const INTENSITY_META: Record<
   high: { icon: 'intensity_high', label: 'Full send' },
 };
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
 
 interface OnboardingScreenProps {
   onComplete: () => void;
@@ -64,6 +65,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   const startTrialIfNeeded = useSubscriptionStore((s) => s.startTrialIfNeeded);
 
   const [step, setStep] = useState(0);
+  const [displayName, setDisplayName] = useState('');
   const [fitnessLevel, setFitnessLevel] = useState<(typeof FITNESS_LEVELS)[number]>('beginner');
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [daysPerWeek, setDaysPerWeek] = useState(4);
@@ -121,10 +123,10 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 
   const handleComplete = () => {
     hapticSuccess();
+    const trimmedName = displayName.trim();
     const profile: UserProfile = {
       id: 'local',
-      display_name: 'Warrior',
-      email: '',
+      display_name: trimmedName.length > 0 ? trimmedName : 'Warrior',
       created_at: new Date().toISOString(),
       onboarding_complete: true,
       fitness_level: fitnessLevel,
@@ -175,14 +177,48 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
           Transform your body with structured, progressive training inspired by
           elite military fitness programs.
         </Text>
+        <View style={styles.disclaimerBox}>
+          <Text style={styles.disclaimerText}>
+            Gruntz programs are high-intensity. Consult a healthcare provider before starting any exercise program, especially if you have a medical condition or haven&apos;t trained in a while. You must be 13 or older to use this app.
+          </Text>
+        </View>
       </View>
       <MissionButton title="BEGIN TRAINING" onPress={goNext} style={styles.cta} />
     </View>
   );
 
+  const renderName = () => (
+    <View style={styles.stepContainer}>
+      <Text style={styles.stepEyebrow}>STEP 1 OF 5</Text>
+      <Text style={styles.stepTitle}>What should we call you?</Text>
+      <Text style={styles.stepSubtitle}>
+        Your callsign appears on every mission brief.
+      </Text>
+      <View style={styles.nameInputWrap}>
+        <TextInput
+          style={styles.nameInput}
+          value={displayName}
+          onChangeText={setDisplayName}
+          placeholder="Enter your callsign"
+          placeholderTextColor={colors.textMuted}
+          maxLength={24}
+          autoCapitalize="words"
+          autoCorrect={false}
+          returnKeyType="done"
+          maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}
+        />
+      </View>
+      <MissionButton
+        title={displayName.trim().length > 0 ? 'NEXT' : 'SKIP'}
+        onPress={goNext}
+        style={styles.cta}
+      />
+    </View>
+  );
+
   const renderFitnessLevel = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepEyebrow}>STEP 1 OF 4</Text>
+      <Text style={styles.stepEyebrow}>STEP 2 OF 5</Text>
       <Text style={styles.stepTitle}>Current fitness level?</Text>
       <Text style={styles.stepSubtitle}>
         We will calibrate your missions accordingly.
@@ -240,9 +276,9 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 
   const renderGoals = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepEyebrow}>STEP 2 OF 4</Text>
-      <Text style={styles.stepTitle}>What are your goals?</Text>
-      <Text style={styles.stepSubtitle}>Select all that apply</Text>
+      <Text style={styles.stepEyebrow}>STEP 3 OF 5</Text>
+      <Text style={styles.stepTitle}>What will you conquer?</Text>
+      <Text style={styles.stepSubtitle}>Pick every objective that fires you up.</Text>
       <View style={styles.optionList}>
         {GOALS.map((goal) => {
           const active = selectedGoals.includes(goal);
@@ -285,7 +321,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 
   const renderDaysAndEquipment = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepEyebrow}>STEP 3 OF 4</Text>
+      <Text style={styles.stepEyebrow}>STEP 4 OF 5</Text>
       <Text style={styles.stepTitle}>Training schedule</Text>
       <Text style={styles.stepSubtitle}>Days per week</Text>
       <View style={styles.dayRow}>
@@ -374,7 +410,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 
   const renderIntensity = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepEyebrow}>STEP 4 OF 4</Text>
+      <Text style={styles.stepEyebrow}>STEP 5 OF 5</Text>
       <Text style={styles.stepTitle}>Preferred intensity</Text>
       <Text style={styles.stepSubtitle}>You can change this later in settings</Text>
       <View style={styles.optionList}>
@@ -428,7 +464,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
     </View>
   );
 
-  const steps = [renderWelcome, renderFitnessLevel, renderGoals, renderDaysAndEquipment, renderIntensity];
+  const steps = [renderWelcome, renderName, renderFitnessLevel, renderGoals, renderDaysAndEquipment, renderIntensity];
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -491,14 +527,14 @@ const createStyles = (colors: ThemeColors) =>
     progressTrack: {
       flex: 1,
       height: 4,
-      borderRadius: 2,
+      borderRadius: borderRadius.full,
       backgroundColor: colors.glassBorder,
       overflow: 'hidden',
     },
     progressFill: {
       height: '100%',
       backgroundColor: colors.accent,
-      borderRadius: 2,
+      borderRadius: borderRadius.full,
     },
     progressLabel: {
       fontSize: 11,
@@ -532,6 +568,40 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.textMuted,
       marginBottom: spacing.lg,
       lineHeight: 20,
+    },
+
+    // Medical + age disclaimer on welcome step
+    disclaimerBox: {
+      marginTop: spacing.xl,
+      padding: spacing.md,
+      borderRadius: borderRadius.lg,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.cardBorder,
+    },
+    disclaimerText: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      lineHeight: 18,
+      textAlign: 'center',
+    },
+
+    // Name capture
+    nameInputWrap: {
+      marginBottom: spacing.xl,
+    },
+    nameInput: {
+      backgroundColor: colors.card,
+      borderRadius: borderRadius.xl,
+      borderWidth: 1,
+      borderColor: colors.cardBorder,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.lg,
+      color: colors.textPrimary,
+      fontSize: 22,
+      fontWeight: '800',
+      textAlign: 'center',
+      letterSpacing: 0.5,
     },
 
     // Welcome

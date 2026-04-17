@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, AppState, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { AppTabs } from './AppTabs';
@@ -14,10 +14,20 @@ export function RootNavigator() {
   const updateStreak = useUserStore((s) => s.updateStreak);
   const subscriptionHydrated = useSubscriptionStore((s) => s.hasHydrated);
   const initializeSubscription = useSubscriptionStore((s) => s.initialize);
+  // Safety valve: if subscription hydration hangs (offline, RevenueCat down),
+  // unblock the UI after 3 s so the user isn't stuck on a loading spinner.
+  const [hydrationTimedOut, setHydrationTimedOut] = useState(false);
+  useEffect(() => {
+    if (subscriptionHydrated) return;
+    const timer = setTimeout(() => setHydrationTimedOut(true), 3000);
+    return () => clearTimeout(timer);
+  }, [subscriptionHydrated]);
   useEffect(() => {
     if (hasHydrated && subscriptionHydrated) {
       updateStreak();
-      initializeSubscription();
+      void initializeSubscription().catch((err) => {
+        if (__DEV__) console.warn('[RootNavigator] initializeSubscription failed', err);
+      });
     }
   }, [hasHydrated, subscriptionHydrated, isOnboarded, initializeSubscription, updateStreak]);
 
@@ -29,7 +39,9 @@ export function RootNavigator() {
     const subscription = AppState.addEventListener('change', (nextState) => {
       if (nextState === 'active') {
         updateStreak();
-        initializeSubscription();
+        void initializeSubscription().catch((err) => {
+          if (__DEV__) console.warn('[RootNavigator] initializeSubscription failed', err);
+        });
       }
     });
 
@@ -38,7 +50,7 @@ export function RootNavigator() {
     };
   }, [hasHydrated, subscriptionHydrated, initializeSubscription, updateStreak]);
 
-  if (!hasHydrated || !subscriptionHydrated) {
+  if (!hasHydrated || (!subscriptionHydrated && !hydrationTimedOut)) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
         <ActivityIndicator size="small" color={colors.accent} />

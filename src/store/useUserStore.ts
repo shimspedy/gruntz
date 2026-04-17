@@ -343,6 +343,7 @@ export const useUserStore = create<UserState>()(
     }),
     {
       name: STORAGE_KEY,
+      version: 1,
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         profile: state.profile,
@@ -354,7 +355,7 @@ export const useUserStore = create<UserState>()(
         isOnboarded: state.isOnboarded,
       }),
       merge: (persistedState, currentState) => {
-        const persisted = persistedState as Partial<UserState> & {
+        const persisted = (persistedState ?? {}) as Partial<UserState> & {
           progress?: Partial<UserProgress> & { claimed_missions?: string[] };
         };
 

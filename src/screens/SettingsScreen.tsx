@@ -1,13 +1,16 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Switch, Alert, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { useUserStore } from '../store/useUserStore';
 import { GlassCard } from '../components/GlassCard';
 import { GameIcon } from '../components/GameIcon';
-import { hapticLight } from '../utils/haptics';
+import { hapticLight, hapticWarning } from '../utils/haptics';
 import { requestNotificationPermission, scheduleDailyReminder, cancelDailyReminder, setupNotificationChannels } from '../services/notifications';
 import {
   GRUNTZ_PRIVACY_POLICY_URL,
@@ -21,6 +24,10 @@ export default function SettingsScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const profile = useUserStore((s) => s.profile);
   const updateSettings = useUserStore((s) => s.updateSettings);
+  const resetUser = useUserStore((s) => s.reset);
+  const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
+  const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
 
   const notificationsEnabled = profile?.settings.notifications_enabled ?? true;
   const imperialUnits = (profile?.settings.units ?? 'imperial') === 'imperial';
@@ -32,9 +39,47 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleDeleteAccount = () => {
+    hapticWarning();
+    Alert.alert(
+      'Delete all data?',
+      'This will erase your profile, missions, streaks, challenges, and achievements. This cannot be undone. Your subscription is managed by the App Store and must be cancelled separately.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            void (async () => {
+              try {
+                // Clear AsyncStorage FIRST so Zustand persist middleware
+                // can't flush stale state back after we call reset.
+                const keys = await AsyncStorage.getAllKeys();
+                const gruntzKeys = keys.filter((k) => k.startsWith('@gruntz'));
+                if (gruntzKeys.length > 0) {
+                  await AsyncStorage.multiRemove(gruntzKeys);
+                }
+                // Clear SecureStore items (fitness assessment is stored here).
+                await SecureStore.deleteItemAsync('gruntz_assessment').catch(() => {});
+                // Finally reset in-memory state.
+                resetUser();
+                Alert.alert(
+                  'Data erased',
+                  'Restart Gruntz to complete the reset.',
+                );
+              } catch {
+                Alert.alert('Could not erase all data', 'Try again, or reinstall the app to fully reset.');
+              }
+            })();
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: bottomContentPadding }]}>
         <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>Settings</Text>
 
         {/* Preferences */}
@@ -174,6 +219,30 @@ export default function SettingsScreen() {
               </View>
             </View>
             <Ionicons name="open-outline" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+        </GlassCard>
+
+        {/* Danger Zone */}
+        <GlassCard style={styles.section}>
+          <Text style={[styles.sectionLabel, { color: colors.accentRed }]}>DANGER ZONE</Text>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={[styles.linkRow, { borderBottomWidth: 0 }]}
+            onPress={handleDeleteAccount}
+            accessibilityRole="button"
+            accessibilityLabel="Delete all data"
+            accessibilityHint="Permanently erases your profile, missions, streaks, challenges, and achievements"
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.settingIcon, { backgroundColor: `${colors.accentRed}15` }]}>
+                <Ionicons name="trash-outline" size={20} color={colors.accentRed} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.settingLabel, { color: colors.accentRed }]}>Delete all data</Text>
+                <Text style={styles.settingDesc}>Erase your profile, missions, streaks, and achievements on this device</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.accentRed} />
           </TouchableOpacity>
         </GlassCard>
       </ScrollView>

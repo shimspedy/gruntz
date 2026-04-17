@@ -197,27 +197,37 @@ export async function loadRevenueCatState(options?: {
   const customerInfoPromise = purchasesModule.default.getCustomerInfo();
 
   if (!includeOfferings) {
-    return {
-      currentOffering: snapshotFromOffering(cachedOffering, cachedPackage),
-      customerInfo: await customerInfoPromise,
-      configured: true,
-    };
+    try {
+      return {
+        currentOffering: snapshotFromOffering(cachedOffering, cachedPackage),
+        customerInfo: await customerInfoPromise,
+        configured: true,
+      };
+    } catch (err) {
+      if (__DEV__) console.warn('[subscription] getCustomerInfo failed', err);
+      return { currentOffering: snapshotFromOffering(cachedOffering, cachedPackage), customerInfo: null, configured: true };
+    }
   }
 
-  const [offerings, customerInfo] = await Promise.all([
-    purchasesModule.default.getOfferings(),
-    customerInfoPromise,
-  ]);
+  try {
+    const [offerings, customerInfo] = await Promise.all([
+      purchasesModule.default.getOfferings(),
+      customerInfoPromise,
+    ]);
 
-  const currentOffering = chooseOffering(offerings);
-  cachedOffering = currentOffering;
-  cachedPackage = choosePackage(currentOffering);
+    const currentOffering = chooseOffering(offerings);
+    cachedOffering = currentOffering;
+    cachedPackage = choosePackage(currentOffering);
 
-  return {
-    currentOffering: snapshotFromOffering(currentOffering, cachedPackage),
-    customerInfo,
-    configured: true,
-  };
+    return {
+      currentOffering: snapshotFromOffering(currentOffering, cachedPackage),
+      customerInfo,
+      configured: true,
+    };
+  } catch (err) {
+    if (__DEV__) console.warn('[subscription] loadRevenueCatState failed', err);
+    return { currentOffering: null, customerInfo: null, configured: true };
+  }
 }
 
 export async function purchaseCurrentRevenueCatPackage(): Promise<{

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -6,6 +6,7 @@ import {
   Text,
   Easing,
   Dimensions,
+  AccessibilityInfo,
 } from 'react-native';
 import { useColors } from '../theme';
 import type { ThemeColors } from '../theme';
@@ -31,6 +32,29 @@ const ANIMATION_DURATION = 2000;
 export function LottieReward({ type, value, visible, onComplete }: LottieRewardProps) {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
+      if (mounted) setReduceMotion(enabled);
+    }).catch(() => {});
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', (enabled) => {
+      setReduceMotion(enabled);
+    });
+    return () => {
+      mounted = false;
+      sub.remove?.();
+    };
+  }, []);
+
+  // Short-circuit animation side effects when the user prefers reduce motion:
+  // still fire onComplete so callers don't block, but skip all heavy particle work.
+  useEffect(() => {
+    if (!visible || !reduceMotion) return;
+    const t = setTimeout(() => onComplete?.(), 600);
+    return () => clearTimeout(t);
+  }, [visible, reduceMotion, onComplete]);
 
   // Persist Animated.Values across renders with useRef
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -283,7 +307,7 @@ export function LottieReward({ type, value, visible, onComplete }: LottieRewardP
   }, [fadeAnim, particles]);
 
   useEffect(() => {
-    if (!visible) {
+    if (!visible || reduceMotion) {
       return;
     }
 
@@ -308,10 +332,25 @@ export function LottieReward({ type, value, visible, onComplete }: LottieRewardP
     }, ANIMATION_DURATION);
 
     return () => clearTimeout(timeout);
-  }, [visible, type, resetAnimations, animateXPGain, animateExerciseComplete, animateStreak, animateLevelUp, animateMissionComplete, onComplete]);
+  }, [visible, type, reduceMotion, resetAnimations, animateXPGain, animateExerciseComplete, animateStreak, animateLevelUp, animateMissionComplete, onComplete]);
 
   if (!visible) {
     return null;
+  }
+
+  // Accessibility: when reduce-motion is on, render a static confirmation
+  // instead of particle effects so we still give visual feedback.
+  if (reduceMotion) {
+    const label = type === 'level_up' ? 'LEVEL UP' : type === 'mission_complete' ? 'MISSION COMPLETE' : type === 'streak' ? 'STREAK' : '✓';
+    return (
+      <View style={styles.container} pointerEvents="none" accessibilityRole="alert" accessibilityLabel={label}>
+        <View style={styles.checkmark}>
+          <View style={styles.checkmarkInner}>
+            <Text style={styles.checkIcon}>✓</Text>
+          </View>
+        </View>
+      </View>
+    );
   }
 
   return (

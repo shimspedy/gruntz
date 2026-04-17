@@ -4,7 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
-import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
+import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
 import { hapticMedium } from '../utils/haptics';
 import { useFadeInUp } from '../utils/animations';
 import type { ThemeColors } from '../theme';
@@ -223,11 +223,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   hero: { alignItems: 'center', marginBottom: spacing.lg, marginTop: spacing.md },
   heroIcon: { marginBottom: spacing.sm },
-  heroName: { fontSize: 28, fontWeight: '900', color: colors.textPrimary },
-  heroSub: { fontSize: 14, fontWeight: '700', letterSpacing: 1.5, marginTop: 4 },
+  heroName: { fontSize: 28, fontWeight: '900', color: colors.textPrimary, lineHeight: 34 },
+  heroSub: { fontSize: 14, fontWeight: '700', letterSpacing: 1.5, marginTop: spacing.xs },
   statsBar: {
     flexDirection: 'row', justifyContent: 'space-around',
-    backgroundColor: colors.card, borderRadius: 2, padding: spacing.lg,
+    backgroundColor: colors.card, borderRadius: borderRadius.md, padding: spacing.lg,
     borderWidth: 1, borderColor: colors.cardBorder, marginBottom: spacing.lg,
   },
   stat: { alignItems: 'center' },
@@ -242,12 +242,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     letterSpacing: 2, marginBottom: spacing.md, marginTop: spacing.md,
   },
   phaseCard: {
-    backgroundColor: colors.card, borderRadius: 2, padding: spacing.md,
+    backgroundColor: colors.card, borderRadius: borderRadius.md, padding: spacing.md,
     borderWidth: 1, borderColor: colors.cardBorder, marginBottom: spacing.sm,
   },
   phaseHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
   phaseNum: {
-    width: 28, height: 28, borderRadius: 2, alignItems: 'center', justifyContent: 'center',
+    width: 28, height: 28, borderRadius: borderRadius.md, alignItems: 'center', justifyContent: 'center',
   },
   phaseNumText: { fontSize: 14, fontWeight: '900', color: colors.background },
   phaseHeaderText: { marginLeft: spacing.sm, flex: 1 },
@@ -262,7 +262,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   phaseFocus: { fontSize: 12, fontWeight: '700' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: spacing.md },
   chip: {
-    borderWidth: 1, borderRadius: 2, paddingHorizontal: 10, paddingVertical: 5,
+    borderWidth: 1, borderRadius: borderRadius.md, paddingHorizontal: 10, paddingVertical: 5,
   },
   chipText: { fontSize: 12, fontWeight: '700' },
   equipRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
@@ -276,7 +276,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   prereqDot: {
     width: 8,
     height: 8,
-    borderRadius: 2,
+    borderRadius: borderRadius.md,
   },
   equipText: { fontSize: 14, color: colors.textSecondary },
   bottomBar: {
@@ -292,7 +292,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     lineHeight: 18,
   },
   startButton: {
-    borderRadius: 2, paddingVertical: 16, alignItems: 'center',
+    borderRadius: borderRadius.md, paddingVertical: 16, alignItems: 'center',
   },
   startButtonText: {
     fontSize: 16, fontWeight: '900', color: colors.background, letterSpacing: 1.5,

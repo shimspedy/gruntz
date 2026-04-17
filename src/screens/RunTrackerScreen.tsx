@@ -2,7 +2,8 @@ import React, { useMemo, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, spacing } from '../theme';
 import type { ThemeColors } from '../theme';
@@ -35,6 +36,10 @@ export default function RunTrackerScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const tracker = useRunTracker();
   const baro = useBarometerAltitude();
+  const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
+  const controlsBottomPad = Math.max(spacing.md, tabBarHeight + insets.bottom + spacing.sm);
+  const scrollBottomPad = controlsBottomPad + 120; // clearance for controls bar
 
   const handleStart = useCallback(async () => {
     hapticMedium();
@@ -92,7 +97,7 @@ export default function RunTrackerScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: scrollBottomPad }]}>
         {/* Main timer */}
         <View style={styles.timerContainer}>
           <Text style={styles.timerLabel}>ELAPSED</Text>
@@ -179,7 +184,7 @@ export default function RunTrackerScreen() {
       </ScrollView>
 
       {/* Controls */}
-      <View style={styles.controls}>
+      <View style={[styles.controls, { paddingBottom: controlsBottomPad }]}>
         {!tracker.isTracking ? (
           <TouchableOpacity style={styles.startButton} onPress={handleStart} activeOpacity={0.8}>
             <Ionicons name="play" size={28} color={colors.background} />
@@ -336,7 +341,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.cardBorder,
     padding: spacing.md,
-    paddingBottom: 100,
   },
   startButton: {
     flexDirection: 'row',

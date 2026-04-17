@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated, AppState } from 'react-native';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,7 +28,7 @@ import { getReconWorkoutDay } from '../data/reconWorkouts';
 import { formatChallengeAmount, getTodaysChallenge } from '../data/dailyChallenges';
 import { getDisplayedMonthlyPrice } from '../config/monetization';
 import { showAchievementUnlocked } from '../services/notifications';
-import { hapticLight, hapticSuccess } from '../utils/haptics';
+import { hapticLight, hapticDoubleTap } from '../utils/haptics';
 import { useAdaptiveLayout } from '../hooks/useAdaptiveLayout';
 import { getAccessState, getTrialDaysRemaining, hasTrainingAccess, useSubscriptionStore } from '../store/useSubscriptionStore';
 import type { HomeStackParamList } from '../types/navigation';
@@ -101,6 +101,9 @@ export default function HomeScreen() {
   const program = selectedProgram ? getProgramById(selectedProgram) : null;
   const [hydrated, setHydrated] = React.useState(false);
   const [challengeModalVisible, setChallengeModalVisible] = React.useState(false);
+  const streakBounce = useRef(new Animated.Value(1)).current;
+  const prevStreak = useRef<number | null>(null);
+  const challengeGlow = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     let active = true;
@@ -113,6 +116,17 @@ export default function HomeScreen() {
   useEffect(() => {
     if (hydrated) loadTodaysMission();
   }, [hydrated, selectedProgram, currentWeek, loadTodaysMission]);
+
+  // Bounce streak pill when streak_days increments
+  useEffect(() => {
+    if (prevStreak.current !== null && progress.streak_days > prevStreak.current) {
+      Animated.sequence([
+        Animated.spring(streakBounce, { toValue: 1.25, damping: 6, stiffness: 260, useNativeDriver: true }),
+        Animated.spring(streakBounce, { toValue: 1, damping: 10, stiffness: 180, useNativeDriver: true }),
+      ]).start();
+    }
+    prevStreak.current = progress.streak_days;
+  }, [progress.streak_days, streakBounce]);
 
   useEffect(() => {
     resetDailyChallenge();
@@ -141,7 +155,10 @@ export default function HomeScreen() {
   const challengeRemaining = todaysChallenge
     ? Math.max(todaysChallenge.target - displayedChallengeProgress, 0)
     : 0;
-  const activeMuscles = getActiveMuscleGroups(todaysMission, selectedProgram);
+  const activeMuscles = useMemo(
+    () => getActiveMuscleGroups(todaysMission, selectedProgram),
+    [todaysMission, selectedProgram],
+  );
   const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
 
   // Get greeting based on time of day
@@ -170,7 +187,8 @@ export default function HomeScreen() {
 
     const result = addChallengeProgress(amount, todaysChallenge);
     if (result.completedNow) {
-      hapticSuccess();
+      void hapticDoubleTap();
+      runChallengeGlow();
       handleChallengeRewards(result.unlockedAchievementIds);
     }
   };
@@ -182,10 +200,36 @@ export default function HomeScreen() {
 
     const result = completeDailyChallenge(todaysChallenge);
     if (result.completedNow) {
-      hapticSuccess();
+      void hapticDoubleTap();
+      runChallengeGlow();
       handleChallengeRewards(result.unlockedAchievementIds);
     }
   };
+
+  const runChallengeGlow = () => {
+    Animated.sequence([
+      Animated.timing(challengeGlow, { toValue: 1, duration: 250, useNativeDriver: false }),
+      Animated.timing(challengeGlow, { toValue: 0, duration: 700, useNativeDriver: false }),
+    ]).start();
+  };
+
+  if (!hydrated) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={[styles.content, { paddingHorizontal: horizontalPadding }]}>
+          <View style={[styles.skelLine, { width: 140, height: 18, marginBottom: spacing.lg }]} />
+          <View style={[styles.skelLine, { width: '100%', height: 48, marginBottom: spacing.lg }]} />
+          <View style={[styles.skelCard, { height: 220, marginBottom: spacing.lg }]} />
+          <View style={[styles.skelCard, { height: 180, marginBottom: spacing.lg }]} />
+          <View style={styles.skelStatsRow}>
+            <View style={[styles.skelCard, { flex: 1, height: 120 }]} />
+            <View style={[styles.skelCard, { flex: 1, height: 120 }]} />
+            <View style={[styles.skelCard, { flex: 1, height: 120 }]} />
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -207,12 +251,14 @@ export default function HomeScreen() {
             <Text style={styles.greetingText}>{getGreeting()}</Text>
             <Text style={styles.rankText}>{progress.current_rank}</Text>
           </View>
-          <GlassCard style={styles.streakPill} variant="default">
-            <View style={styles.streakPillContent}>
-              <GameIcon name="streak" size={18} color={colors.accent} />
-              <Text style={styles.streakPillText}>{progress.streak_days}</Text>
-            </View>
-          </GlassCard>
+          <Animated.View style={{ transform: [{ scale: streakBounce }] }}>
+            <GlassCard style={styles.streakPill} variant="default">
+              <View style={styles.streakPillContent}>
+                <GameIcon name="streak" size={18} color={colors.streakFire} />
+                <Text style={styles.streakPillText}>{progress.streak_days}</Text>
+              </View>
+            </GlassCard>
+          </Animated.View>
         </Animated.View>
 
         {/* SECTION 2: XP Bar */}
@@ -344,7 +390,17 @@ export default function HomeScreen() {
 
             {/* Progress bar */}
             <View style={styles.progressContainer}>
-              <View style={styles.progressTrack}>
+              <Animated.View
+                style={[
+                  styles.progressTrack,
+                  {
+                    shadowColor: colors.accentGreen,
+                    shadowRadius: 12,
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: challengeGlow,
+                  },
+                ]}
+              >
                 <View
                   style={[
                     styles.progressFill,
@@ -354,7 +410,7 @@ export default function HomeScreen() {
                     },
                   ]}
                 />
-              </View>
+              </Animated.View>
               <Text style={styles.progressText}>
                 {formatChallengeProgressLabel(displayedChallengeProgress, todaysChallenge)}
               </Text>
@@ -585,7 +641,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginTop: spacing.md,
   },
   muscleChip: {
-    backgroundColor: colors.accent + '20',
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.accent + '40',
     borderRadius: borderRadius.full,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
@@ -630,7 +688,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    backgroundColor: colors.accent + '15',
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
     borderRadius: borderRadius.full,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
@@ -662,11 +722,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     lineHeight: 20,
   },
   nextWorkoutBox: {
-    backgroundColor: colors.accent + '10',
+    backgroundColor: colors.card,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     borderLeftWidth: 3,
     borderLeftColor: colors.accent,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
   },
   nextLabel: {
     fontSize: 10,
@@ -758,7 +820,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingVertical: spacing.xs,
   },
   difficultyText: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '900',
     color: colors.textPrimary,
     letterSpacing: 1,
@@ -767,7 +829,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    backgroundColor: colors.accent + '15',
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: colors.accent + '40',
     borderRadius: borderRadius.full,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
@@ -838,7 +902,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: borderRadius.lg,
-    backgroundColor: colors.accent + '12',
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.sm,
@@ -876,5 +942,21 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   membershipDesc: {
     fontSize: 12,
     color: colors.textSecondary,
+  },
+
+  // SKELETON
+  skelLine: {
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.sm,
+  },
+  skelCard: {
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+  },
+  skelStatsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
   },
 });

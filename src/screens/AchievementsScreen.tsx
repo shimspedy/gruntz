@@ -1,10 +1,13 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, FlatList } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useColors, spacing, MAX_FONT_MULTIPLIER } from '../theme';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { useNavigation, CommonActions } from '@react-navigation/native';
+import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { Card } from '../components/Card';
 import { GameIcon } from '../components/GameIcon';
+import { MissionButton } from '../components/MissionButton';
 import { useUserStore } from '../store/useUserStore';
 import { achievements as allAchievements } from '../data/achievements';
 
@@ -12,18 +15,46 @@ export default function AchievementsScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const userAchievements = useUserStore((s) => s.achievements);
-  const progress = useUserStore((s) => s.progress);
+  const navigation = useNavigation();
+  const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
+  const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
 
   const isUnlocked = (achievementId: string) =>
     userAchievements.some((a) => a.achievement_id === achievementId && a.unlocked);
 
+  const unlockedCount = userAchievements.filter((a) => a.unlocked).length;
+  const hasNoUnlocks = unlockedCount === 0;
+
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: bottomContentPadding }]}>
         <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>Achievements</Text>
         <Text style={styles.subtitle}>
-          {userAchievements.filter((a) => a.unlocked).length} / {allAchievements.length} Unlocked
+          {unlockedCount} / {allAchievements.length} Unlocked
         </Text>
+
+        {hasNoUnlocks && (
+          <View style={styles.emptyHero}>
+            <View style={styles.emptyIcon}>
+              <GameIcon name="trophy" size={56} color={colors.accentGold} />
+            </View>
+            <Text style={styles.emptyTitle}>No Unlocks Yet</Text>
+            <Text style={styles.emptyBody}>
+              Complete your first mission to unlock the Starter badge and begin filling your trophy wall.
+            </Text>
+            <MissionButton
+              title="START FIRST MISSION"
+              onPress={() =>
+                navigation.dispatch(
+                  CommonActions.navigate({ name: 'HomeTab' as never }),
+                )
+              }
+              variant="primary"
+              style={{ marginTop: spacing.lg }}
+            />
+          </View>
+        )}
 
         {allAchievements.map((achievement) => {
           const unlocked = isUnlocked(achievement.id);
@@ -76,11 +107,42 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontWeight: '800',
     color: colors.textPrimary,
     marginBottom: spacing.xs,
+    lineHeight: 34,
   },
   subtitle: {
     fontSize: 14,
     color: colors.textMuted,
     marginBottom: spacing.lg,
+  },
+  emptyHero: {
+    alignItems: 'center',
+    padding: spacing.xl,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    backgroundColor: colors.card,
+    marginBottom: spacing.xl,
+  },
+  emptyIcon: {
+    width: 96,
+    height: 96,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.accentGold + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+  },
+  emptyBody: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   achievementCard: {
     marginBottom: spacing.sm,
@@ -114,7 +176,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   description: {
     fontSize: 13,
     color: colors.textMuted,
-    marginTop: 2,
+    marginTop: spacing.xs,
+    lineHeight: 18,
   },
   unlockedBadge: {
     marginLeft: spacing.sm,

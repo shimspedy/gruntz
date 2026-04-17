@@ -23,14 +23,17 @@ import {
   useSubscriptionStore,
 } from '../store/useSubscriptionStore';
 import { openExternalUrl } from '../utils/externalLinks';
+import { hapticLevelUp } from '../utils/haptics';
 
-const benefits = [
-  'Full Raider and Recon programs',
-  'Unlimited daily mission access',
-  'Workout cards, swim cards, and run support',
-  'Progress, XP, streaks, and achievements',
-  'Apple Health sync',
-  'Exclusive daily challenges',
+type BenefitTier = 'hero' | 'standard';
+
+const benefits: { label: string; tier: BenefitTier }[] = [
+  { label: 'Full Raider and Recon programs', tier: 'hero' },
+  { label: 'Unlimited daily mission access', tier: 'hero' },
+  { label: 'Workout cards, swim cards, and run support', tier: 'hero' },
+  { label: 'Progress, XP, streaks, and achievements', tier: 'standard' },
+  { label: 'Apple Health sync', tier: 'standard' },
+  { label: 'Exclusive daily challenges', tier: 'standard' },
 ];
 
 export default function PaywallScreen() {
@@ -80,7 +83,12 @@ export default function PaywallScreen() {
 
       const result = await purchaseMonthly();
       if (result === 'purchased') {
-        navigation.goBack();
+        void hapticLevelUp();
+        Alert.alert(
+          `Welcome to ${GRUNTZ_PRO_LABEL}`,
+          'Every program, mission, and challenge is now unlocked. Time to train.',
+          [{ text: "LET'S GO", onPress: () => navigation.goBack() }],
+        );
       }
     } catch {
       // Store already sets lastError — nothing extra needed here
@@ -142,7 +150,25 @@ export default function PaywallScreen() {
                 <GameIcon name="xp" size={16} color={colors.accent} variant="minimal" animated={false} />
                 <Text style={[styles.statusBadgeText, { color: colors.accent }]}>ACCESS</Text>
               </View>
-              <Text style={styles.statusTitle}>{trialDaysRemaining} day{trialDaysRemaining === 1 ? '' : 's'} left</Text>
+              <Text style={[styles.statusTitle, trialDaysRemaining <= 2 && { color: colors.accentRed }]}>
+                {trialDaysRemaining} day{trialDaysRemaining === 1 ? '' : 's'} left
+              </Text>
+              <View style={styles.trialProgressTrack}>
+                <View
+                  style={[
+                    styles.trialProgressFill,
+                    {
+                      width: `${Math.max(0, Math.min(1, 1 - trialDaysRemaining / GRUNTZ_TRIAL_DAYS)) * 100}%`,
+                      backgroundColor:
+                        trialDaysRemaining <= 2
+                          ? colors.accentRed
+                          : trialDaysRemaining <= 5
+                            ? colors.accentOrange
+                            : colors.accent,
+                    },
+                  ]}
+                />
+              </View>
               <Text style={styles.statusBody}>
                 Your first {GRUNTZ_TRIAL_DAYS} days include full app access. Subscribe anytime to keep training after that window ends.
               </Text>
@@ -173,15 +199,48 @@ export default function PaywallScreen() {
         {/* Benefits Card */}
         <GlassCard style={styles.benefitsCard}>
           <Text style={styles.benefitsTitle}>What's Included</Text>
-          {benefits.map((benefit, index) => (
-            <View key={`${benefit}-${index}`} style={styles.benefitRow}>
-              <View style={styles.benefitCheckbox}>
-                <GameIcon name="check" size={16} color={colors.accent} variant="minimal" animated={false} />
+          {benefits.map((benefit, index) => {
+            const isHero = benefit.tier === 'hero';
+            return (
+              <View key={`${benefit.label}-${index}`} style={styles.benefitRow}>
+                <View style={[styles.benefitCheckbox, isHero && styles.benefitCheckboxHero]}>
+                  <GameIcon
+                    name="check"
+                    size={isHero ? 18 : 14}
+                    color={isHero ? colors.background : colors.accent}
+                    variant="minimal"
+                    animated={false}
+                  />
+                </View>
+                <Text style={[styles.benefitText, isHero && styles.benefitTextHero]}>
+                  {benefit.label}
+                </Text>
               </View>
-              <Text style={styles.benefitText}>{benefit}</Text>
-            </View>
-          ))}
+            );
+          })}
         </GlassCard>
+
+        {/* Billing unavailable — inline warning with retry */}
+        {!isConfigured && accessState !== 'subscriber' && !lastError ? (
+          <GlassCard style={styles.warningCard}>
+            <View style={styles.warningHeader}>
+              <GameIcon name="warning" size={20} color={colors.accentOrange} variant="minimal" animated={false} />
+              <Text style={styles.warningTitle}>Setting up billing…</Text>
+            </View>
+            <Text style={styles.warningText}>
+              Secure billing is still initializing. Tap retry if this persists for more than a few seconds.
+            </Text>
+            <TouchableOpacity
+              onPress={() => {
+                void loadOffering();
+              }}
+              activeOpacity={0.85}
+              style={styles.retryButton}
+            >
+              <Text style={styles.retryButtonText}>RETRY</Text>
+            </TouchableOpacity>
+          </GlassCard>
+        ) : null}
 
         {/* Status info — only show when there's no error */}
         {isConfigured && !lastError && accessState === 'subscriber' ? (
@@ -216,6 +275,9 @@ export default function PaywallScreen() {
             is charged to your {storeLabel} account at confirmation of purchase and renews
             automatically unless it is canceled at least 24 hours before the end of the current
             period.
+          </Text>
+          <Text style={styles.legalBody}>
+            Manage or cancel anytime in your {storeLabel} account settings under Subscriptions.
           </Text>
           <Text style={styles.legalBody}>
             Privacy Policy and Terms of Use are available below.
@@ -253,11 +315,17 @@ export default function PaywallScreen() {
             accessState === 'subscriber'
               ? 'MANAGE MEMBERSHIP'
               : isConfigured
-                ? 'UNLOCK GRUNTZ PRO'
+                ? currentOffering
+                  ? 'UNLOCK GRUNTZ PRO'
+                  : 'LOADING PRICING…'
                 : 'BILLING UNAVAILABLE'
           }
           onPress={handlePrimary}
-          disabled={isLoading || (!isConfigured && accessState !== 'subscriber')}
+          loading={isLoading}
+          disabled={
+            (!isConfigured && accessState !== 'subscriber') ||
+            (accessState !== 'subscriber' && !currentOffering)
+          }
           style={styles.primaryButton}
         />
 
@@ -266,7 +334,8 @@ export default function PaywallScreen() {
             title="RESTORE PURCHASES"
             onPress={handleRestore}
             variant="secondary"
-            disabled={isLoading || !isConfigured}
+            loading={isLoading}
+            disabled={!isConfigured}
             style={styles.secondaryButton}
           />
         ) : null}
@@ -411,11 +480,49 @@ const createStyles = (colors: ThemeColors) =>
       justifyContent: 'center',
       flexShrink: 0,
     },
+    benefitCheckboxHero: {
+      width: 28,
+      height: 28,
+      borderRadius: borderRadius.sm,
+      backgroundColor: colors.accent,
+    },
     benefitText: {
       flex: 1,
       fontSize: 14,
       color: colors.textSecondary,
       lineHeight: 20,
+    },
+    benefitTextHero: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    retryButton: {
+      alignSelf: 'flex-start',
+      marginTop: spacing.sm,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderRadius: borderRadius.full,
+      borderWidth: 1,
+      borderColor: colors.accentOrange,
+    },
+    retryButtonText: {
+      fontSize: 11,
+      fontWeight: '800',
+      color: colors.accentOrange,
+      letterSpacing: 1,
+    },
+    trialProgressTrack: {
+      height: 6,
+      backgroundColor: colors.cardBorder,
+      borderRadius: borderRadius.full,
+      overflow: 'hidden',
+      marginTop: spacing.xs,
+      marginBottom: spacing.sm,
+    },
+    trialProgressFill: {
+      height: '100%',
+      borderRadius: borderRadius.full,
     },
     warningCard: {
       marginBottom: spacing.md,

@@ -145,11 +145,13 @@ export function createHealthKitService(): HealthKitService {
 
         await AsyncStorage.setItem(HEALTH_DATA_KEY, JSON.stringify(healthData));
 
-        console.log('[HealthKit] Workout synced:', {
-          type: workout.type,
-          calories: workout.calories,
-          distance: workout.distance,
-        });
+        if (__DEV__) {
+          console.log('[HealthKit] Workout synced:', {
+            type: workout.type,
+            calories: workout.calories,
+            distance: workout.distance,
+          });
+        }
 
         return true;
       } catch (error) {

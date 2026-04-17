@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback } from 'react';
-import { TouchableOpacity, Text, View, StyleSheet, ViewStyle, Animated } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ViewStyle, Animated, ActivityIndicator } from 'react-native';
 import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { GameIcon } from './GameIcon';
@@ -11,6 +11,7 @@ interface MissionButtonProps {
   onPress: () => void;
   variant?: 'primary' | 'secondary' | 'success' | 'danger';
   disabled?: boolean;
+  loading?: boolean;
   style?: ViewStyle;
   icon?: string;
 }
@@ -24,19 +25,23 @@ export function MissionButton({
   onPress,
   variant = 'primary',
   disabled = false,
+  loading = false,
   style,
   icon,
 }: MissionButtonProps) {
   const colors = useColors();
+  const isInactive = disabled || loading;
   const styles = useMemo(() => createStyles(colors, variant), [colors, variant]);
   const { onPressIn, onPressOut, style: scaleStyle } = usePressScale();
 
   const handlePress = useCallback(() => {
+    if (isInactive) return;
     hapticMedium();
     onPress();
-  }, [onPress]);
+  }, [onPress, isInactive]);
 
   const getBgColor = () => {
+    if (isInactive) return colors.cardBorder;
     switch (variant) {
       case 'primary':
         return colors.accent;
@@ -51,16 +56,19 @@ export function MissionButton({
   };
 
   const getTextColor = () => {
+    if (isInactive) return colors.textMuted;
     if (variant === 'secondary') return colors.accent;
     return colors.background;
   };
 
   const getBorderColor = () => {
+    if (isInactive) return colors.cardBorder;
     if (variant === 'secondary') return colors.accent;
     return 'transparent';
   };
 
   const getGlowColor = () => {
+    if (isInactive) return 'transparent';
     switch (variant) {
       case 'primary':
         return colors.accent;
@@ -88,20 +96,26 @@ export function MissionButton({
             backgroundColor: bgColor,
             borderColor,
             shadowColor: glowColor,
-            opacity: disabled ? 0.5 : 1,
+            shadowOpacity: isInactive ? 0 : 0.22,
           },
           style,
         ]}
         onPress={handlePress}
-        onPressIn={onPressIn}
-        onPressOut={onPressOut}
-        disabled={disabled}
+        onPressIn={isInactive ? undefined : onPressIn}
+        onPressOut={isInactive ? undefined : onPressOut}
+        disabled={isInactive}
         activeOpacity={0.9}
       >
-        {icon && <GameIcon name={icon} size={20} color={textColor} style={styles.icon} />}
-        <Text style={[styles.text, { color: textColor }]} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
-          {title}
-        </Text>
+        {loading ? (
+          <ActivityIndicator color={textColor} size="small" />
+        ) : (
+          <>
+            {icon && <GameIcon name={icon} size={20} color={textColor} style={styles.icon} />}
+            <Text style={[styles.text, { color: textColor }]} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
+              {title}
+            </Text>
+          </>
+        )}
       </TouchableOpacity>
     </Animated.View>
   );
@@ -123,7 +137,6 @@ const createStyles = (colors: ThemeColors, variant: 'primary' | 'secondary' | 's
       paddingHorizontal: spacing.lg,
       overflow: 'hidden',
       shadowOffset: { width: 0, height: 12 },
-      shadowOpacity: 0.22,
       shadowRadius: 18,
       elevation: 5,
     },

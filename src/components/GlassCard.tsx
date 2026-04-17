@@ -1,14 +1,17 @@
 import React, { useMemo } from 'react';
-import { View, StyleSheet, StyleProp, ViewStyle, Platform } from 'react-native';
+import { View, StyleSheet, StyleProp, ViewStyle, Platform, Pressable, Animated } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useColors, spacing, borderRadius } from '../theme';
 import type { ThemeColors } from '../theme';
+import { usePressScale } from '../utils/animations';
+import { hapticLight } from '../utils/haptics';
 
 interface GlassCardProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   variant?: 'default' | 'elevated' | 'accent';
   noPadding?: boolean;
+  onPress?: () => void;
 }
 
 /**
@@ -16,16 +19,16 @@ interface GlassCardProps {
  * animated gradient border glow, and inner highlight.
  * iOS: real frosted glass via BlurView.
  * Android: semi-transparent fallback with glow effect.
+ * Pass `onPress` to turn it into an interactive card with press scale + haptic.
  */
-export function GlassCard({ children, style, variant = 'default', noPadding }: GlassCardProps) {
+export function GlassCard({ children, style, variant = 'default', noPadding, onPress }: GlassCardProps) {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors, variant), [colors, variant]);
+  const { onPressIn, onPressOut, style: scaleStyle } = usePressScale();
 
   const inner = (
     <>
-      {/* Inner top edge highlight - thicker and more visible */}
       <View style={styles.edgeHighlight} />
-      {/* Subtle bottom shadow edge */}
       <View style={styles.edgeShadow} />
       <View style={noPadding ? undefined : styles.contentPadding}>
         {children}
@@ -33,24 +36,36 @@ export function GlassCard({ children, style, variant = 'default', noPadding }: G
     </>
   );
 
-  if (Platform.OS === 'ios') {
-    return (
-      <View style={[styles.outerWrap, style]}>
+  const card =
+    Platform.OS === 'ios' ? (
+      <View style={styles.outerWrap}>
         <BlurView intensity={50} tint="dark" style={styles.blurFill}>
-          <View style={styles.glassOverlay}>
-            {inner}
-          </View>
+          <View style={styles.glassOverlay}>{inner}</View>
         </BlurView>
       </View>
+    ) : (
+      <View style={[styles.outerWrap, styles.androidFallback]}>{inner}</View>
+    );
+
+  if (onPress) {
+    return (
+      <Animated.View style={[scaleStyle, style]}>
+        <Pressable
+          onPress={() => {
+            hapticLight();
+            onPress();
+          }}
+          onPressIn={onPressIn}
+          onPressOut={onPressOut}
+          accessibilityRole="button"
+        >
+          {card}
+        </Pressable>
+      </Animated.View>
     );
   }
 
-  // Android fallback — semi-transparent card with glow
-  return (
-    <View style={[styles.outerWrap, styles.androidFallback, style]}>
-      {inner}
-    </View>
-  );
+  return <View style={style}>{card}</View>;
 }
 
 const createStyles = (colors: ThemeColors, variant: 'default' | 'elevated' | 'accent') => {

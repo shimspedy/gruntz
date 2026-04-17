@@ -9,7 +9,8 @@ export const site = {
   price: '$4.99/month',
   trialDays: 15,
   supportEmail: 'johnnyhashim@gmail.com',
-  updated: 'April 12, 2026',
+  updated: 'April 17, 2026',
+  appStoreUrl: 'https://apps.apple.com/us/app/gruntz/id6761699137',
   appIds: {
     ios: 'com.gruntz.fitness',
     android: 'com.gruntz.fitness',
