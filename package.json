@@ -1,6 +1,6 @@
 {
   "name": "gruntz",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "index.ts",
   "scripts": {
     "assets:promo-iap": "node scripts/generate_promoted_iap_image.js",
