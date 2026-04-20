@@ -322,10 +322,7 @@ export default function PaywallScreen() {
           }
           onPress={handlePrimary}
           loading={isLoading}
-          disabled={
-            (!isConfigured && accessState !== 'subscriber') ||
-            (accessState !== 'subscriber' && !currentOffering)
-          }
+          disabled={accessState !== 'subscriber' && (!isConfigured || !currentOffering)}
           style={styles.primaryButton}
         />
 

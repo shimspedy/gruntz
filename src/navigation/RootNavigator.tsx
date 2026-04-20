@@ -29,7 +29,7 @@ export function RootNavigator() {
         if (__DEV__) console.warn('[RootNavigator] initializeSubscription failed', err);
       });
     }
-  }, [hasHydrated, subscriptionHydrated, isOnboarded, initializeSubscription, updateStreak]);
+  }, [hasHydrated, subscriptionHydrated, initializeSubscription, updateStreak]);
 
   useEffect(() => {
     if (!hasHydrated || !subscriptionHydrated) {
