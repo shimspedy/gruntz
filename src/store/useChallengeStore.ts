@@ -28,6 +28,36 @@ interface ChallengeState {
 const STORAGE_KEY = '@gruntz_challenges';
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function normalizeCompletedDates(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return Array.from(new Set(value.filter((item): item is string => typeof item === 'string')));
+}
+
+function migratePersistedChallengeState(persistedState: unknown): Partial<ChallengeState> {
+  if (!isRecord(persistedState)) {
+    return {};
+  }
+
+  const currentProgress =
+    typeof persistedState.currentProgress === 'number' && Number.isFinite(persistedState.currentProgress)
+      ? persistedState.currentProgress
+      : 0;
+
+  return {
+    currentProgress: roundProgressValue(Math.max(0, currentProgress)),
+    completedDates: normalizeCompletedDates(persistedState.completedDates),
+    todayCompleted: persistedState.todayCompleted === true,
+    activeDate: typeof persistedState.activeDate === 'string' ? persistedState.activeDate : null,
+  };
+}
+
 function roundProgressValue(value: number) {
   return Math.round(value * 100) / 100;
 }
@@ -203,6 +233,7 @@ export const useChallengeStore = create<ChallengeState>()(
       name: STORAGE_KEY,
       version: 1,
       storage: createJSONStorage(() => AsyncStorage),
+      migrate: (persistedState) => migratePersistedChallengeState(persistedState),
       partialize: (state) => ({
         currentProgress: state.currentProgress,
         completedDates: state.completedDates,

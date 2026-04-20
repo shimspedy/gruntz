@@ -47,6 +47,49 @@ const EXERCISE_TOTAL_ALIASES: Record<string, string[]> = {
   pushups: ['pushups', 'strict_pushups', 'close_grip_pushups'],
 };
 
+type PersistedUserState = {
+  profile?: UserProfile | null;
+  progress?: Partial<Omit<UserProgress, 'claimed_missions'>> & {
+    claimed_missions?: unknown;
+  };
+  achievements?: UserAchievement[];
+  isOnboarded?: boolean;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function normalizeClaimedMissions(value: unknown) {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === 'string');
+  }
+
+  if (value instanceof Set) {
+    return Array.from(value).filter((item): item is string => typeof item === 'string');
+  }
+
+  return [];
+}
+
+function migratePersistedUserState(persistedState: unknown): PersistedUserState {
+  if (!isRecord(persistedState)) {
+    return {};
+  }
+
+  const persisted = persistedState as PersistedUserState;
+
+  return {
+    ...persisted,
+    progress: persisted.progress
+      ? {
+          ...persisted.progress,
+          claimed_missions: normalizeClaimedMissions(persisted.progress.claimed_missions),
+        }
+      : persisted.progress,
+  };
+}
+
 function getClaimedWorkoutIds(claimedMissions: Set<string>) {
   return new Set(
     Array.from(claimedMissions)
@@ -345,6 +388,7 @@ export const useUserStore = create<UserState>()(
       name: STORAGE_KEY,
       version: 1,
       storage: createJSONStorage(() => AsyncStorage),
+      migrate: (persistedState) => migratePersistedUserState(persistedState),
       partialize: (state) => ({
         profile: state.profile,
         progress: {
@@ -355,18 +399,19 @@ export const useUserStore = create<UserState>()(
         isOnboarded: state.isOnboarded,
       }),
       merge: (persistedState, currentState) => {
-        const persisted = (persistedState ?? {}) as Partial<UserState> & {
-          progress?: Partial<UserProgress> & { claimed_missions?: string[] };
-        };
+        const persisted = migratePersistedUserState(persistedState);
 
         return {
           ...currentState,
-          ...persisted,
+          profile: 'profile' in persisted ? persisted.profile ?? null : currentState.profile,
+          achievements: Array.isArray(persisted.achievements) ? persisted.achievements : currentState.achievements,
+          isOnboarded:
+            typeof persisted.isOnboarded === 'boolean' ? persisted.isOnboarded : currentState.isOnboarded,
           progress: persisted.progress
             ? {
                 ...currentState.progress,
                 ...persisted.progress,
-                claimed_missions: new Set(persisted.progress.claimed_missions ?? []),
+                claimed_missions: new Set(normalizeClaimedMissions(persisted.progress.claimed_missions)),
               }
             : currentState.progress,
         };

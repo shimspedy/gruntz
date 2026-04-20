@@ -43,6 +43,32 @@ interface SubscriptionState {
   clearError: () => void;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function migratePersistedSubscriptionState(persistedState: unknown): Partial<SubscriptionState> {
+  if (!isRecord(persistedState)) {
+    return {};
+  }
+
+  return {
+    trialStartedAt: typeof persistedState.trialStartedAt === 'string' ? persistedState.trialStartedAt : null,
+    entitlementActive: persistedState.entitlementActive === true,
+    entitlementExpiresAt:
+      typeof persistedState.entitlementExpiresAt === 'string' ? persistedState.entitlementExpiresAt : null,
+    entitlementProductIdentifier:
+      typeof persistedState.entitlementProductIdentifier === 'string'
+        ? persistedState.entitlementProductIdentifier
+        : null,
+    managementUrl: typeof persistedState.managementUrl === 'string' ? persistedState.managementUrl : null,
+    currentOffering: isRecord(persistedState.currentOffering)
+      ? (persistedState.currentOffering as unknown as OfferingSnapshot)
+      : null,
+    isConfigured: persistedState.isConfigured === true,
+  };
+}
+
 export function getTrialEndsAt(trialStartedAt: string | null) {
   if (!trialStartedAt) {
     return null;
@@ -222,7 +248,9 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
           if (result.status === 'purchased') {
             // Refresh in background — don't block UI
-            get().refresh().catch(() => {});
+            get().refresh().catch((err) => {
+              if (__DEV__) console.warn('[subscription] background refresh after purchase failed', err);
+            });
             return 'purchased';
           }
 
@@ -263,7 +291,9 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           }
 
           if (result.status === 'restored') {
-            get().refresh().catch(() => {});
+            get().refresh().catch((err) => {
+              if (__DEV__) console.warn('[subscription] background refresh after restore failed', err);
+            });
           }
 
           return result.status;
@@ -319,6 +349,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       name: STORAGE_KEY,
       version: 1,
       storage: createJSONStorage(() => AsyncStorage),
+      migrate: (persistedState) => migratePersistedSubscriptionState(persistedState),
       partialize: (state) => ({
         trialStartedAt: state.trialStartedAt,
         entitlementActive: state.entitlementActive,
