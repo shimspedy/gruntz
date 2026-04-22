@@ -30,24 +30,19 @@ export function Card({ children, style, title, variant = 'default', accentColor 
 
 const createStyles = (colors: ThemeColors, variant: 'default' | 'outlined' | 'filled', accentColor: string) => StyleSheet.create({
   card: {
-    backgroundColor: variant === 'filled' ? `${accentColor}12` : colors.card,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
+    backgroundColor: variant === 'filled' ? `${accentColor}0D` : colors.card,
+    borderRadius: borderRadius.md,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: variant === 'outlined' ? accentColor : colors.cardBorder,
-    padding: spacing.lg,
+    padding: spacing.md,
     overflow: 'hidden',
-    shadowColor: colors.background,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.16,
-    shadowRadius: 16,
-    elevation: 4,
   },
   title: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: colors.textPrimary,
-    letterSpacing: 1,
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textMuted,
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
 });

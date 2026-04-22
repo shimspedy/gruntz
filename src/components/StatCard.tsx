@@ -39,8 +39,8 @@ export function StatCard({ icon, value, label, color, style, hero = false, delta
 
   return (
     <View style={[styles.card, style]}>
-      <View style={[styles.iconContainer, { backgroundColor: `${resolvedColor}15` }]}>
-        <GameIcon name={icon} size={hero ? 44 : 36} color={resolvedColor} />
+      <View style={styles.iconContainer}>
+        <GameIcon name={icon} size={hero ? 24 : 20} color={resolvedColor} />
       </View>
 
       <Text style={[styles.value, { color: resolvedColor }]} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
@@ -72,54 +72,48 @@ export function StatCard({ icon, value, label, color, style, hero = false, delta
 const createStyles = (colors: ThemeColors, accentColor: string, hero: boolean) => StyleSheet.create({
   card: {
     backgroundColor: colors.card,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
+    borderRadius: borderRadius.md,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.cardBorder,
-    paddingHorizontal: hero ? spacing.lg : spacing.md,
-    paddingVertical: hero ? spacing.xl : spacing.lg,
+    paddingHorizontal: hero ? spacing.md : spacing.sm + 2,
+    paddingVertical: hero ? spacing.lg : spacing.md,
     alignItems: 'flex-start',
     flex: 1,
     overflow: 'hidden',
-    minHeight: hero ? 160 : 120,
-    shadowColor: colors.background,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 3,
+    minHeight: hero ? 120 : 88,
   },
   iconContainer: {
-    width: hero ? 64 : 56,
-    height: hero ? 64 : 56,
-    borderRadius: borderRadius.lg,
+    width: hero ? 36 : 28,
+    height: hero ? 36 : 28,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   value: {
-    fontSize: hero ? 48 : 32,
-    fontWeight: '900',
-    lineHeight: hero ? 54 : 38,
-    marginBottom: spacing.xs,
+    fontSize: hero ? 32 : 22,
+    fontWeight: '700',
+    lineHeight: hero ? 38 : 28,
+    marginBottom: 2,
     fontVariant: ['tabular-nums'],
   },
   label: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
     color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     width: '100%',
   },
   deltaChip: {
-    marginTop: spacing.sm,
-    paddingHorizontal: spacing.sm,
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.xs + 2,
     paddingVertical: 2,
     borderRadius: borderRadius.full,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   deltaText: {
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '600',
     letterSpacing: 0.4,
     fontVariant: ['tabular-nums'],
   },
@@ -128,7 +122,7 @@ const createStyles = (colors: ThemeColors, accentColor: string, hero: boolean) =
     bottom: 0,
     left: 0,
     right: 0,
-    height: 3,
-    opacity: 0.7,
+    height: StyleSheet.hairlineWidth,
+    opacity: 0.4,
   },
 });

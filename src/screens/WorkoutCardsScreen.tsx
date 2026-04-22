@@ -55,7 +55,7 @@ const CardItem = React.memo(function CardItem({
     <TouchableOpacity activeOpacity={0.7} onPress={() => { hapticLight(); onPress(card.id); }}>
       <View style={[styles.cardItem, recommended?.priority === 'high' && styles.cardItemHighlighted]}>
         <View style={styles.cardHeader}>
-          <GameIcon name={card.icon} size={34} color={colors.accent} style={styles.cardIcon} />
+          <GameIcon name={card.icon} size={24} color={colors.accent} style={styles.cardIcon} />
           <View style={styles.cardTitleArea}>
             <Text style={styles.cardNumber}>CARD #{card.card_number}</Text>
             <Text style={styles.cardName}>{card.name}</Text>
@@ -65,21 +65,21 @@ const CardItem = React.memo(function CardItem({
         <Text style={styles.cardDesc} numberOfLines={2}>{card.description}</Text>
         <View style={styles.cardMeta}>
           <View style={styles.metaItem}>
-            <Ionicons name="time-outline" size={14} color={colors.textMuted} />
+            <Ionicons name="time-outline" size={12} color={colors.textMuted} />
             <Text style={styles.metaText}>{card.estimated_duration} min</Text>
           </View>
           <View style={styles.metaItem}>
-            <Ionicons name="repeat-outline" size={14} color={colors.textMuted} />
+            <Ionicons name="repeat-outline" size={12} color={colors.textMuted} />
             <Text style={styles.metaText}>{card.total_rounds} rounds</Text>
           </View>
           <View style={styles.metaItem}>
-            <Ionicons name="body-outline" size={14} color={colors.textMuted} />
+            <Ionicons name="body-outline" size={12} color={colors.textMuted} />
             <Text style={styles.metaText}>{card.target_muscle_groups.slice(0, 3).join(', ')}</Text>
           </View>
         </View>
         {recommended && recommended.priority === 'high' && (
           <View style={styles.recBadge}>
-            <Ionicons name="sparkles" size={14} color={colors.background} />
+            <Ionicons name="sparkles" size={10} color={colors.accentGold} />
             <Text style={styles.recBadgeText}>RECOMMENDED</Text>
           </View>
         )}
@@ -130,7 +130,7 @@ export default function WorkoutCardsScreen() {
           contentContainerStyle={[styles.content, { paddingBottom: bottomContentPadding }]}
         >
           <Card style={styles.lockedCard}>
-            <GameIcon name="mission" size={44} color={colors.accentGold} style={styles.lockedIcon} />
+            <GameIcon name="mission" size={32} color={colors.accentGold} style={styles.lockedIcon} />
             <Text style={styles.lockedTitle}>Training cards are part of Gruntz Pro</Text>
             <Text style={styles.lockedText}>
               Subscribe for {monthlyPrice} to unlock movement cards, swim cards, and the full training library.
@@ -158,13 +158,13 @@ export default function WorkoutCardsScreen() {
           onPress={() => { hapticLight(); navigation.navigate('Achievements'); }}
         >
           <View style={styles.bannerLeft}>
-            <GameIcon name="achievement" size={34} color={colors.accentGold} style={styles.bannerIcon} />
+            <GameIcon name="achievement" size={20} color={colors.accentGold} style={styles.bannerIcon} />
             <View>
               <Text style={styles.bannerTitle}>MISSION ACHIEVEMENTS</Text>
               <Text style={styles.bannerSub}>{unlockedCount} unlocked. Track medals, streaks, and milestones.</Text>
             </View>
           </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.accentGold} />
+          <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
         </TouchableOpacity>
 
         {/* Strength Profile */}
@@ -180,7 +180,7 @@ export default function WorkoutCardsScreen() {
               { label: 'Ruck', value: profile.rucking, icon: 'ruck' },
             ].map(item => (
               <View key={item.label} style={styles.profileItem}>
-                <GameIcon name={item.icon} size={20} color={colors.accent} style={styles.profileIcon} />
+                <GameIcon name={item.icon} size={14} color={colors.textMuted} style={styles.profileIcon} />
                 <View style={styles.profileBarTrack}>
                   <View style={[styles.profileBarFill, { width: `${Math.max(5, item.value)}%` }]} />
                 </View>
@@ -237,8 +237,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.accentGold,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.cardBorder,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
@@ -247,19 +247,20 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    gap: spacing.md,
+    gap: spacing.sm + 2,
   },
   bannerIcon: {
-    marginRight: spacing.xs,
+    marginRight: 0,
   },
   bannerTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: colors.accentGold,
-    letterSpacing: 1,
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMuted,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
   bannerSub: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.textSecondary,
     marginTop: 2,
   },
@@ -267,10 +268,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: spacing.md,
   },
   profileTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
-    color: colors.accent,
-    letterSpacing: 2,
+    color: colors.textMuted,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
     marginBottom: spacing.md,
   },
   profileGrid: {
@@ -282,32 +284,33 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: spacing.sm,
   },
   profileIcon: {
-    width: 24,
+    width: 20,
   },
   profileBarTrack: {
     flex: 1,
-    height: 8,
+    height: 6,
     backgroundColor: colors.cardBorder,
-    borderRadius: 4,
+    borderRadius: borderRadius.full,
     overflow: 'hidden',
   },
   profileBarFill: {
     height: '100%',
     backgroundColor: colors.accent,
-    borderRadius: 4,
+    borderRadius: borderRadius.full,
   },
   profileLabel: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
     color: colors.textSecondary,
     width: 65,
   },
   profileValue: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '600',
     color: colors.textPrimary,
     width: 35,
     textAlign: 'right',
+    fontVariant: ['tabular-nums'],
   },
   lockedCard: {
     alignItems: 'center',
@@ -317,15 +320,15 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: spacing.md,
   },
   lockedTitle: {
-    fontSize: 22,
-    fontWeight: '900',
+    fontSize: 18,
+    fontWeight: '700',
     color: colors.textPrimary,
     textAlign: 'center',
     marginBottom: spacing.sm,
   },
   lockedText: {
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 13,
+    lineHeight: 19,
     color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: spacing.md,
@@ -337,22 +340,21 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: borderRadius.md,
     padding: spacing.md,
-    marginBottom: spacing.md,
-    borderWidth: 1,
+    marginBottom: spacing.sm,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.cardBorder,
   },
   cardItemHighlighted: {
-    borderColor: colors.accent,
-    borderWidth: 2,
+    borderColor: `${colors.accent}55`,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.sm,
-    gap: spacing.md,
+    gap: spacing.sm + 2,
   },
   cardIcon: {
-    marginRight: spacing.xs,
+    marginRight: 0,
   },
   cardTitleArea: {
     flex: 1,
@@ -361,28 +363,30 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     color: colors.textMuted,
-    letterSpacing: 1.5,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
   cardName: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '600',
     color: colors.textPrimary,
+    marginTop: 2,
   },
   diffBadge: {
-    borderRadius: 6,
+    borderRadius: borderRadius.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
   },
   diffBadgeText: {
     fontSize: 9,
-    fontWeight: '800',
+    fontWeight: '700',
     color: colors.background,
     letterSpacing: 1,
   },
   cardDesc: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textSecondary,
-    lineHeight: 18,
+    lineHeight: 17,
     marginBottom: spacing.sm,
   },
   cardMeta: {
@@ -396,30 +400,29 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: 4,
   },
   metaText: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.textMuted,
   },
   recBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: colors.accentGold,
+    backgroundColor: `${colors.accentGold}1A`,
     alignSelf: 'flex-start',
-    borderRadius: 6,
+    borderRadius: borderRadius.full,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
+    paddingVertical: 2,
     marginTop: spacing.sm,
   },
   recBadgeText: {
     fontSize: 10,
-    fontWeight: '800',
-    color: colors.background,
+    fontWeight: '700',
+    color: colors.accentGold,
     letterSpacing: 1,
   },
   recReason: {
     fontSize: 12,
-    color: colors.accent,
-    fontStyle: 'italic',
+    color: colors.textMuted,
     marginTop: spacing.xs,
   },
 });

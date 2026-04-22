@@ -125,17 +125,17 @@ export default function RunTrackerScreen() {
         {/* Secondary stats */}
         <View style={styles.secondaryRow}>
           <View style={styles.miniStat}>
-            <Ionicons name="footsteps-outline" size={18} color={colors.accent} />
+            <Ionicons name="footsteps-outline" size={14} color={colors.textMuted} />
             <Text style={styles.miniStatValue}>{tracker.steps.toLocaleString()}</Text>
             <Text style={styles.miniStatLabel}>Steps</Text>
           </View>
           <View style={styles.miniStat}>
-            <Ionicons name="trending-up-outline" size={18} color={colors.accentGreen} />
+            <Ionicons name="trending-up-outline" size={14} color={colors.textMuted} />
             <Text style={styles.miniStatValue}>{elevationGain}</Text>
             <Text style={styles.miniStatLabel}>Elev Gain (ft)</Text>
           </View>
           <View style={styles.miniStat}>
-            <Ionicons name="flame-outline" size={18} color={colors.streakFire} />
+            <Ionicons name="flame-outline" size={14} color={colors.textMuted} />
             <Text style={styles.miniStatValue}>{tracker.caloriesEstimate}</Text>
             <Text style={styles.miniStatLabel}>Calories</Text>
           </View>
@@ -144,7 +144,7 @@ export default function RunTrackerScreen() {
         {/* Barometer altitude */}
         {baro.isActive && baro.currentAltitudeFt != null && (
           <View style={styles.altCard}>
-            <Ionicons name="analytics-outline" size={18} color={colors.textMuted} />
+            <Ionicons name="analytics-outline" size={14} color={colors.textMuted} />
             <Text style={styles.altText}>
               Altitude: {baro.currentAltitudeFt} ft   ·   Pressure: {baro.currentPressure} hPa
             </Text>
@@ -187,25 +187,25 @@ export default function RunTrackerScreen() {
       <View style={[styles.controls, { paddingBottom: controlsBottomPad }]}>
         {!tracker.isTracking ? (
           <TouchableOpacity style={styles.startButton} onPress={handleStart} activeOpacity={0.8}>
-            <Ionicons name="play" size={28} color={colors.background} />
-            <Text style={styles.startText}>START RUN</Text>
+            <Ionicons name="play" size={18} color={colors.background} />
+            <Text style={styles.startText}>Start Run</Text>
           </TouchableOpacity>
         ) : (
           <View style={styles.controlRow}>
             {tracker.isPaused ? (
               <TouchableOpacity style={styles.resumeButton} onPress={handleResume} activeOpacity={0.8}>
-                <Ionicons name="play" size={24} color={colors.background} />
-                <Text style={styles.controlText}>RESUME</Text>
+                <Ionicons name="play" size={16} color={colors.background} />
+                <Text style={styles.controlText}>Resume</Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity style={styles.pauseButton} onPress={handlePause} activeOpacity={0.8}>
-                <Ionicons name="pause" size={24} color={colors.background} />
-                <Text style={styles.controlText}>PAUSE</Text>
+                <Ionicons name="pause" size={16} color={colors.background} />
+                <Text style={styles.controlText}>Pause</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity style={styles.stopButton} onPress={handleStop} activeOpacity={0.8}>
-              <Ionicons name="stop" size={24} color={colors.background} />
-              <Text style={styles.controlText}>END</Text>
+              <Ionicons name="stop" size={16} color={colors.background} />
+              <Text style={styles.controlText}>End</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -223,49 +223,51 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: colors.textMuted,
-    letterSpacing: 3,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
     marginBottom: 4,
   },
   timer: {
-    fontSize: 64,
+    fontSize: 56,
     fontWeight: '200',
     color: colors.textPrimary,
     fontVariant: ['tabular-nums'],
   },
   primaryRow: {
     flexDirection: 'row',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   statBox: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm + 2,
   },
   statBoxCenter: {
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderRightWidth: StyleSheet.hairlineWidth,
     borderColor: colors.cardBorder,
   },
   statValue: {
-    fontSize: 28,
-    fontWeight: '800',
+    fontSize: 24,
+    fontWeight: '700',
     color: colors.textPrimary,
     fontVariant: ['tabular-nums'],
   },
   statLabel: {
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: '500',
     color: colors.textMuted,
-    letterSpacing: 2,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
     marginTop: 4,
   },
   secondaryRow: {
     flexDirection: 'row',
     backgroundColor: colors.card,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: spacing.md,
     marginBottom: spacing.md,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.cardBorder,
   },
   miniStat: {
@@ -274,62 +276,63 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: 4,
   },
   miniStatValue: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
     color: colors.textPrimary,
+    fontVariant: ['tabular-nums'],
   },
   miniStatLabel: {
     fontSize: 10,
     color: colors.textMuted,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   altCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
     backgroundColor: colors.card,
-    borderRadius: 10,
+    borderRadius: 8,
     padding: spacing.sm,
     marginBottom: spacing.md,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.cardBorder,
   },
   altText: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.textMuted,
   },
   summaryCard: {
     backgroundColor: colors.card,
-    borderRadius: 14,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.accent + '40',
-    borderTopWidth: 3,
-    borderTopColor: colors.accent,
+    borderRadius: 12,
+    padding: spacing.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.cardBorder,
   },
   summaryTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: colors.accent,
-    letterSpacing: 2,
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMuted,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
     marginBottom: spacing.md,
     textAlign: 'center',
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
+    paddingVertical: spacing.xs + 2,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.cardBorder,
   },
   summaryLabel: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textMuted,
   },
   summaryValue: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '600',
     color: colors.textPrimary,
+    fontVariant: ['tabular-nums'],
   },
   // Controls
   controls: {
@@ -338,7 +341,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: colors.background,
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.cardBorder,
     padding: spacing.md,
   },
@@ -347,19 +350,20 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.accent,
-    borderRadius: 14,
-    paddingVertical: 18,
+    borderRadius: 12,
+    paddingVertical: 14,
     gap: spacing.sm,
   },
   startText: {
-    fontSize: 17,
-    fontWeight: '800',
+    fontSize: 14,
+    fontWeight: '700',
     color: colors.background,
-    letterSpacing: 1,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
   controlRow: {
     flexDirection: 'row',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   pauseButton: {
     flex: 1,
@@ -367,8 +371,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.accentGold,
-    borderRadius: 14,
-    paddingVertical: 18,
+    borderRadius: 12,
+    paddingVertical: 14,
     gap: spacing.sm,
   },
   resumeButton: {
@@ -377,8 +381,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.accentGreen,
-    borderRadius: 14,
-    paddingVertical: 18,
+    borderRadius: 12,
+    paddingVertical: 14,
     gap: spacing.sm,
   },
   stopButton: {
@@ -387,14 +391,15 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.accentRed,
-    borderRadius: 14,
-    paddingVertical: 18,
+    borderRadius: 12,
+    paddingVertical: 14,
     gap: spacing.sm,
   },
   controlText: {
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: 13,
+    fontWeight: '700',
     color: colors.background,
-    letterSpacing: 1,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
 });

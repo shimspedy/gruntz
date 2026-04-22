@@ -17,7 +17,7 @@ export function SectionHeader({ title, subtitle, icon }: SectionHeaderProps) {
   return (
     <View style={styles.container}>
       <View style={styles.accentLine} />
-      {icon ? <GameIcon name={icon} size={24} style={styles.icon} /> : null}
+      {icon ? <GameIcon name={icon} size={14} color={colors.textMuted} style={styles.icon} /> : null}
       <View>
         <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{title}</Text>
         {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
@@ -30,28 +30,28 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.md,
-    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+    marginTop: spacing.md,
   },
   accentLine: {
-    width: 3,
-    height: 20,
+    width: 2,
+    height: 14,
     backgroundColor: colors.accent,
     marginRight: spacing.sm,
     borderRadius: 1,
   },
   icon: {
-    marginRight: spacing.sm,
+    marginRight: spacing.xs,
   },
   title: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
-    color: colors.accent,
-    letterSpacing: 1.5,
+    color: colors.textMuted,
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textMuted,
     marginTop: 2,
   },

@@ -367,7 +367,7 @@ export default function HomeScreen() {
         {isRestDay && (
           <GlassCard style={styles.restDaySection} variant="default">
             <View style={styles.restDayContent}>
-              <GameIcon name="rest" size={48} color={colors.accent} animated={false} />
+              <GameIcon name="rest" size={32} color={colors.accent} animated={false} />
               <Text style={styles.restDayTitle}>REST & RECOVER</Text>
               <Text style={styles.restDayMessage}>
                 Your body needs time to adapt. Hydrate, stretch, and prepare for tomorrow's mission.
@@ -386,7 +386,7 @@ export default function HomeScreen() {
         {!program && (
           <GlassCard style={styles.noProgramSection} variant="accent">
             <View style={styles.noProgramContent}>
-              <GameIcon name="program" size={40} color={colors.accent} animated={false} />
+              <GameIcon name="program" size={28} color={colors.accent} animated={false} />
               <Text style={styles.noProgramTitle}>Select a Program</Text>
               <Text style={styles.noProgramText}>Choose Base Camp, Raider, or Recon</Text>
               <MissionButton
@@ -406,7 +406,7 @@ export default function HomeScreen() {
         {todaysChallenge && (
           <GlassCard style={styles.challengeSection} variant="default">
             <View style={styles.challengeHeader}>
-              <GameIcon name={todaysChallenge.icon} size={28} color={colors.accent} animated={false} />
+              <GameIcon name={todaysChallenge.icon} size={20} color={colors.accent} animated={false} />
               <View style={styles.challengeTitleBox}>
                 <Text style={styles.sectionLabel}>DAILY CHALLENGE</Text>
                 <Text style={styles.challengeName}>{todaysChallenge.name}</Text>
@@ -501,7 +501,7 @@ export default function HomeScreen() {
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <View style={styles.qaIcon}>
-              <GameIcon name={program ? program.icon : 'program'} size={32} color={colors.accent} animated={false} />
+              <GameIcon name={program ? program.icon : 'program'} size={24} color={colors.accent} animated={false} />
             </View>
             <Text style={styles.qaLabel}>Program</Text>
           </TouchableOpacity>
@@ -522,7 +522,7 @@ export default function HomeScreen() {
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <View style={styles.qaIcon}>
-              <GameIcon name="run" size={32} color={colors.accent} animated={false} />
+              <GameIcon name="run" size={24} color={colors.accent} animated={false} />
             </View>
             <Text style={styles.qaLabel}>Run Tracker</Text>
           </TouchableOpacity>
@@ -540,7 +540,7 @@ export default function HomeScreen() {
           >
             <GameIcon
               name={accessState === 'trial' ? 'badge' : 'warning'}
-              size={24}
+              size={18}
               color={colors.accent}
               animated={false}
             />
@@ -556,7 +556,7 @@ export default function HomeScreen() {
                   : 'Unlock premium features'}
               </Text>
             </View>
-            <GameIcon name="arrow" size={18} color={colors.accent} animated={false} />
+            <GameIcon name="arrow" size={14} color={colors.textMuted} animated={false} />
           </TouchableOpacity>
         )}
       </ScrollView>
@@ -621,7 +621,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: spacing.lg,
     gap: spacing.md,
   },
@@ -629,22 +629,23 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flex: 1,
   },
   greetingText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '500',
     color: colors.textMuted,
-    letterSpacing: 1.5,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
     marginBottom: spacing.xs,
   },
   rankText: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: colors.accent,
-    letterSpacing: 0.5,
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    letterSpacing: 0.2,
   },
   streakPill: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    minWidth: 72,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs + 2,
+    minWidth: 56,
   },
   streakPillContent: {
     flexDirection: 'row',
@@ -653,9 +654,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   streakPillText: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: colors.accent,
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.textPrimary,
   },
 
   // XP SECTION
@@ -717,44 +718,45 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: spacing.lg,
   },
   sectionLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.accent,
-    letterSpacing: 2,
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMuted,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
     marginBottom: spacing.xs,
   },
   missionTitle: {
-    fontSize: 20,
-    fontWeight: '900',
+    fontSize: 18,
+    fontWeight: '700',
     color: colors.textPrimary,
     marginBottom: spacing.xs,
   },
   missionSummary: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textSecondary,
-    lineHeight: 20,
+    lineHeight: 19,
     marginBottom: spacing.md,
   },
   missionChips: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: spacing.xs,
     flexWrap: 'wrap',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   infoChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
     backgroundColor: colors.backgroundSecondary,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.cardBorder,
     borderRadius: borderRadius.full,
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    paddingVertical: 3,
   },
   chipText: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 11,
+    fontWeight: '500',
     color: colors.textSecondary,
   },
 
@@ -764,39 +766,39 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   restDayContent: {
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   restDayTitle: {
-    fontSize: 20,
-    fontWeight: '900',
+    fontSize: 18,
+    fontWeight: '700',
     color: colors.textPrimary,
     marginVertical: spacing.sm,
+    letterSpacing: 0.5,
   },
   restDayMessage: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 19,
   },
   nextWorkoutBox: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.lg,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.md,
     padding: spacing.md,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.accent,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.cardBorder,
   },
   nextLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.accent,
-    letterSpacing: 1.5,
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMuted,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
     marginBottom: spacing.xs,
   },
   nextTitle: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '600',
     color: colors.textPrimary,
   },
 
@@ -808,16 +810,17 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
   },
   noProgramTitle: {
-    fontSize: 18,
-    fontWeight: '900',
+    fontSize: 17,
+    fontWeight: '700',
     color: colors.textPrimary,
     marginVertical: spacing.sm,
   },
   noProgramText: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: spacing.md,
+    lineHeight: 19,
   },
 
   // CHALLENGE SECTION
@@ -827,29 +830,29 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   challengeHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: spacing.md,
-    marginBottom: spacing.md,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   challengeTitleBox: {
     flex: 1,
   },
   challengeName: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '600',
     color: colors.textPrimary,
-    marginTop: spacing.xs,
+    marginTop: 2,
   },
   challengeDesc: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textSecondary,
-    lineHeight: 18,
+    lineHeight: 17,
     marginBottom: spacing.md,
   },
   progressContainer: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   progressTrack: {
-    height: 6,
+    height: 4,
     backgroundColor: colors.cardBorder,
     borderRadius: borderRadius.full,
     overflow: 'hidden',
@@ -861,7 +864,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   progressText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
     color: colors.textMuted,
     textAlign: 'right',
   },
@@ -869,16 +872,16 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
   difficultyBadge: {
     borderRadius: borderRadius.full,
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    paddingVertical: 3,
   },
   difficultyText: {
-    fontSize: 11,
-    fontWeight: '900',
+    fontSize: 10,
+    fontWeight: '700',
     color: colors.textPrimary,
     letterSpacing: 1,
   },
@@ -887,25 +890,25 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
     backgroundColor: colors.backgroundSecondary,
-    borderWidth: 1,
-    borderColor: colors.accent + '40',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.cardBorder,
     borderRadius: borderRadius.full,
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    paddingVertical: 3,
     marginLeft: 'auto',
   },
   rewardBadgeText: {
     fontSize: 11,
-    fontWeight: '700',
-    color: colors.accent,
+    fontWeight: '600',
+    color: colors.textSecondary,
   },
   challengeStatusBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.accentGreen + '14',
-    borderWidth: 1,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.accentGreen + '0D',
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.accentGreen + '30',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -914,15 +917,15 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   challengeStatusText: {
     flex: 1,
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '500',
     color: colors.accentGreen,
-    lineHeight: 18,
+    lineHeight: 17,
   },
   challengeRemainingText: {
     fontSize: 12,
-    color: colors.textSecondary,
-    lineHeight: 18,
-    marginTop: spacing.md,
+    color: colors.textMuted,
+    lineHeight: 17,
+    marginTop: spacing.sm,
   },
   challengeButton: {
     marginTop: spacing.md,
@@ -938,39 +941,30 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   // QUICK ACTIONS
   quickActionsRow: {
     flexDirection: 'row',
-    gap: spacing.md,
+    gap: spacing.sm,
     marginBottom: spacing.lg,
   },
   quickActionCard: {
     flex: 1,
     alignItems: 'center',
     backgroundColor: colors.card,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
+    borderRadius: borderRadius.md,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.cardBorder,
-    paddingVertical: spacing.lg,
-    shadowColor: colors.background,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 2,
+    paddingVertical: spacing.md,
   },
   qaIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.backgroundSecondary,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   qaLabel: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
     color: colors.textPrimary,
-    letterSpacing: 0.5,
+    letterSpacing: 0.2,
   },
 
   // MEMBERSHIP BANNER
@@ -979,26 +973,27 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
     backgroundColor: colors.card,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.accent + '40',
+    borderRadius: borderRadius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.cardBorder,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm + 2,
     marginBottom: spacing.lg,
   },
   membershipBody: {
     flex: 1,
   },
   membershipTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: colors.accent,
-    letterSpacing: 1,
-    marginBottom: spacing.xs,
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    marginBottom: 2,
   },
   membershipDesc: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: colors.textMuted,
   },
 
   // SKELETON

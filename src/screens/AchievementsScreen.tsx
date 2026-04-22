@@ -37,7 +37,7 @@ export default function AchievementsScreen() {
         {hasNoUnlocks && (
           <View style={styles.emptyHero}>
             <View style={styles.emptyIcon}>
-              <GameIcon name="trophy" size={56} color={colors.accentGold} />
+              <GameIcon name="trophy" size={36} color={colors.accentGold} />
             </View>
             <Text style={styles.emptyTitle}>No Unlocks Yet</Text>
             <Text style={styles.emptyBody}>
@@ -66,7 +66,7 @@ export default function AchievementsScreen() {
               <View style={styles.row}>
                 <GameIcon
                   name={achievement.icon}
-                  size={36}
+                  size={24}
                   color={unlocked ? colors.accentGold : colors.textMuted}
                   style={[styles.icon, !unlocked && styles.iconLocked]}
                 />
@@ -77,7 +77,7 @@ export default function AchievementsScreen() {
                   <Text style={styles.description}>{achievement.description}</Text>
                 </View>
                 {unlocked ? (
-                  <GameIcon name="check" size={24} color={colors.accentGreen} style={styles.unlockedBadge} />
+                  <GameIcon name="check" size={14} color={colors.accentGreen} style={styles.unlockedBadge} />
                 ) : (
                   <Text style={styles.xpReward}>+{achievement.xp_reward} XP</Text>
                 )}
@@ -103,46 +103,46 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingBottom: spacing.xxl,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '800',
+    fontSize: 24,
+    fontWeight: '700',
     color: colors.textPrimary,
     marginBottom: spacing.xs,
-    lineHeight: 34,
+    lineHeight: 30,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: colors.textMuted,
     marginBottom: spacing.lg,
   },
   emptyHero: {
     alignItems: 'center',
-    padding: spacing.xl,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
+    padding: spacing.lg,
+    borderRadius: borderRadius.md,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.cardBorder,
     backgroundColor: colors.card,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   emptyIcon: {
-    width: 96,
-    height: 96,
+    width: 64,
+    height: 64,
     borderRadius: borderRadius.full,
-    backgroundColor: colors.accentGold + '15',
+    backgroundColor: `${colors.accentGold}0D`,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: '900',
+    fontSize: 17,
+    fontWeight: '700',
     color: colors.textPrimary,
     marginBottom: spacing.sm,
   },
   emptyBody: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 19,
   },
   achievementCard: {
     marginBottom: spacing.sm,
@@ -150,14 +150,14 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   achievementUnlocked: {
     opacity: 1,
-    borderColor: colors.accentGold,
+    borderColor: `${colors.accentGold}55`,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   icon: {
-    marginRight: spacing.md,
+    marginRight: spacing.sm + 2,
   },
   iconLocked: {
     opacity: 0.4,
@@ -166,25 +166,25 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flex: 1,
   },
   name: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
     color: colors.textPrimary,
   },
   nameLocked: {
     color: colors.textMuted,
   },
   description: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textMuted,
-    marginTop: spacing.xs,
-    lineHeight: 18,
+    marginTop: 2,
+    lineHeight: 17,
   },
   unlockedBadge: {
     marginLeft: spacing.sm,
   },
   xpReward: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 11,
+    fontWeight: '600',
     color: colors.accentGold,
   },
 });

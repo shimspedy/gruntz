@@ -74,7 +74,7 @@ export default function MissionCompleteScreen() {
           style={[styles.checkmarkSection, { opacity: checkAnim.opacity, transform: checkAnim.transform }]}
         >
           <View style={styles.checkCircle}>
-            <GameIcon name="check" size={80} color={colors.accentGreen} variant="minimal" />
+            <GameIcon name="check" size={48} color={colors.accentGreen} variant="minimal" />
           </View>
         </Animated.View>
 
@@ -99,7 +99,7 @@ export default function MissionCompleteScreen() {
         >
           <GlassCard variant="default" style={styles.rewardCard}>
             <View style={styles.rewardContent}>
-              <GameIcon name="xp" size={48} color={colors.accentGold} variant="minimal" />
+              <GameIcon name="xp" size={28} color={colors.accentGold} variant="minimal" />
               <Text style={styles.rewardValue} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
                 +{xpEarned}
               </Text>
@@ -109,7 +109,7 @@ export default function MissionCompleteScreen() {
 
           <GlassCard variant="default" style={styles.rewardCard}>
             <View style={styles.rewardContent}>
-              <GameIcon name="coin" size={48} color={colors.accentGold} variant="minimal" />
+              <GameIcon name="coin" size={28} color={colors.accentGold} variant="minimal" />
               <Text style={styles.rewardValue} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
                 +{coinsEarned}
               </Text>
@@ -125,7 +125,7 @@ export default function MissionCompleteScreen() {
           >
             <GlassCard variant="accent" noPadding>
               <View style={styles.bannerContent}>
-                <GameIcon name="level" size={32} color={colors.background} variant="minimal" />
+                <GameIcon name="level" size={20} color={colors.background} variant="minimal" />
                 <Text style={styles.levelUpText}>LEVEL UP!</Text>
               </View>
             </GlassCard>
@@ -139,7 +139,7 @@ export default function MissionCompleteScreen() {
           >
             <GlassCard variant="accent" noPadding>
               <View style={styles.bannerContent}>
-                <GameIcon name="rank" size={32} color={colors.background} variant="minimal" />
+                <GameIcon name="rank" size={20} color={colors.background} variant="minimal" />
                 <Text style={styles.rankText}>NEW RANK: {newRank.toUpperCase()}</Text>
               </View>
             </GlassCard>
@@ -153,11 +153,11 @@ export default function MissionCompleteScreen() {
           <GlassCard>
             <View style={styles.statsGrid}>
               <View style={styles.statItem}>
-                <GameIcon name="check" size={24} color={colors.accent} variant="minimal" />
+                <GameIcon name="check" size={16} color={colors.accent} variant="minimal" />
                 <Text style={styles.statLabel}>Mission Complete</Text>
               </View>
               <View style={styles.statItem}>
-                <GameIcon name="xp" size={24} color={colors.accentGold} variant="minimal" />
+                <GameIcon name="xp" size={16} color={colors.accentGold} variant="minimal" />
                 <Text style={styles.statLabel}>{xpEarned} Total XP</Text>
               </View>
             </View>
@@ -223,38 +223,33 @@ const createStyles = (colors: ThemeColors) =>
       zIndex: 2,
     },
     checkCircle: {
-      width: 140,
-      height: 140,
-      borderRadius: 70,
-      backgroundColor: `${colors.accentGreen}20`,
-      borderWidth: 2,
-      borderColor: colors.accentGreen,
+      width: 96,
+      height: 96,
+      borderRadius: 48,
+      backgroundColor: `${colors.accentGreen}14`,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: `${colors.accentGreen}55`,
       alignItems: 'center',
       justifyContent: 'center',
-      shadowColor: colors.accentGreen,
-      shadowOffset: { width: 0, height: 12 },
-      shadowOpacity: 0.2,
-      shadowRadius: 24,
-      elevation: 8,
     },
 
     /* === TITLE & SUBTITLE === */
     title: {
-      fontSize: 36,
-      fontWeight: '900',
-      color: colors.accent,
-      letterSpacing: 2,
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      letterSpacing: 1,
       marginBottom: spacing.xs,
       textAlign: 'center',
       zIndex: 2,
     },
     subtitle: {
-      fontSize: 16,
+      fontSize: 14,
       color: colors.textSecondary,
-      marginBottom: spacing.xl,
+      marginBottom: spacing.lg,
       textAlign: 'center',
-      fontWeight: '500',
-      lineHeight: 24,
+      fontWeight: '400',
+      lineHeight: 20,
       zIndex: 2,
     },
 
@@ -262,32 +257,32 @@ const createStyles = (colors: ThemeColors) =>
     rewardsSection: {
       width: '100%',
       flexDirection: 'row',
-      gap: spacing.lg,
-      marginBottom: spacing.lg,
+      gap: spacing.sm,
+      marginBottom: spacing.md,
       justifyContent: 'center',
       zIndex: 2,
     },
     rewardCard: {
       flex: 1,
-      minHeight: 140,
+      minHeight: 96,
     },
     rewardContent: {
       alignItems: 'center',
       justifyContent: 'center',
-      gap: spacing.sm,
+      gap: spacing.xs,
     },
     rewardValue: {
-      fontSize: 28,
-      fontWeight: '800',
+      fontSize: 24,
+      fontWeight: '700',
       color: colors.accentGold,
       marginTop: spacing.xs,
     },
     rewardLabel: {
       fontSize: 11,
-      fontWeight: '600',
+      fontWeight: '500',
       color: colors.textMuted,
       letterSpacing: 1.2,
-      marginTop: spacing.xs,
+      marginTop: 2,
       textTransform: 'uppercase',
     },
 
@@ -306,40 +301,42 @@ const createStyles = (colors: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: spacing.lg,
-      paddingVertical: spacing.lg,
-      paddingHorizontal: spacing.xl,
+      gap: spacing.sm + 2,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
     },
     levelUpText: {
-      fontSize: 24,
-      fontWeight: '800',
+      fontSize: 16,
+      fontWeight: '700',
       color: colors.background,
       letterSpacing: 1.2,
+      textTransform: 'uppercase',
     },
     rankText: {
-      fontSize: 20,
-      fontWeight: '800',
+      fontSize: 14,
+      fontWeight: '700',
       color: colors.background,
       letterSpacing: 1,
+      textTransform: 'uppercase',
     },
 
     /* === STATS === */
     statsWrap: {
       width: '100%',
-      marginBottom: spacing.xl,
+      marginBottom: spacing.lg,
       zIndex: 2,
     },
     statsGrid: {
-      gap: spacing.lg,
+      gap: spacing.md,
     },
     statItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: spacing.md,
+      gap: spacing.sm + 2,
     },
     statLabel: {
-      fontSize: 16,
-      fontWeight: '600',
+      fontSize: 14,
+      fontWeight: '500',
       color: colors.textPrimary,
     },
 

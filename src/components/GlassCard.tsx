@@ -81,15 +81,15 @@ const createStyles = (colors: ThemeColors, variant: 'default' | 'elevated' | 'ac
 
   return StyleSheet.create({
     outerWrap: {
-      borderRadius: borderRadius.xl,
+      borderRadius: borderRadius.md,
       overflow: 'hidden',
-      borderWidth: 1,
+      borderWidth: StyleSheet.hairlineWidth,
       borderColor: getBorderColor(),
       shadowColor: getGlowColor(),
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: variant === 'accent' ? 0.24 : 0.12,
-      shadowRadius: 16,
-      elevation: variant === 'elevated' ? 8 : 4,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: variant === 'accent' ? 0.12 : 0.06,
+      shadowRadius: 10,
+      elevation: variant === 'elevated' ? 4 : 2,
     },
     blurFill: {
       // BlurView fills the container
@@ -102,25 +102,24 @@ const createStyles = (colors: ThemeColors, variant: 'default' | 'elevated' | 'ac
       top: 0,
       left: 0,
       right: 0,
-      height: 2,
+      height: 1,
       backgroundColor: colors.glassHighlight,
-      opacity: 0.6,
-      borderRadius: 1,
+      opacity: 0.3,
     },
     edgeShadow: {
       position: 'absolute',
       bottom: 0,
       left: 0,
       right: 0,
-      height: 1,
+      height: StyleSheet.hairlineWidth,
       backgroundColor: colors.glassShadow,
-      opacity: 0.25,
+      opacity: 0.2,
     },
     contentPadding: {
-      padding: spacing.lg,
+      padding: spacing.md,
     },
     androidFallback: {
-      backgroundColor: `${colors.card}DD`,
+      backgroundColor: colors.card,
     },
   });
 };

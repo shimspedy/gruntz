@@ -128,7 +128,7 @@ export default function PaywallScreen() {
         <View style={styles.hero}>
           <View style={styles.heroBadge}>
             <View style={styles.heroBadgeGlow} />
-            <GameIcon name="rank" size={56} color={colors.accent} />
+            <GameIcon name="rank" size={40} color={colors.accent} />
           </View>
           <Text style={styles.eyebrow}>BECOME ELITE</Text>
           <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
@@ -214,8 +214,8 @@ export default function PaywallScreen() {
                 <View style={[styles.benefitCheckbox, isHero && styles.benefitCheckboxHero]}>
                   <GameIcon
                     name="check"
-                    size={isHero ? 18 : 14}
-                    color={isHero ? colors.background : colors.accent}
+                    size={12}
+                    color={colors.accent}
                     variant="minimal"
                     animated={false}
                   />
@@ -304,7 +304,7 @@ export default function PaywallScreen() {
               }}
               style={styles.legalLinkButton}
             >
-              <Ionicons name="shield-checkmark-outline" size={16} color={colors.accent} />
+              <Ionicons name="shield-checkmark-outline" size={12} color={colors.textMuted} />
               <Text style={styles.legalLinkText}>Privacy Policy</Text>
             </TouchableOpacity>
 
@@ -318,7 +318,7 @@ export default function PaywallScreen() {
               }}
               style={styles.legalLinkButton}
             >
-              <Ionicons name="document-text-outline" size={16} color={colors.accent} />
+              <Ionicons name="document-text-outline" size={12} color={colors.textMuted} />
               <Text style={styles.legalLinkText}>Terms of Use</Text>
             </TouchableOpacity>
           </View>
@@ -375,41 +375,42 @@ const createStyles = (colors: ThemeColors) =>
       marginBottom: spacing.xl,
     },
     heroBadge: {
-      width: 100,
-      height: 100,
-      borderRadius: 50,
+      width: 72,
+      height: 72,
+      borderRadius: 36,
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: spacing.lg,
+      marginBottom: spacing.md,
       position: 'relative',
     },
     heroBadgeGlow: {
       position: 'absolute',
-      width: 110,
-      height: 110,
-      borderRadius: 55,
+      width: 88,
+      height: 88,
+      borderRadius: 44,
       backgroundColor: colors.accent,
-      opacity: 0.15,
+      opacity: 0.08,
     },
     eyebrow: {
       fontSize: 11,
-      fontWeight: '800',
-      color: colors.accent,
-      letterSpacing: 3,
+      fontWeight: '700',
+      color: colors.textMuted,
+      letterSpacing: 1.2,
+      textTransform: 'uppercase',
       marginBottom: spacing.xs,
     },
     title: {
-      fontSize: 34,
-      fontWeight: '900',
+      fontSize: 28,
+      fontWeight: '700',
       color: colors.textPrimary,
       textAlign: 'center',
     },
     subtitle: {
-      fontSize: 16,
+      fontSize: 14,
       color: colors.textSecondary,
       marginTop: spacing.sm,
       textAlign: 'center',
-      lineHeight: 22,
+      lineHeight: 20,
     },
     statusCard: {
       marginBottom: spacing.md,
@@ -419,61 +420,62 @@ const createStyles = (colors: ThemeColors) =>
       alignItems: 'center',
       gap: spacing.xs,
       alignSelf: 'flex-start',
-      backgroundColor: `${colors.accent}15`,
+      backgroundColor: `${colors.accent}0D`,
       paddingHorizontal: spacing.sm,
-      paddingVertical: 4,
+      paddingVertical: 3,
       borderRadius: borderRadius.full,
-      marginBottom: spacing.md,
+      marginBottom: spacing.sm,
     },
     statusBadgeText: {
       fontSize: 10,
-      fontWeight: '800',
+      fontWeight: '700',
       color: colors.accent,
       letterSpacing: 1,
     },
     statusTitle: {
-      fontSize: 22,
-      fontWeight: '900',
+      fontSize: 18,
+      fontWeight: '700',
       color: colors.textPrimary,
       marginBottom: spacing.xs,
     },
     statusBody: {
-      fontSize: 14,
+      fontSize: 13,
       color: colors.textSecondary,
-      lineHeight: 22,
+      lineHeight: 19,
     },
     priceCard: {
       marginBottom: spacing.md,
       alignItems: 'center',
     },
     priceLabel: {
-      fontSize: 13,
+      fontSize: 11,
       fontWeight: '700',
       color: colors.textMuted,
       textAlign: 'center',
-      letterSpacing: 0.5,
+      letterSpacing: 1.2,
+      textTransform: 'uppercase',
       marginBottom: spacing.xs,
     },
     priceValue: {
-      fontSize: 40,
-      fontWeight: '900',
+      fontSize: 32,
+      fontWeight: '800',
       color: colors.accent,
-      marginVertical: spacing.sm,
+      marginVertical: spacing.xs,
     },
     priceSub: {
-      fontSize: 13,
-      lineHeight: 20,
-      color: colors.textSecondary,
+      fontSize: 12,
+      lineHeight: 17,
+      color: colors.textMuted,
       textAlign: 'center',
     },
     benefitsCard: {
       marginBottom: spacing.md,
     },
     benefitsTitle: {
-      fontSize: 12,
-      fontWeight: '800',
-      color: colors.accent,
-      letterSpacing: 1,
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.textMuted,
+      letterSpacing: 1.2,
       marginBottom: spacing.md,
       textTransform: 'uppercase',
     },
@@ -484,29 +486,29 @@ const createStyles = (colors: ThemeColors) =>
       marginBottom: spacing.sm,
     },
     benefitCheckbox: {
-      width: 24,
-      height: 24,
+      width: 20,
+      height: 20,
       borderRadius: borderRadius.sm,
-      backgroundColor: `${colors.accent}12`,
+      backgroundColor: `${colors.accent}0D`,
       alignItems: 'center',
       justifyContent: 'center',
       flexShrink: 0,
     },
     benefitCheckboxHero: {
-      width: 28,
-      height: 28,
+      width: 20,
+      height: 20,
       borderRadius: borderRadius.sm,
-      backgroundColor: colors.accent,
+      backgroundColor: `${colors.accent}1A`,
     },
     benefitText: {
       flex: 1,
-      fontSize: 14,
+      fontSize: 13,
       color: colors.textSecondary,
-      lineHeight: 20,
+      lineHeight: 18,
     },
     benefitTextHero: {
-      fontSize: 15,
-      fontWeight: '700',
+      fontSize: 13,
+      fontWeight: '600',
       color: colors.textPrimary,
     },
     retryButton: {
@@ -538,8 +540,6 @@ const createStyles = (colors: ThemeColors) =>
     },
     warningCard: {
       marginBottom: spacing.md,
-      borderColor: colors.accentOrange,
-      borderWidth: 1,
     },
     warningHeader: {
       flexDirection: 'row',
@@ -549,14 +549,13 @@ const createStyles = (colors: ThemeColors) =>
     },
     warningTitle: {
       fontSize: 13,
-      fontWeight: '800',
+      fontWeight: '700',
       color: colors.accentOrange,
-      letterSpacing: 0.5,
     },
     warningText: {
       fontSize: 12,
-      color: colors.textSecondary,
-      lineHeight: 18,
+      color: colors.textMuted,
+      lineHeight: 17,
     },
     infoCard: {
       marginBottom: spacing.md,
@@ -587,17 +586,17 @@ const createStyles = (colors: ThemeColors) =>
       marginTop: spacing.md,
     },
     legalTitle: {
-      fontSize: 13,
-      fontWeight: '800',
-      color: colors.textPrimary,
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.textMuted,
       marginBottom: spacing.sm,
       textTransform: 'uppercase',
-      letterSpacing: 0.8,
+      letterSpacing: 1.2,
     },
     legalBody: {
       fontSize: 12,
-      lineHeight: 18,
-      color: colors.textSecondary,
+      lineHeight: 17,
+      color: colors.textMuted,
       marginBottom: spacing.sm,
     },
     legalLinksRow: {
@@ -611,15 +610,14 @@ const createStyles = (colors: ThemeColors) =>
       alignItems: 'center',
       gap: spacing.xs,
       borderRadius: borderRadius.full,
-      borderWidth: 1,
-      borderColor: colors.glassBorder,
-      backgroundColor: `${colors.accent}10`,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.cardBorder,
+      paddingHorizontal: spacing.sm + 2,
+      paddingVertical: spacing.xs + 2,
     },
     legalLinkText: {
-      fontSize: 12,
-      fontWeight: '700',
-      color: colors.textPrimary,
+      fontSize: 11,
+      fontWeight: '600',
+      color: colors.textSecondary,
     },
   });

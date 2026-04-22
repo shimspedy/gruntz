@@ -168,7 +168,7 @@ export default function ProgressScreen() {
                 <View key={record.label} style={styles.prRow}>
                   <View style={styles.recordLabelWrap}>
                     <View style={[styles.recordIcon, { backgroundColor: `${colors.accent}12` }]}>
-                      <GameIcon name={record.icon} size={16} color={colors.accent} variant="minimal" animated={false} />
+                      <GameIcon name={record.icon} size={12} color={colors.accent} variant="minimal" animated={false} />
                     </View>
                     <Text style={styles.prLabel}>{record.label}</Text>
                   </View>
@@ -178,7 +178,7 @@ export default function ProgressScreen() {
             ) : (
               <View style={styles.emptyState}>
                 <View style={styles.emptyIllustration}>
-                  <GameIcon name="achievement" size={48} color={colors.accentGold} variant="minimal" animated={false} />
+                  <GameIcon name="achievement" size={28} color={colors.accentGold} variant="minimal" animated={false} />
                 </View>
                 <Text style={styles.emptyTitle}>No records logged yet</Text>
                 <Text style={styles.emptyText}>Complete timed missions and tracked runs to populate your board.</Text>
@@ -217,7 +217,7 @@ export default function ProgressScreen() {
             ) : (
               <View style={styles.emptyState}>
                 <View style={styles.emptyIllustration}>
-                  <GameIcon name="strength" size={48} color={colors.accent} variant="minimal" animated={false} />
+                  <GameIcon name="strength" size={28} color={colors.accent} variant="minimal" animated={false} />
                 </View>
                 <Text style={styles.emptyTitle}>Movement log is empty</Text>
                 <Text style={styles.emptyText}>Your most-used exercises will show up here once you finish missions.</Text>
@@ -265,15 +265,15 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   kicker: {
     fontSize: 11,
-    fontWeight: '800',
-    color: colors.accent,
-    letterSpacing: 2,
+    fontWeight: '700',
+    color: colors.textMuted,
+    letterSpacing: 1.2,
     marginBottom: spacing.xs,
     textTransform: 'uppercase',
   },
   title: {
-    fontSize: 32,
-    fontWeight: '900',
+    fontSize: 28,
+    fontWeight: '700',
     color: colors.textPrimary,
   },
   subtitle: {
@@ -283,16 +283,15 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     lineHeight: 18,
   },
   rankChip: {
-    backgroundColor: `${colors.accent}15`,
-    borderRadius: borderRadius.xl,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    minWidth: 80,
+    backgroundColor: `${colors.accent}0D`,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs + 2,
     alignItems: 'center',
   },
   rankChipText: {
-    fontSize: 12,
-    fontWeight: '800',
+    fontSize: 11,
+    fontWeight: '700',
     letterSpacing: 1,
     color: colors.accent,
     textTransform: 'uppercase',
@@ -324,16 +323,16 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   skillHighlightLabel: {
-    fontSize: 9,
-    fontWeight: '800',
+    fontSize: 10,
+    fontWeight: '700',
     letterSpacing: 1,
     color: colors.textMuted,
-    marginBottom: 4,
+    marginBottom: 2,
     textTransform: 'uppercase',
   },
   skillHighlightValue: {
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   heroStatRow: {
     flexDirection: 'row',
@@ -357,13 +356,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     width: 100,
   },
   skillName: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '500',
     color: colors.textSecondary,
   },
   skillBarTrack: {
     flex: 1,
-    height: 8,
+    height: 4,
     backgroundColor: `${colors.textPrimary}08`,
     borderRadius: borderRadius.full,
     overflow: 'hidden',
@@ -374,9 +373,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   skillScore: {
     width: 32,
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '600',
     textAlign: 'right',
+    fontVariant: ['tabular-nums'],
   },
   prRow: {
     flexDirection: 'row',
@@ -394,9 +394,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingRight: spacing.sm,
   },
   recordIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
+    width: 24,
+    height: 24,
+    borderRadius: borderRadius.sm,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -440,17 +440,17 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: spacing.sm,
   },
   emptyIllustration: {
-    width: 88,
-    height: 88,
+    width: 56,
+    height: 56,
     borderRadius: borderRadius.full,
-    backgroundColor: `${colors.accent}10`,
+    backgroundColor: `${colors.accent}0D`,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.sm,
   },
   emptyTitle: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '700',
     color: colors.textPrimary,
   },
 });

@@ -102,13 +102,13 @@ export default function ProfileScreen() {
         <Animated.View style={[styles.header, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
           <View style={styles.avatarCircle}>
             <View style={styles.avatarGlow} />
-            <GameIcon name={rankInfo?.icon || 'rank'} size={60} color={colors.accent} style={styles.avatarEmoji} />
+            <GameIcon name={rankInfo?.icon || 'rank'} size={36} color={colors.accent} style={styles.avatarEmoji} />
           </View>
           <Text style={styles.displayName} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{profile?.display_name || 'Recruit'}</Text>
           <Text style={styles.rankText}>{progress.current_rank}</Text>
           <Text style={styles.levelText}>Level {progress.current_level}</Text>
           <View style={styles.streakBadge}>
-            <GameIcon name="streak" size={18} color={colors.streakFire} variant="minimal" />
+            <GameIcon name="streak" size={12} color={colors.streakFire} variant="minimal" />
             <Text style={styles.streakText}>{progress.streak_days}-day streak</Text>
           </View>
         </Animated.View>
@@ -124,12 +124,12 @@ export default function ProfileScreen() {
           <View style={styles.membershipBadge}>
             {accessState === 'subscriber' ? (
               <>
-                <GameIcon name="check" size={16} color={colors.accentGreen} variant="minimal" animated={false} />
+                <GameIcon name="check" size={12} color={colors.accentGreen} variant="minimal" animated={false} />
                 <Text style={[styles.membershipBadgeText, { color: colors.accentGreen }]}>PRO</Text>
               </>
             ) : (
               <>
-                <GameIcon name="lock" size={16} color={colors.accent} variant="minimal" animated={false} />
+                <GameIcon name="lock" size={12} color={colors.accent} variant="minimal" animated={false} />
                 <Text style={styles.membershipBadgeText}>FREE</Text>
               </>
             )}
@@ -230,11 +230,11 @@ export default function ProfileScreen() {
           >
             <View style={styles.menuLeft}>
               <View style={styles.menuIcon}>
-                <GameIcon name={item.icon} size={20} color={colors.accent} variant="minimal" animated={false} />
+                <GameIcon name={item.icon} size={16} color={colors.textSecondary} variant="minimal" animated={false} />
               </View>
               <Text style={styles.menuLabel}>{item.label}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -259,39 +259,39 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: spacing.xl,
   },
   avatarCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
     position: 'relative',
   },
   avatarGlow: {
     position: 'absolute',
-    width: 104,
-    height: 104,
-    borderRadius: 52,
+    width: 84,
+    height: 84,
+    borderRadius: 42,
     backgroundColor: colors.accent,
-    opacity: 0.12,
+    opacity: 0.08,
   },
   avatarEmoji: {
   },
   displayName: {
-    fontSize: 32,
-    fontWeight: '900',
+    fontSize: 24,
+    fontWeight: '700',
     color: colors.textPrimary,
     marginBottom: spacing.xs,
   },
   rankText: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: colors.accent,
-    letterSpacing: 1,
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textMuted,
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
   },
   levelText: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textSecondary,
     marginTop: spacing.xs,
   },
@@ -299,31 +299,31 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    marginTop: spacing.md,
-    backgroundColor: `${colors.streakFire}12`,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    marginTop: spacing.sm,
+    backgroundColor: `${colors.streakFire}0D`,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 3,
     borderRadius: borderRadius.full,
   },
   streakText: {
-    fontSize: 12,
-    fontWeight: '800',
+    fontSize: 11,
+    fontWeight: '700',
     color: colors.streakFire,
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
   section: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   sectionLabel: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: colors.accent,
-    letterSpacing: 1,
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMuted,
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
     marginBottom: spacing.md,
   },
   totalXP: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textMuted,
     textAlign: 'center',
     marginTop: spacing.sm,
@@ -334,28 +334,28 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
     alignSelf: 'flex-start',
-    backgroundColor: `${colors.accent}15`,
+    backgroundColor: `${colors.accent}0D`,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
+    paddingVertical: 3,
     borderRadius: borderRadius.full,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   membershipBadgeText: {
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: '700',
     color: colors.accent,
     letterSpacing: 1,
   },
   membershipTitle: {
-    fontSize: 20,
-    fontWeight: '900',
+    fontSize: 17,
+    fontWeight: '700',
     color: colors.textPrimary,
     marginBottom: spacing.xs,
   },
   membershipText: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 18,
+    color: colors.textMuted,
   },
   scoreGrid: {
     flexDirection: 'row',
@@ -368,64 +368,63 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingVertical: spacing.md,
   },
   scoreValue: {
-    fontSize: 32,
-    fontWeight: '900',
+    fontSize: 24,
+    fontWeight: '700',
   },
   scoreLabel: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '500',
     color: colors.textMuted,
     marginTop: spacing.xs,
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
   statRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: `${colors.textPrimary}08`,
+    paddingVertical: spacing.sm + 2,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.cardBorder,
   },
   statLabel: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textSecondary,
-    fontWeight: '500',
+    fontWeight: '400',
   },
   statValue: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 14,
+    fontWeight: '600',
     color: colors.textPrimary,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: `${colors.textPrimary}04`,
-    borderRadius: borderRadius.xl,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
     marginBottom: spacing.sm,
-    borderWidth: 1,
-    borderColor: `${colors.textPrimary}08`,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.cardBorder,
   },
   menuLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm + 2,
     flex: 1,
   },
   menuIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
-    backgroundColor: `${colors.accent}10`,
+    width: 28,
+    height: 28,
+    borderRadius: borderRadius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
   menuLabel: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '500',
     color: colors.textPrimary,
   },
 });

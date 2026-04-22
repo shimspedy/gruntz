@@ -55,7 +55,7 @@ export default function CardDetailScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: bottomContentPadding }]}>
         {/* Hero */}
         <Animated.View style={[styles.hero, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
-          <GameIcon name={card.icon} size={76} color={colors.accent} style={styles.icon} />
+          <GameIcon name={card.icon} size={48} color={colors.accent} style={styles.icon} />
           <Text style={styles.cardLabel} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
             {card.category === 'swim' ? 'SWIM' : 'MOVEMENT'} CARD #{card.card_number}
           </Text>
@@ -101,7 +101,7 @@ export default function CardDetailScreen() {
                 <Text style={styles.sectionRounds}>{section.rounds} round{section.rounds > 1 ? 's' : ''}</Text>
                 {section.rest_between_rounds && (
                   <View style={styles.restWrap}>
-                    <GameIcon name="time" size={16} color={colors.accent} variant="minimal" />
+                    <GameIcon name="time" size={12} color={colors.accent} variant="minimal" />
                     <Text style={styles.sectionRest}>{section.rest_between_rounds}s rest</Text>
                   </View>
                 )}
@@ -126,14 +126,14 @@ export default function CardDetailScreen() {
                     activeOpacity={0.7}
                     onPress={() => navigateToExercise(cardEx.exercise_id)}
                   >
-                    <GameIcon name={exercise.illustration || exercise.category} size={28} color={colors.accent} style={styles.exIcon} />
+                    <GameIcon name={exercise.illustration || exercise.category} size={20} color={colors.textMuted} style={styles.exIcon} />
                     <View style={styles.exInfo}>
                       <Text style={styles.exName}>{exercise.name}</Text>
                       <View style={styles.exDetailRow}>
                         {detail ? <Text style={styles.exDetail}>{detail}</Text> : null}
                         {exercise.rest_seconds > 0 && (
                           <View style={styles.restWrap}>
-                            <GameIcon name="time" size={16} color={colors.accent} variant="minimal" />
+                            <GameIcon name="time" size={12} color={colors.accent} variant="minimal" />
                             <Text style={styles.exRest}>{exercise.rest_seconds}s rest</Text>
                           </View>
                         )}
@@ -142,7 +142,7 @@ export default function CardDetailScreen() {
                         <Text style={styles.exNotes}>{cardEx.notes}</Text>
                       )}
                     </View>
-                    <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                    <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
                   </TouchableOpacity>
                 );
               })}
@@ -193,80 +193,84 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   hero: {
     alignItems: 'center',
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.md,
   },
   icon: {
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   cardLabel: {
     fontSize: 11,
     fontWeight: '700',
     color: colors.textMuted,
-    letterSpacing: 2,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
   cardName: {
-    fontSize: 28,
-    fontWeight: '800',
+    fontSize: 22,
+    fontWeight: '700',
     color: colors.textPrimary,
     marginTop: spacing.xs,
-    lineHeight: 34,
+    lineHeight: 28,
   },
   description: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 19,
     marginTop: spacing.sm,
     paddingHorizontal: spacing.md,
   },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: spacing.sm,
+    gap: spacing.xs,
     marginBottom: spacing.md,
   },
   statPill: {
     backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs + 2,
     alignItems: 'center',
-    minWidth: 65,
-    borderWidth: 1,
+    minWidth: 56,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.cardBorder,
   },
   diffPill: {
-    borderColor: colors.accentGold,
+    borderColor: colors.cardBorder,
   },
   statValue: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '700',
     color: colors.textPrimary,
   },
   statLabel: {
-    fontSize: 9,
-    fontWeight: '700',
+    fontSize: 10,
+    fontWeight: '500',
     color: colors.textMuted,
     letterSpacing: 1,
     marginTop: 2,
+    textTransform: 'uppercase',
   },
   muscleRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
     gap: spacing.xs,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   musclePill: {
-    backgroundColor: colors.cardBorder,
-    borderRadius: borderRadius.md,
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.cardBorder,
+    borderRadius: borderRadius.full,
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
   },
   musclePillText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textPrimary,
+    fontSize: 11,
+    fontWeight: '500',
+    color: colors.textSecondary,
     textTransform: 'capitalize',
   },
   sectionContainer: {
@@ -279,11 +283,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: spacing.xs,
   },
   sectionName: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: colors.accent,
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textMuted,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 1.2,
   },
   sectionMeta: {
     flexDirection: 'row',
@@ -291,13 +295,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
   },
   sectionRounds: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '500',
     color: colors.textSecondary,
   },
   sectionRest: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '500',
     color: colors.accent,
   },
   restWrap: {
@@ -306,47 +310,45 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: 4,
   },
   sectionNotes: {
-    fontSize: 13,
-    fontStyle: 'italic',
+    fontSize: 12,
     color: colors.textMuted,
     marginBottom: spacing.sm,
   },
   exerciseRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
+    paddingVertical: spacing.sm + 2,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.cardBorder,
-    gap: spacing.md,
+    gap: spacing.sm + 2,
   },
   exIcon: {
-    marginRight: spacing.xs,
+    marginRight: 0,
   },
   exInfo: {
     flex: 1,
   },
   exName: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
     color: colors.textPrimary,
   },
   exDetailRow: {
     flexDirection: 'row',
-    gap: spacing.md,
+    gap: spacing.sm + 2,
     marginTop: 2,
   },
   exDetail: {
-    fontSize: 13,
-    color: colors.textSecondary,
+    fontSize: 12,
+    color: colors.textMuted,
   },
   exRest: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.accent,
   },
   exNotes: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.textMuted,
-    fontStyle: 'italic',
     marginTop: 2,
   },
 });

@@ -19,6 +19,7 @@ export interface Exercise {
   muscle_groups?: string[];
   steps?: string[];
   illustration?: string;
+  demo_url?: string;
 }
 
 export interface ProgressionRules {

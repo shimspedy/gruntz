@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, Alert, Animated, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
@@ -450,7 +451,7 @@ export default function DailyMissionScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.emptyContainer}>
-          <GameIcon name="warning" size={48} color={colors.accentGold} style={styles.lockedIcon} />
+          <GameIcon name="warning" size={32} color={colors.accentGold} style={styles.lockedIcon} />
           <Text style={styles.emptyTitle}>Training locked</Text>
           <Text style={styles.emptySubtext}>
             Your free access window has ended. Subscribe for {monthlyPrice} to keep running daily missions.
@@ -526,7 +527,7 @@ export default function DailyMissionScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.emptyContainer}>
-          <GameIcon name="check" size={48} color={colors.accentGreen} style={styles.lockedIcon} />
+          <GameIcon name="check" size={32} color={colors.accentGreen} style={styles.lockedIcon} />
           <Text style={styles.emptyTitle}>Mission already completed</Text>
           <Text style={styles.emptySubtext}>
             You already cleared today&apos;s training block. Recover, review your progress, or come back tomorrow.
@@ -565,17 +566,17 @@ export default function DailyMissionScreen() {
             {/* Mission Stats */}
             <View style={styles.statsGrid}>
               <View style={styles.statCard}>
-                <GameIcon name="time" size={24} color={colors.accent} variant="minimal" animated />
+                <GameIcon name="time" size={18} color={colors.accent} variant="minimal" animated />
                 <Text style={styles.statValue}>{workoutDay.estimated_duration}</Text>
                 <Text style={styles.statLabel}>minutes</Text>
               </View>
               <View style={styles.statCard}>
-                <GameIcon name="xp" size={24} color={colors.accentGold} variant="minimal" animated />
+                <GameIcon name="xp" size={18} color={colors.accentGold} variant="minimal" animated />
                 <Text style={styles.statValue}>{workoutDay.rewards.xp}</Text>
                 <Text style={styles.statLabel}>XP</Text>
               </View>
               <View style={styles.statCard}>
-                <GameIcon name="strength" size={24} color={colors.accent} variant="minimal" animated />
+                <GameIcon name="strength" size={18} color={colors.accent} variant="minimal" animated />
                 <Text style={styles.statValue}>{totalExercises}</Text>
                 <Text style={styles.statLabel}>exercises</Text>
               </View>
@@ -616,7 +617,7 @@ export default function DailyMissionScreen() {
             {sectionInstances.map((section) => (
               <View key={section.id} style={styles.sectionBlock}>
                 <View style={styles.sectionTitleRow}>
-                  <GameIcon name={sectionIcons[section.type]} size={20} color={colors.accent} variant="minimal" />
+                  <GameIcon name={sectionIcons[section.type]} size={14} color={colors.accent} variant="minimal" />
                   <View style={styles.sectionTextWrap}>
                     <Text style={styles.sectionTitle}>{section.title}</Text>
                     <Text style={styles.sectionInstruction}>{section.instructions}</Text>
@@ -643,8 +644,8 @@ export default function DailyMissionScreen() {
                           <View style={styles.exerciseIconWrap}>
                             <GameIcon
                               name={sectionIcons[section.type]}
-                              size={32}
-                              color={isComplete ? colors.accentGreen : colors.accent}
+                              size={20}
+                              color={isComplete ? colors.accentGreen : colors.textMuted}
                               variant="minimal"
                             />
                           </View>
@@ -660,11 +661,22 @@ export default function DailyMissionScreen() {
                             )}
                           </View>
 
+                          {/* Info: opens how-to */}
+                          <TouchableOpacity
+                            style={styles.exerciseInfoBtn}
+                            onPress={() => handleExerciseInfo(instance.exerciseId)}
+                            accessibilityRole="button"
+                            accessibilityLabel={`How to do ${instance.exercise.name}`}
+                            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                          >
+                            <Ionicons name="information-circle-outline" size={18} color={colors.textMuted} />
+                          </TouchableOpacity>
+
                           {/* Right: Completion Indicator */}
                           <View style={styles.completionIndicator}>
                             {isComplete ? (
                               <View style={styles.completedCheckCircle}>
-                                <GameIcon name="check" size={20} color={colors.background} variant="minimal" />
+                                <GameIcon name="check" size={12} color={colors.background} variant="minimal" />
                               </View>
                             ) : (
                               <View style={styles.incompleteCircle} />
@@ -742,27 +754,27 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   missionLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: colors.accent,
-    letterSpacing: 2.5,
+    color: colors.textMuted,
+    letterSpacing: 1.2,
     marginBottom: spacing.xs,
     textTransform: 'uppercase',
   },
   heroTitle: {
-    fontSize: 32,
-    fontWeight: '800',
+    fontSize: 28,
+    fontWeight: '700',
     color: colors.textPrimary,
     marginBottom: spacing.sm,
-    lineHeight: 40,
+    lineHeight: 34,
   },
   heroObjective: {
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textSecondary,
     marginBottom: spacing.lg,
-    lineHeight: 22,
+    lineHeight: 20,
   },
   statsGrid: {
     flexDirection: 'row',
-    gap: spacing.md,
+    gap: spacing.sm,
     justifyContent: 'space-between',
   },
   statCard: {
@@ -770,70 +782,72 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.sm,
-    backgroundColor: `${colors.background}80`,
-    borderWidth: 1,
+    backgroundColor: colors.card,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.cardBorder,
-    borderRadius: 16,
+    borderRadius: borderRadius.md,
   },
   statValue: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: colors.accent,
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.textPrimary,
     marginTop: spacing.xs,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.textMuted,
-    fontWeight: '600',
-    marginTop: 4,
-    textTransform: 'lowercase',
+    fontWeight: '500',
+    marginTop: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
 
   /* === PROGRESS SECTION (Active) === */
   progressSection: {
     width: '100%',
     marginBottom: spacing.lg,
-    padding: spacing.lg,
-    backgroundColor: `${colors.card}60`,
-    borderRadius: 16,
-    borderWidth: 1,
+    padding: spacing.md,
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.md,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.cardBorder,
   },
   progressHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   progressLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: colors.accent,
-    letterSpacing: 1.5,
+    color: colors.textMuted,
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
   },
   progressPercent: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: colors.accent,
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    fontVariant: ['tabular-nums'],
   },
   progressTrack: {
     width: '100%',
-    height: 8,
+    height: 4,
     backgroundColor: colors.backgroundSecondary,
-    borderRadius: 4,
+    borderRadius: borderRadius.full,
     overflow: 'hidden',
     marginBottom: spacing.sm,
   },
   progressFill: {
     height: '100%',
     backgroundColor: colors.accent,
-    borderRadius: 4,
+    borderRadius: borderRadius.full,
   },
   progressCounter: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textMuted,
-    fontWeight: '600',
+    fontWeight: '500',
   },
 
   /* === SECTION BLOCK === */
@@ -843,99 +857,104 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   sectionTitleRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: spacing.sm,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   sectionTextWrap: {
     flex: 1,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 12,
+    fontWeight: '700',
     color: colors.textPrimary,
-    marginBottom: 2,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
   sectionInstruction: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textMuted,
-    fontWeight: '500',
-    lineHeight: 18,
+    fontWeight: '400',
+    lineHeight: 16,
+    marginTop: 2,
   },
 
   /* === EXERCISE CARDS === */
   exercisesContainer: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   exerciseCardTouchable: {
-    borderRadius: 16,
+    borderRadius: 12,
     overflow: 'hidden',
   },
   exerciseCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    backgroundColor: `${colors.card}80`,
-    borderWidth: 1,
+    gap: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.card,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.cardBorder,
-    borderRadius: 16,
-    minHeight: 100,
+    borderRadius: 12,
+    minHeight: 64,
   },
   exerciseCardComplete: {
-    backgroundColor: `${colors.accentGreen}15`,
-    borderColor: colors.accentGreen,
+    backgroundColor: `${colors.accentGreen}0D`,
+    borderColor: `${colors.accentGreen}55`,
   },
   exerciseIconWrap: {
-    width: 48,
-    height: 48,
+    width: 28,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: 12,
   },
   exerciseDetailsWrap: {
     flex: 1,
     justifyContent: 'center',
   },
   exerciseName: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
     color: colors.textPrimary,
-    marginBottom: 4,
   },
   exerciseDetail: {
-    fontSize: 14,
+    fontSize: 12,
     color: colors.textMuted,
-    fontWeight: '600',
-    marginBottom: 6,
+    fontWeight: '400',
+    marginTop: 2,
   },
   loggedSummary: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.accent,
-    fontWeight: '600',
-    fontStyle: 'italic',
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  exerciseInfoBtn: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   completionIndicator: {
-    width: 48,
-    height: 48,
+    width: 28,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
   completedCheckCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: colors.accentGreen,
     alignItems: 'center',
     justifyContent: 'center',
   },
   incompleteCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    borderWidth: 2,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
     borderColor: colors.cardBorder,
     backgroundColor: 'transparent',
   },
@@ -954,8 +973,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: spacing.sm,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: '800',
+    fontSize: 18,
+    fontWeight: '700',
     color: colors.textPrimary,
     textAlign: 'center',
   },
@@ -963,8 +982,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: spacing.xs,
   },
   emptySubtext: {
-    fontSize: 14,
-    lineHeight: 21,
+    fontSize: 13,
+    lineHeight: 19,
     color: colors.textMuted,
     textAlign: 'center',
     maxWidth: 320,
@@ -978,45 +997,45 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   secondaryAction: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
-    borderWidth: 1,
+    paddingVertical: spacing.sm + 2,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.cardBorder,
     backgroundColor: colors.card,
-    borderRadius: 12,
+    borderRadius: borderRadius.md,
   },
   secondaryActionText: {
     color: colors.textSecondary,
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 0.8,
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
   nextWorkoutCard: {
     width: '100%',
     maxWidth: 320,
     marginTop: spacing.md,
     padding: spacing.md,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.cardBorder,
     backgroundColor: colors.card,
-    borderRadius: 16,
+    borderRadius: borderRadius.md,
   },
   nextWorkoutLabel: {
-    color: colors.accent,
+    color: colors.textMuted,
     fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 1.8,
+    letterSpacing: 1.2,
     marginBottom: spacing.xs,
     textTransform: 'uppercase',
   },
   nextWorkoutTitle: {
     color: colors.textPrimary,
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 16,
+    fontWeight: '700',
     marginBottom: spacing.xs,
   },
   nextWorkoutSummary: {
     color: colors.textSecondary,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 19,
   },
 });

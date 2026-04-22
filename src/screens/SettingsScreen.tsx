@@ -89,7 +89,7 @@ export default function SettingsScreen() {
           <View style={styles.settingRow}>
             <View style={styles.settingLeft}>
               <View style={styles.settingIcon}>
-                <GameIcon name="badge" size={20} color={colors.accent} variant="minimal" />
+                <GameIcon name="badge" size={16} color={colors.textSecondary} variant="minimal" />
               </View>
               <View>
                 <Text style={styles.settingLabel}>Push Notifications</Text>
@@ -132,7 +132,7 @@ export default function SettingsScreen() {
           <View style={[styles.settingRow, { borderBottomWidth: 0 }]}>
             <View style={styles.settingLeft}>
               <View style={styles.settingIcon}>
-                <GameIcon name="stats" size={20} color={colors.accent} variant="minimal" />
+                <GameIcon name="stats" size={16} color={colors.textSecondary} variant="minimal" />
               </View>
               <View>
                 <Text style={styles.settingLabel}>Imperial Units</Text>
@@ -171,14 +171,14 @@ export default function SettingsScreen() {
           >
             <View style={styles.settingLeft}>
               <View style={styles.settingIcon}>
-                <Ionicons name="shield-checkmark-outline" size={20} color={colors.accent} />
+                <Ionicons name="shield-checkmark-outline" size={16} color={colors.textSecondary} />
               </View>
               <View>
                 <Text style={styles.settingLabel}>Privacy Policy</Text>
                 <Text style={styles.settingDesc}>View how training and billing data are handled</Text>
               </View>
             </View>
-            <Ionicons name="open-outline" size={18} color={colors.textMuted} />
+            <Ionicons name="open-outline" size={14} color={colors.textMuted} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -191,14 +191,14 @@ export default function SettingsScreen() {
           >
             <View style={styles.settingLeft}>
               <View style={styles.settingIcon}>
-                <Ionicons name="document-text-outline" size={20} color={colors.accent} />
+                <Ionicons name="document-text-outline" size={16} color={colors.textSecondary} />
               </View>
               <View>
                 <Text style={styles.settingLabel}>Terms of Use</Text>
                 <Text style={styles.settingDesc}>Open the Gruntz subscription and usage terms</Text>
               </View>
             </View>
-            <Ionicons name="open-outline" size={18} color={colors.textMuted} />
+            <Ionicons name="open-outline" size={14} color={colors.textMuted} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -211,14 +211,14 @@ export default function SettingsScreen() {
           >
             <View style={styles.settingLeft}>
               <View style={styles.settingIcon}>
-                <Ionicons name="mail-outline" size={20} color={colors.accent} />
+                <Ionicons name="mail-outline" size={16} color={colors.textSecondary} />
               </View>
               <View>
                 <Text style={styles.settingLabel}>Support</Text>
                 <Text style={styles.settingDesc}>Contact support and subscription help</Text>
               </View>
             </View>
-            <Ionicons name="open-outline" size={18} color={colors.textMuted} />
+            <Ionicons name="open-outline" size={14} color={colors.textMuted} />
           </TouchableOpacity>
         </GlassCard>
 
@@ -234,15 +234,15 @@ export default function SettingsScreen() {
             accessibilityHint="Permanently erases your profile, missions, streaks, challenges, and achievements"
           >
             <View style={styles.settingLeft}>
-              <View style={[styles.settingIcon, { backgroundColor: `${colors.accentRed}15` }]}>
-                <Ionicons name="trash-outline" size={20} color={colors.accentRed} />
+              <View style={styles.settingIcon}>
+                <Ionicons name="trash-outline" size={16} color={colors.accentRed} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.settingLabel, { color: colors.accentRed }]}>Delete all data</Text>
                 <Text style={styles.settingDesc}>Erase your profile, missions, streaks, and achievements on this device</Text>
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.accentRed} />
+            <Ionicons name="chevron-forward" size={14} color={colors.accentRed} />
           </TouchableOpacity>
         </GlassCard>
       </ScrollView>
@@ -263,8 +263,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingBottom: spacing.xxl,
   },
   title: {
-    fontSize: 30,
-    fontWeight: '900',
+    fontSize: 24,
+    fontWeight: '700',
     color: colors.textPrimary,
     marginBottom: spacing.lg,
   },
@@ -273,44 +273,44 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 11,
-    fontWeight: '800',
-    color: colors.accent,
-    letterSpacing: 1.5,
+    fontWeight: '700',
+    color: colors.textMuted,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
     marginBottom: spacing.md,
   },
   settingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
+    paddingVertical: spacing.sm + 2,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.cardBorder,
   },
   linkRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
+    paddingVertical: spacing.sm + 2,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.cardBorder,
   },
   settingLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm + 2,
     flex: 1,
   },
   settingIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.md,
-    backgroundColor: `${colors.accent}15`,
+    width: 28,
+    height: 28,
+    borderRadius: borderRadius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
   settingLabel: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '500',
     color: colors.textPrimary,
   },
   settingDesc: {
@@ -319,13 +319,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginTop: 2,
   },
   aboutText: {
-    fontSize: 16,
+    fontSize: 14,
     color: colors.textPrimary,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   versionText: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textMuted,
-    marginTop: 4,
+    marginTop: 2,
   },
 });

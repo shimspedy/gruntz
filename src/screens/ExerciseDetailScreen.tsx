@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated, Linking } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -50,12 +50,20 @@ export default function ExerciseDetailScreen() {
     setShowLogModal(false);
   };
 
+  const handleWatchDemo = () => {
+    hapticMedium();
+    const url =
+      exercise.demo_url ??
+      `https://www.youtube.com/results?search_query=${encodeURIComponent(`how to do ${exercise.name}`)}`;
+    Linking.openURL(url).catch(() => {});
+  };
+
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: bottomContentPadding }]}>
         {/* Hero */}
         <Animated.View style={[styles.hero, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
-          <GameIcon name={exercise.illustration || exercise.category} size={84} color={colors.accent} style={styles.illustration} />
+          <GameIcon name={exercise.illustration || exercise.category} size={56} color={colors.accent} style={styles.illustration} />
           <Text style={styles.name} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{exercise.name}</Text>
           <Text style={styles.category} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{exercise.category.toUpperCase()}</Text>
         </Animated.View>
@@ -103,6 +111,20 @@ export default function ExerciseDetailScreen() {
           <Text style={styles.description}>{exercise.description}</Text>
         </Card>
 
+        {/* Watch How-To */}
+        <TouchableOpacity
+          style={styles.demoBtn}
+          onPress={handleWatchDemo}
+          activeOpacity={0.85}
+          accessibilityRole="link"
+          accessibilityLabel={`Watch how to do ${exercise.name}`}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="play-circle" size={16} color={colors.accent} />
+          <Text style={styles.demoBtnText}>Watch How-To</Text>
+          <Ionicons name="open-outline" size={12} color={colors.textMuted} />
+        </TouchableOpacity>
+
         {/* Step-by-Step */}
         {exercise.steps && exercise.steps.length > 0 && (
           <Card title="How To Perform">
@@ -122,7 +144,7 @@ export default function ExerciseDetailScreen() {
           <Card title="Form Tips">
             {exercise.form_tips.map((tip, i) => (
               <View key={i} style={styles.tipRow}>
-                <Ionicons name="checkmark-circle" size={18} color={colors.accentGreen} />
+                <Ionicons name="checkmark-circle" size={14} color={colors.accentGreen} />
                 <Text style={styles.tipText}>{tip}</Text>
               </View>
             ))}
@@ -147,7 +169,7 @@ export default function ExerciseDetailScreen() {
           <Card title="Equipment Needed">
             {exercise.equipment.map((eq, i) => (
               <View key={i} style={styles.tipRow}>
-                <Ionicons name="barbell-outline" size={18} color={colors.accent} />
+                <Ionicons name="barbell-outline" size={14} color={colors.textMuted} />
                 <Text style={styles.tipText}>{eq}</Text>
               </View>
             ))}
@@ -174,7 +196,7 @@ export default function ExerciseDetailScreen() {
 
         {/* Log Button */}
         <TouchableOpacity style={styles.logBtn} onPress={() => { hapticMedium(); setShowLogModal(true); }}>
-          <Text style={styles.logBtnText} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>LOG THIS EXERCISE</Text>
+          <Text style={styles.logBtnText} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>Log Exercise</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -229,47 +251,47 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   hero: {
     alignItems: 'center',
-    paddingVertical: spacing.xl,
+    paddingVertical: spacing.lg,
   },
   illustration: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   name: {
-    fontSize: 26,
-    fontWeight: '800',
+    fontSize: 22,
+    fontWeight: '700',
     color: colors.textPrimary,
     textAlign: 'center',
   },
   category: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
-    color: colors.accent,
-    letterSpacing: 2,
+    color: colors.textMuted,
+    letterSpacing: 1.2,
     marginTop: spacing.xs,
   },
   statsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
+    gap: spacing.xs,
+    marginBottom: spacing.md,
   },
   statPill: {
     backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs + 2,
     alignItems: 'center',
-    minWidth: 60,
-    borderWidth: 1,
+    minWidth: 54,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.cardBorder,
   },
   restPill: {
-    borderColor: colors.accent,
+    borderColor: colors.cardBorder,
   },
   statValue: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '700',
     color: colors.textPrimary,
   },
   restValue: {
@@ -277,85 +299,110 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   statLabel: {
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: '500',
     color: colors.textMuted,
     letterSpacing: 1,
     marginTop: 2,
+    textTransform: 'uppercase',
   },
   description: {
-    fontSize: 15,
+    fontSize: 13,
     color: colors.textSecondary,
-    lineHeight: 22,
+    lineHeight: 20,
   },
   stepRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: spacing.md,
-    gap: spacing.md,
+    marginBottom: spacing.sm + 2,
+    gap: spacing.sm,
   },
   stepNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.accent,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: `${colors.accent}1A`,
     alignItems: 'center',
     justifyContent: 'center',
   },
   stepNumberText: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: colors.background,
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.accent,
   },
   stepText: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 13,
     color: colors.textPrimary,
-    lineHeight: 22,
+    lineHeight: 20,
   },
   tipRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs + 2,
   },
   tipText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textSecondary,
   },
   pillRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
   musclePill: {
-    backgroundColor: colors.cardBorder,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.cardBorder,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
   },
   musclePillText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textPrimary,
+    fontSize: 11,
+    fontWeight: '500',
+    color: colors.textSecondary,
     textTransform: 'capitalize',
   },
   equipmentAccess: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.textMuted,
     marginTop: spacing.sm,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  demoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.cardBorder,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.sm + 2,
+    marginBottom: spacing.md,
+  },
+  demoBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
   logBtn: {
     backgroundColor: colors.accent,
     borderRadius: borderRadius.md,
-    paddingVertical: 16,
+    paddingVertical: spacing.sm + 4,
     alignItems: 'center',
-    marginTop: spacing.lg,
+    marginTop: spacing.md,
   },
   logBtnText: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 13,
+    fontWeight: '700',
     color: colors.background,
-    letterSpacing: 1.5,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
 });

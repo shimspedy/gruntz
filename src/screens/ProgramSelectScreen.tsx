@@ -80,7 +80,7 @@ function ProgramCard({
   return (
     <TouchableOpacity style={[styles.card, { borderColor: accentColor }]} onPress={() => { hapticLight(); onPress(); }} activeOpacity={0.85}>
       <View style={styles.cardHeader}>
-        <GameIcon name={program.icon} size={44} color={accentColor} style={styles.cardIcon} />
+        <GameIcon name={program.icon} size={32} color={accentColor} style={styles.cardIcon} />
         <View style={styles.badgeGroup}>
           {recommended ? (
             <View style={[styles.cardDiffBadge, { backgroundColor: `${accentColor}22` }]}>
@@ -124,7 +124,7 @@ function ProgramCard({
       </View>
 
       <View style={[styles.cardButton, { backgroundColor: accentColor }]}>
-        <Text style={styles.cardButtonText}>VIEW PROGRAM →</Text>
+        <Text style={styles.cardButtonText}>View Program</Text>
       </View>
     </TouchableOpacity>
   );
@@ -135,26 +135,23 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   scroll: { flex: 1 },
   content: { padding: spacing.md, paddingBottom: spacing.xxl },
   headerLabel: {
-    fontSize: 11, fontWeight: '700', color: colors.accent,
-    letterSpacing: 3, marginBottom: spacing.xs, marginTop: spacing.md,
+    fontSize: 11, fontWeight: '700', color: colors.textMuted,
+    letterSpacing: 1.2, textTransform: 'uppercase',
+    marginBottom: spacing.xs, marginTop: spacing.md,
   },
   headerTitle: {
-    fontSize: 32, fontWeight: '900', color: colors.textPrimary, marginBottom: spacing.xs,
+    fontSize: 28, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.xs,
   },
   headerSub: {
-    fontSize: 15, color: colors.textSecondary, marginBottom: spacing.xl, lineHeight: 22,
+    fontSize: 13, color: colors.textSecondary, marginBottom: spacing.lg, lineHeight: 19,
   },
   card: {
-    backgroundColor: colors.card, borderRadius: borderRadius.lg, borderWidth: 1,
-    padding: spacing.lg, marginBottom: spacing.lg,
-    shadowColor: colors.background,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 2,
+    backgroundColor: colors.card, borderRadius: borderRadius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: spacing.md, marginBottom: spacing.md,
   },
   cardHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm,
   },
   cardIcon: {},
   badgeGroup: {
@@ -162,19 +159,19 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: spacing.xs,
   },
   cardDiffBadge: {
-    backgroundColor: colors.backgroundSecondary, borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.sm, paddingVertical: 4,
+    backgroundColor: colors.backgroundSecondary, borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing.sm, paddingVertical: 3,
   },
-  cardDiffText: { fontSize: 10, fontWeight: '800', letterSpacing: 1.5 },
-  cardName: { fontSize: 24, fontWeight: '900', color: colors.textPrimary, marginBottom: spacing.xs, lineHeight: 30 },
-  cardSubtitle: { fontSize: 13, fontWeight: '700', letterSpacing: 1, marginBottom: spacing.sm },
-  cardDesc: { fontSize: 14, color: colors.textSecondary, lineHeight: 21, marginBottom: spacing.md },
+  cardDiffText: { fontSize: 10, fontWeight: '700', letterSpacing: 1 },
+  cardName: { fontSize: 20, fontWeight: '700', color: colors.textPrimary, marginBottom: 2, lineHeight: 26 },
+  cardSubtitle: { fontSize: 11, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: spacing.sm },
+  cardDesc: { fontSize: 13, color: colors.textSecondary, lineHeight: 19, marginBottom: spacing.md },
   recommendReason: {
-    fontSize: 13,
-    color: colors.textPrimary,
-    lineHeight: 19,
-    backgroundColor: `${colors.accentGreen}12`,
-    borderLeftWidth: 3,
+    fontSize: 12,
+    color: colors.textSecondary,
+    lineHeight: 17,
+    backgroundColor: `${colors.accentGreen}0D`,
+    borderLeftWidth: 2,
     borderLeftColor: colors.accentGreen,
     padding: spacing.sm,
     borderRadius: borderRadius.sm,
@@ -182,27 +179,27 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   cardStats: {
     flexDirection: 'row', backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.md, padding: spacing.md, marginBottom: spacing.md,
+    borderRadius: borderRadius.sm, padding: spacing.sm + 2, marginBottom: spacing.md,
     justifyContent: 'space-around', alignItems: 'center',
   },
   stat: { alignItems: 'center' },
-  statValue: { fontSize: 22, fontWeight: '900', color: colors.textPrimary },
-  statLabel: { fontSize: 11, fontWeight: '600', color: colors.textMuted, marginTop: 2 },
-  statDivider: { width: 1, height: 30, backgroundColor: colors.cardBorder },
-  focusRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: spacing.md },
+  statValue: { fontSize: 18, fontWeight: '700', color: colors.textPrimary },
+  statLabel: { fontSize: 11, fontWeight: '500', color: colors.textMuted, marginTop: 2 },
+  statDivider: { width: StyleSheet.hairlineWidth, height: 24, backgroundColor: colors.cardBorder },
+  focusRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.md },
   focusChip: {
-    borderWidth: 1, borderRadius: borderRadius.md,
-    paddingHorizontal: 10, paddingVertical: 4,
+    borderWidth: StyleSheet.hairlineWidth, borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm, paddingVertical: 3,
   },
-  focusChipText: { fontSize: 11, fontWeight: '700' },
+  focusChipText: { fontSize: 11, fontWeight: '600' },
   cardButton: {
-    borderRadius: borderRadius.md, paddingVertical: 14, alignItems: 'center',
+    borderRadius: borderRadius.md, paddingVertical: spacing.sm + 2, alignItems: 'center',
   },
   cardButtonText: {
-    fontSize: 14, fontWeight: '800', color: colors.background, letterSpacing: 1,
+    fontSize: 12, fontWeight: '700', color: colors.background, letterSpacing: 1.2, textTransform: 'uppercase',
   },
   footer: {
-    fontSize: 13, color: colors.textMuted, textAlign: 'center',
+    fontSize: 12, color: colors.textMuted, textAlign: 'center',
     marginTop: spacing.sm, marginBottom: spacing.xl,
   },
 });

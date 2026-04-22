@@ -251,7 +251,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
           ]}
         >
           <View style={styles.heroBadgeGlow} />
-          <GameIcon name="program" size={80} color={colors.accent} />
+          <GameIcon name="program" size={56} color={colors.accent} />
         </Animated.View>
         <Animated.Text
           style={[styles.brandTitle, { opacity: titleAnim.opacity, transform: titleAnim.transform }]}
@@ -338,7 +338,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                   <View style={[styles.optionIconWrap, active && styles.optionIconWrapActive]}>
                     <GameIcon
                       name={meta.icon}
-                      size={22}
+                      size={18}
                       color={active ? colors.background : colors.accent}
                       variant="minimal"
                       animated={false}
@@ -482,7 +482,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
             <View style={[styles.optionIconWrap, hasPool && styles.optionIconWrapActive]}>
               <GameIcon
                 name="pool"
-                size={20}
+                size={16}
                 color={hasPool ? colors.background : colors.accent}
                 variant="minimal"
                 animated={false}
@@ -509,7 +509,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
             <View style={[styles.optionIconWrap, hasRuck && styles.optionIconWrapActive]}>
               <GameIcon
                 name="ruck"
-                size={20}
+                size={16}
                 color={hasRuck ? colors.background : colors.accent}
                 variant="minimal"
                 animated={false}
@@ -536,7 +536,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
             <View style={[styles.optionIconWrap, hasGym && styles.optionIconWrapActive]}>
               <GameIcon
                 name="strength"
-                size={20}
+                size={16}
                 color={hasGym ? colors.background : colors.accent}
                 variant="minimal"
                 animated={false}
@@ -644,7 +644,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                   <View style={[styles.optionIconWrap, active && styles.optionIconWrapActive]}>
                     <GameIcon
                       name={meta.icon}
-                      size={22}
+                      size={18}
                       color={active ? colors.background : colors.accent}
                       variant="minimal"
                       animated={false}
@@ -679,7 +679,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 
       <GlassCard variant="accent" style={styles.recommendCard}>
         <View style={styles.recommendHeader}>
-          <GameIcon name={recommendedProgram?.icon || 'program'} size={44} color={colors.accent} />
+          <GameIcon name={recommendedProgram?.icon || 'program'} size={32} color={colors.accent} />
           <View style={styles.recommendTitleCol}>
             <Text style={styles.recommendName}>{recommendedProgram?.name || recommendation.title}</Text>
             <Text style={styles.recommendSubtitle}>{recommendation.title}</Text>
@@ -809,13 +809,13 @@ const createStyles = (colors: ThemeColors) =>
       textAlign: 'right',
     },
     backBtn: {
-      width: 32,
-      height: 32,
-      borderRadius: borderRadius.md,
+      width: 28,
+      height: 28,
+      borderRadius: borderRadius.sm,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: colors.card,
-      borderWidth: 1,
+      borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.cardBorder,
     },
     backBtnText: {
@@ -832,37 +832,38 @@ const createStyles = (colors: ThemeColors) =>
     },
     stepEyebrow: {
       fontSize: 11,
-      fontWeight: '800',
-      color: colors.accent,
-      letterSpacing: 3,
+      fontWeight: '700',
+      color: colors.textMuted,
+      letterSpacing: 1.2,
+      textTransform: 'uppercase',
       marginBottom: spacing.sm,
     },
     stepTitle: {
-      fontSize: 28,
-      fontWeight: '900',
+      fontSize: 24,
+      fontWeight: '700',
       color: colors.textPrimary,
       marginBottom: spacing.xs,
     },
     stepSubtitle: {
-      fontSize: 14,
+      fontSize: 13,
       color: colors.textMuted,
       marginBottom: spacing.lg,
-      lineHeight: 20,
+      lineHeight: 19,
     },
 
     // Medical + age disclaimer on welcome step
     disclaimerBox: {
       marginTop: spacing.xl,
       padding: spacing.md,
-      borderRadius: borderRadius.lg,
+      borderRadius: borderRadius.md,
       backgroundColor: colors.card,
-      borderWidth: 1,
+      borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.cardBorder,
     },
     disclaimerText: {
-      fontSize: 12,
-      color: colors.textSecondary,
-      lineHeight: 18,
+      fontSize: 11,
+      color: colors.textMuted,
+      lineHeight: 16,
       textAlign: 'center',
     },
 
@@ -872,16 +873,16 @@ const createStyles = (colors: ThemeColors) =>
     },
     nameInput: {
       backgroundColor: colors.card,
-      borderRadius: borderRadius.xl,
-      borderWidth: 1,
+      borderRadius: borderRadius.md,
+      borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.cardBorder,
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.lg,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
       color: colors.textPrimary,
-      fontSize: 22,
-      fontWeight: '800',
+      fontSize: 18,
+      fontWeight: '600',
       textAlign: 'center',
-      letterSpacing: 0.5,
+      letterSpacing: 0.3,
     },
 
     // Welcome
@@ -891,9 +892,9 @@ const createStyles = (colors: ThemeColors) =>
       paddingBottom: spacing.xl,
     },
     heroBadge: {
-      width: 120,
-      height: 120,
-      borderRadius: 60,
+      width: 88,
+      height: 88,
+      borderRadius: 44,
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: spacing.xl,
@@ -901,34 +902,34 @@ const createStyles = (colors: ThemeColors) =>
     },
     heroBadgeGlow: {
       position: 'absolute',
-      width: 140,
-      height: 140,
-      borderRadius: 70,
+      width: 104,
+      height: 104,
+      borderRadius: 52,
       backgroundColor: colors.accent,
-      opacity: 0.12,
+      opacity: 0.08,
     },
     brandTitle: {
-      fontSize: 48,
-      fontWeight: '900',
+      fontSize: 40,
+      fontWeight: '800',
       color: colors.textPrimary,
       textAlign: 'center',
-      letterSpacing: 8,
+      letterSpacing: 6,
     },
     brandSubtitle: {
-      fontSize: 15,
+      fontSize: 12,
       fontWeight: '700',
-      color: colors.accent,
+      color: colors.textMuted,
       textAlign: 'center',
-      letterSpacing: 3,
+      letterSpacing: 1.5,
       marginTop: spacing.sm,
       textTransform: 'uppercase',
     },
     brandDesc: {
-      fontSize: 15,
+      fontSize: 14,
       color: colors.textSecondary,
       textAlign: 'center',
       marginTop: spacing.lg,
-      lineHeight: 24,
+      lineHeight: 21,
       paddingHorizontal: spacing.md,
     },
 
@@ -945,10 +946,9 @@ const createStyles = (colors: ThemeColors) =>
       gap: spacing.md,
     },
     optionIconWrap: {
-      width: 40,
-      height: 40,
-      borderRadius: borderRadius.md,
-      backgroundColor: `${colors.accent}18`,
+      width: 32,
+      height: 32,
+      borderRadius: borderRadius.sm,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -959,9 +959,9 @@ const createStyles = (colors: ThemeColors) =>
       flex: 1,
     },
     optionLabel: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: colors.textSecondary,
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textPrimary,
     },
     optionLabelActive: {
       color: colors.accent,
@@ -972,19 +972,19 @@ const createStyles = (colors: ThemeColors) =>
       marginTop: 2,
     },
     checkBadge: {
-      width: 26,
-      height: 26,
-      borderRadius: 13,
+      width: 22,
+      height: 22,
+      borderRadius: 11,
       backgroundColor: colors.accent,
       alignItems: 'center',
       justifyContent: 'center',
     },
     checkBox: {
-      width: 26,
-      height: 26,
+      width: 22,
+      height: 22,
       borderRadius: borderRadius.sm,
-      borderWidth: 2,
-      borderColor: colors.glassBorder,
+      borderWidth: 1.5,
+      borderColor: colors.cardBorder,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -1001,21 +1001,21 @@ const createStyles = (colors: ThemeColors) =>
     },
     dayBtn: {
       flex: 1,
-      height: 72,
-      borderRadius: borderRadius.lg,
-      backgroundColor: colors.glassBackground,
-      borderWidth: 1,
-      borderColor: colors.glassBorder,
+      height: 56,
+      borderRadius: borderRadius.md,
+      backgroundColor: colors.card,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.cardBorder,
       alignItems: 'center',
       justifyContent: 'center',
     },
     dayBtnActive: {
       borderColor: colors.accent,
-      backgroundColor: `${colors.accent}18`,
+      backgroundColor: `${colors.accent}0D`,
     },
     dayNum: {
-      fontSize: 24,
-      fontWeight: '900',
+      fontSize: 20,
+      fontWeight: '700',
       color: colors.textMuted,
     },
     dayNumActive: {
@@ -1023,9 +1023,9 @@ const createStyles = (colors: ThemeColors) =>
     },
     dayLabel: {
       fontSize: 10,
-      fontWeight: '600',
+      fontWeight: '500',
       color: colors.textMuted,
-      letterSpacing: 1,
+      letterSpacing: 0.8,
       textTransform: 'uppercase',
       marginTop: 2,
     },
@@ -1034,27 +1034,27 @@ const createStyles = (colors: ThemeColors) =>
     },
 
     groupLabel: {
-      fontSize: 12,
-      fontWeight: '800',
+      fontSize: 11,
+      fontWeight: '700',
       color: colors.textMuted,
-      letterSpacing: 1.5,
+      letterSpacing: 1.2,
       textTransform: 'uppercase',
       marginBottom: spacing.sm,
     },
     ageBtn: {
       flex: 1,
-      minHeight: 58,
-      borderRadius: borderRadius.lg,
-      backgroundColor: colors.glassBackground,
-      borderWidth: 1,
-      borderColor: colors.glassBorder,
+      minHeight: 44,
+      borderRadius: borderRadius.md,
+      backgroundColor: colors.card,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.cardBorder,
       alignItems: 'center',
       justifyContent: 'center',
       paddingHorizontal: spacing.xs,
     },
     ageLabel: {
       fontSize: 12,
-      fontWeight: '800',
+      fontWeight: '600',
       color: colors.textMuted,
       textAlign: 'center',
     },
@@ -1072,29 +1072,29 @@ const createStyles = (colors: ThemeColors) =>
       flex: 1,
     },
     recommendName: {
-      fontSize: 24,
-      fontWeight: '900',
+      fontSize: 20,
+      fontWeight: '700',
       color: colors.textPrimary,
-      lineHeight: 30,
+      lineHeight: 26,
     },
     recommendSubtitle: {
-      fontSize: 12,
-      fontWeight: '800',
-      color: colors.accent,
-      letterSpacing: 1,
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.textMuted,
+      letterSpacing: 1.2,
       textTransform: 'uppercase',
       marginTop: 2,
     },
     recommendReason: {
-      fontSize: 14,
+      fontSize: 13,
       color: colors.textSecondary,
-      lineHeight: 21,
+      lineHeight: 19,
       marginBottom: spacing.sm,
     },
     recommendCoach: {
-      fontSize: 13,
+      fontSize: 12,
       color: colors.textMuted,
-      lineHeight: 19,
+      lineHeight: 17,
       marginBottom: spacing.md,
     },
     focusRow: {
