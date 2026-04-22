@@ -8,6 +8,7 @@ import {
   Animated,
   Easing,
   TextInput,
+  AccessibilityInfo,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFadeInUp } from '../utils/animations';
@@ -17,12 +18,16 @@ import { MissionButton } from '../components/MissionButton';
 import { GlassCard } from '../components/GlassCard';
 import { GameIcon } from '../components/GameIcon';
 import { useUserStore } from '../store/useUserStore';
+import { useProgramStore } from '../store/useProgramStore';
 import { useSubscriptionStore } from '../store/useSubscriptionStore';
+import { getProgramById } from '../data/programs';
+import { recommendProgramForProfile } from '../services/adaptiveCoach';
 import { hapticLight, hapticSelection, hapticSuccess } from '../utils/haptics';
 import type { UserProfile } from '../types';
 
 const FITNESS_LEVELS = ['beginner', 'intermediate', 'advanced'] as const;
 const GOALS = [
+  'Start Moving',
   'Lose Fat',
   'Build Discipline',
   'Improve Endurance',
@@ -30,6 +35,13 @@ const GOALS = [
   'Military Prep',
 ] as const;
 const INTENSITIES = ['low', 'moderate', 'high'] as const;
+const AGE_RANGES = ['under_30', '30_44', '45_59', '60_plus'] as const;
+const SESSION_LENGTHS = [20, 30, 45, 60] as const;
+const LIMITATIONS = [
+  { id: 'low_impact', label: 'Low-impact start' },
+  { id: 'joint_concerns', label: 'Joint concerns' },
+  { id: 'returning_after_break', label: 'Returning after a break' },
+] as const;
 
 const FITNESS_LEVEL_META: Record<
   (typeof FITNESS_LEVELS)[number],
@@ -46,10 +58,18 @@ const INTENSITY_META: Record<
 > = {
   low: { icon: 'intensity_low', label: 'Ease into it' },
   moderate: { icon: 'intensity_medium', label: 'Balanced push' },
-  high: { icon: 'intensity_high', label: 'Full send' },
+  high: { icon: 'intensity_high', label: 'Hard but controlled' },
 };
 
-const TOTAL_STEPS = 6;
+const AGE_RANGE_META: Record<(typeof AGE_RANGES)[number], string> = {
+  under_30: 'Under 30',
+  '30_44': '30-44',
+  '45_59': '45-59',
+  '60_plus': '60+',
+};
+
+const TOTAL_STEPS = 8;
+const QUESTION_STEPS = TOTAL_STEPS - 1;
 
 interface OnboardingScreenProps {
   onComplete: () => void;
@@ -62,22 +82,50 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   const titleAnim = useFadeInUp(700, 200);
   const subtitleAnim = useFadeInUp(700, 400);
   const { setProfile, setOnboarded } = useUserStore();
+  const { selectProgram, setHasSeenProgramSelect } = useProgramStore();
   const startTrialIfNeeded = useSubscriptionStore((s) => s.startTrialIfNeeded);
 
   const [step, setStep] = useState(0);
   const [displayName, setDisplayName] = useState('');
   const [fitnessLevel, setFitnessLevel] = useState<(typeof FITNESS_LEVELS)[number]>('beginner');
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+  const [ageRange, setAgeRange] = useState<(typeof AGE_RANGES)[number]>('30_44');
+  const [movementLimitations, setMovementLimitations] = useState<string[]>([]);
   const [daysPerWeek, setDaysPerWeek] = useState(4);
+  const [sessionMinutes, setSessionMinutes] = useState<(typeof SESSION_LENGTHS)[number]>(30);
   const [hasPool, setHasPool] = useState(false);
   const [hasRuck, setHasRuck] = useState(false);
+  const [hasGym, setHasGym] = useState(false);
   const [intensity, setIntensity] = useState<(typeof INTENSITIES)[number]>('moderate');
 
   // Step transition animation
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((enabled) => {
+        if (active) setReduceMotion(enabled);
+      })
+      .catch(() => {});
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', (enabled) => {
+      setReduceMotion(enabled);
+    });
+    return () => {
+      active = false;
+      sub?.remove?.();
+    };
+  }, []);
 
   const animateStepTransition = (nextStep: number) => {
+    if (reduceMotion) {
+      setStep(nextStep);
+      fadeAnim.setValue(1);
+      slideAnim.setValue(0);
+      return;
+    }
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 0,
@@ -114,6 +162,12 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
     animateStepTransition(step + 1);
   };
 
+  const goBack = () => {
+    if (step <= 0) return;
+    hapticLight();
+    animateStepTransition(step - 1);
+  };
+
   const toggleGoal = (goal: string) => {
     hapticSelection();
     setSelectedGoals((prev) =>
@@ -121,20 +175,36 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
     );
   };
 
-  const handleComplete = () => {
-    hapticSuccess();
+  const toggleLimitation = (limitation: string) => {
+    hapticSelection();
+    setMovementLimitations((prev) =>
+      prev.includes(limitation) ? prev.filter((item) => item !== limitation) : [...prev, limitation]
+    );
+  };
+
+  const draftProfile = useMemo<UserProfile>(() => {
     const trimmedName = displayName.trim();
-    const profile: UserProfile = {
+    const availableEquipment = [
+      hasPool ? 'pool' : null,
+      hasRuck ? 'ruck' : null,
+      hasGym ? 'gym' : null,
+    ].filter((item): item is string => item !== null);
+
+    return {
       id: 'local',
-      display_name: trimmedName.length > 0 ? trimmedName : 'Warrior',
+      display_name: trimmedName.length > 0 ? trimmedName : 'Recruit',
       created_at: new Date().toISOString(),
       onboarding_complete: true,
       fitness_level: fitnessLevel,
       goals: selectedGoals,
-      available_equipment: [],
+      available_equipment: availableEquipment,
       workout_days_per_week: daysPerWeek,
       has_pool_access: hasPool,
       has_ruck_access: hasRuck,
+      has_gym_access: hasGym,
+      age_range: ageRange,
+      movement_limitations: movementLimitations,
+      preferred_session_minutes: sessionMinutes,
       preferred_intensity: intensity,
       settings: {
         notifications_enabled: true,
@@ -142,7 +212,28 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
         units: 'imperial',
       },
     };
-    setProfile(profile);
+  }, [
+    ageRange,
+    daysPerWeek,
+    displayName,
+    fitnessLevel,
+    hasGym,
+    hasPool,
+    hasRuck,
+    intensity,
+    movementLimitations,
+    selectedGoals,
+    sessionMinutes,
+  ]);
+
+  const recommendation = useMemo(() => recommendProgramForProfile(draftProfile), [draftProfile]);
+  const recommendedProgram = useMemo(() => getProgramById(recommendation.programId), [recommendation.programId]);
+
+  const handleComplete = () => {
+    hapticSuccess();
+    setProfile(draftProfile);
+    selectProgram(recommendation.programId);
+    setHasSeenProgramSelect(true);
     setOnboarded(true);
     startTrialIfNeeded();
     onComplete();
@@ -171,25 +262,25 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
         <Animated.Text
           style={[styles.brandSubtitle, { opacity: subtitleAnim.opacity, transform: subtitleAnim.transform }]}
         >
-          Military-Grade Fitness
+          Mission-Based Fitness
         </Animated.Text>
         <Text style={styles.brandDesc}>
-          Transform your body with structured, progressive training inspired by
-          elite military fitness programs.
+          Start where you are. Gruntz will recommend a path and generate daily missions
+          based on your starting point, equipment, and goals.
         </Text>
         <View style={styles.disclaimerBox}>
           <Text style={styles.disclaimerText}>
-            Gruntz programs are high-intensity. Consult a healthcare provider before starting any exercise program, especially if you have a medical condition or haven&apos;t trained in a while. You must be 13 or older to use this app.
+            Consult a healthcare provider before starting any exercise program, especially if you have a medical condition, pain, or haven&apos;t trained in a while. You must be 13 or older to use this app.
           </Text>
         </View>
       </View>
-      <MissionButton title="BEGIN TRAINING" onPress={goNext} style={styles.cta} />
+      <MissionButton title="BUILD MY PLAN" onPress={goNext} style={styles.cta} />
     </View>
   );
 
   const renderName = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepEyebrow}>STEP 1 OF 5</Text>
+      <Text style={styles.stepEyebrow}>STEP 1 OF {QUESTION_STEPS}</Text>
       <Text style={styles.stepTitle}>What should we call you?</Text>
       <Text style={styles.stepSubtitle}>
         Your callsign appears on every mission brief.
@@ -218,7 +309,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 
   const renderFitnessLevel = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepEyebrow}>STEP 2 OF 5</Text>
+      <Text style={styles.stepEyebrow}>STEP 2 OF {QUESTION_STEPS}</Text>
       <Text style={styles.stepTitle}>Current fitness level?</Text>
       <Text style={styles.stepSubtitle}>
         We will calibrate your missions accordingly.
@@ -276,9 +367,9 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 
   const renderGoals = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepEyebrow}>STEP 3 OF 5</Text>
-      <Text style={styles.stepTitle}>What will you conquer?</Text>
-      <Text style={styles.stepSubtitle}>Pick every objective that fires you up.</Text>
+      <Text style={styles.stepEyebrow}>STEP 3 OF {QUESTION_STEPS}</Text>
+      <Text style={styles.stepTitle}>What are you training for?</Text>
+      <Text style={styles.stepSubtitle}>Pick every objective that fits your real goal.</Text>
       <View style={styles.optionList}>
         {GOALS.map((goal) => {
           const active = selectedGoals.includes(goal);
@@ -321,11 +412,11 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 
   const renderDaysAndEquipment = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepEyebrow}>STEP 4 OF 5</Text>
+      <Text style={styles.stepEyebrow}>STEP 5 OF {QUESTION_STEPS}</Text>
       <Text style={styles.stepTitle}>Training schedule</Text>
       <Text style={styles.stepSubtitle}>Days per week</Text>
       <View style={styles.dayRow}>
-        {[3, 4, 5, 6].map((d) => {
+        {[3, 4, 5].map((d) => {
           const active = daysPerWeek === d;
           return (
             <TouchableOpacity
@@ -342,6 +433,32 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
             >
               <Text style={[styles.dayNum, active && styles.dayNumActive]}>{d}</Text>
               <Text style={[styles.dayLabel, active && styles.dayLabelActive]}>days</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      <Text style={[styles.stepSubtitle, { marginTop: spacing.xl }]}>
+        Session length
+      </Text>
+      <View style={styles.dayRow}>
+        {SESSION_LENGTHS.map((minutes) => {
+          const active = sessionMinutes === minutes;
+          return (
+            <TouchableOpacity
+              key={minutes}
+              activeOpacity={0.7}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: active }}
+              accessibilityLabel={`${minutes} minutes per session`}
+              onPress={() => {
+                hapticSelection();
+                setSessionMinutes(minutes);
+              }}
+              style={[styles.dayBtn, active && styles.dayBtnActive]}
+            >
+              <Text style={[styles.dayNum, active && styles.dayNumActive]}>{minutes}</Text>
+              <Text style={[styles.dayLabel, active && styles.dayLabelActive]}>min</Text>
             </TouchableOpacity>
           );
         })}
@@ -404,15 +521,105 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
           </View>
         </GlassCard>
       </TouchableOpacity>
+      <TouchableOpacity
+        activeOpacity={0.7}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: hasGym }}
+        accessibilityLabel="Gym access"
+        onPress={() => {
+          hapticSelection();
+          setHasGym(!hasGym);
+        }}
+      >
+        <GlassCard variant={hasGym ? 'accent' : 'default'} style={styles.optionCard}>
+          <View style={styles.optionRow}>
+            <View style={[styles.optionIconWrap, hasGym && styles.optionIconWrapActive]}>
+              <GameIcon
+                name="strength"
+                size={20}
+                color={hasGym ? colors.background : colors.accent}
+                variant="minimal"
+                animated={false}
+              />
+            </View>
+            <Text style={[styles.optionLabel, hasGym && styles.optionLabelActive]}>
+              Gym Access
+            </Text>
+          </View>
+        </GlassCard>
+      </TouchableOpacity>
+      <MissionButton title="NEXT" onPress={goNext} style={styles.cta} />
+    </View>
+  );
+
+  const renderTrainingContext = () => (
+    <View style={styles.stepContainer}>
+      <Text style={styles.stepEyebrow}>STEP 4 OF {QUESTION_STEPS}</Text>
+      <Text style={styles.stepTitle}>Starting point</Text>
+      <Text style={styles.stepSubtitle}>This helps the app choose a safer first path.</Text>
+
+      <Text style={styles.groupLabel}>Age range</Text>
+      <View style={styles.dayRow}>
+        {AGE_RANGES.map((range) => {
+          const active = ageRange === range;
+          return (
+            <TouchableOpacity
+              key={range}
+              activeOpacity={0.7}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: active }}
+              accessibilityLabel={`Age range ${AGE_RANGE_META[range]}`}
+              onPress={() => {
+                hapticSelection();
+                setAgeRange(range);
+              }}
+              style={[styles.ageBtn, active && styles.dayBtnActive]}
+            >
+              <Text style={[styles.ageLabel, active && styles.dayLabelActive]}>{AGE_RANGE_META[range]}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      <Text style={[styles.groupLabel, { marginTop: spacing.xl }]}>Guardrails</Text>
+      <View style={styles.optionList}>
+        {LIMITATIONS.map((item) => {
+          const active = movementLimitations.includes(item.id);
+          return (
+            <TouchableOpacity
+              key={item.id}
+              activeOpacity={0.7}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: active }}
+              accessibilityLabel={item.label}
+              onPress={() => toggleLimitation(item.id)}
+            >
+              <GlassCard variant={active ? 'accent' : 'default'} style={styles.optionCard}>
+                <View style={styles.optionRow}>
+                  <View style={[styles.checkBox, active && styles.checkBoxActive]}>
+                    {active && (
+                      <GameIcon name="check" size={14} color={colors.background} variant="minimal" animated={false} />
+                    )}
+                  </View>
+                  <Text style={[styles.optionLabel, active && styles.optionLabelActive]}>
+                    {item.label}
+                  </Text>
+                </View>
+              </GlassCard>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
       <MissionButton title="NEXT" onPress={goNext} style={styles.cta} />
     </View>
   );
 
   const renderIntensity = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepEyebrow}>STEP 5 OF 5</Text>
+      <Text style={styles.stepEyebrow}>STEP 6 OF {QUESTION_STEPS}</Text>
       <Text style={styles.stepTitle}>Preferred intensity</Text>
-      <Text style={styles.stepSubtitle}>You can change this later in settings</Text>
+      <Text style={styles.stepSubtitle}>This affects your starting recommendation and Base Camp track.</Text>
       <View style={styles.optionList}>
         {INTENSITIES.map((level) => {
           const active = intensity === level;
@@ -460,11 +667,53 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
           );
         })}
       </View>
-      <MissionButton title="LET'S GO" onPress={handleComplete} style={styles.cta} />
+      <MissionButton title="SEE MY PATH" onPress={goNext} style={styles.cta} />
     </View>
   );
 
-  const steps = [renderWelcome, renderName, renderFitnessLevel, renderGoals, renderDaysAndEquipment, renderIntensity];
+  const renderRecommendedPath = () => (
+    <View style={styles.stepContainer}>
+      <Text style={styles.stepEyebrow}>STEP 7 OF {QUESTION_STEPS}</Text>
+      <Text style={styles.stepTitle}>Recommended path</Text>
+      <Text style={styles.stepSubtitle}>You can switch programs later from your profile.</Text>
+
+      <GlassCard variant="accent" style={styles.recommendCard}>
+        <View style={styles.recommendHeader}>
+          <GameIcon name={recommendedProgram?.icon || 'program'} size={44} color={colors.accent} />
+          <View style={styles.recommendTitleCol}>
+            <Text style={styles.recommendName}>{recommendedProgram?.name || recommendation.title}</Text>
+            <Text style={styles.recommendSubtitle}>{recommendation.title}</Text>
+          </View>
+        </View>
+        <Text style={styles.recommendReason}>{recommendation.reason}</Text>
+        <Text style={styles.recommendCoach}>{recommendation.coachNote}</Text>
+        <View style={styles.focusRow}>
+          {recommendation.focusAreas.map((area) => (
+            <View key={area} style={styles.focusChip}>
+              <Text style={styles.focusChipText}>{area}</Text>
+            </View>
+          ))}
+        </View>
+      </GlassCard>
+
+      <MissionButton
+        title={`START ${recommendedProgram?.name.toUpperCase() || recommendation.programId.toUpperCase()}`}
+        onPress={handleComplete}
+        style={styles.cta}
+      />
+    </View>
+  );
+
+  const steps = [
+    renderWelcome,
+    renderName,
+    renderFitnessLevel,
+    renderGoals,
+    renderTrainingContext,
+    renderDaysAndEquipment,
+    renderIntensity,
+    renderRecommendedPath,
+  ];
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -473,13 +722,28 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Progress bar */}
+        {/* Progress bar + back */}
         <View style={styles.progressBarWrap}>
+          {step > 0 ? (
+            <TouchableOpacity
+              onPress={goBack}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Go back one step"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={styles.backBtn}
+            >
+              <Text style={styles.backBtnText}>‹</Text>
+            </TouchableOpacity>
+          ) : null}
           <View style={styles.progressTrack}>
             <Animated.View
               style={[
                 styles.progressFill,
-                { width: `${((step) / (TOTAL_STEPS - 1)) * 100}%` },
+                {
+                  // Welcome step reads ~8% so the bar isn't empty on first render.
+                  width: `${Math.max(8, (step / (TOTAL_STEPS - 1)) * 100)}%`,
+                },
               ]}
             />
           </View>
@@ -543,6 +807,22 @@ const createStyles = (colors: ThemeColors) =>
       letterSpacing: 0.5,
       minWidth: 48,
       textAlign: 'right',
+    },
+    backBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: borderRadius.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.cardBorder,
+    },
+    backBtnText: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: colors.textSecondary,
+      marginTop: -2,
     },
 
     // Steps shared
@@ -751,6 +1031,90 @@ const createStyles = (colors: ThemeColors) =>
     },
     dayLabelActive: {
       color: colors.accent,
+    },
+
+    groupLabel: {
+      fontSize: 12,
+      fontWeight: '800',
+      color: colors.textMuted,
+      letterSpacing: 1.5,
+      textTransform: 'uppercase',
+      marginBottom: spacing.sm,
+    },
+    ageBtn: {
+      flex: 1,
+      minHeight: 58,
+      borderRadius: borderRadius.lg,
+      backgroundColor: colors.glassBackground,
+      borderWidth: 1,
+      borderColor: colors.glassBorder,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.xs,
+    },
+    ageLabel: {
+      fontSize: 12,
+      fontWeight: '800',
+      color: colors.textMuted,
+      textAlign: 'center',
+    },
+    recommendCard: {
+      marginTop: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    recommendHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      marginBottom: spacing.md,
+    },
+    recommendTitleCol: {
+      flex: 1,
+    },
+    recommendName: {
+      fontSize: 24,
+      fontWeight: '900',
+      color: colors.textPrimary,
+      lineHeight: 30,
+    },
+    recommendSubtitle: {
+      fontSize: 12,
+      fontWeight: '800',
+      color: colors.accent,
+      letterSpacing: 1,
+      textTransform: 'uppercase',
+      marginTop: 2,
+    },
+    recommendReason: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      lineHeight: 21,
+      marginBottom: spacing.sm,
+    },
+    recommendCoach: {
+      fontSize: 13,
+      color: colors.textMuted,
+      lineHeight: 19,
+      marginBottom: spacing.md,
+    },
+    focusRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.xs,
+    },
+    focusChip: {
+      borderWidth: 1,
+      borderColor: `${colors.accent}60`,
+      borderRadius: borderRadius.full,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      backgroundColor: `${colors.background}66`,
+    },
+    focusChipText: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.accent,
+      textTransform: 'capitalize',
     },
 
     // CTA

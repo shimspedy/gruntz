@@ -28,7 +28,7 @@ import { hapticLevelUp } from '../utils/haptics';
 type BenefitTier = 'hero' | 'standard';
 
 const benefits: { label: string; tier: BenefitTier }[] = [
-  { label: 'Full Raider and Recon programs', tier: 'hero' },
+  { label: 'Full Base Camp, Raider, and Recon programs', tier: 'hero' },
   { label: 'Unlimited daily mission access', tier: 'hero' },
   { label: 'Workout cards, swim cards, and run support', tier: 'hero' },
   { label: 'Progress, XP, streaks, and achievements', tier: 'standard' },
@@ -71,6 +71,14 @@ export default function PaywallScreen() {
     loadOffering();
   }, [accessState, isConfigured, loadOffering]);
 
+  const dismissPaywall = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    (navigation as unknown as { navigate: (name: string) => void }).navigate('Home');
+  };
+
   const handlePrimary = async () => {
     try {
       if (accessState === 'subscriber') {
@@ -87,7 +95,7 @@ export default function PaywallScreen() {
         Alert.alert(
           `Welcome to ${GRUNTZ_PRO_LABEL}`,
           'Every program, mission, and challenge is now unlocked. Time to train.',
-          [{ text: "LET'S GO", onPress: () => navigation.goBack() }],
+          [{ text: "LET'S GO", onPress: () => dismissPaywall() }],
         );
       }
     } catch {
@@ -99,7 +107,7 @@ export default function PaywallScreen() {
     try {
       const result = await restoreAccess();
       if (result === 'restored') {
-        navigation.goBack();
+        dismissPaywall();
       }
     } catch {
       // Store already sets lastError
@@ -236,6 +244,9 @@ export default function PaywallScreen() {
               }}
               activeOpacity={0.85}
               style={styles.retryButton}
+              accessibilityRole="button"
+              accessibilityLabel="Retry loading pricing"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={styles.retryButtonText}>RETRY</Text>
             </TouchableOpacity>
@@ -285,7 +296,9 @@ export default function PaywallScreen() {
           <View style={styles.legalLinksRow}>
             <TouchableOpacity
               accessibilityRole="link"
+              accessibilityLabel="Open Privacy Policy"
               activeOpacity={0.8}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               onPress={() => {
                 void handleOpenLegalLink(GRUNTZ_PRIVACY_POLICY_URL, 'Privacy Policy');
               }}
@@ -297,7 +310,9 @@ export default function PaywallScreen() {
 
             <TouchableOpacity
               accessibilityRole="link"
+              accessibilityLabel="Open Terms of Use"
               activeOpacity={0.8}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               onPress={() => {
                 void handleOpenLegalLink(GRUNTZ_TERMS_OF_USE_URL, 'Terms of Use');
               }}

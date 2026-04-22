@@ -99,11 +99,20 @@ function getClaimedWorkoutIds(claimedMissions: Set<string>) {
 }
 
 function hasCompletedProgramWeek(claimedWorkoutIds: Set<string>, week: number) {
-  const raiderIds = getWorkoutDaysForWeek(week).map((day) => day.id);
-  const reconIds = getReconWeek(week).map((day) => day.id);
+  // "Week complete" = at least one workout claimed from any program's matching week.
+  // This is equipment/profile-agnostic so 3-day Base Camp users can unlock the same tier.
+  const weekSuffixes = [`_w${week}d`, `d_w${week}d`];
+  const raiderWeekIds = new Set(getWorkoutDaysForWeek(week).map((day) => day.id));
+  const reconWeekIds = new Set(getReconWeek(week).map((day) => day.id));
+  const baseCampPrefix = `basecamp_w${week}d`;
 
-  const hasAll = (ids: string[]) => ids.length > 0 && ids.every((id) => claimedWorkoutIds.has(id));
-  return hasAll(raiderIds) || hasAll(reconIds);
+  for (const id of claimedWorkoutIds) {
+    if (id.startsWith(baseCampPrefix)) return true;
+    if (raiderWeekIds.has(id)) return true;
+    if (reconWeekIds.has(id)) return true;
+    if (weekSuffixes.some((suffix) => id.includes(suffix))) return true;
+  }
+  return false;
 }
 
 function roundMetric(value: number) {

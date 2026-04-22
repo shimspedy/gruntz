@@ -78,7 +78,7 @@ export interface UserProgress {
   current_xp: number;
   current_rank: Rank;
   streak_days: number;
-  last_workout_date: string;
+  last_workout_date: string | null;
   workouts_completed: number;
   total_reps: number;
   total_distance_miles: number;
@@ -95,7 +95,7 @@ export interface UserProgress {
   challenge_streak_days: number;
   challenge_xp_earned: number;
   challenge_time_seconds_logged: number;
-  last_challenge_date: string;
+  last_challenge_date: string | null;
   exercises_completed: Record<string, number>;
   weekly_workouts: number[];
   claimed_missions: Set<string>;
@@ -162,6 +162,10 @@ export interface UserProfile {
   workout_days_per_week: number;
   has_pool_access: boolean;
   has_ruck_access: boolean;
+  has_gym_access?: boolean;
+  age_range?: 'under_30' | '30_44' | '45_59' | '60_plus';
+  movement_limitations?: string[];
+  preferred_session_minutes?: number;
   preferred_intensity: 'low' | 'moderate' | 'high';
   settings: UserSettings;
 }
@@ -264,7 +268,7 @@ export interface WorkoutRecommendation {
 }
 
 // Training Programs
-export type ProgramId = 'raider' | 'recon';
+export type ProgramId = 'basecamp' | 'raider' | 'recon';
 
 export interface TrainingProgram {
   id: ProgramId;
@@ -274,7 +278,7 @@ export interface TrainingProgram {
   icon: string;
   duration_weeks: number;
   days_per_week: number;
-  difficulty: 'intermediate' | 'advanced' | 'elite';
+  difficulty: 'beginner' | 'intermediate' | 'advanced' | 'elite';
   focus_areas: string[];
   prerequisites: string[];
   equipment_needed: string[];

@@ -23,6 +23,9 @@ export const exercises: Exercise[] = [
   { id: 'backwards_hamstring', name: 'Backwards Hamstring', category: 'warmup', description: 'Bend forward, bring one leg up fully extended. Balance on one leg 30 sec.', sets: 1, reps: 5, rest_seconds: 0, equipment: [], equipment_access: 'none', xp_value: 5, form_tips: ['5 each side', 'Foot flat on ground', 'Hold 30 sec'] },
   { id: 'high_knees', name: 'High Knees', category: 'warmup', description: 'Drive each knee as high as possible, swinging opposite arm to cheek level.', duration_seconds: 15, rest_seconds: 0, equipment: [], equipment_access: 'none', xp_value: 5, form_tips: ['15 seconds', 'Fast pace', 'Drive knees high'] },
   { id: 'butt_kicks', name: 'Butt Kicks', category: 'warmup', description: 'Lift each foot to touch buttocks rapidly. Alternate legs.', duration_seconds: 15, rest_seconds: 0, equipment: [], equipment_access: 'none', xp_value: 5, form_tips: ['15 seconds', 'Heel touches buttock', 'Pump opposite arms'] },
+  { id: 'base_march_in_place', name: 'March in Place', category: 'warmup', description: 'March at an easy pace. Keep posture tall and swing arms naturally.', duration_seconds: 120, rest_seconds: 0, equipment: [], equipment_access: 'none', xp_value: 4, form_tips: ['Stay conversational', 'Lift knees only as high as comfortable', 'Use a chair or wall for balance if needed'] },
+  { id: 'base_arm_circles', name: 'Arm Circles', category: 'warmup', description: 'Small-to-large arm circles to warm shoulders and upper back.', sets: 1, reps: 10, rest_seconds: 0, equipment: [], equipment_access: 'none', xp_value: 3, form_tips: ['10 forward and 10 backward', 'Keep ribs down', 'Move smoothly'] },
+  { id: 'base_single_leg_balance', name: 'Supported Balance Hold', category: 'warmup', description: 'Stand near a wall or chair and balance on one foot, then switch sides.', sets: 2, duration_seconds: 20, rest_seconds: 20, equipment: [], equipment_access: 'none', xp_value: 5, form_tips: ['Use support as needed', 'Keep hips level', 'Stop if dizzy'] },
 
   // ============================
   // CALISTHENICS
@@ -54,6 +57,12 @@ export const exercises: Exercise[] = [
   { id: 'usmc_crunches', name: 'USMC Crunches', category: 'core', description: 'Lying on back, knees up, arms across abdomen. Drive upper body off ground.', sets: 1, reps: 30, rest_seconds: 60, equipment: [], equipment_access: 'none', xp_value: 8, form_tips: ['Shoulders to deck each rep', 'Use abs not momentum', 'Full ROM'], progression_rules: { increment_reps: 5, frequency: 'weekly' } },
   { id: 'walking_lunges', name: 'Walking Lunges', category: 'calisthenics', description: 'Step forward, lower to parallel, drive up. Alternate legs.', sets: 1, reps: 20, rest_seconds: 60, equipment: [], equipment_access: 'none', gym_alternative_id: 'barbell_lunge', xp_value: 10, form_tips: ['Knee over foot', 'Body straight', 'Step through'] },
   { id: 'mountain_climbers', name: 'Mountain Climbers', category: 'core', description: 'Push-up position. Drive knees to chest alternately.', sets: 1, reps: 20, rest_seconds: 45, equipment: [], equipment_access: 'none', xp_value: 10, form_tips: ['4-count', 'Keep right leg straight when left drives', 'Plank position'] },
+  { id: 'base_wall_pushups', name: 'Wall Push-Ups', category: 'calisthenics', description: 'Stand facing a wall. Lower chest toward the wall and press back to tall posture.', sets: 2, reps: 8, rest_seconds: 45, equipment: [], equipment_access: 'none', xp_value: 8, form_tips: ['Hands at chest height', 'Keep body straight', 'Step farther back to make it harder'] },
+  { id: 'base_incline_pushups', name: 'Incline Push-Ups', category: 'calisthenics', description: 'Hands on a bench, counter, or sturdy surface. Lower under control and press up.', sets: 2, reps: 10, rest_seconds: 60, equipment: ['bench or sturdy surface'], equipment_access: 'minimal', xp_value: 10, form_tips: ['Brace your core', 'Lower chest toward the surface', 'Use a higher surface if needed'] },
+  { id: 'base_chair_squats', name: 'Chair Squats', category: 'calisthenics', description: 'Sit back to a chair or bench, lightly touch, then stand tall.', sets: 2, reps: 8, rest_seconds: 60, equipment: ['chair'], equipment_access: 'none', xp_value: 8, form_tips: ['Control the sit', 'Drive through the whole foot', 'Use hands only if needed'] },
+  { id: 'base_dead_bug', name: 'Dead Bug', category: 'core', description: 'Lie on your back, brace your core, and lower opposite arm and leg slowly.', sets: 2, reps: 8, rest_seconds: 45, equipment: [], equipment_access: 'none', xp_value: 8, form_tips: ['Press low back down', 'Move slowly', 'Exhale as the leg lowers'] },
+  { id: 'base_glute_bridge', name: 'Glute Bridge', category: 'calisthenics', description: 'Lie on your back with knees bent. Drive hips up, pause, and lower under control.', sets: 2, reps: 10, rest_seconds: 45, equipment: [], equipment_access: 'none', xp_value: 8, form_tips: ['Squeeze glutes at the top', 'Do not arch your low back', 'Keep feet planted'] },
+  { id: 'base_low_stepups', name: 'Low Step-Ups', category: 'calisthenics', description: 'Step onto a low stair or sturdy platform, stand tall, then step down with control.', sets: 2, reps: 8, rest_seconds: 60, equipment: ['step or stairs'], equipment_access: 'none', xp_value: 9, form_tips: ['Use a low height', 'Drive through the lead foot', 'Hold a rail if needed'] },
 
   // ============================
   // RUNNING
@@ -65,6 +74,11 @@ export const exercises: Exercise[] = [
   { id: 'sprint_800m', name: '800m Sprints', category: 'running', description: 'Run 800m faster than PFT pace.', sets: 3, distance: '800m', rest_seconds: 180, equipment: [], equipment_access: 'none', xp_value: 25, form_tips: ['Hard but sustainable', 'Stay relaxed', 'Negative split'] },
   { id: 'jog_100_200m', name: 'Jog 100-200m', category: 'running', description: 'Easy jog between exercises.', distance: '100-200m', rest_seconds: 0, equipment: [], equipment_access: 'none', xp_value: 5, form_tips: ['Recovery pace', 'Shake out legs'] },
   { id: 'pft_run', name: 'PFT (3-Mile Timed)', category: 'running', description: '3-mile timed run. Max effort.', distance: '3 miles', rest_seconds: 0, equipment: [], equipment_access: 'none', xp_value: 50, form_tips: ['All-out', 'Start at goal pace', 'Record time'] },
+  { id: 'base_walk_10min', name: 'Easy Walk', category: 'running', description: 'Walk at a comfortable pace. Stay relaxed and conversational.', distance: '10 minutes', rest_seconds: 0, equipment: [], equipment_access: 'none', xp_value: 10, form_tips: ['Stay conversational', 'Shorten stride if joints feel irritated', 'Record distance only if you want'] },
+  { id: 'base_walk_20min', name: 'Steady Walk', category: 'running', description: 'Walk with steady posture and relaxed breathing.', distance: '20 minutes', rest_seconds: 0, equipment: [], equipment_access: 'none', xp_value: 15, form_tips: ['Comfortable pace', 'Tall posture', 'Slow down before form breaks'] },
+  { id: 'base_walk_30min', name: 'Long Easy Walk', category: 'running', description: 'Build aerobic base with a longer easy walk.', distance: '30 minutes', rest_seconds: 0, equipment: [], equipment_access: 'none', xp_value: 20, form_tips: ['Keep effort easy', 'Hydrate if needed', 'Stop early if pain changes your stride'] },
+  { id: 'base_walk_jog_intervals', name: 'Walk/Jog Intervals', category: 'running', description: 'Alternate easy jogging with walking recoveries. Keep every rep controlled.', distance: '20 minutes', rest_seconds: 0, equipment: [], equipment_access: 'none', xp_value: 20, form_tips: ['Jog only if joints feel good', 'Walk before breathing gets ragged', 'Stay smooth'] },
+  { id: 'base_light_ruck_walk', name: 'Light Pack Walk', category: 'rucking', description: 'Walk with a light backpack. The pack should feel easy, not like a test.', distance: '20 minutes', rest_seconds: 0, equipment: ['light backpack'], equipment_access: 'minimal', xp_value: 18, form_tips: ['Use light load only', 'Stand tall', 'Remove load if joints complain'] },
 
   // ============================
   // SWIMMING
@@ -107,6 +121,7 @@ export const exercises: Exercise[] = [
   { id: 'ais_middle_back', name: 'AIS Middle Back', category: 'recovery', description: 'Lying on side, rotate torso to put back and arm on ground.', sets: 1, reps: 10, rest_seconds: 0, equipment: [], equipment_access: 'none', xp_value: 3, form_tips: ['Hold top knee down', 'Exhale as you rotate'] },
   { id: 'ais_triceps', name: 'AIS Triceps Stretch', category: 'recovery', description: 'Band behind back. Reach over shoulder down spine.', sets: 1, reps: 10, rest_seconds: 0, equipment: ['resistance band'], equipment_access: 'minimal', xp_value: 3, form_tips: ['Reach down spine', 'Gentle pull'] },
   { id: 'roller_full', name: 'Foam Rolling (Full Body)', category: 'recovery', description: 'Roll calf, hamstring, IT band, quads, groin, glute, back, lats, hip. 20-30 rolls each.', duration_seconds: 600, rest_seconds: 0, equipment: ['foam roller'], equipment_access: 'minimal', xp_value: 10, form_tips: ['20-30 rolls each area', 'Slow on trigger spots', 'Both sides'] },
+  { id: 'base_mobility_flow', name: 'Base Mobility Flow', category: 'recovery', description: 'Easy hips, calves, shoulders, and spine mobility. Move through a comfortable range.', duration_seconds: 300, rest_seconds: 0, equipment: [], equipment_access: 'none', xp_value: 5, form_tips: ['Stay gentle', 'No painful ranges', 'Breathe slowly'] },
 
   // ============================
   // GYM ALTERNATIVES
@@ -213,6 +228,9 @@ const MUSCLE_GROUPS: Record<string, string[]> = {
   backwards_hamstring: ['hamstrings', 'balance', 'core'],
   high_knees: ['hip flexors', 'quads', 'cardiovascular'],
   butt_kicks: ['hamstrings', 'quads', 'cardiovascular'],
+  base_march_in_place: ['hip flexors', 'quads', 'cardiovascular'],
+  base_arm_circles: ['shoulders', 'upper back'],
+  base_single_leg_balance: ['glutes', 'hips', 'balance'],
   // Core
   forward_plank: ['core', 'shoulders', 'hip flexors'],
   side_plank: ['obliques', 'shoulders', 'hips'],
@@ -220,6 +238,7 @@ const MUSCLE_GROUPS: Record<string, string[]> = {
   knees_to_elbows: ['abs', 'hip flexors', 'grip', 'lats'],
   usmc_crunches: ['abs', 'hip flexors'],
   mountain_climbers: ['core', 'shoulders', 'hip flexors', 'cardiovascular'],
+  base_dead_bug: ['core', 'hip flexors'],
   // Calisthenics
   pushups: ['chest', 'triceps', 'shoulders', 'core'],
   hand_release_pushups: ['chest', 'triceps', 'shoulders', 'core'],
@@ -242,6 +261,11 @@ const MUSCLE_GROUPS: Record<string, string[]> = {
   walking_ammo_can_lunge: ['quads', 'glutes', 'core', 'grip'],
   broad_jumps: ['quads', 'glutes', 'calves', 'power'],
   walking_lunges: ['quads', 'glutes', 'hamstrings', 'balance'],
+  base_wall_pushups: ['chest', 'triceps', 'shoulders', 'core'],
+  base_incline_pushups: ['chest', 'triceps', 'shoulders', 'core'],
+  base_chair_squats: ['quads', 'glutes', 'hamstrings'],
+  base_glute_bridge: ['glutes', 'hamstrings', 'core'],
+  base_low_stepups: ['quads', 'glutes', 'hamstrings', 'balance'],
   // Running
   run_1_5mi: ['cardiovascular', 'legs'],
   run_3mi: ['cardiovascular', 'legs', 'endurance'],
@@ -250,6 +274,10 @@ const MUSCLE_GROUPS: Record<string, string[]> = {
   sprint_800m: ['cardiovascular', 'legs', 'lactate threshold'],
   jog_100_200m: ['cardiovascular', 'recovery'],
   pft_run: ['cardiovascular', 'legs', 'mental toughness'],
+  base_walk_10min: ['cardiovascular', 'legs'],
+  base_walk_20min: ['cardiovascular', 'legs'],
+  base_walk_30min: ['cardiovascular', 'legs', 'endurance'],
+  base_walk_jog_intervals: ['cardiovascular', 'legs'],
   // Swimming
   swim_25m: ['shoulders', 'back', 'core'],
   swim_50m: ['shoulders', 'back', 'core', 'legs'],
@@ -272,6 +300,7 @@ const MUSCLE_GROUPS: Record<string, string[]> = {
   ruck_9mi: ['legs', 'back', 'shoulders', 'core', 'endurance', 'mental toughness'],
   ruck_10mi: ['legs', 'back', 'shoulders', 'core', 'endurance', 'mental toughness'],
   ruck_12mi: ['full body', 'endurance', 'mental toughness'],
+  base_light_ruck_walk: ['legs', 'back', 'shoulders', 'core'],
   // Recovery
   ais_calf: ['calves'],
   ais_hamstring: ['hamstrings'],
@@ -283,6 +312,7 @@ const MUSCLE_GROUPS: Record<string, string[]> = {
   ais_middle_back: ['middle back', 'thoracic spine'],
   ais_triceps: ['triceps'],
   roller_full: ['full body', 'fascia'],
+  base_mobility_flow: ['hips', 'shoulders', 'calves', 'thoracic spine'],
   // Gym alternatives
   bench_press: ['chest', 'triceps', 'shoulders'],
   overhead_press: ['shoulders', 'triceps', 'core'],
@@ -486,6 +516,30 @@ const EXERCISE_STEPS: Record<string, string[]> = {
     'Step forward with one leg into a deep lunge.',
     'Lower until back knee nearly touches the ground.',
     'Drive through front heel to step forward into next lunge.',
+  ],
+  base_wall_pushups: [
+    'Stand facing a wall with hands at chest height.',
+    'Step back until your body forms a straight line.',
+    'Lower chest toward the wall under control.',
+    'Press back to tall posture without shrugging shoulders.',
+  ],
+  base_chair_squats: [
+    'Stand in front of a chair with feet about shoulder-width.',
+    'Sit hips back until you lightly touch the chair.',
+    'Drive through the whole foot to stand tall.',
+    'Use hands for support only if needed.',
+  ],
+  base_dead_bug: [
+    'Lie on your back with knees over hips and arms up.',
+    'Brace your core and press low back toward the floor.',
+    'Lower opposite arm and leg slowly.',
+    'Return with control, then switch sides.',
+  ],
+  base_low_stepups: [
+    'Stand facing a low step, stair, or sturdy platform.',
+    'Step up with one foot and stand tall.',
+    'Step down slowly and reset your balance.',
+    'Use a rail or wall if needed.',
   ],
   broad_jumps: [
     'Stand with feet shoulder-width apart.',

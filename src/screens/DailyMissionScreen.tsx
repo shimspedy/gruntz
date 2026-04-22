@@ -16,8 +16,7 @@ import { LottieReward } from '../components/LottieReward';
 import { useMissionStore } from '../store/useMissionStore';
 import { useProgramStore } from '../store/useProgramStore';
 import { useUserStore } from '../store/useUserStore';
-import { getWorkoutDay } from '../data/workouts';
-import { getReconWorkoutDay } from '../data/reconWorkouts';
+import { getProgramWorkoutDay } from '../data/programWorkouts';
 import { getExerciseById } from '../data/exercises';
 import { achievements } from '../data/achievements';
 import { getDisplayedMonthlyPrice } from '../config/monetization';
@@ -43,6 +42,8 @@ const sectionIcons: Record<string, string> = {
   cardio: 'run',
   recovery: 'recovery',
   test: 'test',
+  ruck: 'ruck',
+  swim: 'swim',
 };
 
 export default function DailyMissionScreen() {
@@ -62,14 +63,15 @@ export default function DailyMissionScreen() {
   const finishMission = useMissionStore((s) => s.finishMission);
   const completeMission = useUserStore((s) => s.completeMission);
   const checkAchievements = useUserStore((s) => s.checkAchievements);
+  const profile = useUserStore((s) => s.profile);
   const selectedProgram = useProgramStore((s) => s.selectedProgram);
   const loadPersistedState = useProgramStore((s) => s.loadPersistedState);
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
   const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
   const currentOffering = useSubscriptionStore((s) => s.currentOffering);
 
+  const currentWeek = useProgramStore((s) => s.currentWeek);
   const [started, setStarted] = useState(false);
-  const [missionStartTime] = useState(() => new Date());
   const [restExerciseKey, setRestExerciseKey] = useState<string | null>(null);
   const [logTarget, setLogTarget] = useState<ExerciseInstance | null>(null);
   const [loggedSetsByKey, setLoggedSetsByKey] = useState<Record<string, SetLog[]>>({});
@@ -83,9 +85,7 @@ export default function DailyMissionScreen() {
   } | null>(null);
 
   const workoutDay = todaysMission
-    ? selectedProgram === 'recon'
-      ? getReconWorkoutDay(todaysMission.workout_day_id) ?? null
-      : getWorkoutDay(todaysMission.workout_day_id) ?? null
+    ? getProgramWorkoutDay(selectedProgram, todaysMission.workout_day_id, profile) ?? null
     : null;
 
   const sectionInstances = useMemo(
@@ -184,7 +184,7 @@ export default function DailyMissionScreen() {
     return () => {
       active = false;
     };
-  }, [loadPersistedState, loadTodaysMission]);
+  }, [loadPersistedState, loadTodaysMission, selectedProgram, currentWeek]);
 
   useEffect(() => {
     setStarted(false);
@@ -321,9 +321,6 @@ export default function DailyMissionScreen() {
           return acc;
         }
         const instanceKey = instance.instanceKey;
-        if (!instance) {
-          return acc;
-        }
         const ex = instance.exercise;
         const loggedSets = loggedSetsByKey[instanceKey];
         const completedReps =
@@ -429,7 +426,7 @@ export default function DailyMissionScreen() {
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyTitle}>No program selected</Text>
           <Text style={styles.emptySubtext}>
-            Pick Raider or Recon before opening a daily mission.
+            Pick Base Camp, Raider, or Recon before opening a daily mission.
           </Text>
           <View style={styles.emptyActions}>
             <MissionButton title="CHOOSE PROGRAM" onPress={() => navigation.replace('ProgramSelect')} />
@@ -437,6 +434,9 @@ export default function DailyMissionScreen() {
               style={styles.secondaryAction}
               onPress={() => navigation.navigate('Home')}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Back to Home"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={styles.secondaryActionText}>Back to Home</Text>
             </TouchableOpacity>
@@ -461,6 +461,9 @@ export default function DailyMissionScreen() {
               style={styles.secondaryAction}
               onPress={() => navigation.navigate('Home')}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Back to Home"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={styles.secondaryActionText}>Back to Home</Text>
             </TouchableOpacity>
@@ -507,6 +510,9 @@ export default function DailyMissionScreen() {
               style={styles.secondaryAction}
               onPress={() => navigation.navigate('Home')}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Back to Home"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={styles.secondaryActionText}>Back to Home</Text>
             </TouchableOpacity>
@@ -559,17 +565,17 @@ export default function DailyMissionScreen() {
             {/* Mission Stats */}
             <View style={styles.statsGrid}>
               <View style={styles.statCard}>
-                <GameIcon name="time" size={24} color={colors.accent} variant="minimal" />
+                <GameIcon name="time" size={24} color={colors.accent} variant="minimal" animated />
                 <Text style={styles.statValue}>{workoutDay.estimated_duration}</Text>
                 <Text style={styles.statLabel}>minutes</Text>
               </View>
               <View style={styles.statCard}>
-                <GameIcon name="xp" size={24} color={colors.accentGold} variant="minimal" />
+                <GameIcon name="xp" size={24} color={colors.accentGold} variant="minimal" animated />
                 <Text style={styles.statValue}>{workoutDay.rewards.xp}</Text>
                 <Text style={styles.statLabel}>XP</Text>
               </View>
               <View style={styles.statCard}>
-                <GameIcon name="strength" size={24} color={colors.accent} variant="minimal" />
+                <GameIcon name="strength" size={24} color={colors.accent} variant="minimal" animated />
                 <Text style={styles.statValue}>{totalExercises}</Text>
                 <Text style={styles.statLabel}>exercises</Text>
               </View>
@@ -627,6 +633,10 @@ export default function DailyMissionScreen() {
                         onPress={() => toggleExercise(instance)}
                         activeOpacity={0.8}
                         style={styles.exerciseCardTouchable}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${instance.exercise.name}${isComplete ? ' completed' : ''}`}
+                        accessibilityState={{ checked: isComplete }}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                       >
                         <View style={[styles.exerciseCard, isComplete && styles.exerciseCardComplete]}>
                           {/* Left: Icon */}

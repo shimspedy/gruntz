@@ -105,8 +105,9 @@ export default function WorkoutCardsScreen() {
     [navigation],
   );
   const progress = useUserStore((s) => s.progress);
+  const userProfile = useUserStore((s) => s.profile);
   const unlockedCount = useUserStore((s) => s.achievements.filter((a) => a.unlocked).length);
-  const recommendations = getTopRecommendations(progress, 11);
+  const recommendations = getTopRecommendations(progress, 11, userProfile);
   const profile = getStrengthProfile(progress);
   const trainingUnlocked = hasTrainingAccess({ trialStartedAt, entitlementActive });
   const monthlyPrice = getDisplayedMonthlyPrice(currentOffering);

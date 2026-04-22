@@ -53,6 +53,7 @@ export default function ProfileScreen() {
   const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
   const currentOffering = useSubscriptionStore((s) => s.currentOffering);
   const openCustomerCenter = useSubscriptionStore((s) => s.openCustomerCenter);
+  const openSubscriptionManagement = useSubscriptionStore((s) => s.openSubscriptionManagement);
   const xpInfo = getXPToNextLevel(progress.current_xp);
   const rankInfo = getRankInfo(progress.current_rank);
   const accessState = getAccessState({ trialStartedAt, entitlementActive });
@@ -69,7 +70,10 @@ export default function ProfileScreen() {
       icon: 'rank',
       onPress: async () => {
         if (accessState === 'subscriber') {
-          await openCustomerCenter();
+          const result = await openCustomerCenter();
+          if (result === 'unavailable' || result === 'error') {
+            await openSubscriptionManagement();
+          }
           return;
         }
         navigation.navigate('Paywall');
@@ -100,7 +104,7 @@ export default function ProfileScreen() {
             <View style={styles.avatarGlow} />
             <GameIcon name={rankInfo?.icon || 'rank'} size={60} color={colors.accent} style={styles.avatarEmoji} />
           </View>
-          <Text style={styles.displayName} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{profile?.display_name || 'Warrior'}</Text>
+          <Text style={styles.displayName} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{profile?.display_name || 'Recruit'}</Text>
           <Text style={styles.rankText}>{progress.current_rank}</Text>
           <Text style={styles.levelText}>Level {progress.current_level}</Text>
           <View style={styles.streakBadge}>
@@ -220,6 +224,9 @@ export default function ProfileScreen() {
               navigation.navigate(item.screen);
             }}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={item.label}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <View style={styles.menuLeft}>
               <View style={styles.menuIcon}>

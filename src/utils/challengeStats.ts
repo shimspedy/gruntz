@@ -7,7 +7,7 @@ const KM_TO_MILES = 0.621371;
 export interface ChallengeHistorySummary {
   challengesCompleted: number;
   challengeStreakDays: number;
-  lastChallengeDate: string;
+  lastChallengeDate: string | null;
   challengeXpEarned: number;
 }
 
@@ -24,7 +24,7 @@ export function summarizeChallengeHistory(completedDates: string[]): ChallengeHi
     return {
       challengesCompleted: 0,
       challengeStreakDays: 0,
-      lastChallengeDate: '',
+      lastChallengeDate: null,
       challengeXpEarned: 0,
     };
   }

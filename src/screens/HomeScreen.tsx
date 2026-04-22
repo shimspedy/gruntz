@@ -23,14 +23,13 @@ import { useChallengeStore } from '../store/useChallengeStore';
 import { getXPToNextLevel } from '../utils/xp';
 import { getProgramById } from '../data/programs';
 import { getExerciseById } from '../data/exercises';
-import { getWorkoutDay } from '../data/workouts';
-import { getReconWorkoutDay } from '../data/reconWorkouts';
+import { getProgramWorkoutDay } from '../data/programWorkouts';
 import { formatChallengeAmount, getTodaysChallenge } from '../data/dailyChallenges';
-import { getDisplayedMonthlyPrice } from '../config/monetization';
 import { showAchievementUnlocked } from '../services/notifications';
 import { hapticLight, hapticDoubleTap } from '../utils/haptics';
 import { useAdaptiveLayout } from '../hooks/useAdaptiveLayout';
 import { getAccessState, getTrialDaysRemaining, hasTrainingAccess, useSubscriptionStore } from '../store/useSubscriptionStore';
+import type { ProgramId, UserProfile } from '../types';
 import type { HomeStackParamList } from '../types/navigation';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
@@ -40,13 +39,12 @@ type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
  */
 function getActiveMuscleGroups(
   todaysMission: { workout_day_id: string } | null,
-  selectedProgram: string | null,
+  selectedProgram: ProgramId | null,
+  profile: UserProfile | null,
 ): string[] {
   if (!todaysMission || !selectedProgram) return [];
 
-  const workoutDay = selectedProgram === 'recon'
-    ? getReconWorkoutDay(todaysMission.workout_day_id)
-    : getWorkoutDay(todaysMission.workout_day_id);
+  const workoutDay = getProgramWorkoutDay(selectedProgram, todaysMission.workout_day_id, profile);
 
   if (!workoutDay) return [];
 
@@ -74,6 +72,7 @@ export default function HomeScreen() {
 
   // User & progress
   const progress = useUserStore((s) => s.progress);
+  const profile = useUserStore((s) => s.profile);
 
   // Mission state
   const todaysMission = useMissionStore((s) => s.todaysMission);
@@ -85,6 +84,7 @@ export default function HomeScreen() {
   const selectedProgram = useProgramStore((s) => s.selectedProgram);
   const currentWeek = useProgramStore((s) => s.currentWeek);
   const loadPersistedState = useProgramStore((s) => s.loadPersistedState);
+  const programStoreHydrated = useProgramStore((s) => s.hasHydrated);
 
   // Challenge state
   const challengeProgress = useChallengeStore((s) => s.currentProgress);
@@ -96,26 +96,36 @@ export default function HomeScreen() {
   // Subscription state
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
   const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
-  const currentOffering = useSubscriptionStore((s) => s.currentOffering);
 
   const program = selectedProgram ? getProgramById(selectedProgram) : null;
   const [hydrated, setHydrated] = React.useState(false);
+  const [hydrationError, setHydrationError] = React.useState(false);
   const [challengeModalVisible, setChallengeModalVisible] = React.useState(false);
   const streakBounce = useRef(new Animated.Value(1)).current;
   const prevStreak = useRef<number | null>(null);
   const challengeGlow = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
+  const hydratePersistedState = React.useCallback(() => {
     let active = true;
-    loadPersistedState().then(() => {
-      if (active) setHydrated(true);
-    });
+    setHydrationError(false);
+    loadPersistedState()
+      .catch((err) => {
+        if (__DEV__) {
+          console.warn('[HomeScreen] loadPersistedState failed', err);
+        }
+        if (active) setHydrationError(true);
+      })
+      .finally(() => {
+        if (active) setHydrated(true);
+      });
     return () => { active = false; };
   }, [loadPersistedState]);
 
+  useEffect(() => hydratePersistedState(), [hydratePersistedState]);
+
   useEffect(() => {
-    if (hydrated) loadTodaysMission();
-  }, [hydrated, selectedProgram, currentWeek, loadTodaysMission]);
+    if (hydrated && programStoreHydrated) loadTodaysMission();
+  }, [hydrated, programStoreHydrated, selectedProgram, currentWeek, loadTodaysMission]);
 
   // Bounce streak pill when streak_days increments
   useEffect(() => {
@@ -147,7 +157,6 @@ export default function HomeScreen() {
   const accessState = getAccessState({ trialStartedAt, entitlementActive });
   const trialDaysRemaining = getTrialDaysRemaining(trialStartedAt);
   const trainingUnlocked = hasTrainingAccess({ trialStartedAt, entitlementActive });
-  const monthlyPrice = getDisplayedMonthlyPrice(currentOffering);
   const todaysChallenge = getTodaysChallenge();
   const displayedChallengeProgress = todaysChallenge
     ? Math.min(challengeTodayCompleted ? todaysChallenge.target : challengeProgress, todaysChallenge.target)
@@ -156,8 +165,12 @@ export default function HomeScreen() {
     ? Math.max(todaysChallenge.target - displayedChallengeProgress, 0)
     : 0;
   const activeMuscles = useMemo(
-    () => getActiveMuscleGroups(todaysMission, selectedProgram),
-    [todaysMission, selectedProgram],
+    () => getActiveMuscleGroups(todaysMission, selectedProgram, profile),
+    [todaysMission, selectedProgram, profile],
+  );
+  const currentWorkoutDay = useMemo(
+    () => (todaysMission ? getProgramWorkoutDay(selectedProgram, todaysMission.workout_day_id, profile) : undefined),
+    [profile, selectedProgram, todaysMission],
   );
   const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
 
@@ -254,12 +267,31 @@ export default function HomeScreen() {
           <Animated.View style={{ transform: [{ scale: streakBounce }] }}>
             <GlassCard style={styles.streakPill} variant="default">
               <View style={styles.streakPillContent}>
-                <GameIcon name="streak" size={18} color={colors.streakFire} />
+                <GameIcon name="streak" size={18} color={colors.streakFire} animated />
                 <Text style={styles.streakPillText}>{progress.streak_days}</Text>
               </View>
             </GlassCard>
           </Animated.View>
         </Animated.View>
+
+        {hydrationError && (
+          <TouchableOpacity
+            style={styles.errorBanner}
+            onPress={() => {
+              hapticLight();
+              hydratePersistedState();
+            }}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Reload saved state"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <GameIcon name="warning" size={16} color={colors.accentOrange} variant="minimal" animated={false} />
+            <Text style={styles.errorBannerText}>
+              Couldn&apos;t load saved progress. Tap to retry.
+            </Text>
+          </TouchableOpacity>
+        )}
 
         {/* SECTION 2: XP Bar */}
         <View style={styles.xpSection}>
@@ -294,22 +326,17 @@ export default function HomeScreen() {
             {/* Mission info chips */}
             <View style={styles.missionChips}>
               <View style={styles.infoChip}>
-                <GameIcon name="timer" size={14} color={colors.accent} />
-                <Text style={styles.chipText}>~45 min</Text>
+                <GameIcon name="timer" size={14} color={colors.accent} animated={false} />
+                <Text style={styles.chipText}>~{currentWorkoutDay?.estimated_duration ?? 45} min</Text>
               </View>
               <View style={styles.infoChip}>
-                <GameIcon name="xp" size={14} color={colors.accent} />
+                <GameIcon name="xp" size={14} color={colors.accent} animated={false} />
                 <Text style={styles.chipText}>{todaysMission.reward_xp} XP</Text>
               </View>
               <View style={styles.infoChip}>
-                <GameIcon name="mission" size={14} color={colors.accent} />
+                <GameIcon name="mission" size={14} color={colors.accent} animated={false} />
                 <Text style={styles.chipText}>
-                  {(() => {
-                    const wd = selectedProgram === 'recon'
-                      ? getReconWorkoutDay(todaysMission.workout_day_id)
-                      : getWorkoutDay(todaysMission.workout_day_id);
-                    return wd?.sections.reduce((sum, s) => sum + s.exercises.length, 0) || 0;
-                  })()} exercises
+                  {currentWorkoutDay?.sections.reduce((sum, s) => sum + s.exercises.length, 0) || 0} exercises
                 </Text>
               </View>
             </View>
@@ -340,7 +367,7 @@ export default function HomeScreen() {
         {isRestDay && (
           <GlassCard style={styles.restDaySection} variant="default">
             <View style={styles.restDayContent}>
-              <GameIcon name="rest" size={48} color={colors.accent} />
+              <GameIcon name="rest" size={48} color={colors.accent} animated={false} />
               <Text style={styles.restDayTitle}>REST & RECOVER</Text>
               <Text style={styles.restDayMessage}>
                 Your body needs time to adapt. Hydrate, stretch, and prepare for tomorrow's mission.
@@ -348,7 +375,7 @@ export default function HomeScreen() {
             </View>
             {nextWorkout && (
               <View style={styles.nextWorkoutBox}>
-                <Text style={styles.nextLabel}>TOMORROW'S MISSION</Text>
+                <Text style={styles.nextLabel}>NEXT MISSION</Text>
                 <Text style={styles.nextTitle}>{nextWorkout.title}</Text>
               </View>
             )}
@@ -359,9 +386,9 @@ export default function HomeScreen() {
         {!program && (
           <GlassCard style={styles.noProgramSection} variant="accent">
             <View style={styles.noProgramContent}>
-              <GameIcon name="program" size={40} color={colors.accent} />
+              <GameIcon name="program" size={40} color={colors.accent} animated={false} />
               <Text style={styles.noProgramTitle}>Select a Program</Text>
-              <Text style={styles.noProgramText}>Choose your path: Raider or Recon</Text>
+              <Text style={styles.noProgramText}>Choose Base Camp, Raider, or Recon</Text>
               <MissionButton
                 title="CHOOSE PROGRAM"
                 onPress={() => {
@@ -379,7 +406,7 @@ export default function HomeScreen() {
         {todaysChallenge && (
           <GlassCard style={styles.challengeSection} variant="default">
             <View style={styles.challengeHeader}>
-              <GameIcon name={todaysChallenge.icon} size={28} color={colors.accent} />
+              <GameIcon name={todaysChallenge.icon} size={28} color={colors.accent} animated={false} />
               <View style={styles.challengeTitleBox}>
                 <Text style={styles.sectionLabel}>DAILY CHALLENGE</Text>
                 <Text style={styles.challengeName}>{todaysChallenge.name}</Text>
@@ -422,14 +449,14 @@ export default function HomeScreen() {
                 <Text style={styles.difficultyText}>{todaysChallenge.difficulty.toUpperCase()}</Text>
               </View>
               <View style={styles.rewardBadge}>
-                <GameIcon name="xp" size={14} color={colors.accent} />
+                <GameIcon name="xp" size={14} color={colors.accent} animated={false} />
                 <Text style={styles.rewardBadgeText}>{todaysChallenge.xpReward} XP</Text>
               </View>
             </View>
 
             {challengeTodayCompleted ? (
               <View style={styles.challengeStatusBanner}>
-                <GameIcon name="xp" size={16} color={colors.accentGreen} />
+                <GameIcon name="xp" size={16} color={colors.accentGreen} animated={false} />
                 <Text style={styles.challengeStatusText}>
                   Challenge complete. Today&apos;s XP is already added.
                 </Text>
@@ -469,9 +496,12 @@ export default function HomeScreen() {
               }
             }}
             activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={program ? `Open ${program.name}` : 'Choose a program'}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <View style={styles.qaIcon}>
-              <GameIcon name={program ? program.icon : 'program'} size={32} color={colors.accent} />
+              <GameIcon name={program ? program.icon : 'program'} size={32} color={colors.accent} animated={false} />
             </View>
             <Text style={styles.qaLabel}>Program</Text>
           </TouchableOpacity>
@@ -487,9 +517,12 @@ export default function HomeScreen() {
               }
             }}
             activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Open run tracker"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <View style={styles.qaIcon}>
-              <GameIcon name="run" size={32} color={colors.accent} />
+              <GameIcon name="run" size={32} color={colors.accent} animated={false} />
             </View>
             <Text style={styles.qaLabel}>Run Tracker</Text>
           </TouchableOpacity>
@@ -501,11 +534,15 @@ export default function HomeScreen() {
             style={styles.membershipBanner}
             onPress={() => navigation.navigate('Paywall')}
             activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={accessState === 'trial' ? 'View access status' : 'Upgrade to Pro'}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <GameIcon
               name={accessState === 'trial' ? 'badge' : 'warning'}
               size={24}
               color={colors.accent}
+              animated={false}
             />
             <View style={styles.membershipBody}>
               <Text style={styles.membershipTitle}>
@@ -519,7 +556,7 @@ export default function HomeScreen() {
                   : 'Unlock premium features'}
               </Text>
             </View>
-            <GameIcon name="arrow" size={18} color={colors.accent} />
+            <GameIcon name="arrow" size={18} color={colors.accent} animated={false} />
           </TouchableOpacity>
         )}
       </ScrollView>
@@ -624,6 +661,26 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   // XP SECTION
   xpSection: {
     marginBottom: spacing.lg,
+  },
+
+  // ERROR BANNER
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: `${colors.accentOrange}12`,
+    borderWidth: 1,
+    borderColor: `${colors.accentOrange}40`,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  errorBannerText: {
+    flex: 1,
+    fontSize: 12,
+    color: colors.accentOrange,
+    fontWeight: '700',
   },
 
   // MUSCLE MAP

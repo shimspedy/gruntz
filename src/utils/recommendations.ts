@@ -1,8 +1,8 @@
-import { UserProgress, WorkoutRecommendation, MovementCard } from '../types';
+import { UserProgress, UserProfile, WorkoutRecommendation, MovementCard } from '../types';
 import { movementCards } from '../data/movementCards';
 
 // ============================================================
-// AI WORKOUT RECOMMENDATION ENGINE
+// LOCAL WORKOUT RECOMMENDATION ENGINE
 // Analyzes user progress to recommend the best movement cards
 // and workout focus areas based on performance data.
 // ============================================================
@@ -18,7 +18,7 @@ interface StrengthProfile {
 }
 
 function buildStrengthProfile(progress: UserProgress): StrengthProfile {
-  const ec = progress.exercises_completed;
+  const ec = progress.exercises_completed ?? {};
 
   const upperExercises = ['pushups', 'hand_release_pushups', 'pullups', 'chinups', 'ammo_can_push_press'];
   const lowerExercises = ['air_squats', 'walking_lunges', 'frog_squats', 'ammo_can_front_squats', 'broad_jumps'];
@@ -43,15 +43,20 @@ function buildStrengthProfile(progress: UserProgress): StrengthProfile {
   return { upper_body: upper, lower_body: lower, core, endurance, swimming, rucking, overall };
 }
 
-function getWeakAreas(profile: StrengthProfile): string[] {
+function getWeakAreas(strength: StrengthProfile, userProfile?: UserProfile | null): string[] {
   const areas: { name: string; score: number }[] = [
-    { name: 'upper_body', score: profile.upper_body },
-    { name: 'lower_body', score: profile.lower_body },
-    { name: 'core', score: profile.core },
-    { name: 'endurance', score: profile.endurance },
-    { name: 'swimming', score: profile.swimming },
-    { name: 'rucking', score: profile.rucking },
+    { name: 'upper_body', score: strength.upper_body },
+    { name: 'lower_body', score: strength.lower_body },
+    { name: 'core', score: strength.core },
+    { name: 'endurance', score: strength.endurance },
   ];
+  // Only flag swim/ruck as weak if the user has the equipment to train them.
+  if (userProfile?.has_pool_access) {
+    areas.push({ name: 'swimming', score: strength.swimming });
+  }
+  if (userProfile?.has_ruck_access) {
+    areas.push({ name: 'rucking', score: strength.rucking });
+  }
   areas.sort((a, b) => a.score - b.score);
   return areas.slice(0, 3).map(a => a.name);
 }
@@ -114,9 +119,12 @@ function getReasonForCard(card: MovementCard, weakAreas: string[], profile: Stre
   return reasons[0];
 }
 
-export function generateRecommendations(progress: UserProgress): WorkoutRecommendation[] {
-  const profile = buildStrengthProfile(progress);
-  const weakAreas = getWeakAreas(profile);
+export function generateRecommendations(
+  progress: UserProgress,
+  userProfile?: UserProfile | null,
+): WorkoutRecommendation[] {
+  const strength = buildStrengthProfile(progress);
+  const weakAreas = getWeakAreas(strength, userProfile);
 
   const scored = movementCards.map(card => {
     const matchScore = cardMatchesWeakness(card, weakAreas);
@@ -125,13 +133,14 @@ export function generateRecommendations(progress: UserProgress): WorkoutRecommen
       : (card.difficulty === 'beginner' ? 2 : card.difficulty === 'intermediate' ? 1 : 0);
 
     const totalScore = matchScore + difficultyBonus;
-    const confidence = Math.min(1, (totalScore / 10) + 0.3);
+    // First-run users (totalScore == 0) shouldn't see a 0.3 "confidence" floor — drop to 0.
+    const confidence = totalScore === 0 ? 0 : Math.min(1, totalScore / 10 + 0.3);
 
     return {
       card,
       score: totalScore,
       confidence,
-      reason: getReasonForCard(card, weakAreas, profile),
+      reason: getReasonForCard(card, weakAreas, strength),
     };
   });
 
@@ -147,15 +156,19 @@ export function generateRecommendations(progress: UserProgress): WorkoutRecommen
   }));
 }
 
-export function getTopRecommendations(progress: UserProgress, count: number = 3): WorkoutRecommendation[] {
-  return generateRecommendations(progress).slice(0, count);
+export function getTopRecommendations(
+  progress: UserProgress,
+  count: number = 3,
+  userProfile?: UserProfile | null,
+): WorkoutRecommendation[] {
+  return generateRecommendations(progress, userProfile).slice(0, count);
 }
 
 export function getStrengthProfile(progress: UserProgress): StrengthProfile {
   return buildStrengthProfile(progress);
 }
 
-export function getWeakAreaNames(progress: UserProgress): string[] {
-  const profile = buildStrengthProfile(progress);
-  return getWeakAreas(profile).map(area => area.replace('_', ' '));
+export function getWeakAreaNames(progress: UserProgress, userProfile?: UserProfile | null): string[] {
+  const strength = buildStrengthProfile(progress);
+  return getWeakAreas(strength, userProfile).map(area => area.replace('_', ' '));
 }

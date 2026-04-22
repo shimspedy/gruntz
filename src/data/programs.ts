@@ -1,10 +1,59 @@
 import type { TrainingProgram, IntervalSplits } from '../types';
 
 // ============================================================
-// TRAINING PROGRAMS — Raider Prep & Recon Prep
+// TRAINING PROGRAMS — Base Camp, Raider Prep & Recon Prep
 // ============================================================
 
 export const PROGRAMS: TrainingProgram[] = [
+  {
+    id: 'basecamp',
+    name: 'Base Camp',
+    subtitle: 'Adaptive Starting Point',
+    description: 'An 8-week adaptive mission plan for first-timers, returning athletes, fat-loss goals, older users, and anyone who wants to build a durable foundation before tactical prep. Sessions are generated locally from your onboarding answers, with low-impact, bodyweight, and steady progression options.',
+    icon: 'basecamp',
+    duration_weeks: 8,
+    days_per_week: 4,
+    difficulty: 'beginner',
+    focus_areas: ['Walking Base', 'Bodyweight Strength', 'Mobility', 'Balance', 'Habit Building'],
+    prerequisites: ['Able to move comfortably at your own pace', 'No acute medical restriction against exercise', 'Willing to start steady and progress gradually'],
+    equipment_needed: ['Comfortable shoes', 'Floor space', 'Optional chair, step, light backpack, or dumbbells'],
+    phases: [
+      {
+        phase_number: 1,
+        name: 'Start Moving',
+        weeks: [1, 2],
+        description: 'Short, joint-friendly missions that build confidence, basic strength, and daily movement rhythm.',
+        focus: 'Consistency + movement quality',
+        is_deload_included: false,
+      },
+      {
+        phase_number: 2,
+        name: 'Build Capacity',
+        weeks: [3, 6],
+        description: 'Progress walking time, bodyweight strength, core control, and low-impact conditioning.',
+        focus: 'Aerobic base + strength endurance',
+        is_deload_included: true,
+      },
+      {
+        phase_number: 3,
+        name: 'Mission Ready Base',
+        weeks: [7, 8],
+        description: 'Blend strength, conditioning, and recovery so users can continue Base Camp or graduate into Raider or Recon.',
+        focus: 'Readiness bridge',
+        is_deload_included: false,
+      },
+    ],
+    rpe_guide: {
+      scale: [
+        { value: 1, label: 'Very Easy', description: 'Almost no strain. Useful for warm-ups and recovery.', color: '#4CAF50' },
+        { value: '2-3', label: 'Easy', description: 'Comfortable effort. You can speak in full sentences.', color: '#8BC34A' },
+        { value: '4-6', label: 'Steady', description: 'Working, but controlled. Breathing is deeper but manageable.', color: '#FFEB3B' },
+        { value: '7-8', label: 'Hard', description: 'Short phrases only. Reserved for users who selected higher intensity.', color: '#FF9800' },
+        { value: 9, label: 'Very Hard', description: 'Brief efforts only. Stop if form breaks down.', color: '#FF5722' },
+        { value: 10, label: 'Max', description: 'Not used in Base Camp programming.', color: '#F44336' },
+      ],
+    },
+  },
   {
     id: 'raider',
     name: 'Raider Prep',

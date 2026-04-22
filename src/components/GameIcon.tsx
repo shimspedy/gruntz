@@ -125,6 +125,7 @@ const aliasMap: Record<string, GameIconName> = {
   '🦅': 'program',
   '⚔️': 'program',
   'shield-outline': 'program',
+  basecamp: 'program',
   raider: 'program',
   recon: 'program',
   profile: 'profile',
@@ -287,7 +288,7 @@ export function GameIcon({
   size = 28,
   color,
   style,
-  animated = true,
+  animated = false,
   variant = 'full',
 }: GameIconProps) {
   const colors = useColors();

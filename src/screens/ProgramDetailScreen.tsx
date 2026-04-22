@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Animated } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
@@ -19,11 +20,16 @@ import { GameIcon } from '../components/GameIcon';
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'ProgramDetail'>;
 type Route = RouteProp<HomeStackParamList, 'ProgramDetail'>;
 
-const TAB_BAR_HEIGHT = 72;
+function getProgramAccentColor(programId: ProgramId, colors: ThemeColors) {
+  if (programId === 'basecamp') return colors.accentGreen;
+  if (programId === 'recon') return colors.accentOrange;
+  return colors.accent;
+}
 
 export default function ProgramDetailScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const heroAnim = useFadeInUp(500);
   const navigation = useNavigation<Nav>();
@@ -57,7 +63,7 @@ export default function ProgramDetailScreen() {
     );
   }
 
-  const accentColor = program.id === 'raider' ? colors.accent : colors.accentOrange;
+  const accentColor = getProgramAccentColor(program.id, colors);
   const trainingUnlocked = hasTrainingAccess({ trialStartedAt, entitlementActive });
   const membershipPrice = getDisplayedMonthlyPrice(currentOffering);
 
@@ -75,7 +81,7 @@ export default function ProgramDetailScreen() {
         {
           text: 'Start Program',
           onPress: () => {
-            selectProgram(program.id as ProgramId);
+            selectProgram(program.id);
             setHasSeenProgramSelect(true);
             navigation.popToTop();
           },
@@ -151,7 +157,7 @@ export default function ProgramDetailScreen() {
       </ScrollView>
 
       {/* Fixed bottom button — above glass tab bar */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + TAB_BAR_HEIGHT }]}>
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + tabBarHeight }]}>
         {!trainingUnlocked ? (
           <Text style={styles.lockedNotice}>
             Subscribe for {membershipPrice} to unlock this program and every future training block.
