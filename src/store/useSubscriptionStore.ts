@@ -8,11 +8,16 @@ import {
   isRevenueCatAvailable,
   loadRevenueCatState,
   openManagementUrl,
+  purchaseAnnualRevenueCatPackage,
   purchaseCurrentRevenueCatPackage,
   type OfferingSnapshot,
   presentRevenueCatCustomerCenter,
   restoreRevenueCatPurchases,
 } from '../services/subscription';
+import {
+  cancelTrialEndingReminder,
+  scheduleTrialEndingReminder,
+} from '../services/notifications';
 import { useUserStore } from './useUserStore';
 
 const STORAGE_KEY = '@gruntz_subscription';
@@ -37,6 +42,7 @@ interface SubscriptionState {
   refresh: () => Promise<void>;
   loadOffering: () => Promise<void>;
   purchaseMonthly: () => Promise<'purchased' | 'cancelled' | 'unavailable' | 'error'>;
+  purchaseAnnual: () => Promise<'purchased' | 'cancelled' | 'unavailable' | 'error'>;
   restoreAccess: () => Promise<'restored' | 'unavailable' | 'error'>;
   openCustomerCenter: () => Promise<'presented' | 'unavailable' | 'error'>;
   openSubscriptionManagement: () => Promise<void>;
@@ -123,14 +129,75 @@ function userFacingError(raw: string | undefined | null, fallback: string): stri
   return fallback;
 }
 
+type PurchaseRunner = () => Promise<{
+  status: 'purchased' | 'cancelled' | 'unavailable' | 'error';
+  customerInfo: Awaited<ReturnType<typeof loadRevenueCatState>>['customerInfo'];
+  message?: string;
+}>;
+
+async function runPurchase(
+  set: (partial: Partial<SubscriptionState>) => void,
+  get: () => SubscriptionState,
+  runner: PurchaseRunner,
+): Promise<'purchased' | 'cancelled' | 'unavailable' | 'error'> {
+  set({ isLoading: true, lastError: null });
+
+  try {
+    const result = await runner();
+
+    if (result.customerInfo) {
+      syncEntitlementState(set, result.customerInfo);
+    }
+
+    const configured = isRevenueCatAvailable();
+
+    if (result.status === 'error' || result.status === 'unavailable') {
+      set({
+        isLoading: false,
+        isConfigured: configured,
+        lastError: userFacingError(
+          result.message,
+          'Subscription is temporarily unavailable. Please try again later.',
+        ),
+      });
+      return result.status === 'error' ? 'error' : 'unavailable';
+    }
+
+    set({ isLoading: false, isConfigured: configured, lastError: null });
+
+    if (result.status === 'purchased') {
+      get().refresh().catch((err) => {
+        if (__DEV__) console.warn('[subscription] background refresh after purchase failed', err);
+      });
+      return 'purchased';
+    }
+
+    return 'cancelled';
+  } catch (error) {
+    set({
+      isLoading: false,
+      isConfigured: isRevenueCatAvailable(),
+      lastError: userFacingError(
+        error instanceof Error ? error.message : null,
+        'Something went wrong with your purchase. Please try again.',
+      ),
+    });
+    return 'error';
+  }
+}
+
 function syncEntitlementState(set: (partial: Partial<SubscriptionState>) => void, customerInfo: Awaited<ReturnType<typeof loadRevenueCatState>>['customerInfo']) {
   const entitlement = getEntitlementAccess(customerInfo);
+  const active = entitlement?.isActive === true;
   set({
-    entitlementActive: entitlement?.isActive === true,
+    entitlementActive: active,
     entitlementExpiresAt: entitlement?.expirationDate ?? null,
     entitlementProductIdentifier: entitlement?.productIdentifier ?? null,
     managementUrl: customerInfo?.managementURL ?? null,
   });
+  if (active) {
+    void cancelTrialEndingReminder();
+  }
 }
 
 export const useSubscriptionStore = create<SubscriptionState>()(
@@ -151,7 +218,12 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         if (get().trialStartedAt) {
           return;
         }
-        set({ trialStartedAt: startAt ?? new Date().toISOString() });
+        const startedAt = startAt ?? new Date().toISOString();
+        set({ trialStartedAt: startedAt });
+        const endsAt = getTrialEndsAt(startedAt);
+        if (endsAt) {
+          void scheduleTrialEndingReminder(endsAt);
+        }
       },
 
       initialize: async () => {
@@ -222,51 +294,8 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         }
       },
 
-      purchaseMonthly: async () => {
-        set({ isLoading: true, lastError: null });
-
-        try {
-          const result = await purchaseCurrentRevenueCatPackage();
-
-          if (result.customerInfo) {
-            syncEntitlementState(set, result.customerInfo);
-          }
-
-          const configured = isRevenueCatAvailable();
-
-          if (result.status === 'error' || result.status === 'unavailable') {
-            set({
-              isLoading: false,
-              isConfigured: configured,
-              lastError: userFacingError(result.message, 'Subscription is temporarily unavailable. Please try again later.'),
-            });
-            return result.status === 'error' ? 'error' : 'unavailable';
-          }
-
-          // Success paths — clear errors first, then refresh in background
-          set({ isLoading: false, isConfigured: configured, lastError: null });
-
-          if (result.status === 'purchased') {
-            // Refresh in background — don't block UI
-            get().refresh().catch((err) => {
-              if (__DEV__) console.warn('[subscription] background refresh after purchase failed', err);
-            });
-            return 'purchased';
-          }
-
-          return 'cancelled';
-        } catch (error) {
-          set({
-            isLoading: false,
-            isConfigured: isRevenueCatAvailable(),
-            lastError: userFacingError(
-              error instanceof Error ? error.message : null,
-              'Something went wrong with your purchase. Please try again.',
-            ),
-          });
-          return 'error';
-        }
-      },
+      purchaseMonthly: async () => runPurchase(set, get, purchaseCurrentRevenueCatPackage),
+      purchaseAnnual: async () => runPurchase(set, get, purchaseAnnualRevenueCatPackage),
 
       restoreAccess: async () => {
         set({ isLoading: true, lastError: null });

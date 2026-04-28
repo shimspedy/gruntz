@@ -195,3 +195,82 @@ export async function showStreakWarning(streakDays: number) {
     });
   }, undefined);
 }
+
+// ─── Trial Ending Nudge ─────────────────────────────────────────
+// Schedules a one-shot reminder ~36h before the trial window ends so the
+// user has time to subscribe before losing access. Replaces any prior
+// trial-ending notification on each call.
+
+export async function scheduleTrialEndingReminder(trialEndsAt: string) {
+  await cancelTrialEndingReminder();
+
+  const endTime = new Date(trialEndsAt).getTime();
+  if (!Number.isFinite(endTime)) return;
+  const fireAt = new Date(endTime - 36 * 60 * 60 * 1000);
+  if (fireAt.getTime() <= Date.now() + 60_000) {
+    // Less than a minute away (or in the past) — nothing to schedule.
+    return;
+  }
+
+  await withNotificationGuard(async () => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Your access ends soon',
+        body: 'Your Gruntz trial wraps up in less than 2 days. Subscribe to keep your streak.',
+        data: { type: 'trial-ending' },
+        ...(Platform.OS === 'android' && { channelId: 'daily-reminder' }),
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: fireAt,
+      },
+    });
+  }, undefined);
+}
+
+export async function cancelTrialEndingReminder() {
+  await withNotificationGuard(async () => {
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    for (const notif of scheduled) {
+      if (notif.content.data?.type === 'trial-ending') {
+        await Notifications.cancelScheduledNotificationAsync(notif.identifier);
+      }
+    }
+  }, undefined);
+}
+
+// ─── Weekly Recap ───────────────────────────────────────────────
+// Sunday-evening prompt. Encourages a quick check-in on missions,
+// streaks, and challenge wins — keeps the user looping back into the app.
+
+export async function scheduleWeeklyRecap(hour = 19, minute = 0) {
+  await cancelWeeklyRecap();
+
+  await withNotificationGuard(async () => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Week In Review',
+        body: 'See your missions, streak, and challenge XP for the week.',
+        data: { type: 'weekly-recap' },
+        ...(Platform.OS === 'android' && { channelId: 'daily-reminder' }),
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+        weekday: 1, // Sunday (1 in expo-notifications)
+        hour,
+        minute,
+      },
+    });
+  }, undefined);
+}
+
+export async function cancelWeeklyRecap() {
+  await withNotificationGuard(async () => {
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    for (const notif of scheduled) {
+      if (notif.content.data?.type === 'weekly-recap') {
+        await Notifications.cancelScheduledNotificationAsync(notif.identifier);
+      }
+    }
+  }, undefined);
+}

@@ -25,12 +25,27 @@ export interface OfferingSnapshot {
   description: string;
   priceString: string;
   introPriceString: string | null;
+  /**
+   * Optional yearly package metadata. Present when the active offering in
+   * RevenueCat exposes both a monthly and an annual package. The paywall uses
+   * this to render an annual selector with auto-computed savings.
+   */
+  annual?: {
+    packageIdentifier: string;
+    productIdentifier: string;
+    priceString: string;
+    /** Per-month price derived from the annual product, e.g. "$2.49/month". */
+    pricePerMonthString: string | null;
+    /** Whole-number percent savings vs. monthly, or null if not derivable. */
+    percentSavings: number | null;
+  } | null;
 }
 
 let purchasesModulePromise: Promise<typeof import('react-native-purchases')> | null = null;
 let purchasesUiModulePromise: Promise<typeof import('react-native-purchases-ui')> | null = null;
 let didConfigurePurchases = false;
 let cachedPackage: PurchasesPackage | null = null;
+let cachedAnnualPackage: PurchasesPackage | null = null;
 let cachedOffering: PurchasesOffering | null = null;
 let customerInfoListener: CustomerInfoUpdateListener | null = null;
 let didAttachCustomerInfoListener = false;
@@ -54,6 +69,42 @@ function choosePackage(offering: PurchasesOffering | null): PurchasesPackage | n
     offering.availablePackages[0] ??
     null
   );
+}
+
+function chooseAnnualPackage(offering: PurchasesOffering | null): PurchasesPackage | null {
+  if (!offering) {
+    return null;
+  }
+  return offering.annual ?? null;
+}
+
+function buildAnnualSnapshot(
+  monthlyPkg: PurchasesPackage | null,
+  annualPkg: PurchasesPackage | null,
+): OfferingSnapshot['annual'] {
+  if (!annualPkg) return null;
+  const annualPrice = annualPkg.product.price;
+  const monthlyPrice = monthlyPkg?.product.price ?? null;
+  const pricePerMonthString = annualPkg.product.pricePerMonthString
+    ? `${annualPkg.product.pricePerMonthString}/month`
+    : null;
+  let percentSavings: number | null = null;
+
+  if (Number.isFinite(annualPrice) && monthlyPrice !== null && monthlyPrice > 0) {
+    const fullYearAtMonthly = monthlyPrice * 12;
+    const saved = 1 - annualPrice / fullYearAtMonthly;
+    if (saved > 0) {
+      percentSavings = Math.round(saved * 100);
+    }
+  }
+
+  return {
+    packageIdentifier: annualPkg.identifier,
+    productIdentifier: annualPkg.product.identifier,
+    priceString: annualPkg.product.priceString,
+    pricePerMonthString,
+    percentSavings,
+  };
 }
 
 function chooseOffering(offerings: PurchasesOfferings): PurchasesOffering | null {
@@ -109,6 +160,7 @@ export async function configureRevenueCat() {
   } catch {
     didConfigurePurchases = false;
     cachedPackage = null;
+    cachedAnnualPackage = null;
     cachedOffering = null;
     return false;
   }
@@ -151,7 +203,11 @@ export function getEntitlementAccess(customerInfo: CustomerInfo | null) {
   );
 }
 
-function snapshotFromOffering(offering: PurchasesOffering | null, pkg: PurchasesPackage | null): OfferingSnapshot | null {
+function snapshotFromOffering(
+  offering: PurchasesOffering | null,
+  pkg: PurchasesPackage | null,
+  annualPkg: PurchasesPackage | null = null,
+): OfferingSnapshot | null {
   if (!offering || !pkg) {
     return null;
   }
@@ -165,6 +221,7 @@ function snapshotFromOffering(offering: PurchasesOffering | null, pkg: Purchases
     description: pkg.product.description,
     priceString: pkg.product.priceString,
     introPriceString: pkg.product.introPrice?.priceString ?? null,
+    annual: buildAnnualSnapshot(pkg, annualPkg),
   };
 }
 
@@ -180,6 +237,7 @@ export async function loadRevenueCatState(options?: {
   if (!configured) {
     if (includeOfferings) {
       cachedPackage = null;
+      cachedAnnualPackage = null;
       cachedOffering = null;
     }
     return { currentOffering: null, customerInfo: null, configured: false };
@@ -189,6 +247,7 @@ export async function loadRevenueCatState(options?: {
   if (!purchasesModule) {
     if (includeOfferings) {
       cachedPackage = null;
+      cachedAnnualPackage = null;
       cachedOffering = null;
     }
     return { currentOffering: null, customerInfo: null, configured: false };
@@ -199,13 +258,13 @@ export async function loadRevenueCatState(options?: {
   if (!includeOfferings) {
     try {
       return {
-        currentOffering: snapshotFromOffering(cachedOffering, cachedPackage),
+        currentOffering: snapshotFromOffering(cachedOffering, cachedPackage, cachedAnnualPackage),
         customerInfo: await customerInfoPromise,
         configured: true,
       };
     } catch (err) {
       if (__DEV__) console.warn('[subscription] getCustomerInfo failed', err);
-      return { currentOffering: snapshotFromOffering(cachedOffering, cachedPackage), customerInfo: null, configured: true };
+      return { currentOffering: snapshotFromOffering(cachedOffering, cachedPackage, cachedAnnualPackage), customerInfo: null, configured: true };
     }
   }
 
@@ -218,9 +277,10 @@ export async function loadRevenueCatState(options?: {
     const currentOffering = chooseOffering(offerings);
     cachedOffering = currentOffering;
     cachedPackage = choosePackage(currentOffering);
+    cachedAnnualPackage = chooseAnnualPackage(currentOffering);
 
     return {
-      currentOffering: snapshotFromOffering(currentOffering, cachedPackage),
+      currentOffering: snapshotFromOffering(currentOffering, cachedPackage, cachedAnnualPackage),
       customerInfo,
       configured: true,
     };
@@ -254,6 +314,44 @@ export async function purchaseCurrentRevenueCatPackage(): Promise<{
 
   try {
     const result = await purchasesModule.default.purchasePackage(cachedPackage as PurchasesPackage);
+    return { status: 'purchased', customerInfo: result.customerInfo };
+  } catch (error) {
+    const err = error as { userCancelled?: boolean; message?: string };
+    if (err.userCancelled) {
+      return { status: 'cancelled', customerInfo: null };
+    }
+    return {
+      status: 'error',
+      customerInfo: null,
+      message: err.message || 'Purchase failed. Try again in a moment.',
+    };
+  }
+}
+
+export async function purchaseAnnualRevenueCatPackage(): Promise<{
+  status: PurchaseStatus;
+  customerInfo: CustomerInfo | null;
+  message?: string;
+}> {
+  const configured = await configureRevenueCat();
+  if (!configured) {
+    return { status: 'unavailable', customerInfo: null, message: 'Billing is not configured yet.' };
+  }
+
+  const purchasesModule = await getPurchasesModule();
+  if (!purchasesModule) {
+    return { status: 'unavailable', customerInfo: null, message: 'Billing is not available on this platform.' };
+  }
+
+  if (!cachedAnnualPackage) {
+    await loadRevenueCatState();
+    if (!cachedAnnualPackage) {
+      return { status: 'unavailable', customerInfo: null, message: 'No annual subscription package is available yet.' };
+    }
+  }
+
+  try {
+    const result = await purchasesModule.default.purchasePackage(cachedAnnualPackage as PurchasesPackage);
     return { status: 'purchased', customerInfo: result.customerInfo };
   } catch (error) {
     const err = error as { userCancelled?: boolean; message?: string };

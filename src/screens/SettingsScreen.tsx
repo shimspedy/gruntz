@@ -11,7 +11,14 @@ import { useUserStore } from '../store/useUserStore';
 import { GlassCard } from '../components/GlassCard';
 import { GameIcon } from '../components/GameIcon';
 import { hapticLight, hapticWarning } from '../utils/haptics';
-import { requestNotificationPermission, scheduleDailyReminder, cancelDailyReminder, setupNotificationChannels } from '../services/notifications';
+import {
+  cancelDailyReminder,
+  cancelWeeklyRecap,
+  requestNotificationPermission,
+  scheduleDailyReminder,
+  scheduleWeeklyRecap,
+  setupNotificationChannels,
+} from '../services/notifications';
 import {
   GRUNTZ_PRIVACY_POLICY_URL,
   GRUNTZ_SUPPORT_URL,
@@ -61,12 +68,12 @@ export default function SettingsScreen() {
                 }
                 // Clear SecureStore items (fitness assessment is stored here).
                 await SecureStore.deleteItemAsync('gruntz_assessment').catch(() => {});
-                // Finally reset in-memory state.
+                // Cancel any scheduled local notifications tied to this user.
+                await Promise.all([cancelDailyReminder(), cancelWeeklyRecap()]);
+                // Finally reset in-memory state. RootNavigator watches
+                // `isOnboarded` and will route the user back to OnboardingScreen
+                // automatically — no manual restart needed.
                 resetUser();
-                Alert.alert(
-                  'Data erased',
-                  'Restart Gruntz to complete the reset.',
-                );
               } catch {
                 Alert.alert('Could not erase all data', 'Try again, or reinstall the app to fully reset.');
               }
@@ -114,10 +121,12 @@ export default function SettingsScreen() {
                       }
                       await setupNotificationChannels();
                       await scheduleDailyReminder(7, 0);
+                      await scheduleWeeklyRecap();
                       updateSettings({ notifications_enabled: true, reminder_time: '07:00' });
                       return;
                     }
                     await cancelDailyReminder();
+                    await cancelWeeklyRecap();
                     updateSettings({ notifications_enabled: false });
                   } catch {
                     Alert.alert('Error', 'Could not update notification settings. Try again.');

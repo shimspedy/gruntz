@@ -280,10 +280,10 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 
   const renderName = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepEyebrow}>STEP 1 OF {QUESTION_STEPS}</Text>
+      <Text style={styles.stepEyebrow}>STEP 1 OF {QUESTION_STEPS} · OPTIONAL</Text>
       <Text style={styles.stepTitle}>What should we call you?</Text>
       <Text style={styles.stepSubtitle}>
-        Your callsign appears on every mission brief.
+        Your callsign appears on every mission brief. Leave it blank if you'd rather stay "Recruit."
       </Text>
       <View style={styles.nameInputWrap}>
         <TextInput
@@ -300,10 +300,22 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
         />
       </View>
       <MissionButton
-        title={displayName.trim().length > 0 ? 'NEXT' : 'SKIP'}
+        title={displayName.trim().length > 0 ? 'NEXT' : 'CONTINUE'}
         onPress={goNext}
         style={styles.cta}
       />
+      {displayName.trim().length === 0 ? (
+        <TouchableOpacity
+          onPress={goNext}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Skip naming and continue"
+          hitSlop={{ top: 8, bottom: 8, left: 16, right: 16 }}
+          style={styles.skipLink}
+        >
+          <Text style={styles.skipLinkText}>Skip for now</Text>
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 
@@ -1120,5 +1132,18 @@ const createStyles = (colors: ThemeColors) =>
     // CTA
     cta: {
       marginTop: spacing.xl,
+    },
+    skipLink: {
+      alignSelf: 'center',
+      marginTop: spacing.md,
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.md,
+    },
+    skipLinkText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.textMuted,
+      letterSpacing: 0.5,
+      textDecorationLine: 'underline',
     },
   });

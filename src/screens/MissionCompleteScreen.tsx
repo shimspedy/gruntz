@@ -12,6 +12,8 @@ import { GameIcon } from '../components/GameIcon';
 import { LottieReward } from '../components/LottieReward';
 import { hapticSuccess, hapticLevelUp, hapticHeartbeat } from '../utils/haptics';
 import { useBounceIn, useFadeInUp, useFadeInDown, useZoomIn } from '../utils/animations';
+import { maybeRequestReview } from '../utils/socialActions';
+import { useUserStore } from '../store/useUserStore';
 import type { HomeStackParamList } from '../types/navigation';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'MissionComplete'>;
@@ -28,6 +30,9 @@ export default function MissionCompleteScreen() {
   const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
   const [lottieVisible, setLottieVisible] = useState(true);
   const [levelUpLottieVisible, setLevelUpLottieVisible] = useState(false);
+
+  const workoutsCompleted = useUserStore((s) => s.progress.workouts_completed);
+  const streakDays = useUserStore((s) => s.progress.streak_days);
 
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -49,6 +54,23 @@ export default function MissionCompleteScreen() {
       }
     };
   }, [leveledUp, newRank]);
+
+  // Ask for a review at meaningful, positive moments. The util enforces a
+  // 90-day cooldown and falls back to the App Store URL when the native
+  // prompt isn't available, so this is safe to fire on every qualifying turn.
+  useEffect(() => {
+    const milestone =
+      Boolean(newRank) ||
+      streakDays === 7 ||
+      streakDays === 30 ||
+      workoutsCompleted === 5 ||
+      workoutsCompleted === 25;
+    if (!milestone) return;
+    const timer = setTimeout(() => {
+      void maybeRequestReview(`milestone:streak=${streakDays} workouts=${workoutsCompleted}`);
+    }, 2200);
+    return () => clearTimeout(timer);
+  }, [newRank, streakDays, workoutsCompleted]);
 
   const checkAnim = useBounceIn(600, 200);
   const titleAnim = useFadeInUp(500, 400);

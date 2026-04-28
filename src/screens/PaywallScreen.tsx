@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -28,12 +28,12 @@ import { hapticLevelUp } from '../utils/haptics';
 type BenefitTier = 'hero' | 'standard';
 
 const benefits: { label: string; tier: BenefitTier }[] = [
-  { label: 'Full Base Camp, Raider, and Recon programs', tier: 'hero' },
-  { label: 'Unlimited daily mission access', tier: 'hero' },
-  { label: 'Workout cards, swim cards, and run support', tier: 'hero' },
-  { label: 'Progress, XP, streaks, and achievements', tier: 'standard' },
-  { label: 'Apple Health sync', tier: 'standard' },
-  { label: 'Exclusive daily challenges', tier: 'standard' },
+  { label: 'Train every day with mission-based workouts', tier: 'hero' },
+  { label: 'Build a streak you can actually keep', tier: 'hero' },
+  { label: 'Progress through Base Camp, Raider, and Recon', tier: 'hero' },
+  { label: 'Run and ruck tracking with pace + elevation', tier: 'standard' },
+  { label: 'Workout cards, swim cards, and recovery flows', tier: 'standard' },
+  { label: 'Earn XP, ranks, and exclusive daily challenges', tier: 'standard' },
 ];
 
 export default function PaywallScreen() {
@@ -49,6 +49,7 @@ export default function PaywallScreen() {
   const lastError = useSubscriptionStore((s) => s.lastError);
   const loadOffering = useSubscriptionStore((s) => s.loadOffering);
   const purchaseMonthly = useSubscriptionStore((s) => s.purchaseMonthly);
+  const purchaseAnnual = useSubscriptionStore((s) => s.purchaseAnnual);
   const restoreAccess = useSubscriptionStore((s) => s.restoreAccess);
   const openCustomerCenter = useSubscriptionStore((s) => s.openCustomerCenter);
   const openSubscriptionManagement = useSubscriptionStore((s) => s.openSubscriptionManagement);
@@ -57,6 +58,22 @@ export default function PaywallScreen() {
   const trialDaysRemaining = getTrialDaysRemaining(trialStartedAt);
   const priceLabel = getDisplayedMonthlyPrice(currentOffering);
   const productTitle = currentOffering?.title || `${GRUNTZ_PRO_LABEL} Monthly`;
+  const annual = currentOffering?.annual ?? null;
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>(
+    annual ? 'annual' : 'monthly',
+  );
+  const selectedPlanTitle =
+    selectedPlan === 'annual' && annual ? `${GRUNTZ_PRO_LABEL} Annual` : productTitle;
+  const selectedPlanPrice =
+    selectedPlan === 'annual' && annual ? annual.priceString : priceLabel;
+  const selectedPlanPeriod = selectedPlan === 'annual' && annual ? 'yearly' : 'monthly';
+  // If RevenueCat returns the annual package after first render, default-select it once.
+  useEffect(() => {
+    if (annual && selectedPlan === 'monthly') {
+      setSelectedPlan('annual');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [annual?.productIdentifier]);
   const storeLabel =
     Platform.OS === 'ios'
       ? 'App Store'
@@ -89,7 +106,7 @@ export default function PaywallScreen() {
         return;
       }
 
-      const result = await purchaseMonthly();
+      const result = await (selectedPlan === 'annual' && annual ? purchaseAnnual() : purchaseMonthly());
       if (result === 'purchased') {
         void hapticLevelUp();
         Alert.alert(
@@ -135,9 +152,26 @@ export default function PaywallScreen() {
             {GRUNTZ_PRO_LABEL}
           </Text>
           <Text style={styles.subtitle}>
-            Unlock the complete tactical training system.
+            Show up daily. Build the discipline. Train like it's the standard.
           </Text>
         </View>
+
+        {/* Outcomes Card — what subscribers actually do with Pro */}
+        <GlassCard style={styles.outcomesCard}>
+          <Text style={styles.outcomesEyebrow}>WHAT YOU'LL DO</Text>
+          <View style={styles.outcomeRow}>
+            <GameIcon name="streak" size={16} color={colors.streakFire} variant="minimal" animated={false} />
+            <Text style={styles.outcomeText}>Hold a 30-day streak without breaking it</Text>
+          </View>
+          <View style={styles.outcomeRow}>
+            <GameIcon name="rank" size={16} color={colors.accent} variant="minimal" animated={false} />
+            <Text style={styles.outcomeText}>Move from Recruit to Operator on a real plan</Text>
+          </View>
+          <View style={styles.outcomeRow}>
+            <GameIcon name="run" size={16} color={colors.accentGreen} variant="minimal" animated={false} />
+            <Text style={styles.outcomeText}>Train for ruck, run, and PT with one app</Text>
+          </View>
+        </GlassCard>
 
         {/* Status Card */}
         <GlassCard style={styles.statusCard} variant={accessState === 'subscriber' ? 'default' : 'accent'}>
@@ -195,14 +229,51 @@ export default function PaywallScreen() {
           )}
         </GlassCard>
 
-        {/* Price Card */}
-        <GlassCard style={styles.priceCard} variant="accent">
-          <Text style={styles.priceLabel}>{productTitle}</Text>
-          <Text style={styles.priceValue}>{priceLabel}</Text>
-          <Text style={styles.priceSub}>
-            Monthly subscription. New accounts get {GRUNTZ_TRIAL_DAYS} days of app access before a subscription is required.
-          </Text>
-        </GlassCard>
+        {/* Price / Plan Selector */}
+        {annual ? (
+          <View style={styles.planRow}>
+            <TouchableOpacity
+              style={[styles.planCard, selectedPlan === 'annual' && styles.planCardActive]}
+              activeOpacity={0.85}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: selectedPlan === 'annual' }}
+              accessibilityLabel="Annual plan"
+              onPress={() => setSelectedPlan('annual')}
+            >
+              {annual.percentSavings ? (
+                <View style={styles.planSaveBadge}>
+                  <Text style={styles.planSaveText}>SAVE {annual.percentSavings}%</Text>
+                </View>
+              ) : null}
+              <Text style={styles.planLabel}>ANNUAL</Text>
+              <Text style={styles.planPrice}>{annual.priceString}</Text>
+              <Text style={styles.planSub}>
+                {annual.pricePerMonthString || 'Billed yearly'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.planCard, selectedPlan === 'monthly' && styles.planCardActive]}
+              activeOpacity={0.85}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: selectedPlan === 'monthly' }}
+              accessibilityLabel="Monthly plan"
+              onPress={() => setSelectedPlan('monthly')}
+            >
+              <Text style={styles.planLabel}>MONTHLY</Text>
+              <Text style={styles.planPrice}>{priceLabel}</Text>
+              <Text style={styles.planSub}>Billed monthly</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <GlassCard style={styles.priceCard} variant="accent">
+            <Text style={styles.priceLabel}>{productTitle}</Text>
+            <Text style={styles.priceValue}>{priceLabel}</Text>
+            <Text style={styles.priceSub}>
+              Monthly subscription. New accounts get {GRUNTZ_TRIAL_DAYS} days of app access before a subscription is required.
+            </Text>
+          </GlassCard>
+        )}
 
         {/* Benefits Card */}
         <GlassCard style={styles.benefitsCard}>
@@ -282,7 +353,7 @@ export default function PaywallScreen() {
         <GlassCard style={styles.legalCard}>
           <Text style={styles.legalTitle}>Subscription Details</Text>
           <Text style={styles.legalBody}>
-            {productTitle} is an auto-renewable monthly subscription billed at {priceLabel}. Payment
+            {selectedPlanTitle} is an auto-renewable {selectedPlanPeriod} subscription billed at {selectedPlanPrice}. Payment
             is charged to your {storeLabel} account at confirmation of purchase and renews
             automatically unless it is canceled at least 24 hours before the end of the current
             period.
@@ -333,7 +404,7 @@ export default function PaywallScreen() {
                 ? currentOffering
                   ? 'UNLOCK GRUNTZ PRO'
                   : 'LOADING PRICING…'
-                : 'BILLING UNAVAILABLE'
+                : 'CONNECTING…'
           }
           onPress={handlePrimary}
           loading={isLoading}
@@ -412,6 +483,30 @@ const createStyles = (colors: ThemeColors) =>
       textAlign: 'center',
       lineHeight: 20,
     },
+    outcomesCard: {
+      marginBottom: spacing.md,
+      gap: spacing.sm,
+    },
+    outcomesEyebrow: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.textMuted,
+      letterSpacing: 1.2,
+      textTransform: 'uppercase',
+      marginBottom: spacing.xs,
+    },
+    outcomeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    outcomeText: {
+      flex: 1,
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      lineHeight: 18,
+    },
     statusCard: {
       marginBottom: spacing.md,
     },
@@ -442,6 +537,58 @@ const createStyles = (colors: ThemeColors) =>
       fontSize: 13,
       color: colors.textSecondary,
       lineHeight: 19,
+    },
+    planRow: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    planCard: {
+      flex: 1,
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: colors.cardBorder,
+      backgroundColor: colors.card,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.sm,
+      alignItems: 'center',
+      position: 'relative',
+    },
+    planCardActive: {
+      borderColor: colors.accent,
+      backgroundColor: `${colors.accent}0D`,
+    },
+    planSaveBadge: {
+      position: 'absolute',
+      top: -8,
+      backgroundColor: colors.accentGreen,
+      borderRadius: borderRadius.full,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+    },
+    planSaveText: {
+      fontSize: 10,
+      fontWeight: '800',
+      color: colors.background,
+      letterSpacing: 1,
+    },
+    planLabel: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.textMuted,
+      letterSpacing: 1.2,
+      marginBottom: spacing.xs,
+    },
+    planPrice: {
+      fontSize: 22,
+      fontWeight: '800',
+      color: colors.textPrimary,
+    },
+    planSub: {
+      fontSize: 11,
+      color: colors.textMuted,
+      marginTop: 2,
+      textAlign: 'center',
     },
     priceCard: {
       marginBottom: spacing.md,

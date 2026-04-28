@@ -18,6 +18,7 @@ import { getRankInfo } from '../data/ranks';
 import { getProgramById } from '../data/programs';
 import { getDisplayedMonthlyPrice } from '../config/monetization';
 import { hapticLight } from '../utils/haptics';
+import { shareStreak } from '../utils/socialActions';
 import { useAdaptiveLayout } from '../hooks/useAdaptiveLayout';
 import { getAccessState, getTrialDaysRemaining, useSubscriptionStore } from '../store/useSubscriptionStore';
 import type { ProfileStackParamList } from '../types/navigation';
@@ -81,6 +82,13 @@ export default function ProfileScreen() {
     },
     { label: activeProgram ? `Program: ${activeProgram.name}` : 'Choose Program', icon: 'program', screen: 'ProgramSelect' as const },
     { label: 'Achievements', icon: 'achievement', screen: 'Achievements' as const },
+    {
+      label: 'Share My Streak',
+      icon: 'streak',
+      onPress: async () => {
+        await shareStreak(progress.streak_days, progress.current_rank);
+      },
+    },
     { label: 'Settings', icon: 'settings', screen: 'Settings' as const },
   ];
 
