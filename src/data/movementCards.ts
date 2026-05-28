@@ -1,7 +1,7 @@
 import { MovementCard } from '../types';
 
 // ============================================================
-// MOVEMENT CARDS (6) + SWIM CARDS (5)
+// MOVEMENT CARDS (7) + SWIM CARDS (5)
 // Based on a special operations fitness preparation program
 // Each card is a self-contained workout block used in the weekly schedule
 // ============================================================
@@ -338,6 +338,69 @@ export const movementCards: MovementCard[] = [
         notes: 'Pyramid: 1-2-3-4-5-4-3-2-1 pull-ups.',
         exercises: [
           { exercise_id: 'pullups', order: 1, notes: 'Pyramid reps: 1→5→1' },
+        ],
+      },
+    ],
+  },
+
+  // ============================
+  // MOVEMENT CARD #7: FORM BASICS
+  // ============================
+  {
+    id: 'card_7',
+    card_number: 7,
+    name: 'Form Basics',
+    category: 'total_body',
+    description: 'Beginner-friendly technique circuit built around movement fundamentals. Focuses on clean reps, balanced push/pull work, core control, and a short recovery downshift.',
+    difficulty: 'beginner',
+    estimated_duration: 25,
+    target_muscle_groups: ['chest', 'back', 'legs', 'core', 'shoulders'],
+    icon: 'basecamp',
+    total_rounds: 7,
+    sections: [
+      {
+        id: 'card7_prep',
+        name: 'Movement Prep',
+        rounds: 1,
+        notes: 'Move smoothly and use this block to check today\'s range of motion.',
+        exercises: [
+          { exercise_id: 'jumping_jacks', order: 1, prescribed_duration: 45, notes: 'Step jacks are fine for low impact' },
+          { exercise_id: 'floor_prone_cobra', order: 2, prescribed_reps: 8, notes: 'Pause and squeeze upper back' },
+          { exercise_id: 'prisoner_squat', order: 3, prescribed_reps: 12, notes: 'Tall chest, knees follow toes' },
+        ],
+      },
+      {
+        id: 'card7_control',
+        name: 'Control Circuit',
+        rounds: 3,
+        rest_between_rounds: 60,
+        notes: 'Leave two clean reps in reserve on every movement.',
+        exercises: [
+          { exercise_id: 'modified_pushups', order: 1, prescribed_reps: 10, notes: 'Scale up to regular push-ups when ready' },
+          { exercise_id: 'standing_tubing_row', order: 2, prescribed_reps: 12, notes: 'Squeeze shoulder blades' },
+          { exercise_id: 'straight_arm_plank', order: 3, prescribed_duration: 45, notes: 'Ribs down, glutes tight' },
+          { exercise_id: 'reverse_crunch_rotation', order: 4, prescribed_reps: 10, notes: 'Controlled rotation' },
+        ],
+      },
+      {
+        id: 'card7_power',
+        name: 'Power Primer',
+        rounds: 2,
+        rest_between_rounds: 75,
+        notes: 'Skip jumps if joints are not ready today.',
+        exercises: [
+          { exercise_id: 'squat_jump', order: 1, prescribed_reps: 6, notes: 'Land softly and reset' },
+          { exercise_id: 'plank_walkup', order: 2, prescribed_reps: 6, notes: 'Alternate lead arm each rep' },
+        ],
+      },
+      {
+        id: 'card7_recovery',
+        name: 'Recovery Downshift',
+        rounds: 1,
+        notes: 'Breathe slowly and finish better than you started.',
+        exercises: [
+          { exercise_id: 'child_pose', order: 1, prescribed_duration: 45 },
+          { exercise_id: 'butterfly_stretch', order: 2, prescribed_duration: 45 },
         ],
       },
     ],

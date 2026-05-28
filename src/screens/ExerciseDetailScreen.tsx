@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated, Linking } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -14,6 +14,7 @@ import { Card } from '../components/Card';
 import { GameIcon } from '../components/GameIcon';
 import { MissionButton } from '../components/MissionButton';
 import { RepLogModal } from '../components/RepLogModal';
+import { ExerciseVideoPlayer } from '../components/ExerciseVideoPlayer';
 import { getExerciseById } from '../data/exercises';
 import type { HomeStackParamList } from '../types/navigation';
 import type { SetLog } from '../types';
@@ -48,14 +49,6 @@ export default function ExerciseDetailScreen() {
 
   const handleLog = (_set: SetLog) => {
     setShowLogModal(false);
-  };
-
-  const handleWatchDemo = () => {
-    hapticMedium();
-    const url =
-      exercise.demo_url ??
-      `https://www.youtube.com/results?search_query=${encodeURIComponent(`how to do ${exercise.name}`)}`;
-    Linking.openURL(url).catch(() => {});
   };
 
   return (
@@ -106,28 +99,23 @@ export default function ExerciseDetailScreen() {
           </View>
         </View>
 
+        {typeof exercise.video_asset === 'number' || exercise.video_url || exercise.demo_url ? (
+          <ExerciseVideoPlayer
+            exerciseName={exercise.name}
+            videoAsset={exercise.video_asset}
+            videoUrl={exercise.video_url}
+            demoUrl={exercise.demo_url}
+          />
+        ) : null}
+
         {/* Description */}
-        <Card title="Description">
+        <Card title="Description" style={styles.sectionCard}>
           <Text style={styles.description}>{exercise.description}</Text>
         </Card>
 
-        {/* Watch How-To */}
-        <TouchableOpacity
-          style={styles.demoBtn}
-          onPress={handleWatchDemo}
-          activeOpacity={0.85}
-          accessibilityRole="link"
-          accessibilityLabel={`Watch how to do ${exercise.name}`}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Ionicons name="play-circle" size={16} color={colors.accent} />
-          <Text style={styles.demoBtnText}>Watch How-To</Text>
-          <Ionicons name="open-outline" size={12} color={colors.textMuted} />
-        </TouchableOpacity>
-
         {/* Step-by-Step */}
         {exercise.steps && exercise.steps.length > 0 && (
-          <Card title="How To Perform">
+          <Card title="How To Perform" style={styles.sectionCard}>
             {exercise.steps.map((step, i) => (
               <View key={i} style={styles.stepRow}>
                 <View style={styles.stepNumber}>
@@ -141,7 +129,7 @@ export default function ExerciseDetailScreen() {
 
         {/* Form Tips */}
         {exercise.form_tips.length > 0 && (
-          <Card title="Form Tips">
+          <Card title="Form Tips" style={styles.sectionCard}>
             {exercise.form_tips.map((tip, i) => (
               <View key={i} style={styles.tipRow}>
                 <Ionicons name="checkmark-circle" size={14} color={colors.accentGreen} />
@@ -153,7 +141,7 @@ export default function ExerciseDetailScreen() {
 
         {/* Muscle Groups */}
         {exercise.muscle_groups && exercise.muscle_groups.length > 0 && (
-          <Card title="Muscle Groups">
+          <Card title="Muscle Groups" style={styles.sectionCard}>
             <View style={styles.pillRow}>
               {exercise.muscle_groups.map((group, i) => (
                 <View key={i} style={styles.musclePill}>
@@ -166,7 +154,7 @@ export default function ExerciseDetailScreen() {
 
         {/* Equipment */}
         {exercise.equipment.length > 0 && (
-          <Card title="Equipment Needed">
+          <Card title="Equipment Needed" style={styles.sectionCard}>
             {exercise.equipment.map((eq, i) => (
               <View key={i} style={styles.tipRow}>
                 <Ionicons name="barbell-outline" size={14} color={colors.textMuted} />
@@ -181,7 +169,7 @@ export default function ExerciseDetailScreen() {
 
         {/* Progression */}
         {exercise.progression_rules && (
-          <Card title="Progression">
+          <Card title="Progression" style={styles.sectionCard}>
             <Text style={styles.description}>
               Increase by{' '}
               {exercise.progression_rules.increment_reps
@@ -223,6 +211,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   content: {
     padding: spacing.md,
     paddingBottom: spacing.xxl,
+  },
+  sectionCard: {
+    marginBottom: spacing.lg,
   },
   emptyContainer: {
     flex: 1,
@@ -396,7 +387,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: borderRadius.md,
     paddingVertical: spacing.sm + 4,
     alignItems: 'center',
-    marginTop: spacing.md,
+    marginTop: spacing.lg,
   },
   logBtnText: {
     fontSize: 13,

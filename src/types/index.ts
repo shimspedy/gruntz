@@ -20,6 +20,8 @@ export interface Exercise {
   steps?: string[];
   illustration?: string;
   demo_url?: string;
+  video_url?: string;
+  video_asset?: number;
 }
 
 export interface ProgressionRules {

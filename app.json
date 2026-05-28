@@ -51,7 +51,8 @@
           "locationWhenInUsePermission": "Gruntz uses your location to track runs and rucks."
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-video"
     ],
     "extra": {
       "eas": {
