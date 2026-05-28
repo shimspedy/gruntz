@@ -484,19 +484,19 @@ export default function HomeScreen() {
         {/* SECTION 6: Quick Stats Row */}
         <GlassCard style={styles.summaryStrip} variant="default">
           <View style={styles.summaryRow}>
-            <View style={styles.summaryItem}>
+            <View style={[styles.summaryItem, styles.summaryItemSide]}>
               <GameIcon name="level" size={18} color={colors.accent} animated={false} />
               <Text style={styles.summaryValue}>{progress.current_level}</Text>
               <Text style={styles.summaryLabel}>Level</Text>
             </View>
             <View style={styles.summaryDivider} />
-            <View style={styles.summaryItem}>
+            <View style={[styles.summaryItem, styles.summaryItemCenter]}>
               <GameIcon name="streak" size={18} color={colors.streakFire} animated={false} />
               <Text style={styles.summaryValue}>{progress.streak_days}</Text>
               <Text style={styles.summaryLabel}>Streak</Text>
             </View>
             <View style={styles.summaryDivider} />
-            <View style={styles.summaryItem}>
+            <View style={[styles.summaryItem, styles.summaryItemSide]}>
               <GameIcon name="mission" size={18} color={colors.accentGreen} animated={false} />
               <Text style={styles.summaryValue}>{progress.workouts_completed}</Text>
               <Text style={styles.summaryLabel}>Missions</Text>
@@ -985,9 +985,14 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'stretch',
   },
   summaryItem: {
-    flex: 1,
     alignItems: 'center',
     gap: spacing.xs,
+  },
+  summaryItemSide: {
+    flex: 1,
+  },
+  summaryItemCenter: {
+    flex: 2,
   },
   summaryDivider: {
     width: StyleSheet.hairlineWidth,
