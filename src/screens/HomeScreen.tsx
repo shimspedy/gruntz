@@ -1,14 +1,12 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated, AppState } from 'react-native';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useColors, spacing, borderRadius } from '../theme';
 import { useFadeInUp } from '../utils/animations';
 import type { ThemeColors } from '../theme';
 import { XPBar } from '../components/XPBar';
-import { StatCard } from '../components/StatCard';
 import { MissionButton } from '../components/MissionButton';
 import { ChallengeLogModal } from '../components/ChallengeLogModal';
 import { GlassCard } from '../components/GlassCard';
@@ -28,6 +26,7 @@ import { formatChallengeAmount, getTodaysChallenge } from '../data/dailyChalleng
 import { showAchievementUnlocked } from '../services/notifications';
 import { hapticLight, hapticDoubleTap } from '../utils/haptics';
 import { useAdaptiveLayout } from '../hooks/useAdaptiveLayout';
+import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
 import { getAccessState, getTrialDaysRemaining, hasTrainingAccess, useSubscriptionStore } from '../store/useSubscriptionStore';
 import type { ProgramId, UserProfile } from '../types';
 import type { HomeStackParamList } from '../types/navigation';
@@ -66,8 +65,7 @@ export default function HomeScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const heroAnim = useFadeInUp(500);
   const { contentMaxWidth, horizontalPadding } = useAdaptiveLayout();
-  const tabBarHeight = useBottomTabBarHeight();
-  const insets = useSafeAreaInsets();
+  const { bottomContentPadding } = useFloatingTabBarSpacing();
   const navigation = useNavigation<Nav>();
 
   // User & progress
@@ -172,8 +170,6 @@ export default function HomeScreen() {
     () => (todaysMission ? getProgramWorkoutDay(selectedProgram, todaysMission.workout_day_id, profile) : undefined),
     [profile, selectedProgram, todaysMission],
   );
-  const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
-
   // Get greeting based on time of day
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -298,25 +294,7 @@ export default function HomeScreen() {
           <XPBar current={xpInfo.current} required={xpInfo.required} level={progress.current_level} />
         </View>
 
-        {/* SECTION 3: Muscle Body Map (Hero) */}
-        {program && (
-          <GlassCard style={styles.muscleMapCard} variant="default">
-            <View style={styles.muscleMapContainer}>
-              <MuscleBodyMap activeMuscles={activeMuscles} />
-              {activeMuscles.length > 0 && (
-                <View style={styles.muscleChips}>
-                  {activeMuscles.map((muscle) => (
-                    <View key={muscle} style={styles.muscleChip}>
-                      <Text style={styles.muscleChipText}>{muscle}</Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-            </View>
-          </GlassCard>
-        )}
-
-        {/* SECTION 4: Today's Mission Card */}
+        {/* SECTION 3: Today's Mission Card */}
         {todaysMission && !isRestDay && (
           <GlassCard style={styles.missionSection} variant="accent">
             <Text style={styles.sectionLabel}>TODAY'S MISSION</Text>
@@ -402,6 +380,33 @@ export default function HomeScreen() {
           </GlassCard>
         )}
 
+        {/* SECTION 4: Target Areas */}
+        {program && (
+          <GlassCard style={styles.muscleMapCard} variant="default">
+            <View style={styles.muscleMapHeader}>
+              <View>
+                <Text style={styles.sectionLabel}>TARGET AREAS</Text>
+                <Text style={styles.muscleMapTitle}>Today&apos;s focus</Text>
+              </View>
+              <Text style={styles.muscleMapCount}>
+                {activeMuscles.length > 0 ? `${activeMuscles.length} active` : 'Recovery'}
+              </Text>
+            </View>
+            <View style={styles.muscleMapContainer}>
+              <MuscleBodyMap activeMuscles={activeMuscles} scale={0.86} />
+              {activeMuscles.length > 0 && (
+                <View style={styles.muscleChips}>
+                  {activeMuscles.map((muscle) => (
+                    <View key={muscle} style={styles.muscleChip}>
+                      <Text style={styles.muscleChipText}>{muscle}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          </GlassCard>
+        )}
+
         {/* SECTION 5: Daily Challenge Card */}
         {todaysChallenge && (
           <GlassCard style={styles.challengeSection} variant="default">
@@ -477,11 +482,27 @@ export default function HomeScreen() {
         )}
 
         {/* SECTION 6: Quick Stats Row */}
-        <View style={styles.statsRow}>
-          <StatCard icon="level" value={progress.current_level} label="Level" color={colors.accent} />
-          <StatCard icon="streak" value={progress.streak_days} label="Streak" color={colors.streakFire} />
-          <StatCard icon="mission" value={progress.workouts_completed} label="Missions" color={colors.accentGreen} />
-        </View>
+        <GlassCard style={styles.summaryStrip} variant="default">
+          <View style={styles.summaryRow}>
+            <View style={styles.summaryItem}>
+              <GameIcon name="level" size={18} color={colors.accent} animated={false} />
+              <Text style={styles.summaryValue}>{progress.current_level}</Text>
+              <Text style={styles.summaryLabel}>Level</Text>
+            </View>
+            <View style={styles.summaryDivider} />
+            <View style={styles.summaryItem}>
+              <GameIcon name="streak" size={18} color={colors.streakFire} animated={false} />
+              <Text style={styles.summaryValue}>{progress.streak_days}</Text>
+              <Text style={styles.summaryLabel}>Streak</Text>
+            </View>
+            <View style={styles.summaryDivider} />
+            <View style={styles.summaryItem}>
+              <GameIcon name="mission" size={18} color={colors.accentGreen} animated={false} />
+              <Text style={styles.summaryValue}>{progress.workouts_completed}</Text>
+              <Text style={styles.summaryLabel}>Missions</Text>
+            </View>
+          </View>
+        </GlassCard>
 
         {/* SECTION 7: Quick Actions */}
         <View style={styles.quickActionsRow}>
@@ -687,6 +708,25 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   // MUSCLE MAP
   muscleMapCard: {
     marginBottom: spacing.lg,
+  },
+  muscleMapHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  muscleMapTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  muscleMapCount: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.accent,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   muscleMapContainer: {
     alignItems: 'center',
@@ -936,6 +976,36 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
     marginBottom: spacing.lg,
+  },
+  summaryStrip: {
+    marginBottom: spacing.lg,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+  },
+  summaryItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  summaryDivider: {
+    width: StyleSheet.hairlineWidth,
+    alignSelf: 'stretch',
+    backgroundColor: colors.cardBorder,
+  },
+  summaryValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    fontVariant: ['tabular-nums'],
+  },
+  summaryLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
 
   // QUICK ACTIONS

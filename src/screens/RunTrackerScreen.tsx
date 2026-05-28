@@ -2,13 +2,13 @@ import React, { useMemo, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, spacing } from '../theme';
 import type { ThemeColors } from '../theme';
 import { useRunTracker } from '../hooks/useRunTracker';
 import { useBarometerAltitude } from '../hooks/useBarometerAltitude';
+import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
 import { hapticLight, hapticSuccess, hapticMedium } from '../utils/haptics';
 
 function formatDuration(ms: number): string {
@@ -36,9 +36,8 @@ export default function RunTrackerScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const tracker = useRunTracker();
   const baro = useBarometerAltitude();
-  const tabBarHeight = useBottomTabBarHeight();
-  const insets = useSafeAreaInsets();
-  const controlsBottomPad = Math.max(spacing.md, tabBarHeight + insets.bottom + spacing.sm);
+  const { insets } = useFloatingTabBarSpacing();
+  const controlsBottomPad = Math.max(spacing.md, insets.bottom + spacing.md);
   const scrollBottomPad = controlsBottomPad + 120; // clearance for controls bar
 
   const handleStart = useCallback(async () => {

@@ -21,7 +21,7 @@ export function MissionsStack() {
         contentStyle: { backgroundColor: colors.background },
       }}
     >
-      <Stack.Screen name="WorkoutCards" component={WorkoutCardsScreen} options={{ title: 'Training Cards' }} />
+      <Stack.Screen name="WorkoutCards" component={WorkoutCardsScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Achievements" component={AchievementsScreen} options={{ title: 'Achievements' }} />
       <Stack.Screen name="Paywall" component={PaywallScreen} options={{ title: 'Gruntz Pro', headerBackTitle: 'Back' }} />
       <Stack.Screen name="CardDetail" component={CardDetailScreen} options={{ title: 'Card Detail' }} />

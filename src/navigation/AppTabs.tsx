@@ -4,10 +4,11 @@ import { HomeStack } from './HomeStack';
 import { MissionsStack } from './MissionsStack';
 import ProgressScreen from '../screens/ProgressScreen';
 import { ProfileStack } from './ProfileStack';
-import { useColors } from '../theme';
+import { spacing, useColors } from '../theme';
 import { hapticSelection } from '../utils/haptics';
 import { GlassTabBar } from '../components/GlassTabBar';
 import { GameIcon } from '../components/GameIcon';
+import { FLOATING_TAB_BAR_BOTTOM_OFFSET, FLOATING_TAB_BAR_HEIGHT } from '../hooks/useFloatingTabBarSpacing';
 import type { RootTabParamList } from '../types/navigation';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -23,9 +24,9 @@ export function AppTabs() {
           backgroundColor: colors.background,
           borderTopColor: colors.cardBorder,
           borderTopWidth: 1,
-          height: 85,
-          paddingBottom: 25,
-          paddingTop: 8,
+          height: FLOATING_TAB_BAR_HEIGHT + FLOATING_TAB_BAR_BOTTOM_OFFSET + spacing.sm,
+          paddingBottom: 0,
+          paddingTop: 0,
         },
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,

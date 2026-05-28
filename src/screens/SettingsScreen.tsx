@@ -2,8 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Switch, Alert, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
@@ -25,6 +24,7 @@ import {
   GRUNTZ_TERMS_OF_USE_URL,
 } from '../config/legal';
 import { openExternalUrl } from '../utils/externalLinks';
+import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
 
 export default function SettingsScreen() {
   const colors = useColors();
@@ -32,9 +32,7 @@ export default function SettingsScreen() {
   const profile = useUserStore((s) => s.profile);
   const updateSettings = useUserStore((s) => s.updateSettings);
   const resetUser = useUserStore((s) => s.reset);
-  const tabBarHeight = useBottomTabBarHeight();
-  const insets = useSafeAreaInsets();
-  const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
+  const { bottomContentPadding } = useFloatingTabBarSpacing();
 
   const notificationsEnabled = profile?.settings.notifications_enabled ?? true;
   const imperialUnits = (profile?.settings.units ?? 'imperial') === 'imperial';

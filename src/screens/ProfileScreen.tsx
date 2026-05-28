@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated } from 'react-native';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +19,7 @@ import { getDisplayedMonthlyPrice } from '../config/monetization';
 import { hapticLight } from '../utils/haptics';
 import { shareStreak } from '../utils/socialActions';
 import { useAdaptiveLayout } from '../hooks/useAdaptiveLayout';
+import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
 import { getAccessState, getTrialDaysRemaining, useSubscriptionStore } from '../store/useSubscriptionStore';
 import type { ProfileStackParamList } from '../types/navigation';
 
@@ -46,8 +46,7 @@ export default function ProfileScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const heroAnim = useFadeInUp(500);
   const { contentMaxWidth, horizontalPadding } = useAdaptiveLayout();
-  const tabBarHeight = useBottomTabBarHeight();
-  const insets = useSafeAreaInsets();
+  const { bottomContentPadding } = useFloatingTabBarSpacing(140);
   const navigation = useNavigation<Nav>();
   const { progress, profile } = useUserStore();
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
@@ -60,10 +59,21 @@ export default function ProfileScreen() {
   const accessState = getAccessState({ trialStartedAt, entitlementActive });
   const trialDaysRemaining = getTrialDaysRemaining(trialStartedAt);
   const monthlyPrice = getDisplayedMonthlyPrice(currentOffering);
-  const bottomContentPadding = Math.max(120, tabBarHeight + insets.bottom + spacing.lg);
 
   const { selectedProgram } = useProgramStore();
   const activeProgram = selectedProgram ? getProgramById(selectedProgram) : null;
+  const hasAnyActivity = progress.workouts_completed > 0 || progress.total_reps > 0;
+
+  const handleMembershipPress = async () => {
+    if (accessState === 'subscriber') {
+      const result = await openCustomerCenter();
+      if (result === 'unavailable' || result === 'error') {
+        await openSubscriptionManagement();
+      }
+      return;
+    }
+    navigation.navigate('Paywall');
+  };
 
   const menuItems = [
     {
@@ -127,8 +137,35 @@ export default function ProfileScreen() {
           <Text style={styles.totalXP}>{progress.current_xp.toLocaleString()} Total XP</Text>
         </GlassCard>
 
+        {!hasAnyActivity && (
+          <TouchableOpacity
+            style={styles.setupPrompt}
+            activeOpacity={0.85}
+            onPress={() => {
+              hapticLight();
+              navigation.navigate('ProgramSelect');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Choose a training program"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <View style={styles.setupIcon}>
+              <GameIcon name="program" size={18} color={colors.accent} variant="minimal" animated={false} />
+            </View>
+            <View style={styles.setupBody}>
+              <Text style={styles.setupTitle}>Set your training path</Text>
+              <Text style={styles.setupText}>Pick a program so your stats and scores calibrate from real work.</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
+          </TouchableOpacity>
+        )}
+
         {/* Membership Card */}
-        <GlassCard style={styles.section} variant={accessState === 'subscriber' ? 'default' : 'accent'}>
+        <GlassCard
+          style={styles.section}
+          variant={accessState === 'subscriber' ? 'default' : 'accent'}
+          onPress={handleMembershipPress}
+        >
           <View style={styles.membershipBadge}>
             {accessState === 'subscriber' ? (
               <>
@@ -151,9 +188,9 @@ export default function ProfileScreen() {
           </Text>
           <Text style={styles.membershipText}>
             {accessState === 'subscriber'
-              ? 'All programs and daily missions unlocked.'
+              ? 'All programs, daily missions, and training cards are unlocked.'
               : accessState === 'trial'
-                ? `Included access active. Subscription is only required when this window ends. Monthly plan: ${monthlyPrice}.`
+                ? `Included access is active. Pro starts after trial at ${monthlyPrice}.`
                 : `Subscribe for ${monthlyPrice} to unlock all training.`}
           </Text>
         </GlassCard>
@@ -161,6 +198,9 @@ export default function ProfileScreen() {
         {/* Fitness Scores */}
         <GlassCard style={styles.section}>
           <Text style={styles.sectionLabel}>Fitness Scores</Text>
+          {!hasAnyActivity && (
+            <Text style={styles.scoreHint}>Scores unlock after your first completed mission.</Text>
+          )}
           <View style={styles.scoreGrid}>
             <View style={styles.scoreItem}>
               <Text style={[styles.scoreValue, { color: colors.accent }]}>{progress.strength_score}</Text>
@@ -337,6 +377,40 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginTop: spacing.sm,
     fontVariant: ['tabular-nums'],
   },
+  setupPrompt: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: `${colors.accent}0D`,
+    borderRadius: borderRadius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: `${colors.accent}45`,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    marginBottom: spacing.md,
+  },
+  setupIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: borderRadius.sm,
+    backgroundColor: `${colors.accent}12`,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  setupBody: {
+    flex: 1,
+  },
+  setupTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: 2,
+  },
+  setupText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    lineHeight: 17,
+  },
   membershipBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -369,6 +443,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+  },
+  scoreHint: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    lineHeight: 17,
+    marginTop: -spacing.xs,
+    marginBottom: spacing.sm,
   },
   scoreItem: {
     width: '48%',

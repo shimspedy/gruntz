@@ -8,6 +8,7 @@ import { hapticSuccess, hapticSelection, hapticLight } from '../utils/haptics';
 import { useFadeInDown } from '../utils/animations';
 import type { Exercise, SetLog } from '../types';
 import { GameIcon } from './GameIcon';
+import { ExerciseVideoPlayer } from './ExerciseVideoPlayer';
 
 interface RepLogModalProps {
   visible: boolean;
@@ -104,14 +105,22 @@ export function RepLogModal({
   const isTimeExercise = !!exercise.duration_seconds && !exercise.reps;
   const isDistanceExercise = !!exercise.distance && !exercise.reps && !exercise.duration_seconds;
   const saveLabel = exercise.rest_seconds > 0 && !isFinalSet ? 'LOG SET & START REST' : isFinalSet ? 'LOG FINAL SET' : `LOG SET ${currentSetNumber}`;
+  const hasVideo = typeof exercise.video_asset === 'number' || Boolean(exercise.video_url || exercise.demo_url);
+  const targetText = [
+    exercise.reps ? `${exercise.sets || 1} x ${exercise.reps} reps` : null,
+    exercise.duration_seconds ? `${exercise.duration_seconds}s` : null,
+    exercise.distance ? exercise.distance : null,
+  ].filter(Boolean).join(' ');
 
   return (
     <Modal visible={visible} animationType="fade" transparent>
-      <BlurView intensity={40} tint="dark" style={styles.overlay}>
+      <BlurView intensity={54} tint="dark" style={styles.overlay}>
         <Animated.View style={[styles.modal, { opacity: fadeIn.opacity, transform: fadeIn.transform }]}>
           <View style={styles.header}>
             <View style={styles.headerLeft}>
-              <GameIcon name={exercise.illustration || exercise.category} size={44} color={colors.accent} style={styles.illustration} />
+              <View style={styles.illustrationBadge}>
+                <GameIcon name={exercise.illustration || exercise.category} size={26} color={colors.accent} variant="minimal" />
+              </View>
               <View>
                 <Text style={styles.title}>{exercise.name}</Text>
                 <Text style={styles.category}>{exercise.category.toUpperCase()}</Text>
@@ -128,28 +137,47 @@ export function RepLogModal({
             </TouchableOpacity>
           </View>
 
-          {/* Target info */}
-          <View style={styles.targetRow}>
-            <Text style={styles.targetLabel}>TARGET:</Text>
-            <Text style={styles.targetValue}>
-              {exercise.reps ? `${exercise.sets || 1} × ${exercise.reps} reps` : ''}
-              {exercise.duration_seconds ? `${exercise.duration_seconds}s` : ''}
-              {exercise.distance ? ` ${exercise.distance}` : ''}
-            </Text>
-            <View style={styles.progressBadge}>
-              <Text style={styles.progressBadgeText}>
-                SET {currentSetNumber}/{targetSets}
-              </Text>
-            </View>
-            {exercise.rest_seconds > 0 && (
-              <View style={styles.restWrap}>
-                <GameIcon name="time" size={16} color={colors.accent} variant="minimal" />
-                <Text style={styles.restLabel}>{exercise.rest_seconds}s rest</Text>
+          <ScrollView
+            style={styles.contentScroll}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {hasVideo ? (
+              <View style={styles.videoBlock}>
+                <ExerciseVideoPlayer
+                  exerciseName={exercise.name}
+                  videoAsset={exercise.video_asset}
+                  videoUrl={exercise.video_url}
+                  demoUrl={exercise.demo_url}
+                  variant="compact"
+                  allowExternalOpen={false}
+                />
               </View>
-            )}
-          </View>
+            ) : null}
 
-          <ScrollView style={styles.setsList} showsVerticalScrollIndicator={false}>
+            {/* Target info */}
+            <View style={styles.targetRow}>
+              <View style={styles.targetMetric}>
+                <Text style={styles.targetLabel}>TARGET</Text>
+                <Text style={styles.targetValue}>{targetText}</Text>
+              </View>
+              <View style={styles.targetDivider} />
+              <View style={styles.targetMetricCompact}>
+                <Text style={styles.targetLabel}>SET</Text>
+                <Text style={styles.targetValue}>{currentSetNumber}/{targetSets}</Text>
+              </View>
+              {exercise.rest_seconds > 0 && (
+                <>
+                  <View style={styles.targetDivider} />
+                  <View style={styles.targetMetricCompact}>
+                    <Text style={styles.targetLabel}>REST</Text>
+                    <Text style={styles.targetValue}>{exercise.rest_seconds}s</Text>
+                  </View>
+                </>
+              )}
+            </View>
+
             {hasLoggedSets ? (
               <View style={styles.loggedBlock}>
                 <View style={styles.loggedHeader}>
@@ -290,28 +318,39 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderTopRightRadius: borderRadius.xl,
     borderTopWidth: 2,
     borderTopColor: colors.accent,
-    padding: spacing.lg,
-    paddingBottom: spacing.xl,
-    maxHeight: '88%',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.lg,
+    maxHeight: '94%',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm + 2,
+    flex: 1,
+    paddingRight: spacing.sm,
   },
-  illustration: {
-    marginRight: spacing.xs,
+  illustrationBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: `${colors.accent}10`,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: `${colors.accent}35`,
   },
   title: {
     fontSize: 20,
     fontWeight: '800',
     color: colors.textPrimary,
+    lineHeight: 24,
   },
   category: {
     fontSize: 11,
@@ -323,17 +362,40 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   closeBtn: {
     padding: spacing.sm,
   },
+  contentScroll: {
+    maxHeight: 570,
+  },
+  scrollContent: {
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.md,
+  },
+  videoBlock: {
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+  },
   targetRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
     marginBottom: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.sm + 2,
     paddingHorizontal: spacing.md,
     backgroundColor: colors.background,
     borderRadius: borderRadius.md,
-    borderLeftWidth: 2,
-    borderLeftColor: colors.accentGold,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.cardBorder,
+    gap: spacing.sm,
+  },
+  targetMetric: {
+    flex: 1,
+    minWidth: 0,
+  },
+  targetMetricCompact: {
+    alignItems: 'center',
+  },
+  targetDivider: {
+    width: StyleSheet.hairlineWidth,
+    alignSelf: 'stretch',
+    backgroundColor: colors.cardBorder,
   },
   targetLabel: {
     fontSize: 11,
@@ -343,8 +405,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   targetValue: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '800',
     color: colors.textPrimary,
+    marginTop: 2,
+    fontVariant: ['tabular-nums'],
   },
   progressBadge: {
     marginLeft: 'auto',
@@ -434,6 +498,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.cardBorder,
+    marginBottom: spacing.md,
   },
   currentSetLabel: {
     fontSize: 11,
@@ -446,7 +511,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    marginBottom: spacing.sm,
   },
   setNumber: {
     width: 32,
@@ -488,7 +552,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   rpeSection: {
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.sm,
   },
   rpeLabel: {
     fontSize: 11,
@@ -537,6 +601,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: borderRadius.md,
     paddingVertical: 16,
     alignItems: 'center',
+    marginTop: spacing.sm,
   },
   saveBtnText: {
     fontSize: 16,

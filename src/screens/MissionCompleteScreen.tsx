@@ -1,7 +1,6 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Animated, ScrollView } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useColors, spacing, MAX_FONT_MULTIPLIER, borderRadius } from '../theme';
@@ -14,6 +13,7 @@ import { hapticSuccess, hapticLevelUp, hapticHeartbeat } from '../utils/haptics'
 import { useBounceIn, useFadeInUp, useFadeInDown, useZoomIn } from '../utils/animations';
 import { maybeRequestReview } from '../utils/socialActions';
 import { useUserStore } from '../store/useUserStore';
+import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
 import type { HomeStackParamList } from '../types/navigation';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'MissionComplete'>;
@@ -25,9 +25,7 @@ export default function MissionCompleteScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const { xpEarned = 0, coinsEarned = 0, leveledUp = false, newRank } = route.params ?? {};
-  const tabBarHeight = useBottomTabBarHeight();
-  const insets = useSafeAreaInsets();
-  const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
+  const { bottomContentPadding } = useFloatingTabBarSpacing();
   const [lottieVisible, setLottieVisible] = useState(true);
   const [levelUpLottieVisible, setLevelUpLottieVisible] = useState(false);
 

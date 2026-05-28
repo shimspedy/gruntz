@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, CommonActions } from '@react-navigation/native';
 import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
@@ -10,15 +9,14 @@ import { GameIcon } from '../components/GameIcon';
 import { MissionButton } from '../components/MissionButton';
 import { useUserStore } from '../store/useUserStore';
 import { achievements as allAchievements } from '../data/achievements';
+import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
 
 export default function AchievementsScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const userAchievements = useUserStore((s) => s.achievements);
   const navigation = useNavigation();
-  const tabBarHeight = useBottomTabBarHeight();
-  const insets = useSafeAreaInsets();
-  const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
+  const { bottomContentPadding } = useFloatingTabBarSpacing();
 
   const isUnlocked = (achievementId: string) =>
     userAchievements.some((a) => a.achievement_id === achievementId && a.unlocked);

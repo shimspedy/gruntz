@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Animated } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
@@ -13,6 +12,7 @@ import { getProgramById } from '../data/programs';
 import { getDisplayedMonthlyPrice } from '../config/monetization';
 import { useProgramStore } from '../store/useProgramStore';
 import { hasTrainingAccess, useSubscriptionStore } from '../store/useSubscriptionStore';
+import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
 import type { HomeStackParamList } from '../types/navigation';
 import type { ProgramPhase, ProgramId } from '../types';
 import { GameIcon } from '../components/GameIcon';
@@ -28,8 +28,7 @@ function getProgramAccentColor(programId: ProgramId, colors: ThemeColors) {
 
 export default function ProgramDetailScreen() {
   const colors = useColors();
-  const insets = useSafeAreaInsets();
-  const tabBarHeight = useBottomTabBarHeight();
+  const { insets } = useFloatingTabBarSpacing();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const heroAnim = useFadeInUp(500);
   const navigation = useNavigation<Nav>();
@@ -157,7 +156,7 @@ export default function ProgramDetailScreen() {
       </ScrollView>
 
       {/* Fixed bottom button — above glass tab bar */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + tabBarHeight }]}>
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + spacing.md }]}>
         {!trainingUnlocked ? (
           <Text style={styles.lockedNotice}>
             Subscribe for {membershipPrice} to unlock this program and every future training block.

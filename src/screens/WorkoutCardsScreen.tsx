@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +16,7 @@ import { useUserStore } from '../store/useUserStore';
 import { hasTrainingAccess, useSubscriptionStore } from '../store/useSubscriptionStore';
 import { getTopRecommendations, getStrengthProfile } from '../utils/recommendations';
 import { hapticLight } from '../utils/haptics';
+import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
 import type { MovementCard, WorkoutRecommendation } from '../types';
 import type { MissionsStackParamList } from '../types/navigation';
 
@@ -94,8 +94,7 @@ const CardItem = React.memo(function CardItem({
 export default function WorkoutCardsScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const tabBarHeight = useBottomTabBarHeight();
-  const insets = useSafeAreaInsets();
+  const { bottomContentPadding } = useFloatingTabBarSpacing();
   const navigation = useNavigation<Nav>();
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
   const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
@@ -117,10 +116,9 @@ export default function WorkoutCardsScreen() {
     recommendations.forEach(r => map.set(r.card_id, r));
     return map;
   }, [recommendations]);
-  const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
-
   const movCards = useMemo(() => getAllMovementCards(), []);
   const swimCards = useMemo(() => getAllSwimCards(), []);
+  const totalCardCount = movCards.length + swimCards.length;
 
   if (!trainingUnlocked) {
     return (
@@ -129,6 +127,13 @@ export default function WorkoutCardsScreen() {
           style={styles.scroll}
           contentContainerStyle={[styles.content, { paddingBottom: bottomContentPadding }]}
         >
+          <View style={styles.screenHeader}>
+            <Text style={styles.kicker}>TRAINING LIBRARY</Text>
+            <Text style={styles.screenTitle} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>Training Cards</Text>
+            <Text style={styles.screenSubtitle}>
+              Unlock movement and swim cards built for tactical prep.
+            </Text>
+          </View>
           <Card style={styles.lockedCard}>
             <GameIcon name="mission" size={32} color={colors.accentGold} style={styles.lockedIcon} />
             <Text style={styles.lockedTitle}>Training cards are part of Gruntz Pro</Text>
@@ -152,6 +157,14 @@ export default function WorkoutCardsScreen() {
         style={styles.scroll}
         contentContainerStyle={[styles.content, { paddingBottom: bottomContentPadding }]}
       >
+        <View style={styles.screenHeader}>
+          <Text style={styles.kicker}>TRAINING LIBRARY</Text>
+          <Text style={styles.screenTitle} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>Training Cards</Text>
+          <Text style={styles.screenSubtitle}>
+            {totalCardCount} cards matched to your strength profile and current gaps.
+          </Text>
+        </View>
+
         <TouchableOpacity
           style={styles.achievementsBanner}
           activeOpacity={0.8}
@@ -231,6 +244,28 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   content: {
     padding: spacing.md,
+  },
+  screenHeader: {
+    marginBottom: spacing.lg,
+  },
+  kicker: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMuted,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+  },
+  screenTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
+  screenSubtitle: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 18,
   },
   achievementsBanner: {
     flexDirection: 'row',
@@ -314,7 +349,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   lockedCard: {
     alignItems: 'center',
-    marginTop: spacing.xl,
   },
   lockedIcon: {
     marginBottom: spacing.md,
@@ -340,7 +374,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: borderRadius.md,
     padding: spacing.md,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.cardBorder,
   },

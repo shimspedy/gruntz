@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { useEvent } from 'expo';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import type { VideoSource } from 'expo-video';
@@ -14,6 +14,9 @@ interface ExerciseVideoPlayerProps {
   videoAsset?: number;
   videoUrl?: string;
   demoUrl?: string;
+  variant?: 'standard' | 'compact';
+  allowExternalOpen?: boolean;
+  style?: StyleProp<ViewStyle>;
 }
 
 const DEMO_LOOP_SECONDS = 6;
@@ -389,16 +392,27 @@ function YouTubeEmbedSurface({ videoId, colors }: { videoId: string; colors: The
   );
 }
 
-export function ExerciseVideoPlayer({ exerciseName, videoAsset, videoUrl, demoUrl }: ExerciseVideoPlayerProps) {
+export function ExerciseVideoPlayer({
+  exerciseName,
+  videoAsset,
+  videoUrl,
+  demoUrl,
+  variant = 'standard',
+  allowExternalOpen = true,
+  style,
+}: ExerciseVideoPlayerProps) {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const mode = useMemo(() => getPlayerMode(videoAsset, videoUrl, demoUrl), [demoUrl, videoAsset, videoUrl]);
+  const isCompact = variant === 'compact';
 
   if (!mode) return null;
 
   if (mode.type === 'external') {
+    if (!allowExternalOpen) return null;
+
     return (
-      <View style={styles.fallbackCard}>
+      <View style={[styles.fallbackCard, isCompact && styles.fallbackCardCompact, style]}>
         <View style={styles.fallbackIcon}>
           <Ionicons name="play" size={18} color={colors.accent} />
         </View>
@@ -421,8 +435,8 @@ export function ExerciseVideoPlayer({ exerciseName, videoAsset, videoUrl, demoUr
   }
 
   return (
-    <View style={styles.playerCard}>
-      <View pointerEvents="none" style={styles.stage}>
+    <View style={[styles.playerCard, isCompact && styles.playerCardCompact, style]}>
+      <View pointerEvents="none" style={[styles.stage, isCompact && styles.stageCompact]}>
         {mode.type === 'native' ? (
           <NativeVideoSurface source={mode.source} />
         ) : (
@@ -451,11 +465,18 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     overflow: 'hidden',
     marginBottom: spacing.lg,
   },
+  playerCardCompact: {
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.md,
+  },
   stage: {
     width: '100%',
     aspectRatio: 16 / 9,
     backgroundColor: colors.background,
     overflow: 'hidden',
+  },
+  stageCompact: {
+    aspectRatio: 1.72,
   },
   fallbackCard: {
     flexDirection: 'row',
@@ -467,6 +488,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.lg,
+  },
+  fallbackCardCompact: {
+    marginBottom: spacing.md,
   },
   fallbackIcon: {
     width: 40,

@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
@@ -15,6 +14,7 @@ import { GameIcon } from '../components/GameIcon';
 import { MissionButton } from '../components/MissionButton';
 import { getMovementCard } from '../data/movementCards';
 import { getExerciseById } from '../data/exercises';
+import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
 import type { MissionsStackParamList } from '../types/navigation';
 
 type CardDetailRoute = RouteProp<MissionsStackParamList, 'CardDetail'>;
@@ -27,9 +27,7 @@ export default function CardDetailScreen() {
   const route = useRoute<CardDetailRoute>();
   const navigation = useNavigation<Nav>();
   const card = getMovementCard(route.params.cardId);
-  const tabBarHeight = useBottomTabBarHeight();
-  const insets = useSafeAreaInsets();
-  const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
+  const { bottomContentPadding } = useFloatingTabBarSpacing();
 
   if (!card) {
     return (

@@ -24,6 +24,7 @@ import {
 } from '../store/useSubscriptionStore';
 import { openExternalUrl } from '../utils/externalLinks';
 import { hapticLevelUp } from '../utils/haptics';
+import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
 
 type BenefitTier = 'hero' | 'standard';
 
@@ -39,6 +40,7 @@ const benefits: { label: string; tier: BenefitTier }[] = [
 export default function PaywallScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const { bottomContentPadding } = useFloatingTabBarSpacing();
   const navigation = useNavigation();
 
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
@@ -140,7 +142,10 @@ export default function PaywallScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.content, { paddingBottom: bottomContentPadding }]}
+      >
         {/* Hero Section */}
         <View style={styles.hero}>
           <View style={styles.heroBadge}>

@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, Alert, Animated, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFadeInUp } from '../utils/animations';
@@ -24,6 +23,7 @@ import { getDisplayedMonthlyPrice } from '../config/monetization';
 import { hapticMedium, hapticLevelUp } from '../utils/haptics';
 import { showWorkoutProgress, clearWorkoutProgress, showWorkoutComplete, showAchievementUnlocked } from '../services/notifications';
 import { useAdaptiveLayout } from '../hooks/useAdaptiveLayout';
+import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
 import { hasTrainingAccess, useSubscriptionStore } from '../store/useSubscriptionStore';
 import type { CompletedExercise, CompletedMission, Exercise, SetLog } from '../types';
 import type { HomeStackParamList } from '../types/navigation';
@@ -52,9 +52,7 @@ export default function DailyMissionScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const heroAnim = useFadeInUp(500);
   const { contentMaxWidth, horizontalPadding } = useAdaptiveLayout();
-  const tabBarHeight = useBottomTabBarHeight();
-  const insets = useSafeAreaInsets();
-  const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
+  const { bottomContentPadding } = useFloatingTabBarSpacing();
   const navigation = useNavigation<Nav>();
   const todaysMission = useMissionStore((s) => s.todaysMission);
   const isRestDay = useMissionStore((s) => s.isRestDay);

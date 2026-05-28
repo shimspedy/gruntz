@@ -15,7 +15,7 @@ export const colors = {
   // Clean text hierarchy
   textPrimary: '#FFFFFF',
   textSecondary: '#A0A0A0',
-  textMuted: '#666666',
+  textMuted: '#8A8A8A',
 
   // Gamification
   xpBar: '#AAFF00',

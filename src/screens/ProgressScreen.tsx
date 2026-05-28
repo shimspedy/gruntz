@@ -1,18 +1,17 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
 import type { ThemeColors } from '../theme';
 import { useNavigation, CommonActions } from '@react-navigation/native';
 import { GlassCard } from '../components/GlassCard';
 import { SectionHeader } from '../components/SectionHeader';
-import { StatCard } from '../components/StatCard';
 import { XPBar } from '../components/XPBar';
 import { GameIcon } from '../components/GameIcon';
 import { MissionButton } from '../components/MissionButton';
 import { useUserStore } from '../store/useUserStore';
 import { getXPToNextLevel } from '../utils/xp';
+import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
 
 function formatDurationLabel(seconds: number) {
   if (!Number.isFinite(seconds) || seconds <= 0) return '--';
@@ -40,12 +39,10 @@ function getSkillIcon(skill: string) {
 export default function ProgressScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const insets = useSafeAreaInsets();
-  const tabBarHeight = useBottomTabBarHeight();
+  const { bottomContentPadding, insets } = useFloatingTabBarSpacing();
   const navigation = useNavigation();
   const progress = useUserStore((s) => s.progress);
   const xpInfo = getXPToNextLevel(progress.current_xp);
-  const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
   const hasAnyActivity = progress.workouts_completed > 0 || progress.total_reps > 0;
   const goToHome = () =>
     navigation.dispatch(CommonActions.navigate({ name: 'HomeTab' as never }));
@@ -71,6 +68,14 @@ export default function ProgressScreen() {
     .slice(0, 5)
     .map(([id, count]) => ({ id, count }));
   const topExerciseMax = topExercises[0]?.count ?? 1;
+  const progressMetrics = [
+    { icon: 'mission', label: 'Missions', value: progress.workouts_completed, color: colors.accent },
+    { icon: 'streak', label: 'Streak', value: progress.streak_days, color: colors.streakFire },
+    { icon: 'reps', label: 'Reps', value: progress.total_reps.toLocaleString(), color: colors.accentGreen },
+    { icon: 'run', label: 'Miles', value: progress.total_distance_miles, color: colors.accentOrange },
+    { icon: 'achievement', label: 'Challenges', value: progress.challenges_completed, color: colors.accentGold },
+    { icon: 'xp', label: 'Challenge XP', value: progress.challenge_xp_earned.toLocaleString(), color: colors.accent },
+  ];
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
@@ -102,6 +107,21 @@ export default function ProgressScreen() {
             </View>
           </View>
 
+          {!hasAnyActivity && (
+            <GlassCard style={styles.startCard} variant="accent">
+              <View style={styles.startCardIcon}>
+                <GameIcon name="mission" size={22} color={colors.accent} variant="minimal" animated={false} />
+              </View>
+              <View style={styles.startCardBody}>
+                <Text style={styles.startCardTitle}>Start your first mission</Text>
+                <Text style={styles.startCardText}>
+                  Complete one workout to unlock meaningful scores, records, and movement trends.
+                </Text>
+              </View>
+              <MissionButton title="START MISSION" onPress={goToHome} variant="primary" style={styles.startCardButton} />
+            </GlassCard>
+          )}
+
           {/* XP Overview */}
           <GlassCard style={styles.section}>
             <XPBar current={xpInfo.current} required={xpInfo.required} level={progress.current_level} />
@@ -120,28 +140,22 @@ export default function ProgressScreen() {
             </View>
           </GlassCard>
 
-          {/* Stats Grid — hero: Missions */}
-          <View style={styles.heroStatRow}>
-            <StatCard
-              icon="mission"
-              value={progress.workouts_completed}
-              label="Missions Completed"
-              color={colors.accent}
-              hero
-            />
-          </View>
-          <View style={styles.statsGrid}>
-            <StatCard icon="streak" value={progress.streak_days} label="Day Streak" color={colors.streakFire} />
-            <StatCard icon="xp" value={progress.challenge_xp_earned.toLocaleString()} label="Challenge XP" color={colors.accentGold} />
-          </View>
-          <View style={styles.statsGrid}>
-            <StatCard icon="reps" value={progress.total_reps.toLocaleString()} label="Total Reps" color={colors.accentGreen} />
-            <StatCard icon="run" value={`${progress.total_distance_miles}`} label="Miles" color={colors.accentOrange} />
-          </View>
-          <View style={styles.statsGrid}>
-            <StatCard icon="achievement" value={progress.challenges_completed} label="Challenges" color={colors.accent} />
-            <StatCard icon="mission" value={progress.current_level} label="Level" color={colors.accent} />
-          </View>
+          {/* Metrics */}
+          <GlassCard style={styles.section}>
+            <View style={styles.metricsGrid}>
+              {progressMetrics.map((metric) => (
+                <View key={metric.label} style={styles.metricItem}>
+                  <View style={[styles.metricIcon, { backgroundColor: `${metric.color}12` }]}>
+                    <GameIcon name={metric.icon} size={14} color={metric.color} variant="minimal" animated={false} />
+                  </View>
+                  <View style={styles.metricTextWrap}>
+                    <Text style={styles.metricLabel}>{metric.label}</Text>
+                    <Text style={[styles.metricValue, { color: metric.color }]}>{metric.value}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </GlassCard>
 
           {/* Operator Profile */}
           <SectionHeader title="Operator Profile" subtitle="Strengths and gaps from completed work." icon="stats" />
@@ -182,14 +196,6 @@ export default function ProgressScreen() {
                 </View>
                 <Text style={styles.emptyTitle}>No records logged yet</Text>
                 <Text style={styles.emptyText}>Complete timed missions and tracked runs to populate your board.</Text>
-                {!hasAnyActivity && (
-                  <MissionButton
-                    title="START FIRST MISSION"
-                    onPress={goToHome}
-                    variant="primary"
-                    style={{ marginTop: spacing.md }}
-                  />
-                )}
               </View>
             )}
           </GlassCard>
@@ -221,14 +227,6 @@ export default function ProgressScreen() {
                 </View>
                 <Text style={styles.emptyTitle}>Movement log is empty</Text>
                 <Text style={styles.emptyText}>Your most-used exercises will show up here once you finish missions.</Text>
-                {!hasAnyActivity && (
-                  <MissionButton
-                    title="START FIRST MISSION"
-                    onPress={goToHome}
-                    variant="primary"
-                    style={{ marginTop: spacing.md }}
-                  />
-                )}
               </View>
             )}
           </GlassCard>
@@ -299,6 +297,35 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   section: {
     marginBottom: spacing.lg,
   },
+  startCard: {
+    marginBottom: spacing.lg,
+  },
+  startCardIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: borderRadius.full,
+    backgroundColor: `${colors.accent}12`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
+  startCardBody: {
+    marginBottom: spacing.md,
+  },
+  startCardTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
+  startCardText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 19,
+  },
+  startCardButton: {
+    marginTop: spacing.xs,
+  },
   xpDetails: {
     marginTop: spacing.lg,
     gap: spacing.md,
@@ -342,6 +369,41 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
     marginBottom: spacing.sm,
+  },
+  metricsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    rowGap: spacing.md,
+  },
+  metricItem: {
+    width: '50%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingRight: spacing.sm,
+  },
+  metricIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: borderRadius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  metricTextWrap: {
+    flex: 1,
+  },
+  metricLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+  },
+  metricValue: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginTop: 2,
+    fontVariant: ['tabular-nums'],
   },
   skillRow: {
     flexDirection: 'row',

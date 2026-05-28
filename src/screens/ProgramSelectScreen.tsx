@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
@@ -10,6 +9,7 @@ import { PROGRAMS } from '../data/programs';
 import { recommendProgramForProfile } from '../services/adaptiveCoach';
 import { hapticLight } from '../utils/haptics';
 import { useUserStore } from '../store/useUserStore';
+import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
 import type { HomeStackParamList } from '../types/navigation';
 import type { ProgramId, TrainingProgram } from '../types';
 import { GameIcon } from '../components/GameIcon';
@@ -19,11 +19,9 @@ export default function ProgramSelectScreen() {
   const colors = useColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const navigation = useNavigation<Nav>();
-  const tabBarHeight = useBottomTabBarHeight();
-  const insets = useSafeAreaInsets();
   const profile = useUserStore((s) => s.profile);
   const recommendation = useMemo(() => (profile ? recommendProgramForProfile(profile) : null), [profile]);
-  const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
+  const { bottomContentPadding } = useFloatingTabBarSpacing();
 
   return (
     <SafeAreaView style={styles.safe}>

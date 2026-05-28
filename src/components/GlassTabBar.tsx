@@ -3,6 +3,7 @@ import { View, StyleSheet, Platform, Pressable } from 'react-native';
 import { BlurView } from 'expo-blur';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useColors, spacing, borderRadius } from '../theme';
+import { FLOATING_TAB_BAR_BOTTOM_OFFSET, FLOATING_TAB_BAR_HEIGHT } from '../hooks/useFloatingTabBarSpacing';
 import { hapticLight } from '../utils/haptics';
 
 /**
@@ -37,7 +38,7 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
         const icon = options.tabBarIcon?.({
           focused: isFocused,
           color: isFocused ? colors.accent : colors.textSecondary,
-          size: 28,
+          size: 22,
         });
 
         return (
@@ -77,39 +78,45 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
 
   if (Platform.OS === 'ios') {
     return (
-      <View style={styles.iosContainer}>
-        <BlurView intensity={50} tint="dark" style={styles.blurView}>
-          <View
-            style={[
-              styles.overlay,
-              {
-                backgroundColor: colors.glassBackground,
-                borderColor: colors.glassBorder,
-              },
-            ]}
-          >
-            {content}
-          </View>
-        </BlurView>
+      <View style={[styles.tabBarRoot, { backgroundColor: colors.background }]}>
+        <View style={styles.iosContainer}>
+          <BlurView intensity={50} tint="dark" style={styles.blurView}>
+            <View
+              style={[
+                styles.overlay,
+                {
+                  backgroundColor: colors.glassBackground,
+                  borderColor: colors.glassBorder,
+                },
+              ]}
+            >
+              {content}
+            </View>
+          </BlurView>
+        </View>
       </View>
     );
   }
 
   // Android fallback
   return (
-    <View style={[styles.androidContainer, { backgroundColor: `${colors.background}F0` }]}>
-      {content}
+    <View style={[styles.tabBarRoot, { backgroundColor: colors.background }]}>
+      <View style={[styles.androidContainer, { backgroundColor: `${colors.background}F0` }]}>
+        {content}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  tabBarRoot: {
+    paddingTop: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: FLOATING_TAB_BAR_BOTTOM_OFFSET,
+  },
   // iOS floating style
   iosContainer: {
-    position: 'absolute',
-    bottom: spacing.lg,
-    left: spacing.lg,
-    right: spacing.lg,
+    height: FLOATING_TAB_BAR_HEIGHT,
     borderRadius: borderRadius.xxl,
     overflow: 'hidden',
     shadowColor: '#000',
@@ -123,19 +130,15 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
+    justifyContent: 'center',
     borderWidth: 1,
     borderRadius: borderRadius.xxl,
-    paddingVertical: spacing.md,
     paddingHorizontal: spacing.sm,
   },
   // Android fallback
   androidContainer: {
-    position: 'absolute',
-    bottom: spacing.lg,
-    left: spacing.lg,
-    right: spacing.lg,
+    height: FLOATING_TAB_BAR_HEIGHT,
     borderRadius: borderRadius.xxl,
-    paddingVertical: spacing.md,
     paddingHorizontal: spacing.sm,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.12)',
@@ -155,12 +158,11 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.sm,
   },
   activeIndicatorBg: {
     position: 'absolute',
-    top: 0,
-    bottom: 0,
+    top: spacing.xs,
+    bottom: spacing.xs,
     left: '10%',
     right: '10%',
     borderRadius: borderRadius.full,
@@ -169,7 +171,9 @@ const styles = StyleSheet.create({
   touchTarget: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: spacing.md,
+    minWidth: 56,
+    minHeight: 48,
+    paddingHorizontal: spacing.sm,
     zIndex: 10,
   },
   iconWrapper: {

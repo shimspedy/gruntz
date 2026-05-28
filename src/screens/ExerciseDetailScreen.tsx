@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
@@ -16,6 +15,7 @@ import { MissionButton } from '../components/MissionButton';
 import { RepLogModal } from '../components/RepLogModal';
 import { ExerciseVideoPlayer } from '../components/ExerciseVideoPlayer';
 import { getExerciseById } from '../data/exercises';
+import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
 import type { HomeStackParamList } from '../types/navigation';
 import type { SetLog } from '../types';
 
@@ -29,9 +29,7 @@ export default function ExerciseDetailScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const exercise = getExerciseById(route.params.exerciseId);
   const [showLogModal, setShowLogModal] = useState(false);
-  const tabBarHeight = useBottomTabBarHeight();
-  const insets = useSafeAreaInsets();
-  const bottomContentPadding = Math.max(spacing.xxl, tabBarHeight + insets.bottom + spacing.lg);
+  const { bottomContentPadding } = useFloatingTabBarSpacing();
 
   if (!exercise) {
     return (
