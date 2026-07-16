@@ -1,6 +1,6 @@
 {
   "name": "gruntz",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "main": "index.ts",
   "scripts": {
     "check": "npm run typecheck && npm run site:build",
