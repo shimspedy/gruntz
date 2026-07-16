@@ -65,7 +65,8 @@ function estimateCalories(distanceMiles: number, weightLbs: number = 160): numbe
   return Math.round(distanceMiles * (weightLbs / 1.6));
 }
 
-export function useRunTracker() {
+export function useRunTracker(options: { batterySaver?: boolean } = {}) {
+  const { batterySaver = false } = options;
   const getInitialState = useCallback(
     (): RunTrackerState => ({
       isTracking: false,
@@ -136,9 +137,9 @@ export function useRunTracker() {
       internals.current.locationSub?.remove();
       internals.current.locationSub = await Location.watchPositionAsync(
         {
-          accuracy: Location.Accuracy.BestForNavigation,
-          timeInterval: 2000,
-          distanceInterval: 3, // meters
+          accuracy: batterySaver ? Location.Accuracy.Balanced : Location.Accuracy.BestForNavigation,
+          timeInterval: batterySaver ? 5000 : 2000,
+          distanceInterval: batterySaver ? 10 : 3, // meters
         },
         (location) => {
           const point: RoutePoint = {
@@ -183,7 +184,7 @@ export function useRunTracker() {
       internals.current.locationSub = null;
       return false;
     }
-  }, []);
+  }, [batterySaver]);
 
   const attachTimer = useCallback(() => {
     if (internals.current.timerInterval) {

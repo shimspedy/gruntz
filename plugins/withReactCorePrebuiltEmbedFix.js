@@ -5,6 +5,13 @@ const PATCH_MARKER = "GRUNTZ_REACT_CORE_PREBUILT_EMBED_FIX";
 const rubyPatch = `
     # ${PATCH_MARKER}: React Native 0.81 prebuilt core links React.framework,
     # but CocoaPods can omit it from the app embed phase in generated debug builds.
+    # Xcode 27 also rejects older deployment targets retained by pod resource bundles.
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |build_config|
+        build_config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
+      end
+    end
+
     react_core_line = '  install_framework "\${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework"'
     rn_deps_line = '  install_framework "\${PODS_XCFRAMEWORKS_BUILD_DIR}/ReactNativeDependencies/ReactNativeDependencies.framework"'
     frameworks_script = File.join(__dir__, 'Pods/Target Support Files/Pods-Gruntz/Pods-Gruntz-frameworks.sh')

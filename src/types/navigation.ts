@@ -1,6 +1,7 @@
 export type RootTabParamList = {
   HomeTab: undefined;
-  MissionsTab: undefined;
+  PlanTab: undefined;
+  TestTab: undefined;
   ProgressTab: undefined;
   ProfileTab: undefined;
 };
@@ -17,6 +18,7 @@ export type HomeStackParamList = {
 };
 
 export type MissionsStackParamList = {
+  Plan: undefined;
   WorkoutCards: undefined;
   Achievements: undefined;
   Paywall: undefined;
@@ -35,6 +37,8 @@ export type ProfileStackParamList = {
   ProgramSelect: undefined;
   ProgramDetail: { programId: string };
   Paywall: undefined;
+  LeaderTools: undefined;
+  ServiceProfile: undefined;
 };
 
 export type AuthStackParamList = {

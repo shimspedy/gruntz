@@ -67,25 +67,9 @@ export function MissionButton({
     return 'transparent';
   };
 
-  const getGlowColor = () => {
-    if (isInactive) return 'transparent';
-    switch (variant) {
-      case 'primary':
-        return colors.accent;
-      case 'success':
-        return colors.accentGreen;
-      case 'danger':
-        return colors.accentRed;
-      case 'secondary':
-      default:
-        return colors.accent;
-    }
-  };
-
   const bgColor = getBgColor();
   const textColor = getTextColor();
   const borderColor = getBorderColor();
-  const glowColor = getGlowColor();
 
   return (
     <Animated.View style={[styles.wrapper, scaleStyle]}>
@@ -95,8 +79,6 @@ export function MissionButton({
           {
             backgroundColor: bgColor,
             borderColor,
-            shadowColor: glowColor,
-            shadowOpacity: isInactive ? 0 : 0.12,
           },
           style,
         ]}
@@ -137,9 +119,6 @@ const createStyles = (colors: ThemeColors, variant: 'primary' | 'secondary' | 's
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.sm + 2,
       overflow: 'hidden',
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 8,
-      elevation: 2,
     },
     icon: {
       marginRight: spacing.sm,

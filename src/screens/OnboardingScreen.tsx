@@ -23,7 +23,8 @@ import { useSubscriptionStore } from '../store/useSubscriptionStore';
 import { getProgramById } from '../data/programs';
 import { recommendProgramForProfile } from '../services/adaptiveCoach';
 import { hapticLight, hapticSelection, hapticSuccess } from '../utils/haptics';
-import type { UserProfile } from '../types';
+import type { FitnessTestType, ServiceBranch, ServiceStatus, UserProfile } from '../types';
+import { branchDefaultTest, militaryTests } from '../data/militaryTests';
 
 const FITNESS_LEVELS = ['beginner', 'intermediate', 'advanced'] as const;
 const GOALS = [
@@ -68,7 +69,18 @@ const AGE_RANGE_META: Record<(typeof AGE_RANGES)[number], string> = {
   '60_plus': '60+',
 };
 
-const TOTAL_STEPS = 8;
+const SERVICE_BRANCHES: { id: ServiceBranch; label: string }[] = [
+  { id: 'army', label: 'Army' }, { id: 'marines', label: 'Marine Corps' }, { id: 'navy', label: 'Navy' },
+  { id: 'air_force', label: 'Air Force' }, { id: 'space_force', label: 'Space Force' },
+  { id: 'coast_guard', label: 'Coast Guard' }, { id: 'general', label: 'General / Other' },
+];
+const SERVICE_STATUSES: { id: ServiceStatus; label: string }[] = [
+  { id: 'active', label: 'Active Duty' }, { id: 'reserve', label: 'Reserve' }, { id: 'guard', label: 'Guard' },
+  { id: 'veteran', label: 'Veteran' }, { id: 'rotc', label: 'ROTC / Academy' }, { id: 'recruit', label: 'Recruit / Applicant' },
+  { id: 'civilian', label: 'Civilian Prep' },
+];
+
+const TOTAL_STEPS = 9;
 const QUESTION_STEPS = TOTAL_STEPS - 1;
 
 interface OnboardingScreenProps {
@@ -97,6 +109,10 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   const [hasRuck, setHasRuck] = useState(false);
   const [hasGym, setHasGym] = useState(false);
   const [intensity, setIntensity] = useState<(typeof INTENSITIES)[number]>('moderate');
+  const [serviceBranch, setServiceBranch] = useState<ServiceBranch>('general');
+  const [serviceStatus, setServiceStatus] = useState<ServiceStatus>('active');
+  const [fitnessTestType, setFitnessTestType] = useState<FitnessTestType>('general_readiness');
+  const [fitnessTestDate, setFitnessTestDate] = useState('');
 
   // Step transition animation
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -206,6 +222,11 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
       movement_limitations: movementLimitations,
       preferred_session_minutes: sessionMinutes,
       preferred_intensity: intensity,
+      service_branch: serviceBranch,
+      service_status: serviceStatus,
+      fitness_test_type: fitnessTestType,
+      fitness_test_date: /^\d{4}-\d{2}-\d{2}$/.test(fitnessTestDate) ? fitnessTestDate : null,
+      occupational_demands: [],
       settings: {
         notifications_enabled: true,
         reminder_time: '07:00',
@@ -221,6 +242,10 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
     hasPool,
     hasRuck,
     intensity,
+    serviceBranch,
+    serviceStatus,
+    fitnessTestType,
+    fitnessTestDate,
     movementLimitations,
     selectedGoals,
     sessionMinutes,
@@ -422,9 +447,39 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
     </View>
   );
 
+  const renderServiceProfile = () => (
+    <View style={styles.stepContainer}>
+      <Text style={styles.stepEyebrow}>STEP 4 OF {QUESTION_STEPS}</Text>
+      <Text style={styles.stepTitle}>Your service profile</Text>
+      <Text style={styles.stepSubtitle}>This configures terminology, assessment events, and preparation priorities. It never changes official records.</Text>
+      <Text style={styles.groupLabel}>Branch</Text>
+      <View style={styles.compactGrid}>
+        {SERVICE_BRANCHES.map((branch) => {
+          const active = serviceBranch === branch.id;
+          return <TouchableOpacity key={branch.id} style={[styles.compactOption, active && styles.compactOptionActive]} accessibilityRole="radio" accessibilityState={{ selected: active }} onPress={() => { hapticSelection(); setServiceBranch(branch.id); setFitnessTestType(branchDefaultTest[branch.id]); }}><Text style={[styles.compactOptionText, active && styles.compactOptionTextActive]}>{branch.label}</Text></TouchableOpacity>;
+        })}
+      </View>
+      <Text style={[styles.groupLabel, { marginTop: spacing.lg }]}>Status</Text>
+      <View style={styles.compactGrid}>
+        {SERVICE_STATUSES.map((status) => {
+          const active = serviceStatus === status.id;
+          return <TouchableOpacity key={status.id} style={[styles.compactOption, active && styles.compactOptionActive]} accessibilityRole="radio" accessibilityState={{ selected: active }} onPress={() => { hapticSelection(); setServiceStatus(status.id); }}><Text style={[styles.compactOptionText, active && styles.compactOptionTextActive]}>{status.label}</Text></TouchableOpacity>;
+        })}
+      </View>
+      {serviceBranch === 'marines' && (
+        <View style={styles.testChoiceRow}>
+          {(['marine_pft', 'marine_cft'] as FitnessTestType[]).map((testId) => <TouchableOpacity key={testId} style={[styles.testChoice, fitnessTestType === testId && styles.compactOptionActive]} onPress={() => setFitnessTestType(testId)}><Text style={[styles.compactOptionText, fitnessTestType === testId && styles.compactOptionTextActive]}>{militaryTests[testId].name}</Text></TouchableOpacity>)}
+        </View>
+      )}
+      <Text style={[styles.groupLabel, { marginTop: spacing.lg }]}>Next test date · optional</Text>
+      <TextInput style={styles.dateInput} value={fitnessTestDate} onChangeText={setFitnessTestDate} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} keyboardType="numbers-and-punctuation" maxLength={10} />
+      <MissionButton title="NEXT" onPress={goNext} style={styles.cta} />
+    </View>
+  );
+
   const renderDaysAndEquipment = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepEyebrow}>STEP 5 OF {QUESTION_STEPS}</Text>
+      <Text style={styles.stepEyebrow}>STEP 6 OF {QUESTION_STEPS}</Text>
       <Text style={styles.stepTitle}>Training schedule</Text>
       <Text style={styles.stepSubtitle}>Days per week</Text>
       <View style={styles.dayRow}>
@@ -566,7 +621,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 
   const renderTrainingContext = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepEyebrow}>STEP 4 OF {QUESTION_STEPS}</Text>
+      <Text style={styles.stepEyebrow}>STEP 5 OF {QUESTION_STEPS}</Text>
       <Text style={styles.stepTitle}>Starting point</Text>
       <Text style={styles.stepSubtitle}>This helps the app choose a safer first path.</Text>
 
@@ -629,7 +684,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 
   const renderIntensity = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepEyebrow}>STEP 6 OF {QUESTION_STEPS}</Text>
+      <Text style={styles.stepEyebrow}>STEP 7 OF {QUESTION_STEPS}</Text>
       <Text style={styles.stepTitle}>Preferred intensity</Text>
       <Text style={styles.stepSubtitle}>This affects your starting recommendation and Base Camp track.</Text>
       <View style={styles.optionList}>
@@ -685,7 +740,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 
   const renderRecommendedPath = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepEyebrow}>STEP 7 OF {QUESTION_STEPS}</Text>
+      <Text style={styles.stepEyebrow}>STEP 8 OF {QUESTION_STEPS}</Text>
       <Text style={styles.stepTitle}>Recommended path</Text>
       <Text style={styles.stepSubtitle}>You can switch programs later from your profile.</Text>
 
@@ -721,6 +776,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
     renderName,
     renderFitnessLevel,
     renderGoals,
+    renderServiceProfile,
     renderTrainingContext,
     renderDaysAndEquipment,
     renderIntensity,
@@ -799,6 +855,7 @@ const createStyles = (colors: ThemeColors) =>
       alignItems: 'center',
       gap: spacing.sm,
       marginBottom: spacing.xl,
+      paddingTop: spacing.sm,
     },
     progressTrack: {
       flex: 1,
@@ -1052,6 +1109,49 @@ const createStyles = (colors: ThemeColors) =>
       letterSpacing: 1.2,
       textTransform: 'uppercase',
       marginBottom: spacing.sm,
+    },
+    compactGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+    },
+    compactOption: {
+      minHeight: 44,
+      minWidth: '30%',
+      flexGrow: 1,
+      flexBasis: '30%',
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: colors.cardBorder,
+      backgroundColor: colors.card,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.sm,
+    },
+    compactOptionActive: {
+      borderColor: colors.accent,
+      backgroundColor: `${colors.accent}12`,
+    },
+    compactOptionText: {
+      color: colors.textSecondary,
+      fontSize: 11,
+      fontWeight: '700',
+      textAlign: 'center',
+    },
+    compactOptionTextActive: { color: colors.accent },
+    testChoiceRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
+    testChoice: { flex: 1, minHeight: 44, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.cardBorder, alignItems: 'center', justifyContent: 'center', padding: spacing.sm },
+    dateInput: {
+      minHeight: 48,
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: colors.cardBorder,
+      backgroundColor: colors.card,
+      color: colors.textPrimary,
+      paddingHorizontal: spacing.md,
+      fontSize: 16,
+      fontWeight: '700',
+      letterSpacing: 1,
     },
     ageBtn: {
       flex: 1,

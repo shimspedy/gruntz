@@ -8,6 +8,8 @@ import ProgramDetailScreen from '../screens/ProgramDetailScreen';
 import PaywallScreen from '../screens/PaywallScreen';
 import type { ProfileStackParamList } from '../types/navigation';
 import { useColors } from '../theme';
+import LeaderToolsScreen from '../screens/LeaderToolsScreen';
+import ServiceProfileScreen from '../screens/ServiceProfileScreen';
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
 
@@ -28,6 +30,8 @@ export function ProfileStack() {
       <Stack.Screen name="Paywall" component={PaywallScreen} options={{ title: 'Gruntz Pro', headerBackTitle: 'Back' }} />
       <Stack.Screen name="ProgramSelect" component={ProgramSelectScreen} options={{ title: 'Programs', headerBackTitle: 'Back' }} />
       <Stack.Screen name="ProgramDetail" component={ProgramDetailScreen} options={{ title: 'Program Details', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="LeaderTools" component={LeaderToolsScreen} options={{ title: 'Leader Tools', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="ServiceProfile" component={ServiceProfileScreen} options={{ title: 'Service Profile', headerBackTitle: 'Back' }} />
     </Stack.Navigator>
   );
 }

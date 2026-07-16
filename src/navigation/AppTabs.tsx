@@ -10,6 +10,7 @@ import { GlassTabBar } from '../components/GlassTabBar';
 import { GameIcon } from '../components/GameIcon';
 import { FLOATING_TAB_BAR_BOTTOM_OFFSET, FLOATING_TAB_BAR_HEIGHT } from '../hooks/useFloatingTabBarSpacing';
 import type { RootTabParamList } from '../types/navigation';
+import TestCenterScreen from '../screens/TestCenterScreen';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
@@ -36,13 +37,16 @@ export function AppTabs() {
           letterSpacing: 0.5,
         },
         tabBarIcon: ({ color, size, focused }) => {
-          let iconName: 'home' | 'mission' | 'progress' | 'profile' = 'home';
+          let iconName: 'home' | 'mission' | 'progress' | 'profile' | 'achievement' = 'home';
           switch (route.name) {
             case 'HomeTab':
               iconName = 'home';
               break;
-            case 'MissionsTab':
+            case 'PlanTab':
               iconName = 'mission';
+              break;
+            case 'TestTab':
+              iconName = 'achievement';
               break;
             case 'ProgressTab':
               iconName = 'progress';
@@ -68,8 +72,9 @@ export function AppTabs() {
         },
       }}
     >
-      <Tab.Screen name="HomeTab" component={HomeStack} options={{ title: 'Home' }} />
-      <Tab.Screen name="MissionsTab" component={MissionsStack} options={{ title: 'Missions' }} />
+      <Tab.Screen name="HomeTab" component={HomeStack} options={{ title: 'Today' }} />
+      <Tab.Screen name="PlanTab" component={MissionsStack} options={{ title: 'Plan' }} />
+      <Tab.Screen name="TestTab" component={TestCenterScreen} options={{ title: 'Test' }} />
       <Tab.Screen name="ProgressTab" component={ProgressScreen} options={{ title: 'Progress' }} />
       <Tab.Screen name="ProfileTab" component={ProfileStack} options={{ title: 'Profile' }} />
     </Tab.Navigator>

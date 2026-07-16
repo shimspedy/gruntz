@@ -91,7 +91,9 @@ export default function ProfileScreen() {
       },
     },
     { label: activeProgram ? `Program: ${activeProgram.name}` : 'Choose Program', icon: 'program', screen: 'ProgramSelect' as const },
+    { label: 'Service & Test Profile', icon: 'mission', screen: 'ServiceProfile' as const },
     { label: 'Achievements', icon: 'achievement', screen: 'Achievements' as const },
+    { label: 'Leader Tools', icon: 'mission', screen: 'LeaderTools' as const },
     {
       label: 'Share My Streak',
       icon: 'streak',

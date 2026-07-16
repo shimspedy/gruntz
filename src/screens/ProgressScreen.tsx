@@ -12,6 +12,7 @@ import { MissionButton } from '../components/MissionButton';
 import { useUserStore } from '../store/useUserStore';
 import { getXPToNextLevel } from '../utils/xp';
 import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
+import { useReadinessStore } from '../store/useReadinessStore';
 
 function formatDurationLabel(seconds: number) {
   if (!Number.isFinite(seconds) || seconds <= 0) return '--';
@@ -42,6 +43,7 @@ export default function ProgressScreen() {
   const { bottomContentPadding, insets } = useFloatingTabBarSpacing();
   const navigation = useNavigation();
   const progress = useUserStore((s) => s.progress);
+  const trackedSessions = useReadinessStore((s) => s.trackedSessions);
   const xpInfo = getXPToNextLevel(progress.current_xp);
   const hasAnyActivity = progress.workouts_completed > 0 || progress.total_reps > 0;
   const goToHome = () =>
@@ -156,6 +158,30 @@ export default function ProgressScreen() {
               ))}
             </View>
           </GlassCard>
+
+          {trackedSessions.length > 0 && (
+            <>
+              <SectionHeader title="Field Sessions" subtitle="Recent GPS-tracked run and ruck efforts." icon="ruck" />
+              <GlassCard style={styles.section}>
+                {trackedSessions.slice(0, 6).map((session, index) => (
+                  <View key={session.id} style={[styles.prRow, index === Math.min(trackedSessions.length, 6) - 1 && { borderBottomWidth: 0 }]}>
+                    <View style={styles.recordLabelWrap}>
+                      <View style={[styles.recordIcon, { backgroundColor: `${colors.accentGreen}12` }]}>
+                        <GameIcon name={session.type === 'ruck' ? 'ruck' : 'run'} size={12} color={colors.accentGreen} variant="minimal" animated={false} />
+                      </View>
+                      <View>
+                        <Text style={styles.prLabel}>{session.type.toUpperCase()} · {session.distanceMiles.toFixed(2)} MI</Text>
+                        <Text style={styles.sessionMeta}>
+                          {new Date(session.date).toLocaleDateString()}{session.packWeightPounds ? ` · ${session.packWeightPounds} lb` : ''}{session.terrain ? ` · ${session.terrain}` : ''}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={styles.prValue}>{formatDurationLabel(session.durationSeconds)}</Text>
+                  </View>
+                ))}
+              </GlassCard>
+            </>
+          )}
 
           {/* Operator Profile */}
           <SectionHeader title="Operator Profile" subtitle="Strengths and gaps from completed work." icon="stats" />
@@ -405,6 +431,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginTop: 2,
     fontVariant: ['tabular-nums'],
   },
+  sessionMeta: { color: colors.textMuted, fontSize: 11, marginTop: 3 },
   skillRow: {
     flexDirection: 'row',
     alignItems: 'center',

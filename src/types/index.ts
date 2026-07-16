@@ -1,5 +1,9 @@
 export type EquipmentAccess = 'none' | 'minimal' | 'gym';
 
+export type ServiceBranch = 'army' | 'marines' | 'navy' | 'air_force' | 'space_force' | 'coast_guard' | 'general';
+export type ServiceStatus = 'active' | 'reserve' | 'guard' | 'veteran' | 'rotc' | 'recruit' | 'civilian';
+export type FitnessTestType = 'army_aft' | 'marine_pft' | 'marine_cft' | 'navy_prt' | 'air_force_pfra' | 'space_force_hpa' | 'coast_guard_pft' | 'general_readiness';
+
 export interface Exercise {
   id: string;
   name: string;
@@ -170,6 +174,11 @@ export interface UserProfile {
   movement_limitations?: string[];
   preferred_session_minutes?: number;
   preferred_intensity: 'low' | 'moderate' | 'high';
+  service_branch?: ServiceBranch;
+  service_status?: ServiceStatus;
+  fitness_test_type?: FitnessTestType;
+  fitness_test_date?: string | null;
+  occupational_demands?: string[];
   settings: UserSettings;
 }
 

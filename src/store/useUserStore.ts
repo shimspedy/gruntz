@@ -79,8 +79,13 @@ function migratePersistedUserState(persistedState: unknown): PersistedUserState 
 
   const persisted = persistedState as PersistedUserState;
 
+  const migratedProfile = persisted.profile && (persisted.profile.fitness_test_type as string) === 'air_force_pfa'
+    ? { ...persisted.profile, fitness_test_type: 'air_force_pfra' as const }
+    : persisted.profile;
+
   return {
     ...persisted,
+    profile: migratedProfile,
     progress: persisted.progress
       ? {
           ...persisted.progress,

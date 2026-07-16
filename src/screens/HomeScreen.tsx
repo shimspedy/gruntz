@@ -30,6 +30,8 @@ import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
 import { getAccessState, getTrialDaysRemaining, hasTrainingAccess, useSubscriptionStore } from '../store/useSubscriptionStore';
 import type { ProgramId, UserProfile } from '../types';
 import type { HomeStackParamList } from '../types/navigation';
+import { ReadinessPanel } from '../components/ReadinessPanel';
+import { calculateDailyReadiness, getTodaysCheckIn, useReadinessStore } from '../store/useReadinessStore';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 
@@ -94,6 +96,8 @@ export default function HomeScreen() {
   // Subscription state
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
   const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
+  const checkIns = useReadinessStore((s) => s.checkIns);
+  const fieldMode = useReadinessStore((s) => s.fieldMode);
 
   const program = selectedProgram ? getProgramById(selectedProgram) : null;
   const [hydrated, setHydrated] = React.useState(false);
@@ -170,6 +174,13 @@ export default function HomeScreen() {
     () => (todaysMission ? getProgramWorkoutDay(selectedProgram, todaysMission.workout_day_id, profile) : undefined),
     [profile, selectedProgram, todaysMission],
   );
+  const isTacticalTrack = profile?.goals?.some((goal) => goal.toLowerCase().includes('military')) ?? false;
+  const equipmentStatus = profile
+    ? [profile.has_gym_access && 'GYM', profile.has_ruck_access && 'RUCK', profile.has_pool_access && 'POOL']
+        .filter(Boolean)
+        .join(' + ') || 'BODYWEIGHT'
+    : 'NOT SET';
+  const readinessScore = calculateDailyReadiness(getTodaysCheckIn(checkIns));
   // Get greeting based on time of day
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -293,6 +304,54 @@ export default function HomeScreen() {
         <View style={styles.xpSection}>
           <XPBar current={xpInfo.current} required={xpInfo.required} level={progress.current_level} />
         </View>
+
+        <ReadinessPanel />
+
+        {profile && (
+          <GlassCard style={styles.fieldBrief} variant="default">
+            <View style={styles.fieldBriefHeader}>
+              <View>
+                <Text style={styles.sectionLabel}>FIELD BRIEF</Text>
+                <Text style={styles.fieldBriefTitle}>
+                  {isTacticalTrack ? 'Tactical readiness track' : 'Foundation readiness track'}
+                </Text>
+              </View>
+              <View style={styles.statusPill} accessibilityLabel="Training status active">
+                <View style={styles.statusDot} />
+                <Text style={styles.statusText}>ACTIVE</Text>
+              </View>
+            </View>
+            <Text style={styles.fieldBriefCopy}>
+              {readinessScore < 50
+                ? 'Readiness is low. Reduce intensity and prioritize mobility, hydration, and recovery.'
+                : `Today’s order is calibrated to your schedule, equipment, training level${fieldMode ? ', and Field Mode' : ''}.`}
+            </Text>
+            <View style={styles.coachingReason}>
+              <Text style={styles.coachingReasonLabel}>WHY THIS ORDER</Text>
+              <Text style={styles.coachingReasonText}>
+                {readinessScore < 50
+                  ? 'Your check-in indicates elevated recovery risk, so intensity is capped today.'
+                  : `Built from your ${profile.fitness_test_type?.replace(/_/g, ' ') ?? 'readiness'} goal, ${profile.preferred_session_minutes ?? 30}-minute window, and available equipment.`}
+              </Text>
+            </View>
+            <View style={styles.fieldMetrics}>
+              <View style={styles.fieldMetric}>
+                <Text style={styles.fieldMetricValue}>{profile.workout_days_per_week}X</Text>
+                <Text style={styles.fieldMetricLabel}>PER WEEK</Text>
+              </View>
+              <View style={styles.fieldMetricDivider} />
+              <View style={styles.fieldMetric}>
+                <Text style={styles.fieldMetricValue}>{profile.preferred_session_minutes ?? 30}</Text>
+                <Text style={styles.fieldMetricLabel}>MIN WINDOW</Text>
+              </View>
+              <View style={styles.fieldMetricDivider} />
+              <View style={[styles.fieldMetric, styles.fieldMetricWide]}>
+                <Text style={styles.fieldMetricValueSmall} numberOfLines={1}>{equipmentStatus}</Text>
+                <Text style={styles.fieldMetricLabel}>AVAILABLE KIT</Text>
+              </View>
+            </View>
+          </GlassCard>
+        )}
 
         {/* SECTION 3: Today's Mission Card */}
         {todaysMission && !isRestDay && (
@@ -683,6 +742,88 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   // XP SECTION
   xpSection: {
     marginBottom: spacing.lg,
+  },
+
+  fieldBrief: {
+    marginBottom: spacing.lg,
+  },
+  fieldBriefHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  fieldBriefTitle: {
+    color: colors.textPrimary,
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+  },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.accentGreen,
+  },
+  statusText: {
+    color: colors.accentGreen,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  fieldBriefCopy: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: spacing.sm,
+  },
+  coachingReason: {
+    marginTop: spacing.md,
+    paddingTop: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.cardBorder,
+  },
+  coachingReasonLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '800', letterSpacing: 1.1, marginBottom: 3 },
+  coachingReasonText: { color: colors.textSecondary, fontSize: 12, lineHeight: 17 },
+  fieldMetrics: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.glassBorder,
+  },
+  fieldMetric: { flex: 1, minWidth: 0 },
+  fieldMetricWide: { flex: 1.45 },
+  fieldMetricDivider: {
+    width: StyleSheet.hairlineWidth,
+    backgroundColor: colors.glassBorder,
+    marginHorizontal: spacing.sm,
+  },
+  fieldMetricValue: {
+    color: colors.textPrimary,
+    fontSize: 20,
+    fontWeight: '900',
+    fontVariant: ['tabular-nums'],
+  },
+  fieldMetricValueSmall: {
+    color: colors.textPrimary,
+    fontSize: 12,
+    lineHeight: 24,
+    fontWeight: '900',
+  },
+  fieldMetricLabel: {
+    color: colors.textMuted,
+    fontSize: 8,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    marginTop: 2,
   },
 
   // ERROR BANNER

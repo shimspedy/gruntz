@@ -5,6 +5,7 @@ import AchievementsScreen from '../screens/AchievementsScreen';
 import CardDetailScreen from '../screens/CardDetailScreen';
 import ExerciseDetailScreen from '../screens/ExerciseDetailScreen';
 import PaywallScreen from '../screens/PaywallScreen';
+import PlanScreen from '../screens/PlanScreen';
 import type { MissionsStackParamList } from '../types/navigation';
 import { useColors } from '../theme';
 
@@ -21,7 +22,8 @@ export function MissionsStack() {
         contentStyle: { backgroundColor: colors.background },
       }}
     >
-      <Stack.Screen name="WorkoutCards" component={WorkoutCardsScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Plan" component={PlanScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="WorkoutCards" component={WorkoutCardsScreen} options={{ title: 'Training Cards' }} />
       <Stack.Screen name="Achievements" component={AchievementsScreen} options={{ title: 'Achievements' }} />
       <Stack.Screen name="Paywall" component={PaywallScreen} options={{ title: 'Gruntz Pro', headerBackTitle: 'Back' }} />
       <Stack.Screen name="CardDetail" component={CardDetailScreen} options={{ title: 'Card Detail' }} />

@@ -25,6 +25,7 @@ import {
 } from '../config/legal';
 import { openExternalUrl } from '../utils/externalLinks';
 import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
+import { useReadinessStore } from '../store/useReadinessStore';
 
 export default function SettingsScreen() {
   const colors = useColors();
@@ -33,6 +34,11 @@ export default function SettingsScreen() {
   const updateSettings = useUserStore((s) => s.updateSettings);
   const resetUser = useUserStore((s) => s.reset);
   const { bottomContentPadding } = useFloatingTabBarSpacing();
+  const fieldMode = useReadinessStore((s) => s.fieldMode);
+  const audioCues = useReadinessStore((s) => s.audioCues);
+  const keepScreenAwake = useReadinessStore((s) => s.keepScreenAwake);
+  const batterySaver = useReadinessStore((s) => s.batterySaver);
+  const setFieldPreference = useReadinessStore((s) => s.setFieldPreference);
 
   const notificationsEnabled = profile?.settings.notifications_enabled ?? true;
   const imperialUnits = (profile?.settings.units ?? 'imperial') === 'imperial';
@@ -156,6 +162,16 @@ export default function SettingsScreen() {
               thumbColor="#FFFFFF"
             />
           </View>
+        </GlassCard>
+
+        <GlassCard style={styles.section}>
+          <Text style={styles.sectionLabel}>FIELD MODE</Text>
+          {[
+            { key: 'fieldMode' as const, label: 'Field Mode', desc: 'High contrast, simplified training controls', value: fieldMode },
+            { key: 'audioCues' as const, label: 'Audio Cues', desc: 'Hands-free intervals and split prompts', value: audioCues },
+            { key: 'keepScreenAwake' as const, label: 'Keep Screen Awake', desc: 'Prevent lock during active sessions', value: keepScreenAwake },
+            { key: 'batterySaver' as const, label: 'Battery Saver', desc: 'Reduce GPS and visual update frequency', value: batterySaver },
+          ].map((item, index, list) => <View key={item.key} style={[styles.settingRow, index === list.length - 1 && { borderBottomWidth: 0 }]}><View style={styles.settingLeft}><View style={styles.settingIcon}><GameIcon name={item.key === 'batterySaver' ? 'warning' : 'mission'} size={16} color={colors.textSecondary} variant="minimal" /></View><View style={{ flex: 1 }}><Text style={styles.settingLabel}>{item.label}</Text><Text style={styles.settingDesc}>{item.desc}</Text></View></View><Switch value={item.value} onValueChange={(value) => { hapticLight(); setFieldPreference(item.key, value); }} trackColor={{ false: colors.cardBorder, true: colors.accent }} thumbColor="#FFFFFF" /></View>)}
         </GlassCard>
 
         {/* About */}
