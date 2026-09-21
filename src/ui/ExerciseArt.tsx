@@ -73,7 +73,7 @@ export function HeroArt({ exercise, style, children }: { exercise?: Exercise; st
   return (
     <View style={[styles.hero, style]}>
       {media ? (
-        <Image source={media.hero} style={StyleSheet.absoluteFill} contentFit="cover" transition={160} />
+        <Image source={media.poster} style={styles.heroImage} contentFit="cover" transition={160} />
       ) : (
         <View style={[StyleSheet.absoluteFill, styles.heroFallback]}>
           <LinearGradient colors={['#1B2433', '#0A0B0D']} start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={StyleSheet.absoluteFill} />
@@ -88,5 +88,7 @@ export function HeroArt({ exercise, style, children }: { exercise?: Exercise; st
 const styles = StyleSheet.create({
   thumb: { overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   hero: { overflow: 'hidden', backgroundColor: '#050506' },
+  // Zooms the landscape poster into a portrait crop framed on the figure (head to knees).
+  heroImage: { position: 'absolute', left: 0, right: 0, top: '-6%', height: '119%' },
   heroFallback: { alignItems: 'center', justifyContent: 'center' },
 });

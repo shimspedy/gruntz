@@ -1,50 +1,102 @@
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { FadeIn, interpolate, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { challengeMode, formatAmount, formatQuick, quickAdds, useDailyChallenge } from '../features/challenge';
-import { useUiStore } from '../store/useUiStore';
+import { useChromePrefs, useUiStore } from '../store/useUiStore';
+import { haptic } from '../ui/haptics';
+import { toast } from '../ui/Toast';
+import { getLocalDateKey } from '../utils/dateKey';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { Ring } from '../ui/Progress';
 import { Tap } from '../ui/Pressable';
 import { Sheet } from '../ui/Sheet';
 import { Text } from '../ui/Text';
-import { color, font, radius, space } from '../ui/tokens';
+import { color, font, motion, radius, space } from '../ui/tokens';
 
-/** Floating pill above the tab bar — the day's challenge at a glance. */
+const DISMISS_DISTANCE = 96;
+const DISMISS_VELOCITY = 800;
+
+/** The pill shows until today's challenge is done or the user swipes it away for the day. */
+export function useChallengePillVisible() {
+  const { done } = useDailyChallenge();
+  const hiddenOn = useChromePrefs((s) => s.challengePillHiddenOn);
+  return !done && hiddenOn !== getLocalDateKey();
+}
+
+/** Floating pill above the tab bar — the day's challenge at a glance. Swipe sideways to hide it for today. */
 export function ChallengePill() {
   const { challenge, ratio, done, progress } = useDailyChallenge();
   const open = useUiStore((s) => s.setChallenge);
+  const { width } = useWindowDimensions();
+  const x = useSharedValue(0);
   const subtitle = done ? `Complete · +${challenge.xpReward} XP earned` : progress > 0 ? `${formatAmount(progress, challenge)} logged` : `Earn ${challenge.xpReward} XP today`;
 
+  const dismiss = () => {
+    haptic.light();
+    useChromePrefs.getState().hideChallengePill(getLocalDateKey());
+    toast('Challenge hidden for today · find it under +', { tone: 'info', icon: 'check' });
+  };
+
+  const pan = Gesture.Pan()
+    .activeOffsetX([-12, 12])
+    .failOffsetY([-10, 10])
+    .onChange((e) => {
+      x.set(e.translationX);
+    })
+    .onEnd((e) => {
+      const projected = e.translationX + e.velocityX * 0.15;
+      if (Math.abs(projected) > DISMISS_DISTANCE || Math.abs(e.velocityX) > DISMISS_VELOCITY) {
+        const dir = Math.sign(projected || e.velocityX) || 1;
+        x.set(
+          withTiming(dir * width, { duration: 200, easing: motion.easeOut }, (finished) => {
+            if (finished) scheduleOnRN(dismiss);
+          }),
+        );
+      } else {
+        x.set(withSpring(0, { ...motion.settle, velocity: e.velocityX }));
+      }
+    });
+
+  const swipeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: x.get() }],
+    opacity: interpolate(Math.abs(x.get()), [0, width * 0.6], [1, 0], 'clamp'),
+  }));
+
   return (
-    <Tap onPress={() => open(true)} scaleTo={0.98} style={styles.pill} accessibilityLabel={`Daily challenge, ${challenge.name}, ${Math.round(ratio * 100)} percent`}>
-      <LinearGradient
-        colors={['#1D2838', '#151A22', '#121418']}
-        start={{ x: 0, y: 0.5 }}
-        end={{ x: 1, y: 0.5 }}
-        style={[StyleSheet.absoluteFill, styles.pillFill]}
-      />
-      <Ring progress={ratio} size={52} stroke={4} trackColor="#2B3038">
-        {done ? (
-          <Icon name="check" size={18} color={color.accent} weight="bold" />
-        ) : (
-          <Text variant="caption" style={styles.ringLabel} tabular>
-            {`${Math.round(ratio * 100)}%`}
-          </Text>
-        )}
-      </Ring>
-      <View style={{ flex: 1, marginLeft: 14 }}>
-        <Text variant="headline" numberOfLines={1}>
-          {challenge.name}
-        </Text>
-        <Text variant="subhead" tone="accent" numberOfLines={1} style={{ marginTop: 2 }}>
-          {subtitle}
-        </Text>
-      </View>
-      <Icon name="chevronRight" size={16} color={color.textSecondary} weight="semibold" />
-    </Tap>
+    <GestureDetector gesture={pan}>
+      <Animated.View style={swipeStyle}>
+        <Tap onPress={() => open(true)} scaleTo={0.98} style={styles.pill} accessibilityLabel={`Daily challenge, ${challenge.name}, ${Math.round(ratio * 100)} percent`}>
+          <LinearGradient
+            colors={['#1D2838', '#151A22', '#121418']}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={[StyleSheet.absoluteFill, styles.pillFill]}
+          />
+          <Ring progress={ratio} size={52} stroke={4} trackColor="#2B3038">
+            {done ? (
+              <Icon name="check" size={18} color={color.accent} weight="bold" />
+            ) : (
+              <Text variant="caption" style={styles.ringLabel} tabular>
+                {`${Math.round(ratio * 100)}%`}
+              </Text>
+            )}
+          </Ring>
+          <View style={{ flex: 1, marginLeft: 14 }}>
+            <Text variant="headline" numberOfLines={1}>
+              {challenge.name}
+            </Text>
+            <Text variant="subhead" tone="accent" numberOfLines={1} style={{ marginTop: 2 }}>
+              {subtitle}
+            </Text>
+          </View>
+          <Icon name="chevronRight" size={16} color={color.textSecondary} weight="semibold" />
+        </Tap>
+      </Animated.View>
+    </GestureDetector>
   );
 }
 

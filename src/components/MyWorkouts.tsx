@@ -4,10 +4,10 @@ import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { EXERCISE_LIBRARY } from '../data/exerciseLibrary';
-import { getExerciseMedia } from '../data/exerciseMedia';
+import { getExerciseById, libraryExerciseId } from '../data/exercises';
 import { scheduleLabel } from '../screens/RoutineDetailScreen';
 import { routineMinutes, useRoutineStore, type Routine } from '../store/useRoutineStore';
-import { Image } from 'expo-image';
+import { HeroArt } from '../ui/ExerciseArt';
 import { Icon } from '../ui/Icon';
 import { SectionTitle } from '../ui/Layout';
 import { Tap } from '../ui/Pressable';
@@ -55,10 +55,10 @@ export function MyWorkouts() {
 }
 
 function RoutineCard({ routine, onPress }: { routine: Routine; onPress: () => void }) {
-  const media = getExerciseMedia(routine.items[0]?.key);
+  const first = routine.items[0]?.key;
   return (
     <Tap onPress={onPress} scaleTo={0.96} style={styles.card} accessibilityLabel={`${routine.name}, ${routine.items.length} exercises`}>
-      {media ? <Image source={media.hero} style={StyleSheet.absoluteFill} contentFit="cover" transition={160} /> : null}
+      {first ? <HeroArt exercise={getExerciseById(libraryExerciseId(first))} style={StyleSheet.absoluteFill} /> : null}
       <LinearGradient colors={['rgba(0,0,0,0)', 'rgba(6,7,9,0.95)']} locations={[0.3, 0.95]} style={StyleSheet.absoluteFill} />
       <View style={styles.cardCopy}>
         <Text variant="headline" numberOfLines={2}>

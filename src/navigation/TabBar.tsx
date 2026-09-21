@@ -13,7 +13,8 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { ChallengePill } from '../components/ChallengeSheet';
+import { ChallengePill, useChallengePillVisible } from '../components/ChallengeSheet';
+import { useRoute } from '@react-navigation/native';
 import { SessionMiniBar } from '../components/session/SessionMiniBar';
 import { useSessionStore } from '../store/useSessionStore';
 import { useUiStore } from '../store/useUiStore';
@@ -32,11 +33,16 @@ const TAB_META: Record<string, { label: string; icon?: IconName; iconActive?: Ic
   Profile: { label: 'Profile', icon: 'person', iconActive: 'personFill' },
 };
 
+/** The daily-challenge pill lives on the home tab only, so it never covers other tabs' content. */
+const PILL_TAB = 'Train';
+
 /** Bottom space a tab screen must leave for the floating chrome. */
 export function useTabChromeInset() {
   const insets = useSafeAreaInsets();
   const sessionMin = useSessionStore((s) => s.active && s.minimized);
-  return insets.bottom + layout.tabBarHeight + layout.pillBlock + (sessionMin ? layout.miniBar : 0) + space.lg;
+  const route = useRoute();
+  const pill = useChallengePillVisible() && route.name === PILL_TAB;
+  return insets.bottom + layout.tabBarHeight + (pill ? layout.pillBlock : 0) + (sessionMin ? layout.miniBar : 0) + space.lg;
 }
 
 export function TabBar({ state, navigation }: BottomTabBarProps) {
@@ -45,6 +51,7 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
   const setMenu = useUiStore((s) => s.setCreateMenu);
   const sessionMin = useSessionStore((s) => s.active && s.minimized);
   const barH = layout.tabBarHeight + insets.bottom;
+  const pillVisible = useChallengePillVisible() && state.routes[state.index]?.name === PILL_TAB;
 
   const routes = state.routes;
   const renderTab = (index: number) => {
@@ -86,7 +93,7 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
     <>
       <CreateMenu bottom={barH} />
       <View pointerEvents="box-none" style={styles.chrome}>
-        {!menuOpen ? (
+        {!menuOpen && pillVisible ? (
           <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(120)} pointerEvents="box-none" style={styles.pillWrap}>
             <ChallengePill />
           </Animated.View>

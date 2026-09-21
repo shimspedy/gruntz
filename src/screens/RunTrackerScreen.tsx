@@ -78,7 +78,11 @@ export default function RunTrackerScreen() {
     const whole = Math.floor(dist);
     if (audioCues && whole > announced.current) {
       announced.current = whole;
-      Speech.speak(`${metric ? 'Kilometer' : 'Mile'} ${whole}. Pace ${pace(tracker.paceMinPerMile, metric)}.`, { rate: 0.92 });
+      Speech.speak(`${metric ? 'Kilometer' : 'Mile'} ${whole}. Pace ${pace(tracker.paceMinPerMile, metric)}.`, {
+        rate: 0.92,
+        // The system's own speech session ducks music under the cue, then restores it (like Maps).
+        useApplicationAudioSession: false,
+      });
       haptic.success();
     }
   }, [tracker.isTracking, dist, tracker.paceMinPerMile, audioCues, metric]);

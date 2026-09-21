@@ -44,6 +44,8 @@ function LoopingVideo({ source }: { source: number }) {
   const player = useVideoPlayer(source, (p) => {
     p.loop = true;
     p.muted = true;
+    // Silent demo loops must never pause the user's music or podcast.
+    p.audioMixingMode = 'mixWithOthers';
     p.play();
   });
   const opacity = useSharedValue(0);
