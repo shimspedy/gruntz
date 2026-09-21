@@ -61,6 +61,10 @@
         {
           "ios": {
             "deploymentTarget": "16.4"
+          },
+          "android": {
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36
           }
         }
       ]

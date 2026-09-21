@@ -2,26 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
-import Animated, {
-  FadeIn,
-  interpolate,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withRepeat,
-  withSequence,
-  withSpring,
-  withTiming,
-  type SharedValue,
-} from 'react-native-reanimated';
-import { getExerciseMedia } from '../../data/exerciseMedia';
+import Animated, { interpolate, useAnimatedStyle, useSharedValue, withDelay, withTiming, type SharedValue } from 'react-native-reanimated';
 import { Button } from '../../ui/Button';
-import { Icon } from '../../ui/Icon';
 import { LogoMark } from '../../ui/Logo';
-import { Bar, Ring } from '../../ui/Progress';
-import { RANK_ORDER, RankBadge } from '../../ui/RankBadge';
 import { Text } from '../../ui/Text';
-import { color, font, motion, radius, space } from '../../ui/tokens';
+import { color, motion, space } from '../../ui/tokens';
 
 const SLIDES = [
   { title: 'Log every set', body: 'Reps, load and rest for every movement in your mission.' },
@@ -30,7 +15,9 @@ const SLIDES = [
 ];
 
 export function Welcome({ onStart }: { onStart: () => void }) {
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
+  // The phone takes the space between the copy and the footer, capped so it never crowds small screens.
+  const phoneHeight = Math.min(500, Math.round(height * 0.5));
   const insets = useSafeAreaInsets();
   const [page, setPage] = useState(0);
   const x = useSharedValue(0);
@@ -96,7 +83,9 @@ export function Welcome({ onStart }: { onStart: () => void }) {
               <Text variant="callout" tone="secondary" align="center" style={styles.body}>
                 {s.body}
               </Text>
-              <View style={styles.stage}>{i === 0 ? <SetMock active={page === 0} /> : i === 1 ? <RankMock active={page === 1} /> : <TestMock active={page === 2} />}</View>
+              <View style={styles.stage}>
+                <ScreenPhone source={SCREENS[i]} active={page === i} height={phoneHeight} />
+              </View>
             </View>
           ))}
         </ScrollView>
@@ -129,137 +118,25 @@ function Dot({ index, x, width }: { index: number; x: SharedValue<number>; width
   return <Animated.View style={[styles.dot, style]} />;
 }
 
-function Phone({ children }: { children: React.ReactNode }) {
-  return (
-    <View style={styles.phone}>
-      <View style={styles.island} />
-      {children}
-    </View>
-  );
-}
+const SCREENS = [require('../../../assets/onboarding/log.jpg'), require('../../../assets/onboarding/ranks.jpg'), require('../../../assets/onboarding/test.jpg')];
+const SCREEN_RATIO = 1434 / 660;
 
-function SetMock({ active }: { active: boolean }) {
-  const media = getExerciseMedia('barbell-bench-press');
-  const [done, setDone] = useState(0);
+/** A real capture of the app inside a phone frame; it settles in when its slide becomes active. */
+function ScreenPhone({ source, active, height }: { source: number; active: boolean; height: number }) {
+  const t = useSharedValue(active ? 1 : 0);
   useEffect(() => {
-    if (!active) return;
-    setDone(0);
-    const id = setInterval(() => setDone((d) => (d >= 3 ? 0 : d + 1)), 900);
-    return () => clearInterval(id);
-  }, [active]);
+    t.set(withTiming(active ? 1 : 0.92, { duration: 420, easing: motion.easeOut }));
+  }, [active, t]);
+  const style = useAnimatedStyle(() => ({
+    transform: [{ scale: interpolate(t.get(), [0.92, 1], [0.96, 1], 'clamp') }],
+    opacity: interpolate(t.get(), [0.92, 1], [0.6, 1], 'clamp'),
+  }));
+  const width = Math.round(height / SCREEN_RATIO);
   return (
-    <View style={{ alignItems: 'center' }}>
-      <Phone>
-        <View style={styles.mockBubbles}>
-          {['barbell-bench-press', 'pull-ups', 'barbell-squat'].map((k, i) => (
-            <View key={k} style={[styles.mockBubble, i === 0 && { borderColor: '#FFFFFF', borderWidth: 2 }]}>
-              <Image source={getExerciseMedia(k)?.poster} style={StyleSheet.absoluteFill} contentFit="cover" />
-            </View>
-          ))}
-        </View>
-        {media ? <Image source={media.poster} style={{ width: '100%', height: 190, marginTop: 6 }} contentFit="contain" /> : null}
-      </Phone>
-      <View style={styles.setCard}>
-        <View style={styles.setHead}>
-          {['SET', 'PREVIOUS', 'LB', 'REPS'].map((h) => (
-            <Text key={h} variant="caption" tone="secondary" style={styles.setCell}>
-              {h}
-            </Text>
-          ))}
-          <View style={{ width: 30 }} />
-        </View>
-        {[1, 2, 3].map((n) => {
-          const on = n <= done;
-          return (
-            <Animated.View key={n} style={[styles.setRow, on && { backgroundColor: color.accentDeep }]}>
-              {[String(n), '135 x 8', '135', '8'].map((c, i) => (
-                <Text key={i} variant="subhead" tone={i === 1 ? 'tertiary' : 'primary'} style={styles.setCell} tabular>
-                  {c}
-                </Text>
-              ))}
-              <View style={[styles.setCheck, on && { backgroundColor: color.accent }]}>
-                <Icon name="check" size={13} color="#FFFFFF" weight="bold" />
-              </View>
-            </Animated.View>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
-
-function RankMock({ active }: { active: boolean }) {
-  const [lit, setLit] = useState(0);
-  const pop = useSharedValue(1);
-  useEffect(() => {
-    if (!active) return;
-    setLit(0);
-    const id = setInterval(() => {
-      setLit((l) => (l >= RANK_ORDER.length - 1 ? 0 : l + 1));
-      pop.set(withSequence(withTiming(0.85, { duration: 90 }), withSpring(1, motion.bouncy)));
-    }, 700);
-    return () => clearInterval(id);
-  }, [active, pop]);
-  const style = useAnimatedStyle(() => ({ transform: [{ scale: pop.get() }] }));
-  const rank = RANK_ORDER[lit];
-  return (
-    <Phone>
-      <View style={{ alignItems: 'center', paddingTop: 52 }}>
-        <Animated.View style={style}>
-          <RankBadge rank={rank} size={120} />
-        </Animated.View>
-        <Text style={styles.mockRank}>{rank}</Text>
-        <Text variant="footnote" tone="secondary">
-          Level {[1, 5, 10, 20, 30, 40, 50][lit]}
-        </Text>
-        <View style={styles.pips}>
-          {RANK_ORDER.map((r, i) => (
-            <RankBadge key={r} rank={r} size={i === lit ? 26 : 20} variant="pip" active={i === lit} locked={i > lit} />
-          ))}
-        </View>
-      </View>
-    </Phone>
-  );
-}
-
-function TestMock({ active }: { active: boolean }) {
-  const [p, setP] = useState(0);
-  useEffect(() => {
-    if (!active) return;
-    setP(0);
-    const id = setTimeout(() => setP(0.78), 200);
-    return () => clearTimeout(id);
-  }, [active]);
-  const events = [
-    { name: 'Deadlift', v: 0.9 },
-    { name: 'HR Push-Ups', v: 0.72 },
-    { name: 'Sprint-Drag-Carry', v: 0.64 },
-    { name: 'Plank', v: 0.95 },
-    { name: '2-Mile Run', v: 0.58 },
-  ];
-  return (
-    <Phone>
-      <View style={{ alignItems: 'center', paddingTop: 44 }}>
-        <Ring progress={p} size={112} stroke={8} trackColor={color.surfaceHigh}>
-          <Text style={styles.mockPct} tabular>
-            {Math.round(p * 100)}%
-          </Text>
-        </Ring>
-        <Text variant="footnote" tone="secondary" style={{ marginTop: 8 }}>
-          Army Fitness Test
-        </Text>
-      </View>
-      <View style={{ paddingHorizontal: 18, marginTop: 18, gap: 12 }}>
-        {events.map((e, i) => (
-          <View key={e.name}>
-            <Text variant="caption" tone="secondary" style={{ marginBottom: 5 }}>
-              {e.name}
-            </Text>
-            <Bar progress={active ? e.v : 0} height={5} duration={700 + i * 120} trackColor={color.surfaceHigh} />
-          </View>
-        ))}
-      </View>
-    </Phone>
+    <Animated.View style={[styles.phone, { width: width + 8, height: height + 8, borderRadius: width * 0.17 }, style]}>
+      <Image source={source} style={{ width, height, borderRadius: width * 0.15 }} contentFit="cover" transition={150} />
+      <View style={[styles.island, { top: height * 0.018, width: width * 0.3, height: height * 0.032 }]} />
+    </Animated.View>
   );
 }
 
@@ -273,34 +150,12 @@ const styles = StyleSheet.create({
   footer: { paddingHorizontal: space.md },
   disclaimer: { marginTop: 14, paddingHorizontal: space.lg, lineHeight: 15 },
   phone: {
-    width: 232,
-    height: 400,
-    borderRadius: 44,
+    padding: 4,
     borderCurve: 'continuous',
-    borderWidth: 4,
-    borderColor: '#2A2C30',
     backgroundColor: '#050505',
-    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: '#2A2C30',
+    boxShadow: '0 24px 60px rgba(0,0,0,0.6)',
   },
-  island: { position: 'absolute', top: 10, alignSelf: 'center', width: 72, height: 20, borderRadius: 10, backgroundColor: '#000', zIndex: 2 },
-  mockBubbles: { flexDirection: 'row', gap: 10, paddingHorizontal: 14, paddingTop: 44 },
-  mockBubble: { width: 48, height: 48, borderRadius: 24, borderWidth: 1, borderColor: '#3A3A3C', overflow: 'hidden', backgroundColor: '#000' },
-  setCard: {
-    marginTop: -120,
-    width: 300,
-    borderRadius: radius.lg,
-    borderCurve: 'continuous',
-    backgroundColor: '#141416',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.1)',
-    paddingBottom: 6,
-    boxShadow: '0 20px 40px rgba(0,0,0,0.7)',
-  },
-  setHead: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, height: 36 },
-  setRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, height: 44 },
-  setCell: { flex: 1, textAlign: 'center' },
-  setCheck: { width: 26, height: 26, borderRadius: 13, backgroundColor: color.surfaceHigh, alignItems: 'center', justifyContent: 'center', marginLeft: 4 },
-  mockRank: { fontFamily: font.bold, fontSize: 28, color: color.text, marginTop: 12 },
-  mockPct: { fontFamily: font.bold, fontSize: 26, color: color.text },
-  pips: { flexDirection: 'row', gap: 6, alignItems: 'center', marginTop: 24 },
+  island: { position: 'absolute', alignSelf: 'center', borderRadius: 999, backgroundColor: '#000' },
 });

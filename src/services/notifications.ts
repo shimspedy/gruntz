@@ -59,13 +59,11 @@ export async function setupNotificationChannels() {
     await Notifications.setNotificationChannelAsync('daily-reminder', {
       name: 'Daily Mission Reminder',
       importance: Notifications.AndroidImportance.DEFAULT,
-      sound: 'default',
     });
 
     await Notifications.setNotificationChannelAsync('achievements', {
       name: 'Achievements & Milestones',
       importance: Notifications.AndroidImportance.HIGH,
-      sound: 'default',
       lightColor: '#FFB800',
     });
   }, undefined);
