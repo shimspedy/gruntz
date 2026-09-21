@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, AppState, FlatList, ScrollView, StyleSheet, View, useWindowDimensions, type ViewToken } from 'react-native';
+import { ActionSheetIOS, Alert, AppState, FlatList, ScrollView, StyleSheet, View, useWindowDimensions, type ViewToken } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   Extrapolation,
+  FadeIn,
+  FadeOut,
   interpolate,
   useAnimatedStyle,
   useSharedValue,
@@ -13,6 +15,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { getExerciseById } from '../../data/exercises';
+import { navigationRef } from '../../navigation/ref';
 import { formatClock, useNow } from '../../hooks/useNow';
 import { clearWorkoutProgress, showWorkoutProgress } from '../../services/notifications';
 import { useReadinessStore } from '../../store/useReadinessStore';
@@ -31,6 +34,9 @@ import { RestBanner } from './RestBanner';
 import { RestSheet } from './RestSheet';
 import { SessionSummary } from './SessionSummary';
 import { SetTable } from './SetTable';
+
+const BUBBLE = 68;
+const BUBBLE_STEP = BUBBLE + 14;
 
 const KEEP_AWAKE_TAG = 'gruntz-session';
 
@@ -115,6 +121,7 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
   const summaryX = useSharedValue(0);
 
   const completed = s.exercises.filter(isExerciseDone).length;
+  const allDone = s.exercises.length > 0 && completed === s.exercises.length;
 
   // The progress notification is for when the user leaves the app mid-workout; in the foreground
   // the session UI already shows it, so a banner would only interrupt.
@@ -136,7 +143,7 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
   useEffect(() => {
     if (!s.exercises.length) return;
     pager.current?.scrollToIndex({ index: s.index, animated: true });
-    carousel.current?.scrollTo({ x: Math.max(0, s.index * 126 - width / 2 + 63 + space.gutter), animated: true });
+    carousel.current?.scrollTo({ x: Math.max(0, s.index * BUBBLE_STEP - width / 2 + BUBBLE / 2 + space.gutter), animated: true });
   }, [s.index, s.exercises.length, width]);
 
   useEffect(() => {
@@ -174,6 +181,40 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
 
   const current = s.exercises[s.index];
 
+  // Until every set is logged the corner stays quiet: ending early is a deliberate, menu-level choice.
+  const sessionMenu = () => {
+    haptic.light();
+    const finishEarly = () => setPhase('summary');
+    const discard = () =>
+      Alert.alert('Discard workout?', 'Logged sets from this session will be lost.', [
+        { text: 'Keep going', style: 'cancel' },
+        {
+          text: 'Discard',
+          style: 'destructive',
+          onPress: () => {
+            haptic.warning();
+            useSessionStore.getState().discard();
+          },
+        },
+      ]);
+    const message = `${completed} of ${s.exercises.length} exercises logged.`;
+    if (process.env.EXPO_OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { title: s.title, message, options: ['Finish early', 'Discard workout', 'Cancel'], destructiveButtonIndex: 1, cancelButtonIndex: 2, userInterfaceStyle: 'dark' },
+        (i) => {
+          if (i === 0) finishEarly();
+          if (i === 1) discard();
+        },
+      );
+      return;
+    }
+    Alert.alert(s.title, message, [
+      { text: 'Finish early', onPress: finishEarly },
+      { text: 'Discard workout', style: 'destructive', onPress: discard },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
   return (
     <View style={{ flex: 1 }}>
       <Animated.View style={[{ flex: 1 }, logStyle]}>
@@ -195,18 +236,28 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
               <Text variant="headline" tabular style={styles.clock} accessibilityLabel="Elapsed time">
                 {s.startedAt ? formatClock(now - s.startedAt) : '0:00'}
               </Text>
-              <Tap
-                onPress={() => {
-                  haptic.light();
-                  setPhase('summary');
-                }}
-                style={styles.finish}
-                accessibilityLabel="Finish workout"
-              >
-                <Text variant="headline" tone="inverse">
-                  Finish
-                </Text>
-              </Tap>
+              {allDone ? (
+                <Animated.View key="finish" entering={FadeIn.duration(240)} exiting={FadeOut.duration(120)}>
+                  <Tap
+                    onPress={() => {
+                      haptic.light();
+                      setPhase('summary');
+                    }}
+                    style={styles.finish}
+                    accessibilityLabel="Finish workout"
+                  >
+                    <Text variant="headline" tone="inverse">
+                      Finish
+                    </Text>
+                  </Tap>
+                </Animated.View>
+              ) : (
+                <Animated.View key="more" entering={FadeIn.duration(160)} exiting={FadeOut.duration(120)}>
+                  <Tap feedback="opacity" hitSlop={10} onPress={sessionMenu} style={styles.topIcon} accessibilityLabel="Workout options">
+                    <Icon name="more" size={22} color={color.textSecondary} weight="semibold" />
+                  </Tap>
+                </Animated.View>
+              )}
             </View>
             <ScrollView
               ref={carousel}
@@ -229,7 +280,7 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
                     accessibilityLabel={`${ex?.name ?? 'Exercise'}${doneEx ? ', done' : ''}`}
                     style={[styles.bubble, activeEx && styles.bubbleActive]}
                   >
-                    <ExerciseThumb exercise={ex} size={activeEx ? 98 : 100} tone="dark" />
+                    <ExerciseThumb exercise={ex} size={activeEx ? 62 : 64} tone="dark" />
                     {doneEx ? (
                       <View style={styles.bubbleCheck}>
                         <Icon name="check" size={12} color="#FFFFFF" weight="bold" />
@@ -238,6 +289,18 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
                   </Tap>
                 );
               })}
+              <Tap
+                scaleTo={0.94}
+                onPress={() => {
+                  haptic.light();
+                  s.minimize();
+                  navigationRef.navigate('ExerciseLibrary', { pick: true, target: 'session' });
+                }}
+                accessibilityLabel="Add exercise"
+                style={[styles.bubble, styles.bubbleAdd]}
+              >
+                <Icon name="plus" size={24} color={color.textSecondary} weight="medium" />
+              </Tap>
             </ScrollView>
           </View>
         </GestureDetector>
@@ -308,19 +371,40 @@ function ExercisePage({
   const removeExercise = useSessionStore((st) => st.removeExercise);
   const replaceExercise = useSessionStore((st) => st.replaceExercise);
   const alternative = ex?.gym_alternative_id ? getExerciseById(ex.gym_alternative_id) : undefined;
-  const videoH = Math.round(width * 0.74);
+  // Sized so the set table starts above the fold: logging is the job, the video is the reference.
+  const videoH = Math.round(width * 0.6);
 
-  const confirmRemove = () => {
-    Alert.alert('Remove exercise?', `${ex?.name ?? 'This exercise'} won’t count toward today’s mission.`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: () => {
-          haptic.warning();
-          removeExercise(exercise.key);
+  const replace = () => {
+    if (!alternative) return;
+    haptic.light();
+    replaceExercise(exercise.key, alternative.id);
+    toast(`Swapped to ${alternative.name}`, { tone: 'info', icon: 'replace' });
+  };
+  const remove = () => {
+    haptic.warning();
+    removeExercise(exercise.key);
+  };
+
+  // Rare, destructive actions live behind the overflow button, never beside the sets.
+  const openMore = () => {
+    haptic.light();
+    const name = ex?.name ?? 'This exercise';
+    const message = `Removing ${name} means it won’t count toward today’s mission.`;
+    const options = [...(alternative ? [`Replace with ${alternative.name}`] : []), 'Remove exercise', 'Cancel'];
+    if (process.env.EXPO_OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { title: name, message, options, destructiveButtonIndex: options.length - 2, cancelButtonIndex: options.length - 1, userInterfaceStyle: 'dark' },
+        (i) => {
+          if (alternative && i === 0) replace();
+          else if (i === options.length - 2) remove();
         },
-      },
+      );
+      return;
+    }
+    Alert.alert(name, message, [
+      ...(alternative ? [{ text: `Replace with ${alternative.name}`, onPress: replace }] : []),
+      { text: 'Remove exercise', style: 'destructive' as const, onPress: remove },
+      { text: 'Cancel', style: 'cancel' as const },
     ]);
   };
 
@@ -333,23 +417,15 @@ function ExercisePage({
       keyboardDismissMode="on-drag"
       automaticallyAdjustKeyboardInsets
     >
-      <ExerciseVideo exercise={ex} active={active} style={{ width, height: videoH }} />
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-        <ActionChip icon="play" label="Guide" onPress={onGuide} />
-        {alternative ? (
-          <ActionChip
-            icon="replace"
-            label="Replace"
-            onPress={() => {
-              haptic.light();
-              replaceExercise(exercise.key, alternative.id);
-              toast(`Swapped to ${alternative.name}`, { tone: 'info', icon: 'replace' });
-            }}
-          />
-        ) : null}
-        <ActionChip icon="trash" label="Remove" danger onPress={confirmRemove} />
-      </ScrollView>
+      <View>
+        <ExerciseVideo exercise={ex} active={active} style={{ width, height: videoH }} />
+        <Tap onPress={onGuide} scaleTo={0.95} style={styles.guide} accessibilityLabel="Guide">
+          <Icon name="play" size={12} color="#FFFFFF" weight="semibold" />
+          <Text variant="subhead" style={{ fontFamily: font.semibold }}>
+            Guide
+          </Text>
+        </Tap>
+      </View>
 
       <View style={styles.nameRow}>
         <Text variant="title" style={styles.name} numberOfLines={2}>
@@ -360,6 +436,9 @@ function ExercisePage({
           <Text variant="caption" tone="accent" tabular style={{ fontFamily: font.semibold, marginTop: 1 }}>
             {rest > 0 ? `${rest}s` : 'Off'}
           </Text>
+        </Tap>
+        <Tap feedback="opacity" hitSlop={8} onPress={openMore} style={styles.moreIcon} accessibilityLabel="Exercise options">
+          <Icon name="more" size={22} color={color.textSecondary} weight="semibold" />
         </Tap>
       </View>
       {ex?.description ? (
@@ -383,17 +462,6 @@ function ExercisePage({
   );
 }
 
-function ActionChip({ icon, label, onPress, danger }: { icon: 'play' | 'replace' | 'trash'; label: string; onPress: () => void; danger?: boolean }) {
-  return (
-    <Tap onPress={onPress} scaleTo={0.95} style={[styles.chip, danger && styles.chipDanger]} accessibilityLabel={label}>
-      <Icon name={icon} size={16} color="#FFFFFF" weight="semibold" />
-      <Text variant="headline" style={{ fontSize: 16 }}>
-        {label}
-      </Text>
-    </Tap>
-  );
-}
-
 const styles = StyleSheet.create({
   layer: { backgroundColor: color.bg, overflow: 'hidden', zIndex: 50 },
   topBar: { height: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.md },
@@ -407,44 +475,47 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  carousel: { paddingHorizontal: space.gutter, gap: 22, paddingVertical: 14 },
+  carousel: { paddingHorizontal: space.gutter, gap: BUBBLE_STEP - BUBBLE, paddingVertical: 10 },
   bubble: {
-    width: 104,
-    height: 104,
-    borderRadius: 52,
+    width: BUBBLE,
+    height: BUBBLE,
+    borderRadius: BUBBLE / 2,
     borderWidth: 1,
     borderColor: color.lineStrong,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bubbleActive: { borderWidth: 3, borderColor: '#FFFFFF' },
+  bubbleActive: { borderWidth: 2.5, borderColor: '#FFFFFF' },
+  bubbleAdd: { borderStyle: 'dashed', borderColor: color.lineStrong, backgroundColor: color.surface },
   bubbleCheck: {
     position: 'absolute',
-    right: 4,
-    bottom: 4,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    right: -2,
+    bottom: -2,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: color.accent,
     borderWidth: 2,
     borderColor: color.bg,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  chips: { paddingHorizontal: space.gutter, gap: 12, paddingTop: space.md },
-  chip: {
-    height: 48,
-    paddingHorizontal: 20,
-    borderRadius: radius.pill,
-    backgroundColor: color.surface,
+  guide: {
+    position: 'absolute',
+    top: space.sm,
+    right: space.gutter,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 6,
+    height: 34,
+    paddingHorizontal: 14,
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(28,28,30,0.86)',
   },
-  chipDanger: { backgroundColor: '#E5484D' },
-  nameRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.gutter, marginTop: space.xl },
+  nameRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.gutter, marginTop: space.md },
   name: { flex: 1, fontSize: 25, lineHeight: 30 },
   restIcon: { alignItems: 'center', marginLeft: space.md },
+  moreIcon: { width: 36, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: space.xs },
   desc: { paddingHorizontal: space.gutter, marginTop: space.sm },
   sectionTag: { paddingHorizontal: space.gutter, marginTop: space.md, marginBottom: space.sm },
   summary: { backgroundColor: color.bg },

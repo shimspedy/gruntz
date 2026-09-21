@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { LogBox, StyleSheet } from 'react-native';
+import { Linking, LogBox, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -45,6 +45,15 @@ export default function App() {
     // Prepare notification channels silently. Permission is requested in context
     // (onboarding reminder step or the Settings toggle), never at launch.
     setupNotificationChannels();
+  }, []);
+
+  useEffect(() => {
+    if (!__DEV__) return;
+    // Dev-only: `com.gruntz.fitness://seed-demo` loads screenshot demo data.
+    const sub = Linking.addEventListener('url', ({ url }) => {
+      if (url.includes('seed-demo')) require('./src/dev/seedDemo').seedDemo();
+    });
+    return () => sub.remove();
   }, []);
 
   return (

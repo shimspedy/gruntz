@@ -28,7 +28,8 @@ export type RootStackParamList = {
   CardLibrary: { category?: string } | undefined;
   CardDetail: { cardId: string };
   ExerciseDetail: { exerciseId?: string; mediaKey?: string };
-  ExerciseLibrary: { pick?: boolean } | undefined;
+  /** `pick` opens multi-select; `target: 'session'` adds the picks to the running workout instead of the routine draft. */
+  ExerciseLibrary: { pick?: boolean; target?: 'routine' | 'session' } | undefined;
   RoutineEditor: undefined;
   RoutineDetail: { routineId: string };
   Achievements: undefined;

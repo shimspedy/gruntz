@@ -62,6 +62,8 @@ interface SessionState {
   addSet: (exKey: string) => void;
   removeExercise: (exKey: string) => void;
   replaceExercise: (exKey: string, nextId: string) => void;
+  /** Appends library clips to the running workout and jumps to the first one added. */
+  addExercises: (keys: string[]) => void;
   setRestFor: (exerciseId: string, seconds: number) => void;
   startRest: (seconds: number) => void;
   adjustRest: (delta: number) => void;
@@ -260,6 +262,19 @@ export const useSessionStore = create<SessionState>()(
             };
           }),
         })),
+
+      addExercises: (keys) =>
+        set((s) => {
+          const added: SessionExercise[] = keys.flatMap((k, i) => {
+            const id = libraryExerciseId(k);
+            const ex = getExerciseById(id);
+            if (!ex) return [];
+            const count = Math.max(1, ex.sets || 3);
+            return [{ key: `added:${Date.now().toString(36)}:${i}:${k}`, exerciseId: id, section: 'Added', kind: kindFor(ex), weighted: isWeighted(ex), requiredSets: count, sets: buildSets(ex, count, s.previous[id]) }];
+          });
+          if (!added.length) return s;
+          return { exercises: [...s.exercises, ...added], index: s.exercises.length };
+        }),
 
       setRestFor: (exerciseId, seconds) => set((s) => ({ restOverrides: { ...s.restOverrides, [exerciseId]: seconds } })),
       startRest: (seconds) => set({ restEndsAt: Date.now() + seconds * 1000, restTotal: seconds }),

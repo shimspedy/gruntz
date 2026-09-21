@@ -11,6 +11,8 @@ import { Text } from '../ui/Text';
 import { color, font, radius, space } from '../ui/tokens';
 import type { RootStackParamList } from '../types/navigation';
 import { useRoutineStore } from '../store/useRoutineStore';
+import { useSessionStore } from '../store/useSessionStore';
+import { toast } from '../ui/Toast';
 import { Button } from '../ui/Button';
 import { haptic } from '../ui/haptics';
 
@@ -35,6 +37,13 @@ export default function ExerciseLibraryScreen() {
   const navigation = useNavigation();
   const { params } = useRoute<RouteProp<RootStackParamList, 'ExerciseLibrary'>>();
   const picking = !!params?.pick;
+  const toSession = params?.target === 'session';
+
+  // Picking for a live workout: the session was minimized to open this sheet, so bring it back on close.
+  React.useEffect(() => {
+    if (!toSession) return;
+    return () => useSessionStore.getState().expand();
+  }, [toSession]);
   const [picked, setPicked] = useState<string[]>([]);
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
@@ -134,7 +143,10 @@ export default function ExerciseLibraryScreen() {
             title={picked.length ? `Add ${picked.length} ${picked.length === 1 ? 'exercise' : 'exercises'}` : 'Select exercises'}
             disabled={!picked.length}
             onPress={() => {
-              useRoutineStore.getState().addToDraft(picked);
+              if (toSession) {
+                useSessionStore.getState().addExercises(picked);
+                toast(`Added ${picked.length} to your workout`, { icon: 'check' });
+              } else useRoutineStore.getState().addToDraft(picked);
               navigation.goBack();
             }}
           />
