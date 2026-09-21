@@ -23,9 +23,8 @@ export interface Exercise {
   muscle_groups?: string[];
   steps?: string[];
   illustration?: string;
-  demo_url?: string;
-  video_url?: string;
-  video_asset?: number;
+  /** Base name of the render in assets/exercise-media (see data/exerciseMedia.ts). */
+  media_key?: string;
 }
 
 export interface ProgressionRules {

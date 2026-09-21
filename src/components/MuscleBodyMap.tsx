@@ -1,29 +1,15 @@
-import React, { useCallback, useMemo } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useMemo } from 'react';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Body from 'react-native-body-highlighter';
-import type { Slug, ExtendedBodyPart } from 'react-native-body-highlighter';
-import { useColors } from '../theme';
-import type { ThemeColors } from '../theme';
-
-interface MuscleBodyMapProps {
-  /** Muscle group names from exercise data (e.g. 'chest', 'quads', 'back') */
-  activeMuscles?: string[];
-  onMusclePress?: (muscleId: string) => void;
-  side?: 'front' | 'back';
-  scale?: number;
-}
+import type { ExtendedBodyPart, Slug } from 'react-native-body-highlighter';
+import { color } from '../ui/tokens';
 
 /**
- * Maps the app's internal muscle group names (from exercises.ts MUSCLE_GROUPS)
- * to react-native-body-highlighter slugs.
- *
- * Library slugs (front): chest, biceps, abs, obliques, deltoids, forearm,
- *   adductors, quadriceps, tibialis, trapezius, neck, hands, feet, head, knees
- * Library slugs (back): upper-back, lower-back, hamstring, gluteal, abductors,
- *   trapezius, deltoids, triceps, forearm, calves
+ * Maps the app's muscle group names (exercises.ts MUSCLE_GROUPS) to body-highlighter slugs.
+ * Front: chest, biceps, abs, obliques, deltoids, forearm, adductors, quadriceps, tibialis, trapezius
+ * Back: upper-back, lower-back, hamstring, gluteal, abductors, trapezius, deltoids, triceps, forearm, calves
  */
-const MUSCLE_TO_SLUG: Record<string, Slug[]> = {
-  // Direct matches
+export const MUSCLE_TO_SLUG: Record<string, Slug[]> = {
   chest: ['chest'],
   biceps: ['biceps'],
   triceps: ['triceps'],
@@ -31,8 +17,6 @@ const MUSCLE_TO_SLUG: Record<string, Slug[]> = {
   forearms: ['forearm'],
   adductors: ['adductors'],
   calves: ['calves'],
-
-  // Our names → library slugs
   shoulders: ['deltoids'],
   deltoids: ['deltoids'],
   quads: ['quadriceps'],
@@ -50,87 +34,51 @@ const MUSCLE_TO_SLUG: Record<string, Slug[]> = {
   'hip flexors': ['adductors'],
   legs: ['quadriceps', 'hamstring', 'calves'],
   'full body': ['chest', 'deltoids', 'abs', 'quadriceps', 'upper-back', 'biceps', 'triceps'],
-
-  // Pass-throughs for any that already match
   'upper-back': ['upper-back'],
   'lower-back': ['lower-back'],
   hamstring: ['hamstring'],
   gluteal: ['gluteal'],
 };
 
-/**
- * Convert app muscle names to library BodyPartObject[] data.
- */
-function buildBodyData(activeMuscles: string[]): ExtendedBodyPart[] {
-  const slugSet = new Set<Slug>();
+/** Three intensities of the accent: touched, trained, dominant. */
+const LEVELS = ['#1C4E8C', '#2468C4', color.accent];
 
-  activeMuscles.forEach((muscle) => {
-    const mappedSlugs = MUSCLE_TO_SLUG[muscle.toLowerCase()];
-    if (mappedSlugs) {
-      mappedSlugs.forEach((s) => slugSet.add(s));
-    }
-  });
-
-  return Array.from(slugSet).map((slug) => ({
-    slug,
-    intensity: 2,
-  }));
+interface Props {
+  /** muscle name → intensity 1..3 */
+  muscles?: Record<string, number>;
+  side?: 'front' | 'back';
+  scale?: number;
+  /** line: white outline art on black (Ranks) · soft: dim silhouette (tiles) */
+  variant?: 'line' | 'soft';
+  style?: StyleProp<ViewStyle>;
 }
 
-/**
- * Anatomical muscle body map using react-native-body-highlighter.
- * Shows a detailed SVG body with tappable muscle regions.
- * Active muscles glow in electric lime.
- */
-export function MuscleBodyMap({
-  activeMuscles = [],
-  onMusclePress,
-  side = 'front',
-  scale = 1,
-}: MuscleBodyMapProps) {
-  const colors = useColors();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-
-  const bodyData = useMemo(() => buildBodyData(activeMuscles), [activeMuscles]);
-
-  const handlePress = useCallback(
-    (muscle: ExtendedBodyPart) => {
-      if (!muscle.slug) return;
-      // Reverse-map slug back to our muscle name
-      const entry = Object.entries(MUSCLE_TO_SLUG).find(([, slugs]) =>
-        slugs.includes(muscle.slug as Slug),
-      );
-      const muscleId = entry ? entry[0] : muscle.slug;
-      onMusclePress?.(muscleId);
-    },
-    [onMusclePress],
-  );
+export function MuscleBodyMap({ muscles = {}, side = 'front', scale = 1, variant = 'line', style }: Props) {
+  const data = useMemo<ExtendedBodyPart[]>(() => {
+    const bySlug = new Map<Slug, number>();
+    Object.entries(muscles).forEach(([m, level]) => {
+      (MUSCLE_TO_SLUG[m.toLowerCase()] ?? []).forEach((slug) => bySlug.set(slug, Math.max(bySlug.get(slug) ?? 0, level)));
+    });
+    return Array.from(bySlug.entries()).map(([slug, intensity]) => ({ slug, intensity }));
+  }, [muscles]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.wrap, style]} pointerEvents="none">
       <Body
-        data={bodyData}
+        data={data}
         gender="male"
         side={side}
         scale={scale}
-        border="none"
-        colors={[colors.accent + '66', colors.accent + '99', colors.accent]}
-        onBodyPartPress={handlePress}
-        defaultFill="#FFFFFF0A"
-        defaultStroke="#FFFFFF18"
-        defaultStrokeWidth={0.5}
+        border={variant === 'line' ? '#F2F2F4' : 'none'}
+        colors={LEVELS}
+        defaultFill={variant === 'line' ? '#000000' : '#2A2A2E'}
+        defaultStroke={variant === 'line' ? '#D8D8DC' : '#3A3A3E'}
+        defaultStrokeWidth={variant === 'line' ? 1.1 : 0.6}
       />
     </View>
   );
 }
 
-/** Re-export the slug mapping so HomeScreen can use it */
-export { MUSCLE_TO_SLUG };
-
-const createStyles = (_colors: ThemeColors) =>
-  StyleSheet.create({
-    container: {
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-  });
+const styles = StyleSheet.create({
+  wrap: { alignItems: 'center', justifyContent: 'center' },
+});

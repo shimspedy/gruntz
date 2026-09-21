@@ -1,47 +1,111 @@
-import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { GlassCard } from '../components/GlassCard';
+import React from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { branchDefaultTest, getTestsForBranch } from '../data/militaryTests';
 import { useUserStore } from '../store/useUserStore';
-import { borderRadius, spacing, useColors } from '../theme';
-import type { ThemeColors } from '../theme';
-import type { FitnessTestType, ServiceBranch } from '../types';
+import type { FitnessTestType, ServiceBranch, ServiceStatus } from '../types';
+import { Icon } from '../ui/Icon';
+import { NavHeader } from '../ui/Layout';
+import { Tap } from '../ui/Pressable';
+import { Text } from '../ui/Text';
+import { haptic } from '../ui/haptics';
+import { color, radius, space } from '../ui/tokens';
+import { BRANCH_LABEL } from './TestScreen';
 
-const branches: Array<{ id: ServiceBranch; label: string; short: string }> = [
-  { id: 'army', label: 'U.S. Army', short: 'ARMY' }, { id: 'marines', label: 'U.S. Marine Corps', short: 'USMC' },
-  { id: 'navy', label: 'U.S. Navy', short: 'NAVY' }, { id: 'air_force', label: 'U.S. Air Force', short: 'USAF' },
-  { id: 'space_force', label: 'U.S. Space Force', short: 'USSF' }, { id: 'coast_guard', label: 'U.S. Coast Guard', short: 'USCG' },
-  { id: 'general', label: 'General readiness', short: 'GENERAL' },
+const BRANCHES: ServiceBranch[] = ['army', 'marines', 'navy', 'air_force', 'space_force', 'coast_guard', 'general'];
+const STATUSES: { id: ServiceStatus; label: string }[] = [
+  { id: 'recruit', label: 'Recruit or applicant' },
+  { id: 'active', label: 'Active duty' },
+  { id: 'reserve', label: 'Reserve' },
+  { id: 'guard', label: 'National Guard' },
+  { id: 'rotc', label: 'ROTC or academy' },
+  { id: 'veteran', label: 'Veteran' },
+  { id: 'civilian', label: 'Civilian' },
 ];
 
+/** Branch drives the Test tab. Changing it swaps the event board immediately. */
 export default function ServiceProfileScreen() {
-  const colors = useColors();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-  const profile = useUserStore((state) => state.profile);
-  const setProfile = useUserStore((state) => state.setProfile);
+  const insets = useSafeAreaInsets();
+  const profile = useUserStore((s) => s.profile);
+  const setProfile = useUserStore((s) => s.setProfile);
   const branch = profile?.service_branch ?? 'general';
   const tests = getTestsForBranch(branch);
-  const selectedTest = tests.some((test) => test.id === profile?.fitness_test_type) ? profile?.fitness_test_type : branchDefaultTest[branch];
-  const selectBranch = (next: ServiceBranch) => profile && setProfile({ ...profile, service_branch: next, fitness_test_type: branchDefaultTest[next] });
-  const selectTest = (test: FitnessTestType) => profile && setProfile({ ...profile, fitness_test_type: test });
+  const selectedTest = tests.some((t) => t.id === profile?.fitness_test_type) ? profile?.fitness_test_type : branchDefaultTest[branch];
 
-  return <SafeAreaView style={styles.safe} edges={['bottom']}><ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic">
-    <Text style={styles.kicker}>SERVICE ALIGNMENT</Text><Text style={styles.title}>Your branch drives your test.</Text>
-    <Text style={styles.subtitle}>Changing branches immediately replaces the Test Center event board. Scores remain isolated by assessment.</Text>
-    <View style={styles.branchGrid} accessibilityRole="radiogroup">{branches.map((item) => { const active = branch === item.id; return <TouchableOpacity key={item.id} style={[styles.branchCard, active && styles.branchCardActive]} onPress={() => selectBranch(item.id)} accessibilityRole="radio" accessibilityState={{ selected: active }}><Text style={[styles.branchShort, active && styles.branchShortActive]}>{item.short}</Text><Text style={[styles.branchName, active && styles.branchNameActive]}>{item.label}</Text></TouchableOpacity>; })}</View>
-    <Text style={styles.sectionLabel}>ASSIGNED ASSESSMENT</Text>
-    {tests.map((test) => { const active = selectedTest === test.id; return <GlassCard key={test.id} style={[styles.testCard, active && styles.testCardActive]} onPress={() => selectTest(test.id)}><View style={styles.testRow}><View style={{ flex: 1 }}><Text style={styles.testName}>{test.name}</Text><Text style={styles.testMeta}>{test.events.length} events · {test.effectiveLabel}</Text></View><View style={[styles.radio, active && styles.radioActive]}>{active && <View style={styles.radioDot} />}</View></View></GlassCard>; })}
-    <Text style={styles.note}>Marine profiles can switch between the PFT and CFT. Other branches receive their current primary assessment lane.</Text>
-  </ScrollView></SafeAreaView>;
+  const update = (patch: Partial<NonNullable<typeof profile>>) => {
+    if (!profile) return;
+    haptic.selection();
+    setProfile({ ...profile, ...patch });
+  };
+
+  return (
+    <View style={styles.screen}>
+      <NavHeader title="Service profile" />
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + space.xxl, paddingHorizontal: space.md }} showsVerticalScrollIndicator={false}>
+        <Text variant="callout" tone="secondary" style={styles.intro}>
+          Your branch sets the test on your Test tab. Scores are kept per test, so switching never erases them.
+        </Text>
+
+        <Choice label="Branch">
+          {BRANCHES.map((b) => (
+            <Option key={b} title={BRANCH_LABEL[b]} selected={branch === b} onPress={() => update({ service_branch: b, fitness_test_type: branchDefaultTest[b] })} />
+          ))}
+        </Choice>
+
+        <Choice label="Assessment">
+          {tests.map((t) => (
+            <Option key={t.id} title={t.name} subtitle={`${t.events.length} events · ${t.effectiveLabel}`} selected={selectedTest === t.id} onPress={() => update({ fitness_test_type: t.id as FitnessTestType })} />
+          ))}
+        </Choice>
+
+        <Choice label="Status">
+          {STATUSES.map((s) => (
+            <Option key={s.id} title={s.label} selected={profile?.service_status === s.id} onPress={() => update({ service_status: s.id })} />
+          ))}
+        </Choice>
+      </ScrollView>
+    </View>
+  );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background }, content: { padding: spacing.md, paddingBottom: spacing.xxl, gap: spacing.sm },
-  kicker: { color: colors.accent, fontSize: 10, fontWeight: '900', letterSpacing: 1.6 }, title: { color: colors.textPrimary, fontSize: 28, fontWeight: '900', letterSpacing: -0.7 },
-  subtitle: { color: colors.textSecondary, fontSize: 13, lineHeight: 19, marginBottom: spacing.md }, branchGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.lg },
-  branchCard: { width: '48%', minHeight: 68, justifyContent: 'center', padding: spacing.sm, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.cardBorder, backgroundColor: colors.card }, branchCardActive: { borderColor: colors.accent, backgroundColor: `${colors.accent}12` },
-  branchShort: { color: colors.textMuted, fontSize: 15, fontWeight: '900', letterSpacing: 1 }, branchShortActive: { color: colors.accent }, branchName: { color: colors.textMuted, fontSize: 10, marginTop: 3 }, branchNameActive: { color: colors.textSecondary },
-  sectionLabel: { color: colors.textMuted, fontSize: 10, fontWeight: '900', letterSpacing: 1.3, marginBottom: 2 }, testCard: { marginBottom: 2 }, testCardActive: { borderColor: colors.accent }, testRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  testName: { color: colors.textPrimary, fontSize: 14, fontWeight: '800' }, testMeta: { color: colors.textMuted, fontSize: 10, marginTop: 4 }, radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 1, borderColor: colors.cardBorder, alignItems: 'center', justifyContent: 'center' }, radioActive: { borderColor: colors.accent }, radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent }, note: { color: colors.textMuted, fontSize: 11, lineHeight: 16, marginTop: spacing.sm },
+function Choice({ label, children }: { label: string; children: React.ReactNode }) {
+  const rows = React.Children.toArray(children);
+  return (
+    <View style={{ marginTop: space.xl }}>
+      <Text variant="overline" tone="secondary" style={{ marginLeft: 6, marginBottom: 10 }}>
+        {label}
+      </Text>
+      <View style={styles.group} accessibilityRole="radiogroup">
+        {rows.map((r, i) => (
+          <View key={i} style={i > 0 ? styles.divider : null}>
+            {r}
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function Option({ title, subtitle, selected, onPress }: { title: string; subtitle?: string; selected: boolean; onPress: () => void }) {
+  return (
+    <Tap feedback="highlight" baseColor={color.surface} pressedColor={color.surfacePressed} onPress={onPress} style={styles.row} accessibilityRole="radio" accessibilityState={{ selected }} accessibilityLabel={title}>
+      <View style={{ flex: 1 }}>
+        <Text variant="bodyMedium">{title}</Text>
+        {subtitle ? (
+          <Text variant="footnote" tone="tertiary" style={{ marginTop: 2 }}>
+            {subtitle}
+          </Text>
+        ) : null}
+      </View>
+      {selected ? <Icon name="check" size={18} color={color.accent} weight="semibold" /> : null}
+    </Tap>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: color.bg },
+  intro: { paddingHorizontal: 6, marginTop: space.sm },
+  group: { backgroundColor: color.surface, borderRadius: radius.lg, borderCurve: 'continuous', overflow: 'hidden' },
+  row: { minHeight: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.md + 2, paddingVertical: 12 },
+  divider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color.line, marginLeft: space.md + 2 },
 });

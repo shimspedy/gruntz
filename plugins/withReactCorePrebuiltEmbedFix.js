@@ -1,4 +1,4 @@
-const { withPodfile } = require("@expo/config-plugins");
+const { withPodfile } = require("expo/config-plugins");
 
 const PATCH_MARKER = "GRUNTZ_REACT_CORE_PREBUILT_EMBED_FIX";
 
@@ -8,11 +8,21 @@ const rubyPatch = `
     # Xcode 27 also rejects older deployment targets retained by pod resource bundles.
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |build_config|
-        build_config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
+        build_config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.4'
       end
     end
 
-    react_core_line = '  install_framework "\${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework"'
+    # Xcode 27's Swift compiler synthesizes a memberwise init(stringRepresentation:) for
+    # RevenueCat's PaywallColor (its optional stored var defaults to nil), which collides
+    # with the SDK's own public init. Making the storage a let removes the synthesized one.
+    paywall_color = File.join(__dir__, 'Pods/RevenueCat/Sources/Paywalls/PaywallColor.swift')
+    if File.exist?(paywall_color)
+      source = File.read(paywall_color)
+      patched = source.sub('fileprivate var _underlyingColor: (any Sendable)?', 'fileprivate let _underlyingColor: (any Sendable)?')
+      File.write(paywall_color, patched) if patched != source
+    end
+
+    react_core_line ='  install_framework "\${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework"'
     rn_deps_line = '  install_framework "\${PODS_XCFRAMEWORKS_BUILD_DIR}/ReactNativeDependencies/ReactNativeDependencies.framework"'
     frameworks_script = File.join(__dir__, 'Pods/Target Support Files/Pods-Gruntz/Pods-Gruntz-frameworks.sh')
 

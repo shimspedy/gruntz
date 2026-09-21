@@ -1,83 +1,163 @@
 import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { GlassCard } from '../components/GlassCard';
-import { GameIcon } from '../components/GameIcon';
-import { MissionButton } from '../components/MissionButton';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { getProgramById } from '../data/programs';
+import { formatMinutes, getPlanWeek, heroExercise, workoutExercises } from '../features/plan';
 import { useProgramStore } from '../store/useProgramStore';
+import { calculateDailyReadiness, getTodaysCheckIn, useReadinessStore } from '../store/useReadinessStore';
 import { useUserStore } from '../store/useUserStore';
-import { getTodaysCheckIn, calculateDailyReadiness, useReadinessStore } from '../store/useReadinessStore';
-import { spacing, useColors } from '../theme';
-import type { ThemeColors } from '../theme';
-import type { MissionsStackParamList } from '../types/navigation';
-import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
+import { routineMinutes, useRoutineStore } from '../store/useRoutineStore';
+import { ExerciseThumb } from '../ui/ExerciseArt';
+import { Icon } from '../ui/Icon';
+import { Group, NavHeader, Row } from '../ui/Layout';
+import { Bar } from '../ui/Progress';
+import { Tap } from '../ui/Pressable';
+import { Text } from '../ui/Text';
+import { color, motion, radius, space } from '../ui/tokens';
 
-type Nav = NativeStackNavigationProp<MissionsStackParamList, 'Plan'>;
-
+/** The week at a glance: seven rows, today marked, rest days quiet. */
 export default function PlanScreen() {
-  const colors = useColors();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-  const navigation = useNavigation<Nav>();
-  const { insets, bottomContentPadding } = useFloatingTabBarSpacing();
-  const selectedProgram = useProgramStore((state) => state.selectedProgram);
-  const currentWeek = useProgramStore((state) => state.currentWeek);
-  const profile = useUserStore((state) => state.profile);
-  const checkIns = useReadinessStore((state) => state.checkIns);
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+  const program = useProgramStore((s) => s.selectedProgram);
+  const week = useProgramStore((s) => s.currentWeek);
+  const profile = useUserStore((s) => s.profile);
+  const claimed = useUserStore((s) => s.progress.claimed_missions);
+  const checkIns = useReadinessStore((s) => s.checkIns);
+  const info = program ? getProgramById(program) : undefined;
+  const days = useMemo(() => (program ? getPlanWeek(program, week, profile, claimed) : []), [program, week, profile, claimed]);
+  const trainingDays = days.filter((d) => d.workout);
+  const done = trainingDays.filter((d) => d.completed).length;
   const readiness = calculateDailyReadiness(getTodaysCheckIn(checkIns));
-  const program = selectedProgram ? getProgramById(selectedProgram) : null;
-  const weeklyDays = profile?.workout_days_per_week ?? 4;
-  const recoveryBias = readiness < 50;
+  const phase = info?.phases.find((p) => week >= p.weeks[0] && week <= p.weeks[1]);
+  const routines = useRoutineStore((s) => s.routines);
 
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.md, paddingBottom: bottomContentPadding }]}>
-        <Text style={styles.kicker}>TRAINING ORDER</Text>
-        <Text style={styles.title}>Plan</Text>
-        <Text style={styles.subtitle}>{program?.name ?? 'Choose a program'} · Week {currentWeek}</Text>
-
-        <GlassCard variant="accent" style={styles.intentCard}>
-          <View style={styles.intentHeader}>
-            <View style={styles.intentIcon}><GameIcon name={recoveryBias ? 'recovery' : 'program'} size={24} color={colors.accent} animated={false} /></View>
-            <View style={{ flex: 1 }}><Text style={styles.intentLabel}>THIS WEEK&apos;S INTENT</Text><Text style={styles.intentTitle}>{recoveryBias ? 'Recover without losing momentum' : 'Build repeatable operational capacity'}</Text></View>
+    <View style={styles.screen}>
+      <NavHeader title="This week" />
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + space.xxl }} showsVerticalScrollIndicator={false}>
+        <View style={styles.head}>
+          <Text variant="title">{info?.name ?? 'Your plan'}</Text>
+          <Text variant="body" tone="secondary" style={{ marginTop: 4, fontSize: 17 }}>
+            Week {week} of {info?.duration_weeks ?? '–'}
+            {phase ? ` · ${phase.name}` : ''}
+          </Text>
+          <View style={styles.progressRow}>
+            <Text variant="subhead" tone="secondary" tabular>
+              {done} of {trainingDays.length} missions
+            </Text>
+            <Text variant="subhead" tone={readiness < 50 ? 'danger' : 'secondary'}>
+              {readiness < 50 ? 'Recovery bias today' : phase?.focus ?? ''}
+            </Text>
           </View>
-          <Text style={styles.intentCopy}>{recoveryBias ? 'Today’s readiness is low, so the plan favors mobility and controlled volume.' : `Your ${weeklyDays}-day schedule balances strength, conditioning, and recovery around your available time.`}</Text>
-        </GlassCard>
+          <Bar progress={trainingDays.length ? done / trainingDays.length : 0} height={6} style={{ marginTop: 8 }} />
+        </View>
 
-        <View style={styles.weekHeader}><Text style={styles.sectionTitle}>Seven-day view</Text><Text style={styles.weekTag}>{weeklyDays} TRAINING DAYS</Text></View>
-        <View style={styles.weekRow}>
-          {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => {
-            const active = index < weeklyDays;
-            const today = index === (new Date().getDay() + 6) % 7;
-            return <View key={`${day}-${index}`} style={[styles.day, active && styles.dayActive, today && styles.dayToday]}><Text style={[styles.dayText, active && styles.dayTextActive]}>{day}</Text><View style={[styles.dayDot, active && styles.dayDotActive]} /></View>;
+        <View style={{ marginTop: space.lg }}>
+          {days.map((d, i) => {
+            const w = d.workout;
+            const count = workoutExercises(w).length;
+            return (
+              <Animated.View key={d.dateKey} entering={FadeInDown.delay(i * motion.stagger).duration(320)}>
+                <Tap
+                  feedback="highlight"
+                  baseColor={color.bg}
+                  pressedColor={color.bgRaised}
+                  disabled={!w}
+                  onPress={() => w && navigation.navigate('WorkoutDetail', { workoutId: w.id, dateKey: d.dateKey })}
+                  style={styles.row}
+                  accessibilityLabel={`${d.weekday}${w ? `, ${w.title}` : ', rest day'}`}
+                >
+                  <View style={styles.dateCol}>
+                    <Text variant="caption" tone={d.isToday ? 'accent' : 'tertiary'} style={{ letterSpacing: 0.8 }}>
+                      {d.weekday.slice(0, 3).toUpperCase()}
+                    </Text>
+                    <Text variant="headline" tabular style={{ fontSize: 20, color: d.isToday ? color.accent : d.isPast ? color.textTertiary : color.text }}>
+                      {d.date.getDate()}
+                    </Text>
+                  </View>
+                  {w ? (
+                    <>
+                      <ExerciseThumb exercise={heroExercise(w)} size={60} />
+                      <View style={{ flex: 1, marginLeft: space.md }}>
+                        <Text variant="headline" numberOfLines={1} style={{ color: d.isPast && !d.completed ? color.textSecondary : color.text }}>
+                          {w.title}
+                        </Text>
+                        <Text variant="subhead" tone="secondary" style={{ marginTop: 2 }}>
+                          {formatMinutes(w.estimated_duration)} · {count} exercises
+                        </Text>
+                      </View>
+                      {d.completed ? (
+                        <View style={styles.done}>
+                          <Icon name="check" size={13} color="#FFFFFF" weight="bold" />
+                        </View>
+                      ) : (
+                        <Icon name="chevronRight" size={15} color={color.textTertiary} weight="semibold" />
+                      )}
+                    </>
+                  ) : (
+                    <View style={styles.rest}>
+                      <Icon name="moon" size={18} color={color.textTertiary} />
+                      <Text variant="callout" tone="tertiary">
+                        Rest and recover
+                      </Text>
+                    </View>
+                  )}
+                </Tap>
+                {routines
+                  .filter((r) => r.days.includes(d.date.getDay()))
+                  .map((r) => (
+                    <Tap
+                      key={r.id}
+                      feedback="highlight"
+                      baseColor={color.bg}
+                      pressedColor={color.bgRaised}
+                      onPress={() => navigation.navigate('RoutineDetail', { routineId: r.id })}
+                      style={styles.routineRow}
+                      accessibilityLabel={`${r.name}, your workout`}
+                    >
+                      <View style={styles.routineDot} />
+                      <Text variant="subhead" style={{ flex: 1 }} numberOfLines={1}>
+                        {r.name}
+                      </Text>
+                      <Text variant="footnote" tone="tertiary">
+                        Your workout · {routineMinutes(r)} min
+                      </Text>
+                    </Tap>
+                  ))}
+              </Animated.View>
+            );
           })}
         </View>
 
-        <Text style={styles.sectionTitle}>Capability rotation</Text>
-        {[
-          { icon: 'strength', title: 'Strength & load carriage', detail: 'Lower-body strength, carries, and resilient trunk work', color: colors.accentRed },
-          { icon: 'run', title: 'Aerobic engine', detail: 'Run and ruck capacity with controlled progression', color: colors.accent },
-          { icon: 'mission', title: 'Work capacity', detail: 'Short intervals and test-event specificity', color: colors.accentOrange },
-          { icon: 'recovery', title: 'Recovery & mobility', detail: 'Movement quality, sleep, hydration, and downshift', color: colors.accentGreen },
-        ].map((item) => (
-          <GlassCard key={item.title} style={styles.capabilityCard}>
-            <View style={[styles.capabilityIcon, { backgroundColor: `${item.color}12` }]}><GameIcon name={item.icon} size={19} color={item.color} animated={false} /></View>
-            <View style={{ flex: 1 }}><Text style={styles.capabilityTitle}>{item.title}</Text><Text style={styles.capabilityDetail}>{item.detail}</Text></View>
-          </GlassCard>
-        ))}
-
-        <MissionButton title="OPEN TRAINING CARDS" onPress={() => navigation.navigate('WorkoutCards')} style={styles.button} />
-        <TouchableOpacity style={styles.changePlan} onPress={() => navigation.getParent()?.navigate('ProfileTab' as never)}><Text style={styles.changePlanText}>Change program from Profile</Text></TouchableOpacity>
+        <Group label="Program" style={{ marginHorizontal: space.md, marginTop: space.xl }}>
+          <Row icon="calendar" title="Change program" value={info?.name} onPress={() => navigation.navigate('ProgramSelect')} />
+          <Row icon="grid" title="Training cards" onPress={() => navigation.navigate('CardLibrary')} />
+          <Row icon="list" title="Exercise library" onPress={() => navigation.navigate('ExerciseLibrary')} />
+          <Row
+            icon="pencil"
+            title="Plan a workout"
+            onPress={() => {
+              useRoutineStore.getState().newDraft();
+              navigation.navigate('RoutineEditor');
+            }}
+          />
+        </Group>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background }, content: { paddingHorizontal: spacing.md }, kicker: { color: colors.accent, fontSize: 10, fontWeight: '900', letterSpacing: 1.6 }, title: { color: colors.textPrimary, fontSize: 30, fontWeight: '900', letterSpacing: -0.8 }, subtitle: { color: colors.textSecondary, fontSize: 13, marginTop: 2, marginBottom: spacing.lg },
-  intentCard: { marginBottom: spacing.xl, borderLeftWidth: 3, borderLeftColor: colors.accent }, intentHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md }, intentIcon: { width: 44, height: 44, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: `${colors.accent}12` }, intentLabel: { color: colors.accent, fontSize: 9, fontWeight: '900', letterSpacing: 1.2 }, intentTitle: { color: colors.textPrimary, fontSize: 16, fontWeight: '800', marginTop: 2 }, intentCopy: { color: colors.textSecondary, fontSize: 12, lineHeight: 18, marginTop: spacing.md },
-  weekHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, sectionTitle: { color: colors.textPrimary, fontSize: 17, fontWeight: '800', marginBottom: spacing.md }, weekTag: { color: colors.textMuted, fontSize: 8, fontWeight: '900', letterSpacing: 1 }, weekRow: { flexDirection: 'row', gap: 7, marginBottom: spacing.xl }, day: { flex: 1, height: 54, borderRadius: 12, borderWidth: 1, borderColor: colors.cardBorder, alignItems: 'center', justifyContent: 'center', gap: 6 }, dayActive: { backgroundColor: `${colors.accent}0D` }, dayToday: { borderColor: colors.accent }, dayText: { color: colors.textMuted, fontSize: 11, fontWeight: '800' }, dayTextActive: { color: colors.textPrimary }, dayDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.cardBorder }, dayDotActive: { backgroundColor: colors.accent },
-  capabilityCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.sm }, capabilityIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }, capabilityTitle: { color: colors.textPrimary, fontSize: 13, fontWeight: '800' }, capabilityDetail: { color: colors.textMuted, fontSize: 10, lineHeight: 15, marginTop: 2 }, button: { marginTop: spacing.md }, changePlan: { alignItems: 'center', padding: spacing.md }, changePlanText: { color: colors.textMuted, fontSize: 11, fontWeight: '700' },
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: color.bg },
+  head: { paddingHorizontal: space.gutter + 4, paddingTop: space.md },
+  progressRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: space.lg },
+  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.gutter, paddingVertical: 12, minHeight: 84 },
+  dateCol: { width: 48, alignItems: 'flex-start' },
+  rest: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, height: 60, paddingHorizontal: space.md, borderRadius: radius.md, backgroundColor: color.bgRaised },
+  routineRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginLeft: space.gutter + 48, marginRight: space.gutter, marginBottom: 8, paddingHorizontal: 14, height: 44, borderRadius: radius.sm, borderWidth: StyleSheet.hairlineWidth, borderColor: color.lineStrong },
+  routineDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: color.accent },
+  done: { width: 24, height: 24, borderRadius: 12, backgroundColor: color.accent, alignItems: 'center', justifyContent: 'center' },
 });

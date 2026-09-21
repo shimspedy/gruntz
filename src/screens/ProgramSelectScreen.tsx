@@ -1,203 +1,86 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
-import type { ThemeColors } from '../theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { getExerciseById } from '../data/exercises';
 import { PROGRAMS } from '../data/programs';
 import { recommendProgramForProfile } from '../services/adaptiveCoach';
-import { hapticLight } from '../utils/haptics';
+import { useProgramStore } from '../store/useProgramStore';
 import { useUserStore } from '../store/useUserStore';
-import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
-import type { HomeStackParamList } from '../types/navigation';
-import type { ProgramId, TrainingProgram } from '../types';
-import { GameIcon } from '../components/GameIcon';
-type Nav = NativeStackNavigationProp<HomeStackParamList, 'ProgramSelect'>;
+import type { ProgramId } from '../types';
+import { HeroArt } from '../ui/ExerciseArt';
+import { NavHeader } from '../ui/Layout';
+import { Tap } from '../ui/Pressable';
+import { Text } from '../ui/Text';
+import { color, motion, radius, space } from '../ui/tokens';
+
+export const PROGRAM_ART: Record<ProgramId, string> = { basecamp: 'goblet_squat', raider: 'deadlift', recon: 'pullups' };
 
 export default function ProgramSelectScreen() {
-  const colors = useColors();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-  const navigation = useNavigation<Nav>();
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const profile = useUserStore((s) => s.profile);
-  const recommendation = useMemo(() => (profile ? recommendProgramForProfile(profile) : null), [profile]);
-  const { bottomContentPadding } = useFloatingTabBarSpacing();
+  const current = useProgramStore((s) => s.selectedProgram);
+  const rec = useMemo(() => (profile ? recommendProgramForProfile(profile) : null), [profile]);
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: bottomContentPadding }]}>
-        <Text style={styles.headerLabel}>SELECT YOUR PROGRAM</Text>
-        <Text style={styles.headerTitle}>Choose Your Path</Text>
-        <Text style={styles.headerSub}>
-          Start with Base Camp or move into tactical prep when your answers match the prerequisites.
+    <View style={styles.screen}>
+      <NavHeader title="Programs" />
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + space.xxl, paddingHorizontal: space.md, gap: space.md }} showsVerticalScrollIndicator={false}>
+        <Text variant="callout" tone="secondary" style={{ paddingHorizontal: 8, marginBottom: 4 }}>
+          Start with Base Camp, or move into tactical prep when you’re ready.
         </Text>
-
-        {PROGRAMS.map((program) => (
-          <ProgramCard
-            key={program.id}
-            program={program}
-            recommended={recommendation?.programId === program.id}
-            recommendationReason={recommendation?.programId === program.id ? recommendation.reason : undefined}
-            onPress={() => navigation.navigate('ProgramDetail', { programId: program.id })}
-            colors={colors}
-            styles={styles}
-          />
-        ))}
-
-        <Text style={styles.footer}>
-          You can switch programs at any time from your profile.
+        {PROGRAMS.map((p, i) => {
+          const tag = current === p.id ? 'Current' : rec?.programId === p.id ? 'Recommended' : null;
+          return (
+            <Animated.View key={p.id} entering={FadeInDown.delay(i * motion.stagger).duration(360)}>
+              <Tap onPress={() => navigation.navigate('ProgramDetail', { programId: p.id })} scaleTo={0.98} style={[styles.card, { height: width * 0.72 }]} accessibilityLabel={`${p.name}${tag ? `, ${tag}` : ''}`}>
+                <HeroArt exercise={getExerciseById(PROGRAM_ART[p.id])} style={StyleSheet.absoluteFill} />
+                <LinearGradient colors={['rgba(0,0,0,0)', 'rgba(6,7,9,0.95)']} locations={[0.25, 0.92]} style={StyleSheet.absoluteFill} />
+                {tag ? (
+                  <View style={[styles.tag, tag === 'Current' && styles.tagCurrent]}>
+                    <Text variant="subhead" style={{ color: tag === 'Current' ? '#000' : '#FFF' }}>
+                      {tag}
+                    </Text>
+                  </View>
+                ) : null}
+                <View style={styles.copy}>
+                  <Text variant="hero">{p.name.toUpperCase()}</Text>
+                  <Text variant="callout" tone="secondary" style={{ marginTop: 4 }}>
+                    {p.duration_weeks} weeks · {p.days_per_week} days a week · {p.difficulty.charAt(0).toUpperCase() + p.difficulty.slice(1)}
+                  </Text>
+                  <Text variant="footnote" tone="tertiary" style={{ marginTop: 6 }} numberOfLines={2}>
+                    {p.subtitle}
+                  </Text>
+                </View>
+              </Tap>
+            </Animated.View>
+          );
+        })}
+        <Text variant="footnote" tone="tertiary" align="center" style={{ marginTop: space.sm }}>
+          Switching programs starts you at week one.
         </Text>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
-function getProgramAccentColor(programId: ProgramId, colors: ThemeColors) {
-  if (programId === 'basecamp') return colors.accentGreen;
-  if (programId === 'recon') return colors.accentOrange;
-  return colors.accent;
-}
-
-function ProgramCard({
-  program,
-  recommended,
-  recommendationReason,
-  onPress,
-  colors,
-  styles,
-}: {
-  program: TrainingProgram;
-  recommended?: boolean;
-  recommendationReason?: string;
-  onPress: () => void;
-  colors: ThemeColors;
-  styles: ReturnType<typeof createStyles>;
-}) {
-  const accentColor = getProgramAccentColor(program.id, colors);
-
-  return (
-    <TouchableOpacity style={[styles.card, { borderColor: accentColor }]} onPress={() => { hapticLight(); onPress(); }} activeOpacity={0.85}>
-      <View style={styles.cardHeader}>
-        <GameIcon name={program.icon} size={32} color={accentColor} style={styles.cardIcon} />
-        <View style={styles.badgeGroup}>
-          {recommended ? (
-            <View style={[styles.cardDiffBadge, { backgroundColor: `${accentColor}22` }]}>
-              <Text style={[styles.cardDiffText, { color: accentColor }]}>RECOMMENDED</Text>
-            </View>
-          ) : null}
-          <View style={styles.cardDiffBadge}>
-            <Text style={[styles.cardDiffText, { color: accentColor }]}>{program.difficulty.toUpperCase()}</Text>
-          </View>
-        </View>
-      </View>
-
-      <Text style={styles.cardName}>{program.name}</Text>
-      <Text style={[styles.cardSubtitle, { color: accentColor }]}>{program.subtitle}</Text>
-      <Text style={styles.cardDesc}>{program.description}</Text>
-      {recommendationReason ? <Text style={styles.recommendReason}>{recommendationReason}</Text> : null}
-
-      <View style={styles.cardStats}>
-        <View style={styles.stat}>
-          <Text style={styles.statValue}>{program.duration_weeks}</Text>
-          <Text style={styles.statLabel}>Weeks</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.stat}>
-          <Text style={styles.statValue}>{program.days_per_week}</Text>
-          <Text style={styles.statLabel}>Days/Wk</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.stat}>
-          <Text style={styles.statValue}>{program.phases.length}</Text>
-          <Text style={styles.statLabel}>Phases</Text>
-        </View>
-      </View>
-
-      <View style={styles.focusRow}>
-        {program.focus_areas.slice(0, 3).map((area) => (
-          <View key={area} style={[styles.focusChip, { borderColor: accentColor }]}>
-            <Text style={[styles.focusChipText, { color: accentColor }]}>{area}</Text>
-          </View>
-        ))}
-      </View>
-
-      <View style={[styles.cardButton, { backgroundColor: accentColor }]}>
-        <Text style={styles.cardButtonText}>View Program</Text>
-      </View>
-    </TouchableOpacity>
-  );
-}
-
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  scroll: { flex: 1 },
-  content: { padding: spacing.md, paddingBottom: spacing.xxl },
-  headerLabel: {
-    fontSize: 11, fontWeight: '700', color: colors.textMuted,
-    letterSpacing: 1.2, textTransform: 'uppercase',
-    marginBottom: spacing.xs, marginTop: spacing.md,
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: color.bg },
+  card: { borderRadius: radius.xl, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: color.surface },
+  tag: {
+    position: 'absolute',
+    top: space.lg,
+    left: space.lg,
+    height: 30,
+    paddingHorizontal: 12,
+    borderRadius: 9,
+    backgroundColor: color.accent,
+    justifyContent: 'center',
   },
-  headerTitle: {
-    fontSize: 28, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.xs,
-  },
-  headerSub: {
-    fontSize: 13, color: colors.textSecondary, marginBottom: spacing.lg, lineHeight: 19,
-  },
-  card: {
-    backgroundColor: colors.card, borderRadius: borderRadius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    padding: spacing.md, marginBottom: spacing.md,
-  },
-  cardHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm,
-  },
-  cardIcon: {},
-  badgeGroup: {
-    alignItems: 'flex-end',
-    gap: spacing.xs,
-  },
-  cardDiffBadge: {
-    backgroundColor: colors.backgroundSecondary, borderRadius: borderRadius.sm,
-    paddingHorizontal: spacing.sm, paddingVertical: 3,
-  },
-  cardDiffText: { fontSize: 10, fontWeight: '700', letterSpacing: 1 },
-  cardName: { fontSize: 20, fontWeight: '700', color: colors.textPrimary, marginBottom: 2, lineHeight: 26 },
-  cardSubtitle: { fontSize: 11, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: spacing.sm },
-  cardDesc: { fontSize: 13, color: colors.textSecondary, lineHeight: 19, marginBottom: spacing.md },
-  recommendReason: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    lineHeight: 17,
-    backgroundColor: `${colors.accentGreen}0D`,
-    borderLeftWidth: 2,
-    borderLeftColor: colors.accentGreen,
-    padding: spacing.sm,
-    borderRadius: borderRadius.sm,
-    marginBottom: spacing.md,
-  },
-  cardStats: {
-    flexDirection: 'row', backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.sm, padding: spacing.sm + 2, marginBottom: spacing.md,
-    justifyContent: 'space-around', alignItems: 'center',
-  },
-  stat: { alignItems: 'center' },
-  statValue: { fontSize: 18, fontWeight: '700', color: colors.textPrimary },
-  statLabel: { fontSize: 11, fontWeight: '500', color: colors.textMuted, marginTop: 2 },
-  statDivider: { width: StyleSheet.hairlineWidth, height: 24, backgroundColor: colors.cardBorder },
-  focusRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.md },
-  focusChip: {
-    borderWidth: StyleSheet.hairlineWidth, borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.sm, paddingVertical: 3,
-  },
-  focusChipText: { fontSize: 11, fontWeight: '600' },
-  cardButton: {
-    borderRadius: borderRadius.md, paddingVertical: spacing.sm + 2, alignItems: 'center',
-  },
-  cardButtonText: {
-    fontSize: 12, fontWeight: '700', color: colors.background, letterSpacing: 1.2, textTransform: 'uppercase',
-  },
-  footer: {
-    fontSize: 12, color: colors.textMuted, textAlign: 'center',
-    marginTop: spacing.sm, marginBottom: spacing.xl,
-  },
+  tagCurrent: { backgroundColor: '#F5F5F7' },
+  copy: { position: 'absolute', left: space.lg, right: space.lg, bottom: space.lg },
 });

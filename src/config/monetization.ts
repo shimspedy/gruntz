@@ -34,3 +34,9 @@ export function getDisplayedMonthlyPrice(offering?: RevenueCatPriceCandidate | n
   // Use the live price from RevenueCat, appending "/month" when not present
   return livePrice.includes('/') ? livePrice : `${livePrice}/month`;
 }
+
+/**
+ * Development builds (simulator, dev client) run fully unlocked: every screen is reachable
+ * without a purchase, and onboarding skips the paywall. Release builds are unaffected.
+ */
+export const DEV_UNLOCK = __DEV__;

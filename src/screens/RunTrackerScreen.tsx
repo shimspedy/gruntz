@@ -1,502 +1,315 @@
-import React, { useMemo, useCallback, useEffect, useRef, useState } from 'react';
-import {
-  View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, TextInput,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useColors, spacing } from '../theme';
-import type { ThemeColors } from '../theme';
-import { useRunTracker } from '../hooks/useRunTracker';
-import { useBarometerAltitude } from '../hooks/useBarometerAltitude';
-import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
-import { hapticLight, hapticSuccess, hapticMedium } from '../utils/haptics';
-import { useReadinessStore } from '../store/useReadinessStore';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeIn, FadeInDown, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as Speech from 'expo-speech';
+import { useBarometerAltitude } from '../hooks/useBarometerAltitude';
+import { useRunTracker } from '../hooks/useRunTracker';
+import { useReadinessStore } from '../store/useReadinessStore';
+import { useUserStore } from '../store/useUserStore';
+import type { RootStackParamList } from '../types/navigation';
+import { Button } from '../ui/Button';
+import { Chip, IconButton } from '../ui/Layout';
+import { Segmented } from '../ui/Segmented';
+import { Text } from '../ui/Text';
+import { haptic } from '../ui/haptics';
+import { toast } from '../ui/Toast';
+import { color, font, motion, radius, space } from '../ui/tokens';
 
-const TRACKER_AWAKE_TAG = 'gruntz-field-session';
+const AWAKE = 'gruntz-field-session';
 
-function formatDuration(ms: number): string {
-  const totalSec = Math.floor(ms / 1000);
-  const hrs = Math.floor(totalSec / 3600);
-  const mins = Math.floor((totalSec % 3600) / 60);
-  const secs = totalSec % 60;
-  if (hrs > 0) return `${hrs}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+function clock(ms: number) {
+  const t = Math.floor(ms / 1000);
+  const h = Math.floor(t / 3600);
+  const m = Math.floor((t % 3600) / 60);
+  const s = t % 60;
+  return h ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-function formatPace(minPerMile: number | null): string {
+function pace(minPerMile: number | null, metric: boolean) {
   if (minPerMile == null || minPerMile <= 0 || minPerMile > 60) return '--:--';
-  let mins = Math.floor(minPerMile);
-  let secs = Math.round((minPerMile - mins) * 60);
-  if (secs === 60) {
-    mins += 1;
-    secs = 0;
+  const v = metric ? minPerMile / 1.609 : minPerMile;
+  let m = Math.floor(v);
+  let s = Math.round((v - m) * 60);
+  if (s === 60) {
+    m += 1;
+    s = 0;
   }
-  return `${mins}:${String(secs).padStart(2, '0')}`;
+  return `${m}:${String(s).padStart(2, '0')}`;
 }
 
 export default function RunTrackerScreen() {
-  const colors = useColors();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const navigation = useNavigation();
+  const { params } = useRoute<RouteProp<RootStackParamList, 'RunTracker'>>();
+  const insets = useSafeAreaInsets();
   const batterySaver = useReadinessStore((s) => s.batterySaver);
-  const keepScreenAwake = useReadinessStore((s) => s.keepScreenAwake);
+  const keepAwake = useReadinessStore((s) => s.keepScreenAwake);
   const audioCues = useReadinessStore((s) => s.audioCues);
-  const fieldMode = useReadinessStore((s) => s.fieldMode);
-  const addTrackedSession = useReadinessStore((s) => s.addTrackedSession);
-  const [sessionType, setSessionType] = useState<'run' | 'ruck'>('run');
-  const [packWeight, setPackWeight] = useState('35');
+  const addSession = useReadinessStore((s) => s.addTrackedSession);
+  const metric = useUserStore((s) => s.profile?.settings.units === 'metric');
+  const [type, setType] = useState<'run' | 'ruck'>(params?.type ?? 'run');
+  const [pack, setPack] = useState('35');
   const [terrain, setTerrain] = useState('Mixed');
   const tracker = useRunTracker({ batterySaver });
-  const announcedMile = useRef(0);
   const baro = useBarometerAltitude();
-  const { insets } = useFloatingTabBarSpacing();
-  const controlsBottomPad = Math.max(spacing.md, insets.bottom + spacing.md);
-  const scrollBottomPad = controlsBottomPad + 120; // clearance for controls bar
+  const announced = useRef(0);
+  const [finished, setFinished] = useState(false);
+
+  const idle = !tracker.isTracking && !finished;
+  const dist = metric ? tracker.distanceMiles * 1.609 : tracker.distanceMiles;
+  const unit = metric ? 'km' : 'mi';
+  const elev = baro.elevationGainFt || tracker.elevationGainFt;
 
   useEffect(() => {
-    if (tracker.isTracking && keepScreenAwake) {
-      void activateKeepAwakeAsync(TRACKER_AWAKE_TAG);
-      return () => { void deactivateKeepAwake(TRACKER_AWAKE_TAG); };
+    if (tracker.isTracking && keepAwake) {
+      void activateKeepAwakeAsync(AWAKE);
+      return () => void deactivateKeepAwake(AWAKE);
     }
-    void deactivateKeepAwake(TRACKER_AWAKE_TAG);
     return undefined;
-  }, [tracker.isTracking, keepScreenAwake]);
+  }, [tracker.isTracking, keepAwake]);
 
   useEffect(() => {
     if (!tracker.isTracking) {
-      announcedMile.current = 0;
+      announced.current = 0;
       return;
     }
-    const wholeMiles = Math.floor(tracker.distanceMiles);
-    if (audioCues && wholeMiles > announcedMile.current) {
-      announcedMile.current = wholeMiles;
-      const pace = formatPace(tracker.paceMinPerMile);
-      Speech.speak(`Mile ${wholeMiles}. Pace ${pace} per mile.`, { rate: 0.92 });
+    const whole = Math.floor(dist);
+    if (audioCues && whole > announced.current) {
+      announced.current = whole;
+      Speech.speak(`${metric ? 'Kilometer' : 'Mile'} ${whole}. Pace ${pace(tracker.paceMinPerMile, metric)}.`, { rate: 0.92 });
+      haptic.success();
     }
-  }, [tracker.isTracking, tracker.distanceMiles, tracker.paceMinPerMile, audioCues]);
+  }, [tracker.isTracking, dist, tracker.paceMinPerMile, audioCues, metric]);
 
-  const handleStart = useCallback(async () => {
-    hapticMedium();
-    const started = await tracker.start();
-    if (!started) {
-      Alert.alert(
-        'Location required',
-        `Allow location access to track your ${sessionType}, distance, pace, and route.`
-      );
+  // The live dot breathes while GPS is recording.
+  const pulse = useSharedValue(1);
+  useEffect(() => {
+    if (tracker.isTracking && !tracker.isPaused) {
+      pulse.set(withRepeat(withSequence(withTiming(0.35, { duration: 700 }), withTiming(1, { duration: 700 })), -1));
+    } else {
+      pulse.set(withTiming(1, { duration: 200 }));
+    }
+  }, [tracker.isTracking, tracker.isPaused, pulse]);
+  const dotStyle = useAnimatedStyle(() => ({ opacity: pulse.get() }));
+
+  const start = useCallback(async () => {
+    haptic.medium();
+    const ok = await tracker.start();
+    if (!ok) {
+      Alert.alert('Location needed', `Allow location access to track your ${type}: distance, pace and route.`);
       return;
     }
     await baro.start();
-  }, [tracker, baro, sessionType]);
+  }, [tracker, baro, type]);
 
-  const handlePause = useCallback(() => {
-    hapticLight();
-    tracker.pause();
-    baro.stop();
-  }, [tracker, baro]);
-
-  const handleResume = useCallback(async () => {
-    hapticLight();
-    const resumed = await tracker.resume();
-    if (!resumed) {
-      Alert.alert(
-        'Unable to resume',
-        'Check location access and try again.'
-      );
-      return;
-    }
-
-    const barometerResumed = await baro.resume();
-    if (!barometerResumed) {
-      // GPS tracker remains active; altitude will fall back to GPS gain only.
-    }
-  }, [tracker, baro]);
-
-  const handleStop = useCallback(() => {
-    const label = sessionType === 'ruck' ? 'Ruck' : 'Run';
-    Alert.alert(`End ${label}?`, `This will stop tracking your ${label.toLowerCase()}.`, [
-      { text: 'Cancel', style: 'cancel' },
+  const end = () => {
+    const label = type === 'ruck' ? 'ruck' : 'run';
+    Alert.alert(`End ${label}?`, 'Your session will be saved to Stats.', [
+      { text: 'Keep going', style: 'cancel' },
       {
         text: `End ${label}`,
         style: 'destructive',
         onPress: () => {
-          hapticSuccess();
           const final = tracker.stop();
           baro.stop();
-          addTrackedSession({
-            id: `${Date.now()}-${sessionType}`,
-            type: sessionType,
+          addSession({
+            id: `${Date.now()}-${type}`,
+            type,
             date: new Date().toISOString(),
             distanceMiles: final.distanceMiles,
             durationSeconds: Math.round(final.durationMs / 1000),
             elevationFeet: baro.elevationGainFt || final.elevationGainFt,
-            packWeightPounds: sessionType === 'ruck' ? Number(packWeight) || undefined : undefined,
-            terrain: sessionType === 'ruck' ? terrain : undefined,
+            packWeightPounds: type === 'ruck' ? Number(pack) || undefined : undefined,
+            terrain: type === 'ruck' ? terrain : undefined,
           });
+          haptic.success();
+          setFinished(true);
         },
       },
     ]);
-  }, [tracker, baro, sessionType, addTrackedSession, packWeight, terrain]);
+  };
 
-  // Use barometer elevation if available, fall back to GPS elevation
-  const elevationGain = baro.elevationGainFt || tracker.elevationGainFt;
+  const close = () => {
+    if (tracker.isTracking) {
+      Alert.alert('Session in progress', 'End the session before closing, or keep tracking.', [{ text: 'OK' }]);
+      return;
+    }
+    navigation.goBack();
+  };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: scrollBottomPad }]}>
-        {!tracker.isTracking && tracker.distanceMiles === 0 && (
-          <View style={[styles.setupCard, fieldMode && styles.fieldSetupCard]}>
-            <Text style={styles.setupKicker}>FIELD SESSION</Text>
-            <View style={styles.segmentRow}>
-              {(['run', 'ruck'] as const).map((type) => (
-                <TouchableOpacity key={type} style={[styles.segment, sessionType === type && styles.segmentActive]} onPress={() => setSessionType(type)}>
-                  <Ionicons name={type === 'ruck' ? 'bag-handle-outline' : 'walk-outline'} size={18} color={sessionType === type ? colors.background : colors.textSecondary} />
-                  <Text style={[styles.segmentText, sessionType === type && styles.segmentTextActive]}>{type.toUpperCase()}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            {sessionType === 'ruck' && (
-              <View style={styles.ruckSetup}>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>PACK (LB)</Text>
-                  <TextInput style={styles.setupInput} value={packWeight} onChangeText={setPackWeight} keyboardType="decimal-pad" maxLength={3} />
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
+      <View style={styles.top}>
+        <IconButton icon="close" label="Close" onPress={close} tint={tracker.isTracking ? color.textQuaternary : color.text} />
+        <View style={styles.titleRow}>
+          {tracker.isTracking ? <Animated.View style={[styles.live, dotStyle, tracker.isPaused && { backgroundColor: color.flame }]} /> : null}
+          <Text variant="headline" style={{ fontSize: 18 }}>
+            {finished ? 'Session saved' : tracker.isPaused ? 'Paused' : tracker.isTracking ? (type === 'ruck' ? 'Rucking' : 'Running') : type === 'ruck' ? 'Ruck' : 'Run'}
+          </Text>
+        </View>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <ScrollView contentContainerStyle={{ paddingBottom: 180 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        {idle ? (
+          <Animated.View entering={FadeIn.duration(240)} style={styles.setup}>
+            <Segmented value={type} onChange={setType} options={[{ value: 'run', label: 'Run' }, { value: 'ruck', label: 'Ruck' }]} />
+            {type === 'ruck' ? (
+              <Animated.View entering={FadeInDown.duration(260)} style={styles.ruck}>
+                <View style={styles.packBox}>
+                  <Text variant="subhead" tone="secondary">
+                    Pack (lb)
+                  </Text>
+                  <TextInput value={pack} onChangeText={setPack} keyboardType="number-pad" maxLength={3} style={styles.packInput} selectionColor={color.accent} accessibilityLabel="Pack weight in pounds" />
                 </View>
-                <View style={styles.inputGroupWide}>
-                  <Text style={styles.inputLabel}>TERRAIN</Text>
-                  <View style={styles.terrainRow}>
-                    {['Road', 'Trail', 'Mixed'].map((item) => (
-                      <TouchableOpacity key={item} style={[styles.terrainChip, terrain === item && styles.terrainChipActive]} onPress={() => setTerrain(item)}>
-                        <Text style={[styles.terrainText, terrain === item && styles.terrainTextActive]}>{item}</Text>
-                      </TouchableOpacity>
+                <View style={{ flex: 1 }}>
+                  <Text variant="subhead" tone="secondary" style={{ marginBottom: 8 }}>
+                    Terrain
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    {['Road', 'Trail', 'Mixed'].map((t) => (
+                      <Chip key={t} label={t} active={terrain === t} onPress={() => setTerrain(t)} />
                     ))}
                   </View>
                 </View>
-              </View>
-            )}
-            <Text style={styles.setupNote}>{batterySaver ? 'Battery saver: balanced GPS sampling.' : 'Precision GPS enabled.'} Confirm weather, route, water, and local safety conditions before stepping off.</Text>
-          </View>
-        )}
-        {/* Main timer */}
-        <View style={styles.timerContainer}>
-          <Text style={styles.timerLabel}>ELAPSED</Text>
-          <Text style={styles.timer}>{formatDuration(tracker.durationMs)}</Text>
+              </Animated.View>
+            ) : null}
+          </Animated.View>
+        ) : null}
+
+        <View style={styles.clockWrap}>
+          <Text variant="subhead" tone="secondary">
+            Time
+          </Text>
+          <Text style={styles.clock} tabular accessibilityLabel={`Elapsed ${clock(tracker.durationMs)}`}>
+            {clock(tracker.durationMs)}
+          </Text>
         </View>
 
-        {/* Primary stats */}
-        <View style={styles.primaryRow}>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>{tracker.distanceMiles.toFixed(2)}</Text>
-            <Text style={styles.statLabel}>MILES</Text>
-          </View>
-          <View style={[styles.statBox, styles.statBoxCenter]}>
-            <Text style={styles.statValue}>{formatPace(tracker.paceMinPerMile)}</Text>
-            <Text style={styles.statLabel}>PACE /MI</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>
-              {tracker.currentSpeedMph != null ? tracker.currentSpeedMph.toFixed(1) : '--'}
-            </Text>
-            <Text style={styles.statLabel}>MPH</Text>
-          </View>
+        <View style={styles.primary}>
+          <Big label={unit === 'km' ? 'Kilometers' : 'Miles'} value={dist.toFixed(2)} />
+          <View style={styles.vr} />
+          <Big label={`Pace /${unit}`} value={pace(tracker.paceMinPerMile, metric)} />
+          <View style={styles.vr} />
+          <Big label={metric ? 'km/h' : 'mph'} value={tracker.currentSpeedMph != null ? (metric ? tracker.currentSpeedMph * 1.609 : tracker.currentSpeedMph).toFixed(1) : '--'} />
         </View>
 
-        {/* Secondary stats */}
-        <View style={styles.secondaryRow}>
-          <View style={styles.miniStat}>
-            <Ionicons name="footsteps-outline" size={14} color={colors.textMuted} />
-            <Text style={styles.miniStatValue}>{tracker.steps.toLocaleString()}</Text>
-            <Text style={styles.miniStatLabel}>Steps</Text>
-          </View>
-          <View style={styles.miniStat}>
-            <Ionicons name="trending-up-outline" size={14} color={colors.textMuted} />
-            <Text style={styles.miniStatValue}>{elevationGain}</Text>
-            <Text style={styles.miniStatLabel}>Elev Gain (ft)</Text>
-          </View>
-          <View style={styles.miniStat}>
-            <Ionicons name="flame-outline" size={14} color={colors.textMuted} />
-            <Text style={styles.miniStatValue}>{tracker.caloriesEstimate}</Text>
-            <Text style={styles.miniStatLabel}>Calories</Text>
-          </View>
+        <View style={styles.secondary}>
+          <Small label="Steps" value={tracker.steps.toLocaleString()} />
+          <Small label="Elevation" value={`${elev} ft`} />
+          <Small label="Calories" value={String(tracker.caloriesEstimate)} />
         </View>
 
-        {/* Barometer altitude */}
-        {baro.isActive && baro.currentAltitudeFt != null && (
-          <View style={styles.altCard}>
-            <Ionicons name="analytics-outline" size={14} color={colors.textMuted} />
-            <Text style={styles.altText}>
-              Altitude: {baro.currentAltitudeFt} ft   ·   Pressure: {baro.currentPressure} hPa
-            </Text>
-          </View>
-        )}
+        {baro.isActive && baro.currentAltitudeFt != null ? (
+          <Text variant="footnote" tone="tertiary" align="center" style={{ marginTop: space.md }}>
+            Altitude {baro.currentAltitudeFt} ft · {baro.currentPressure} hPa
+          </Text>
+        ) : null}
 
-        {/* Completed stats (when stopped) */}
-        {!tracker.isTracking && tracker.distanceMiles > 0 && (
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryTitle}>{sessionType.toUpperCase()} COMPLETE</Text>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Distance</Text>
-              <Text style={styles.summaryValue}>{tracker.distanceMiles.toFixed(2)} mi</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Duration</Text>
-              <Text style={styles.summaryValue}>{formatDuration(tracker.durationMs)}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Avg Pace</Text>
-              <Text style={styles.summaryValue}>{formatPace(tracker.paceMinPerMile)} /mi</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Steps</Text>
-              <Text style={styles.summaryValue}>{tracker.steps.toLocaleString()}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Elevation Gain</Text>
-              <Text style={styles.summaryValue}>{elevationGain} ft</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Calories</Text>
-              <Text style={styles.summaryValue}>{tracker.caloriesEstimate} cal</Text>
-            </View>
-          </View>
-        )}
+        {idle ? (
+          <Text variant="footnote" tone="tertiary" align="center" style={styles.note}>
+            {batterySaver ? 'Battery saver: balanced GPS sampling.' : 'Precision GPS.'} Check weather, route, water and local conditions before you step off.
+          </Text>
+        ) : null}
       </ScrollView>
 
-      {/* Controls */}
-      <View style={[styles.controls, { paddingBottom: controlsBottomPad }]}>
-        {!tracker.isTracking ? (
-          <TouchableOpacity style={styles.startButton} onPress={handleStart} activeOpacity={0.8}>
-            <Ionicons name="play" size={18} color={colors.background} />
-            <Text style={styles.startText}>Start {sessionType === 'ruck' ? 'Ruck' : 'Run'}</Text>
-          </TouchableOpacity>
+      <View style={[styles.controls, { paddingBottom: insets.bottom + space.xs }]}>
+        {finished ? (
+          <Button
+            title="Done"
+            onPress={() => {
+              toast(`${type === 'ruck' ? 'Ruck' : 'Run'} saved to Stats`);
+              navigation.goBack();
+            }}
+          />
+        ) : !tracker.isTracking ? (
+          <Button title={`Start ${type}`} icon="play" onPress={() => void start()} />
         ) : (
-          <View style={styles.controlRow}>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
             {tracker.isPaused ? (
-              <TouchableOpacity style={styles.resumeButton} onPress={handleResume} activeOpacity={0.8}>
-                <Ionicons name="play" size={16} color={colors.background} />
-                <Text style={styles.controlText}>Resume</Text>
-              </TouchableOpacity>
+              <Button
+                title="Resume"
+                icon="play"
+                style={{ flex: 1 }}
+                onPress={async () => {
+                  const ok = await tracker.resume();
+                  if (!ok) Alert.alert('Can’t resume', 'Check location access and try again.');
+                  else await baro.resume();
+                }}
+              />
             ) : (
-              <TouchableOpacity style={styles.pauseButton} onPress={handlePause} activeOpacity={0.8}>
-                <Ionicons name="pause" size={16} color={colors.background} />
-                <Text style={styles.controlText}>Pause</Text>
-              </TouchableOpacity>
+              <Button
+                title="Pause"
+                icon="pause"
+                variant="secondary"
+                style={{ flex: 1 }}
+                onPress={() => {
+                  tracker.pause();
+                  baro.stop();
+                }}
+              />
             )}
-            <TouchableOpacity style={styles.stopButton} onPress={handleStop} activeOpacity={0.8}>
-              <Ionicons name="stop" size={16} color={colors.background} />
-              <Text style={styles.controlText}>End</Text>
-            </TouchableOpacity>
+            <Button title="End" icon="stop" variant="secondary" style={{ flex: 1 }} onPress={end} />
           </View>
         )}
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  scroll: { flex: 1 },
-  content: { padding: spacing.md, paddingBottom: 140 },
-  setupCard: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.cardBorder, borderRadius: 16, padding: spacing.md, marginTop: spacing.md },
-  fieldSetupCard: { borderColor: colors.accent, borderWidth: 2 },
-  setupKicker: { color: colors.accent, fontSize: 11, fontWeight: '800', letterSpacing: 1.4, marginBottom: spacing.sm },
-  segmentRow: { flexDirection: 'row', gap: spacing.sm },
-  segment: { flex: 1, minHeight: 48, borderRadius: 12, borderWidth: 1, borderColor: colors.cardBorder, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  segmentActive: { backgroundColor: colors.accent, borderColor: colors.accent },
-  segmentText: { color: colors.textSecondary, fontSize: 13, fontWeight: '800', letterSpacing: 1 },
-  segmentTextActive: { color: colors.background },
-  ruckSetup: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
-  inputGroup: { width: 92 },
-  inputGroupWide: { flex: 1 },
-  inputLabel: { color: colors.textMuted, fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 6 },
-  setupInput: { minHeight: 44, borderRadius: 10, borderWidth: 1, borderColor: colors.cardBorder, color: colors.textPrimary, paddingHorizontal: spacing.sm, fontSize: 18, fontWeight: '700' },
-  terrainRow: { flexDirection: 'row', gap: 5 },
-  terrainChip: { flex: 1, minHeight: 44, borderRadius: 10, borderWidth: 1, borderColor: colors.cardBorder, alignItems: 'center', justifyContent: 'center' },
-  terrainChipActive: { borderColor: colors.accent, backgroundColor: `${colors.accent}18` },
-  terrainText: { color: colors.textMuted, fontSize: 11, fontWeight: '700' },
-  terrainTextActive: { color: colors.accent },
-  setupNote: { color: colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: spacing.sm },
-  timerContainer: { alignItems: 'center', marginBottom: spacing.lg, paddingTop: spacing.lg },
-  timerLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.textMuted,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  timer: {
-    fontSize: 56,
-    fontWeight: '200',
-    color: colors.textPrimary,
-    fontVariant: ['tabular-nums'],
-  },
-  primaryRow: {
-    flexDirection: 'row',
-    marginBottom: spacing.md,
-  },
-  statBox: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: spacing.sm + 2,
-  },
-  statBoxCenter: {
-    borderLeftWidth: StyleSheet.hairlineWidth,
-    borderRightWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.cardBorder,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    fontVariant: ['tabular-nums'],
-  },
-  statLabel: {
-    fontSize: 10,
-    fontWeight: '500',
-    color: colors.textMuted,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    marginTop: 4,
-  },
-  secondaryRow: {
-    flexDirection: 'row',
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.cardBorder,
-  },
-  miniStat: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 4,
-  },
-  miniStatValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    fontVariant: ['tabular-nums'],
-  },
-  miniStatLabel: {
-    fontSize: 10,
-    color: colors.textMuted,
-    fontWeight: '500',
-  },
-  altCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.card,
-    borderRadius: 8,
-    padding: spacing.sm,
-    marginBottom: spacing.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.cardBorder,
-  },
-  altText: {
-    fontSize: 11,
-    color: colors.textMuted,
-  },
-  summaryCard: {
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: spacing.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.cardBorder,
-  },
-  summaryTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.textMuted,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    marginBottom: spacing.md,
+function Big({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={{ flex: 1, alignItems: 'center' }}>
+      <Text style={styles.bigValue} tabular>
+        {value}
+      </Text>
+      <Text variant="footnote" tone="tertiary" style={{ marginTop: 2 }}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+function Small({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.small}>
+      <Text variant="footnote" tone="tertiary">
+        {label}
+      </Text>
+      <Text variant="headline" tabular style={{ marginTop: 4 }}>
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: color.bg },
+  top: { height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.sm },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  live: { width: 9, height: 9, borderRadius: 5, backgroundColor: color.success },
+  setup: { paddingHorizontal: space.md, marginTop: space.sm },
+  ruck: { flexDirection: 'row', gap: space.md, marginTop: space.md, alignItems: 'flex-start' },
+  packBox: { width: 96 },
+  packInput: {
+    height: 44,
+    marginTop: 8,
+    borderRadius: radius.sm,
+    backgroundColor: color.surface,
+    color: color.text,
+    fontFamily: font.semibold,
+    fontSize: 20,
     textAlign: 'center',
   },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.xs + 2,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.cardBorder,
-  },
-  summaryLabel: {
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-  summaryValue: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    fontVariant: ['tabular-nums'],
-  },
-  // Controls
-  controls: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: colors.background,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.cardBorder,
-    padding: spacing.md,
-  },
-  startButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.accent,
-    borderRadius: 12,
-    paddingVertical: 14,
-    gap: spacing.sm,
-  },
-  startText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.background,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
-  controlRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  pauseButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.accentGold,
-    borderRadius: 12,
-    paddingVertical: 14,
-    gap: spacing.sm,
-  },
-  resumeButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.accentGreen,
-    borderRadius: 12,
-    paddingVertical: 14,
-    gap: spacing.sm,
-  },
-  stopButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.accentRed,
-    borderRadius: 12,
-    paddingVertical: 14,
-    gap: spacing.sm,
-  },
-  controlText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.background,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
+  clockWrap: { alignItems: 'center', marginTop: space.xxl },
+  clock: { fontFamily: font.heavy, fontSize: 84, lineHeight: 96, color: color.text, letterSpacing: -2 },
+  primary: { flexDirection: 'row', marginHorizontal: space.md, marginTop: space.xl, paddingVertical: space.lg, borderRadius: radius.lg, backgroundColor: color.surface },
+  vr: { width: StyleSheet.hairlineWidth, backgroundColor: color.line },
+  bigValue: { fontFamily: font.bold, fontSize: 30, color: color.text },
+  secondary: { flexDirection: 'row', gap: 12, marginHorizontal: space.md, marginTop: 12 },
+  small: { flex: 1, padding: space.md, borderRadius: radius.md, backgroundColor: color.bgRaised },
+  note: { marginTop: space.xl, paddingHorizontal: space.xxl },
+  controls: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: space.md, paddingTop: space.md, backgroundColor: color.bg },
 });

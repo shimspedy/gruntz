@@ -1,15 +1,11 @@
-import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, Switch, Alert, TouchableOpacity } from 'react-native';
+import React from 'react';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
-import type { ThemeColors } from '../theme';
-import { useUserStore } from '../store/useUserStore';
-import { GlassCard } from '../components/GlassCard';
-import { GameIcon } from '../components/GameIcon';
-import { hapticLight, hapticWarning } from '../utils/haptics';
+import Constants from 'expo-constants';
+import { GRUNTZ_PRIVACY_POLICY_URL, GRUNTZ_SUPPORT_URL, GRUNTZ_TERMS_OF_USE_URL } from '../config/legal';
 import {
   cancelDailyReminder,
   cancelWeeklyRecap,
@@ -18,43 +14,73 @@ import {
   scheduleWeeklyRecap,
   setupNotificationChannels,
 } from '../services/notifications';
-import {
-  GRUNTZ_PRIVACY_POLICY_URL,
-  GRUNTZ_SUPPORT_URL,
-  GRUNTZ_TERMS_OF_USE_URL,
-} from '../config/legal';
-import { openExternalUrl } from '../utils/externalLinks';
-import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
 import { useReadinessStore } from '../store/useReadinessStore';
+import { useSessionStore } from '../store/useSessionStore';
+import { getAccessState, useSubscriptionStore } from '../store/useSubscriptionStore';
+import { useUserStore } from '../store/useUserStore';
+import { Group, NavHeader, Row } from '../ui/Layout';
+import { Wordmark } from '../ui/Logo';
+import { Text } from '../ui/Text';
+import { haptic } from '../ui/haptics';
+import { toast } from '../ui/Toast';
+import { space } from '../ui/tokens';
+import { color } from '../ui/tokens';
+import { openExternalUrl } from '../utils/externalLinks';
+import { maybeRequestReview } from '../utils/socialActions';
 
 export default function SettingsScreen() {
-  const colors = useColors();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const profile = useUserStore((s) => s.profile);
   const updateSettings = useUserStore((s) => s.updateSettings);
   const resetUser = useUserStore((s) => s.reset);
-  const { bottomContentPadding } = useFloatingTabBarSpacing();
   const fieldMode = useReadinessStore((s) => s.fieldMode);
   const audioCues = useReadinessStore((s) => s.audioCues);
   const keepScreenAwake = useReadinessStore((s) => s.keepScreenAwake);
   const batterySaver = useReadinessStore((s) => s.batterySaver);
-  const setFieldPreference = useReadinessStore((s) => s.setFieldPreference);
+  const setField = useReadinessStore((s) => s.setFieldPreference);
+  const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
+  const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
+  const restore = useSubscriptionStore((s) => s.restoreAccess);
+  const access = getAccessState({ trialStartedAt, entitlementActive });
 
-  const notificationsEnabled = profile?.settings.notifications_enabled ?? true;
-  const imperialUnits = (profile?.settings.units ?? 'imperial') === 'imperial';
+  const notifications = profile?.settings.notifications_enabled ?? true;
+  const imperial = (profile?.settings.units ?? 'imperial') === 'imperial';
 
-  const handleOpenLink = async (url: string, label: string) => {
-    const opened = await openExternalUrl(url);
-    if (!opened) {
-      Alert.alert('Link unavailable', `Unable to open ${label.toLowerCase()} right now.`);
+  const open = async (url: string, label: string) => {
+    const ok = await openExternalUrl(url);
+    if (!ok) Alert.alert('Link unavailable', `Unable to open ${label.toLowerCase()} right now.`);
+  };
+
+  const toggleNotifications = async (v: boolean) => {
+    try {
+      if (v) {
+        const granted = await requestNotificationPermission();
+        if (!granted) {
+          updateSettings({ notifications_enabled: false });
+          Alert.alert('Notifications are off', 'Turn on notifications for Gruntz in iOS Settings to get mission reminders.');
+          return;
+        }
+        await setupNotificationChannels();
+        await scheduleDailyReminder(7, 0);
+        await scheduleWeeklyRecap();
+        updateSettings({ notifications_enabled: true, reminder_time: '07:00' });
+        toast('Reminders on · 7:00 AM daily', { icon: 'bell' });
+        return;
+      }
+      await cancelDailyReminder();
+      await cancelWeeklyRecap();
+      updateSettings({ notifications_enabled: false });
+    } catch {
+      Alert.alert('Couldn’t update reminders', 'Try again in a moment.');
     }
   };
 
-  const handleDeleteAccount = () => {
-    hapticWarning();
+  const deleteAll = () => {
+    haptic.warning();
     Alert.alert(
       'Delete all data?',
-      'This will erase your profile, missions, streaks, challenges, and achievements. This cannot be undone. Your subscription is managed by the App Store and must be cancelled separately.',
+      'This erases your profile, missions, streaks, challenges and achievements on this device. It can’t be undone. Your subscription is managed by the App Store and must be cancelled separately.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -63,23 +89,17 @@ export default function SettingsScreen() {
           onPress: () => {
             void (async () => {
               try {
-                // Clear AsyncStorage FIRST so Zustand persist middleware
-                // can't flush stale state back after we call reset.
+                // Clear storage first so persist middleware can't flush stale state back.
                 const keys = await AsyncStorage.getAllKeys();
-                const gruntzKeys = keys.filter((k) => k.startsWith('@gruntz'));
-                if (gruntzKeys.length > 0) {
-                  await AsyncStorage.multiRemove(gruntzKeys);
-                }
-                // Clear SecureStore items (fitness assessment is stored here).
+                const ours = keys.filter((k) => k.startsWith('@gruntz'));
+                if (ours.length) await AsyncStorage.multiRemove(ours);
                 await SecureStore.deleteItemAsync('gruntz_assessment').catch(() => {});
-                // Cancel any scheduled local notifications tied to this user.
                 await Promise.all([cancelDailyReminder(), cancelWeeklyRecap()]);
-                // Finally reset in-memory state. RootNavigator watches
-                // `isOnboarded` and will route the user back to OnboardingScreen
-                // automatically — no manual restart needed.
+                useSessionStore.getState().discard();
+                // RootNavigator watches isOnboarded and returns to onboarding.
                 resetUser();
               } catch {
-                Alert.alert('Could not erase all data', 'Try again, or reinstall the app to fully reset.');
+                Alert.alert('Couldn’t erase all data', 'Try again, or reinstall the app to fully reset.');
               }
             })();
           },
@@ -89,266 +109,76 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: bottomContentPadding }]}>
-        <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>Settings</Text>
+    <View style={styles.screen}>
+      <NavHeader title="Settings" />
+      <ScrollView contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]} showsVerticalScrollIndicator={false}>
+        <Group label="Profile and training">
+          <Row icon="flag" title="Service & test profile" onPress={() => navigation.navigate('ServiceProfile')} />
+          <Row icon="calendar" title="Program" onPress={() => navigation.navigate('ProgramSelect')} />
+          <Row icon="bell" title="Mission reminders" subtitle="Daily at 7:00 AM, weekly recap" toggle={notifications} onToggle={(v) => void toggleNotifications(v)} />
+        </Group>
 
-        {/* Preferences */}
-        <GlassCard style={styles.section}>
-          <Text style={styles.sectionLabel}>PREFERENCES</Text>
-
-          <View style={styles.settingRow}>
-            <View style={styles.settingLeft}>
-              <View style={styles.settingIcon}>
-                <GameIcon name="badge" size={16} color={colors.textSecondary} variant="minimal" />
-              </View>
-              <View>
-                <Text style={styles.settingLabel}>Push Notifications</Text>
-                <Text style={styles.settingDesc}>Daily mission reminders</Text>
-              </View>
-            </View>
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={(v) => {
-                hapticLight();
-                void (async () => {
-                  try {
-                    if (v) {
-                      const granted = await requestNotificationPermission();
-                      if (!granted) {
-                        updateSettings({ notifications_enabled: false });
-                        Alert.alert(
-                          'Notifications unavailable',
-                          'Enable notifications in system settings if you want daily mission reminders.'
-                        );
-                        return;
-                      }
-                      await setupNotificationChannels();
-                      await scheduleDailyReminder(7, 0);
-                      await scheduleWeeklyRecap();
-                      updateSettings({ notifications_enabled: true, reminder_time: '07:00' });
-                      return;
-                    }
-                    await cancelDailyReminder();
-                    await cancelWeeklyRecap();
-                    updateSettings({ notifications_enabled: false });
-                  } catch {
-                    Alert.alert('Error', 'Could not update notification settings. Try again.');
-                  }
-                })();
-              }}
-              trackColor={{ false: colors.cardBorder, true: colors.accent }}
-              thumbColor="#FFFFFF"
-            />
-          </View>
-
-          <View style={[styles.settingRow, { borderBottomWidth: 0 }]}>
-            <View style={styles.settingLeft}>
-              <View style={styles.settingIcon}>
-                <GameIcon name="stats" size={16} color={colors.textSecondary} variant="minimal" />
-              </View>
-              <View>
-                <Text style={styles.settingLabel}>Imperial Units</Text>
-                <Text style={styles.settingDesc}>Miles, pounds, feet</Text>
-              </View>
-            </View>
-            <Switch
-              value={imperialUnits}
-              onValueChange={(v) => {
-                hapticLight();
-                updateSettings({ units: v ? 'imperial' : 'metric' });
-              }}
-              trackColor={{ false: colors.cardBorder, true: colors.accent }}
-              thumbColor="#FFFFFF"
-            />
-          </View>
-        </GlassCard>
-
-        <GlassCard style={styles.section}>
-          <Text style={styles.sectionLabel}>FIELD MODE</Text>
-          {[
-            { key: 'fieldMode' as const, label: 'Field Mode', desc: 'High contrast, simplified training controls', value: fieldMode },
-            { key: 'audioCues' as const, label: 'Audio Cues', desc: 'Hands-free intervals and split prompts', value: audioCues },
-            { key: 'keepScreenAwake' as const, label: 'Keep Screen Awake', desc: 'Prevent lock during active sessions', value: keepScreenAwake },
-            { key: 'batterySaver' as const, label: 'Battery Saver', desc: 'Reduce GPS and visual update frequency', value: batterySaver },
-          ].map((item, index, list) => <View key={item.key} style={[styles.settingRow, index === list.length - 1 && { borderBottomWidth: 0 }]}><View style={styles.settingLeft}><View style={styles.settingIcon}><GameIcon name={item.key === 'batterySaver' ? 'warning' : 'mission'} size={16} color={colors.textSecondary} variant="minimal" /></View><View style={{ flex: 1 }}><Text style={styles.settingLabel}>{item.label}</Text><Text style={styles.settingDesc}>{item.desc}</Text></View></View><Switch value={item.value} onValueChange={(value) => { hapticLight(); setFieldPreference(item.key, value); }} trackColor={{ false: colors.cardBorder, true: colors.accent }} thumbColor="#FFFFFF" /></View>)}
-        </GlassCard>
-
-        {/* About */}
-        <GlassCard style={styles.section}>
-          <Text style={styles.sectionLabel}>ABOUT</Text>
-          <Text style={styles.aboutText}>Gruntz — Military Fitness App</Text>
-          <Text style={styles.versionText}>Version 1.0.0</Text>
-        </GlassCard>
-
-        <GlassCard style={styles.section}>
-          <Text style={styles.sectionLabel}>LEGAL</Text>
-
-          <TouchableOpacity
-            activeOpacity={0.7}
-            style={styles.linkRow}
+        <Group label="Preferences" style={styles.group}>
+          <Row
+            icon="gauge"
+            title="Units"
+            value={imperial ? 'Imperial · lb, mi' : 'Metric · kg, km'}
             onPress={() => {
-              hapticLight();
-              void handleOpenLink(GRUNTZ_PRIVACY_POLICY_URL, 'Privacy Policy');
+              haptic.selection();
+              updateSettings({ units: imperial ? 'metric' : 'imperial' });
             }}
-          >
-            <View style={styles.settingLeft}>
-              <View style={styles.settingIcon}>
-                <Ionicons name="shield-checkmark-outline" size={16} color={colors.textSecondary} />
-              </View>
-              <View>
-                <Text style={styles.settingLabel}>Privacy Policy</Text>
-                <Text style={styles.settingDesc}>View how training and billing data are handled</Text>
-              </View>
-            </View>
-            <Ionicons name="open-outline" size={14} color={colors.textMuted} />
-          </TouchableOpacity>
+          />
+        </Group>
 
-          <TouchableOpacity
-            activeOpacity={0.7}
-            style={styles.linkRow}
+        <Group label="Field mode" style={styles.group}>
+          <Row icon="sun" title="Field mode" subtitle="High contrast, simplified controls" toggle={fieldMode} onToggle={(v) => setField('fieldMode', v)} />
+          <Row icon="speaker" title="Audio cues" subtitle="Spoken splits during runs and rucks" toggle={audioCues} onToggle={(v) => setField('audioCues', v)} />
+          <Row icon="eye" title="Keep screen awake" subtitle="During workouts and tracked sessions" toggle={keepScreenAwake} onToggle={(v) => setField('keepScreenAwake', v)} />
+          <Row icon="battery" title="Battery saver" subtitle="Lighter GPS sampling" toggle={batterySaver} onToggle={(v) => setField('batterySaver', v)} />
+        </Group>
+
+        <Group label="Membership" style={styles.group}>
+          <Row icon="starFill" title={access === 'subscriber' ? 'Gruntz Pro' : 'Upgrade to Pro'} value={access === 'subscriber' ? 'Active' : undefined} onPress={() => navigation.navigate('Paywall')} />
+          <Row
+            icon="restart"
+            title="Restore purchases"
             onPress={() => {
-              hapticLight();
-              void handleOpenLink(GRUNTZ_TERMS_OF_USE_URL, 'Terms of Use');
+              void restore().then((r) => {
+                if (r === 'restored') toast('Purchases restored');
+                else Alert.alert('Nothing to restore', 'No active Gruntz Pro subscription was found for this Apple ID.');
+              });
             }}
-          >
-            <View style={styles.settingLeft}>
-              <View style={styles.settingIcon}>
-                <Ionicons name="document-text-outline" size={16} color={colors.textSecondary} />
-              </View>
-              <View>
-                <Text style={styles.settingLabel}>Terms of Use</Text>
-                <Text style={styles.settingDesc}>Open the Gruntz subscription and usage terms</Text>
-              </View>
-            </View>
-            <Ionicons name="open-outline" size={14} color={colors.textMuted} />
-          </TouchableOpacity>
+          />
+        </Group>
 
-          <TouchableOpacity
-            activeOpacity={0.7}
-            style={[styles.linkRow, { borderBottomWidth: 0 }]}
-            onPress={() => {
-              hapticLight();
-              void handleOpenLink(GRUNTZ_SUPPORT_URL, 'Support');
-            }}
-          >
-            <View style={styles.settingLeft}>
-              <View style={styles.settingIcon}>
-                <Ionicons name="mail-outline" size={16} color={colors.textSecondary} />
-              </View>
-              <View>
-                <Text style={styles.settingLabel}>Support</Text>
-                <Text style={styles.settingDesc}>Contact support and subscription help</Text>
-              </View>
-            </View>
-            <Ionicons name="open-outline" size={14} color={colors.textMuted} />
-          </TouchableOpacity>
-        </GlassCard>
+        <Group label="Support" style={styles.group}>
+          <Row icon="mail" title="Contact support" onPress={() => void open(GRUNTZ_SUPPORT_URL, 'Support')} external />
+          <Row icon="star" title="Leave us a review" onPress={() => void maybeRequestReview('settings')} />
+        </Group>
 
-        {/* Danger Zone */}
-        <GlassCard style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: colors.accentRed }]}>DANGER ZONE</Text>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            style={[styles.linkRow, { borderBottomWidth: 0 }]}
-            onPress={handleDeleteAccount}
-            accessibilityRole="button"
-            accessibilityLabel="Delete all data"
-            accessibilityHint="Permanently erases your profile, missions, streaks, challenges, and achievements"
-          >
-            <View style={styles.settingLeft}>
-              <View style={styles.settingIcon}>
-                <Ionicons name="trash-outline" size={16} color={colors.accentRed} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.settingLabel, { color: colors.accentRed }]}>Delete all data</Text>
-                <Text style={styles.settingDesc}>Erase your profile, missions, streaks, and achievements on this device</Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={14} color={colors.accentRed} />
-          </TouchableOpacity>
-        </GlassCard>
+        <Group label="Legal" style={styles.group}>
+          <Row icon="doc" title="Privacy policy" onPress={() => void open(GRUNTZ_PRIVACY_POLICY_URL, 'Privacy Policy')} external />
+          <Row icon="book" title="Terms of use" onPress={() => void open(GRUNTZ_TERMS_OF_USE_URL, 'Terms of Use')} external />
+        </Group>
+
+        <Group style={styles.group}>
+          <Row icon="trash" title="Delete all data" tone="danger" onPress={deleteAll} />
+        </Group>
+
+        <View style={styles.footer}>
+          <Wordmark height={40} />
+          <Text variant="footnote" tone="tertiary" style={{ marginTop: space.sm }}>
+            Version {Constants.expoConfig?.version ?? '1.0'}
+          </Text>
+        </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    padding: spacing.md,
-    paddingBottom: spacing.xxl,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.lg,
-  },
-  section: {
-    marginBottom: spacing.md,
-  },
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.textMuted,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    marginBottom: spacing.md,
-  },
-  settingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.sm + 2,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.cardBorder,
-  },
-  linkRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.sm + 2,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.cardBorder,
-  },
-  settingLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm + 2,
-    flex: 1,
-  },
-  settingIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: borderRadius.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  settingLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.textPrimary,
-  },
-  settingDesc: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  aboutText: {
-    fontSize: 14,
-    color: colors.textPrimary,
-    fontWeight: '500',
-  },
-  versionText: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: color.bg },
+  body: { paddingHorizontal: space.md, paddingTop: space.lg },
+  group: { marginTop: space.xl },
+  footer: { alignItems: 'center', marginTop: space.xxxl },
 });

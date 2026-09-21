@@ -1,306 +1,192 @@
-import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Animated } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RouteProp } from '@react-navigation/native';
-import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
-import { hapticMedium } from '../utils/haptics';
-import { useFadeInUp } from '../utils/animations';
-import type { ThemeColors } from '../theme';
+import React from 'react';
+import { Alert, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StackActions, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { getExerciseById } from '../data/exercises';
 import { getProgramById } from '../data/programs';
-import { getDisplayedMonthlyPrice } from '../config/monetization';
 import { useProgramStore } from '../store/useProgramStore';
+import { useSessionStore } from '../store/useSessionStore';
 import { hasTrainingAccess, useSubscriptionStore } from '../store/useSubscriptionStore';
-import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
-import type { HomeStackParamList } from '../types/navigation';
-import type { ProgramPhase, ProgramId } from '../types';
-import { GameIcon } from '../components/GameIcon';
-
-type Nav = NativeStackNavigationProp<HomeStackParamList, 'ProgramDetail'>;
-type Route = RouteProp<HomeStackParamList, 'ProgramDetail'>;
-
-function getProgramAccentColor(programId: ProgramId, colors: ThemeColors) {
-  if (programId === 'basecamp') return colors.accentGreen;
-  if (programId === 'recon') return colors.accentOrange;
-  return colors.accent;
-}
+import type { ProgramId } from '../types';
+import type { RootStackParamList } from '../types/navigation';
+import { Button } from '../ui/Button';
+import { HeroArt } from '../ui/ExerciseArt';
+import { Icon } from '../ui/Icon';
+import { EmptyState, Hairline, NavHeader, Stat } from '../ui/Layout';
+import { Text } from '../ui/Text';
+import { haptic } from '../ui/haptics';
+import { toast } from '../ui/Toast';
+import { color, radius, space } from '../ui/tokens';
+import { PROGRAM_ART } from './ProgramSelectScreen';
 
 export default function ProgramDetailScreen() {
-  const colors = useColors();
-  const { insets } = useFloatingTabBarSpacing();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-  const heroAnim = useFadeInUp(500);
-  const navigation = useNavigation<Nav>();
-  const route = useRoute<Route>();
-  const { selectProgram, setHasSeenProgramSelect } = useProgramStore();
+  const navigation = useNavigation();
+  const { params } = useRoute<RouteProp<RootStackParamList, 'ProgramDetail'>>();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const current = useProgramStore((s) => s.selectedProgram);
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
   const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
-  const currentOffering = useSubscriptionStore((s) => s.currentOffering);
+  const program = getProgramById(params.programId);
+  const y = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler((e) => y.set(e.contentOffset.y));
+  const heroH = width * 1.05;
+  const heroStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: interpolate(y.get(), [-200, 0, heroH], [-100, 0, heroH * 0.4]) }, { scale: interpolate(y.get(), [-200, 0], [1.3, 1], 'clamp') }],
+  }));
 
-  const program = getProgramById(route.params.programId);
   if (!program) {
     return (
-      <SafeAreaView style={styles.safe} edges={['bottom']}>
-        <View style={styles.emptyContainer}>
-          <GameIcon name="warning" size={44} color={colors.accentGold} style={styles.emptyIcon} />
-          <Text style={styles.emptyTitle}>Program unavailable</Text>
-          <Text style={styles.emptyText}>
-            This training block could not be loaded. Go back and choose a valid program.
-          </Text>
-          <TouchableOpacity
-            style={[styles.startButton, { backgroundColor: colors.accent }]}
-            onPress={() => navigation.goBack()}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.startButtonText} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
-              GO BACK
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
+      <View style={styles.screen}>
+        <NavHeader />
+        <EmptyState icon="alert" title="Program unavailable" body="This training block couldn’t be loaded. Go back and pick another." />
+      </View>
     );
   }
 
-  const accentColor = getProgramAccentColor(program.id, colors);
-  const trainingUnlocked = hasTrainingAccess({ trialStartedAt, entitlementActive });
-  const membershipPrice = getDisplayedMonthlyPrice(currentOffering);
+  const unlocked = hasTrainingAccess({ trialStartedAt, entitlementActive });
+  const isCurrent = current === program.id;
 
-  const handleStart = () => {
-    hapticMedium();
-    if (!trainingUnlocked) {
+  const start = () => {
+    if (!unlocked) {
       navigation.navigate('Paywall');
       return;
     }
-    Alert.alert(
-      `Start ${program.name}?`,
-      `This will set your active program to ${program.name}. You can switch anytime.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Start Program',
-          onPress: () => {
-            selectProgram(program.id);
-            setHasSeenProgramSelect(true);
-            navigation.popToTop();
-          },
+    Alert.alert(`Start ${program.name}?`, 'Your plan restarts at week one. Completed missions and XP stay with you.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Start program',
+        onPress: () => {
+          if (useSessionStore.getState().active) useSessionStore.getState().discard();
+          useProgramStore.getState().selectProgram(program.id as ProgramId);
+          useProgramStore.getState().setHasSeenProgramSelect(true);
+          haptic.success();
+          navigation.dispatch(StackActions.popToTop());
+          toast(`${program.name} is your new program`, { icon: 'check' });
         },
-      ],
-    );
+      },
+    ]);
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        {/* Hero */}
-        <Animated.View style={[styles.hero, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
-          <GameIcon name={program.icon} size={48} color={accentColor} style={styles.heroIcon} />
-          <Text style={styles.heroName} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{program.name}</Text>
-          <Text style={[styles.heroSub, { color: accentColor }]} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{program.subtitle}</Text>
+    <View style={styles.screen}>
+      <Animated.ScrollView onScroll={onScroll} scrollEventThrottle={16} contentContainerStyle={{ paddingBottom: insets.bottom + 140 }} showsVerticalScrollIndicator={false}>
+        <Animated.View style={[{ height: heroH }, heroStyle]}>
+          <HeroArt exercise={getExerciseById(PROGRAM_ART[program.id])} style={StyleSheet.absoluteFill} />
+          <LinearGradient colors={['rgba(0,0,0,0.35)', 'rgba(0,0,0,0)', color.bg]} locations={[0, 0.35, 1]} style={StyleSheet.absoluteFill} />
         </Animated.View>
-
-        {/* Stats Bar */}
-        <View style={styles.statsBar}>
-          <View style={styles.stat}>
-            <Text style={styles.statVal}>{program.duration_weeks}</Text>
-            <Text style={styles.statLbl}>Weeks</Text>
+        <View style={[styles.body, { marginTop: -heroH * 0.28 }]}>
+          <Text variant="display">{program.name.toUpperCase()}</Text>
+          <Text variant="body" tone="secondary" style={{ marginTop: 6 }}>
+            {program.subtitle}
+          </Text>
+          <View style={styles.stats}>
+            <Stat label="Weeks" value={String(program.duration_weeks)} accent style={{ flex: 1 }} />
+            <Stat label="Days / week" value={String(program.days_per_week)} style={{ flex: 1 }} />
+            <Stat label="Level" value={program.difficulty.charAt(0).toUpperCase() + program.difficulty.slice(1)} style={{ flex: 1 }} />
           </View>
-          <View style={styles.stat}>
-            <Text style={styles.statVal}>{program.days_per_week}</Text>
-            <Text style={styles.statLbl}>Days/Wk</Text>
-          </View>
-          <View style={styles.stat}>
-            <Text style={[styles.statVal, { color: accentColor }]}>{program.difficulty.toUpperCase()}</Text>
-            <Text style={styles.statLbl}>Difficulty</Text>
-          </View>
-        </View>
+          <Hairline />
+          <Text variant="body" tone="secondary" style={{ marginTop: space.lg }}>
+            {program.description}
+          </Text>
 
-        {/* Description */}
-        <Text style={styles.description}>{program.description}</Text>
-
-        {/* Phases */}
-        <Text style={styles.sectionTitle}>TRAINING PHASES</Text>
-        {program.phases.map((phase) => (
-          <PhaseCard key={phase.phase_number} phase={phase} accent={accentColor} styles={styles} />
-        ))}
-
-        {/* Focus Areas */}
-        <Text style={styles.sectionTitle}>FOCUS AREAS</Text>
-        <View style={styles.chipRow}>
-          {program.focus_areas.map((area) => (
-            <View key={area} style={[styles.chip, { borderColor: accentColor }]}>
-              <Text style={[styles.chipText, { color: accentColor }]}>{area}</Text>
+          <Text variant="section" style={styles.h}>
+            Phases
+          </Text>
+          {program.phases.map((p, i) => (
+            <View key={p.phase_number} style={styles.phase}>
+              <View style={styles.rail}>
+                <View style={[styles.dot, i === 0 && styles.dotOn]} />
+                {i < program.phases.length - 1 ? <View style={styles.line} /> : null}
+              </View>
+              <View style={{ flex: 1, paddingBottom: space.lg }}>
+                <Text variant="headline">{p.name}</Text>
+                <Text variant="subhead" tone="tertiary" style={{ marginTop: 2 }}>
+                  Weeks {p.weeks[0]}–{p.weeks[1]}
+                  {p.is_deload_included ? ' · includes deload' : ''}
+                </Text>
+                <Text variant="callout" tone="secondary" style={{ marginTop: 6 }}>
+                  {p.description}
+                </Text>
+              </View>
             </View>
           ))}
-        </View>
 
-        {/* Equipment */}
-        <Text style={styles.sectionTitle}>EQUIPMENT NEEDED</Text>
-        {program.equipment_needed.map((item) => (
-          <View key={item} style={styles.equipRow}>
-            <View style={styles.equipDot} />
-            <Text style={styles.equipText}>{item}</Text>
-          </View>
-        ))}
-
-        {/* Prerequisites */}
-        <Text style={styles.sectionTitle}>PREREQUISITES</Text>
-        {program.prerequisites.map((item) => (
-          <View key={item} style={styles.equipRow}>
-            <View style={[styles.equipDot, styles.prereqDot, { backgroundColor: colors.accentGold }]} />
-            <Text style={styles.equipText}>{item}</Text>
-          </View>
-        ))}
-
-        <View style={{ height: spacing.xxl }} />
-      </ScrollView>
-
-      {/* Fixed bottom button — above glass tab bar */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + spacing.md }]}>
-        {!trainingUnlocked ? (
-          <Text style={styles.lockedNotice}>
-            Subscribe for {membershipPrice} to unlock this program and every future training block.
+          <Text variant="section" style={styles.h}>
+            Focus
           </Text>
-        ) : null}
-        <TouchableOpacity
-          style={[styles.startButton, { backgroundColor: accentColor }]}
-          onPress={handleStart}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.startButtonText} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
-            {trainingUnlocked ? `START ${program.name.toUpperCase()}` : 'UNLOCK GRUNTZ PRO'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
-  );
-}
-
-function PhaseCard({ phase, accent, styles }: { phase: ProgramPhase; accent: string; styles: ReturnType<typeof createStyles> }) {
-  return (
-    <View style={styles.phaseCard}>
-      <View style={styles.phaseHeader}>
-        <View style={[styles.phaseNum, { backgroundColor: accent }]}>
-          <Text style={styles.phaseNumText}>{phase.phase_number}</Text>
-        </View>
-        <View style={styles.phaseHeaderText}>
-          <Text style={styles.phaseName}>{phase.name}</Text>
-          <Text style={styles.phaseWeeks}>Weeks {phase.weeks[0]}–{phase.weeks[1]}</Text>
-        </View>
-        {phase.is_deload_included && (
-          <View style={styles.deloadBadge}>
-            <Text style={styles.deloadText}>DELOAD</Text>
+          <View style={styles.chips}>
+            {program.focus_areas.map((f) => (
+              <View key={f} style={styles.chip}>
+                <Text variant="subhead">{f}</Text>
+              </View>
+            ))}
           </View>
-        )}
+
+          {program.equipment_needed.length ? (
+            <>
+              <Text variant="section" style={styles.h}>
+                Equipment
+              </Text>
+              {program.equipment_needed.map((e) => (
+                <View key={e} style={styles.item}>
+                  <Icon name="check" size={15} color={color.accent} weight="bold" />
+                  <Text variant="callout" style={{ flex: 1 }}>
+                    {e}
+                  </Text>
+                </View>
+              ))}
+            </>
+          ) : null}
+
+          {program.prerequisites.length ? (
+            <>
+              <Text variant="section" style={styles.h}>
+                Before you start
+              </Text>
+              {program.prerequisites.map((e) => (
+                <View key={e} style={styles.item}>
+                  <Icon name="info" size={16} color={color.textSecondary} />
+                  <Text variant="callout" tone="secondary" style={{ flex: 1 }}>
+                    {e}
+                  </Text>
+                </View>
+              ))}
+            </>
+          ) : null}
+        </View>
+      </Animated.ScrollView>
+
+      <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+        <NavHeader transparent />
       </View>
-      <Text style={styles.phaseDesc}>{phase.description}</Text>
-      <Text style={[styles.phaseFocus, { color: accent }]}>Focus: {phase.focus}</Text>
+
+      <View style={[styles.footer, { paddingBottom: insets.bottom + space.xs }]}>
+        <Button
+          title={isCurrent ? 'Your current program' : unlocked ? `Start ${program.name}` : 'Unlock Gruntz Pro'}
+          disabled={isCurrent}
+          icon={isCurrent || !unlocked ? undefined : 'play'}
+          onPress={start}
+        />
+      </View>
     </View>
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  scroll: { flex: 1 },
-  content: { padding: spacing.md, paddingBottom: 180 },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.xl,
-  },
-  emptyIcon: {
-    marginBottom: spacing.md,
-  },
-  emptyTitle: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
-  },
-  emptyText: {
-    fontSize: 14,
-    lineHeight: 21,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: spacing.xl,
-    maxWidth: 320,
-  },
-  hero: { alignItems: 'center', marginBottom: spacing.md, marginTop: spacing.md },
-  heroIcon: { marginBottom: spacing.sm },
-  heroName: { fontSize: 24, fontWeight: '700', color: colors.textPrimary, lineHeight: 30 },
-  heroSub: { fontSize: 11, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginTop: spacing.xs },
-  statsBar: {
-    flexDirection: 'row', justifyContent: 'space-around',
-    backgroundColor: colors.card, borderRadius: borderRadius.md, padding: spacing.md,
-    borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder, marginBottom: spacing.lg,
-  },
-  stat: { alignItems: 'center' },
-  statVal: { fontSize: 18, fontWeight: '700', color: colors.textPrimary },
-  statLbl: { fontSize: 11, fontWeight: '500', color: colors.textMuted, marginTop: 2 },
-  description: {
-    fontSize: 14, color: colors.textSecondary, lineHeight: 21,
-    marginBottom: spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: 11, fontWeight: '700', color: colors.textMuted,
-    letterSpacing: 1.2, textTransform: 'uppercase',
-    marginBottom: spacing.sm, marginTop: spacing.md,
-  },
-  phaseCard: {
-    backgroundColor: colors.card, borderRadius: borderRadius.md, padding: spacing.md,
-    borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder, marginBottom: spacing.sm,
-  },
-  phaseHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
-  phaseNum: {
-    width: 24, height: 24, borderRadius: borderRadius.sm, alignItems: 'center', justifyContent: 'center',
-  },
-  phaseNumText: { fontSize: 12, fontWeight: '700', color: colors.background },
-  phaseHeaderText: { marginLeft: spacing.sm, flex: 1 },
-  phaseName: { fontSize: 15, fontWeight: '600', color: colors.textPrimary },
-  phaseWeeks: { fontSize: 11, color: colors.textMuted, marginTop: 1 },
-  deloadBadge: {
-    backgroundColor: colors.backgroundSecondary, borderRadius: borderRadius.sm,
-    paddingHorizontal: spacing.sm, paddingVertical: 2,
-  },
-  deloadText: { fontSize: 9, fontWeight: '700', color: colors.accentGold, letterSpacing: 1 },
-  phaseDesc: { fontSize: 12, color: colors.textSecondary, lineHeight: 18, marginBottom: 4 },
-  phaseFocus: { fontSize: 11, fontWeight: '600' },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.md },
-  chip: {
-    borderWidth: StyleSheet.hairlineWidth, borderRadius: borderRadius.full, paddingHorizontal: spacing.sm, paddingVertical: 3,
-  },
-  chipText: { fontSize: 11, fontWeight: '600' },
-  equipRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  equipDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.textMuted,
-    marginRight: spacing.sm,
-  },
-  prereqDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  equipText: { fontSize: 13, color: colors.textSecondary },
-  bottomBar: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    backgroundColor: colors.background, padding: spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.cardBorder,
-  },
-  lockedNotice: {
-    fontSize: 12,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginBottom: spacing.sm,
-    lineHeight: 17,
-  },
-  startButton: {
-    borderRadius: borderRadius.md, paddingVertical: spacing.sm + 4, alignItems: 'center',
-  },
-  startButtonText: {
-    fontSize: 13, fontWeight: '700', color: colors.background, letterSpacing: 1.2, textTransform: 'uppercase',
-  },
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: color.bg },
+  body: { paddingHorizontal: space.gutter + 4 },
+  stats: { flexDirection: 'row', paddingVertical: space.lg, marginTop: space.md },
+  h: { marginTop: space.xl, marginBottom: space.md },
+  phase: { flexDirection: 'row', gap: 14 },
+  rail: { alignItems: 'center', width: 14 },
+  dot: { width: 12, height: 12, borderRadius: 6, borderWidth: 2, borderColor: color.lineStrong, marginTop: 5 },
+  dotOn: { backgroundColor: color.accent, borderColor: color.accent },
+  line: { flex: 1, width: 2, backgroundColor: color.line, marginTop: 4 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: { height: 36, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: color.surface, justifyContent: 'center' },
+  item: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
+  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: space.md, paddingTop: space.md, backgroundColor: color.bg },
 });

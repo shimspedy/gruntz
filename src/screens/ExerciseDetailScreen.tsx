@@ -1,397 +1,292 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRoute, useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RouteProp } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
-import { hapticMedium } from '../utils/haptics';
-import { useFadeInUp } from '../utils/animations';
-import type { ThemeColors } from '../theme';
-import { Card } from '../components/Card';
-import { GameIcon } from '../components/GameIcon';
-import { MissionButton } from '../components/MissionButton';
-import { RepLogModal } from '../components/RepLogModal';
-import { ExerciseVideoPlayer } from '../components/ExerciseVideoPlayer';
-import { getExerciseById } from '../data/exercises';
-import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
-import type { HomeStackParamList } from '../types/navigation';
-import type { SetLog } from '../types';
+import React from 'react';
+import { Alert, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { useIsFocused, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { ExerciseVideo } from '../components/ExerciseVideo';
+import { MuscleBodyMap } from '../components/MuscleBodyMap';
+import { exercises, getExerciseById, libraryExerciseId } from '../data/exercises';
+import { appMuscles, getLibraryItem } from '../data/exerciseLibrary';
+import { muscleLabel } from '../features/plan';
+import { useRoutineStore } from '../store/useRoutineStore';
+import type { RootStackParamList } from '../types/navigation';
+import { Button } from '../ui/Button';
+import { Icon } from '../ui/Icon';
+import { EmptyState, Hairline, NavHeader, Stat } from '../ui/Layout';
+import { Text } from '../ui/Text';
+import { haptic } from '../ui/haptics';
+import { toast } from '../ui/Toast';
+import { color, radius, space } from '../ui/tokens';
+import { GROUP_LABEL } from './ExerciseLibraryScreen';
 
-type ExerciseDetailRoute = RouteProp<HomeStackParamList, 'ExerciseDetail'>;
+const BACK = new Set(['back', 'hamstrings', 'glutes', 'triceps', 'lats', 'calves', 'lower_back', 'traps']);
+const FRONT = new Set(['chest', 'quads', 'core', 'biceps', 'shoulders', 'adductors']);
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export default function ExerciseDetailScreen() {
-  const colors = useColors();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-  const heroAnim = useFadeInUp(500);
-  const route = useRoute<ExerciseDetailRoute>();
-  const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
-  const exercise = getExerciseById(route.params.exerciseId);
-  const [showLogModal, setShowLogModal] = useState(false);
-  const { bottomContentPadding } = useFloatingTabBarSpacing();
+  const navigation = useNavigation();
+  const { params } = useRoute<RouteProp<RootStackParamList, 'ExerciseDetail'>>();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const focused = useIsFocused();
 
-  if (!exercise) {
+  const fromLibrary = !params.exerciseId && !!params.mediaKey;
+  const ex = params.exerciseId
+    ? getExerciseById(params.exerciseId)
+    : params.mediaKey
+      ? getExerciseById(libraryExerciseId(params.mediaKey))
+      : undefined;
+  const lib = ex?.media_key ? getLibraryItem(ex.media_key) : undefined;
+
+  if (!ex) {
     return (
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.emptyContainer}>
-          <Text style={styles.errorTitle}>Exercise unavailable</Text>
-          <Text style={styles.errorText}>
-            This exercise could not be loaded. Go back and reopen it from the mission or card list.
-          </Text>
-          <MissionButton title="GO BACK" onPress={() => navigation.goBack()} style={styles.errorButton} />
-        </View>
-      </SafeAreaView>
+      <View style={styles.screen}>
+        <NavHeader />
+        <EmptyState icon="alert" title="Exercise unavailable" body="This movement couldn’t be loaded. Go back and open it again." />
+      </View>
     );
   }
 
-  const handleLog = (_set: SetLog) => {
-    setShowLogModal(false);
+  const muscles = ex.muscle_groups?.length ? ex.muscle_groups : lib ? appMuscles(lib) : [];
+  const primaryApp = new Set(lib ? appMuscles({ ...lib, secondary: [] }) : muscles.slice(0, 2));
+  const heat = Object.fromEntries(muscles.map((m) => [m, primaryApp.has(m) ? 3 : 1]));
+  const side = muscles.some((m) => BACK.has(m)) && !muscles.some((m) => FRONT.has(m) && primaryApp.has(m)) ? 'back' : 'front';
+  const usedIn = fromLibrary && lib ? exercises.filter((e) => e.media_key === lib.key) : [];
+
+  const stats =
+    fromLibrary && lib
+      ? [
+          { label: 'Level', value: cap(lib.difficulty) },
+          { label: 'Equipment', value: lib.equipment[0] ?? 'None' },
+          { label: 'Pattern', value: lib.pattern[0] ?? '–' },
+        ]
+      : [
+          ex.sets ? { label: 'Sets', value: String(ex.sets) } : null,
+          ex.reps ? { label: 'Reps', value: String(ex.reps) } : null,
+          ex.duration_seconds
+            ? { label: 'Time', value: ex.duration_seconds >= 60 ? `${Math.round(ex.duration_seconds / 60)} min` : `${ex.duration_seconds}s` }
+            : null,
+          ex.distance ? { label: 'Distance', value: ex.distance } : null,
+          ex.rest_seconds > 0 ? { label: 'Rest', value: `${ex.rest_seconds}s` } : null,
+          { label: 'XP', value: `${ex.xp_value}` },
+        ]
+          .filter((s): s is { label: string; value: string } => !!s)
+          .slice(0, 4);
+
+  const steps = ex.steps?.length ? ex.steps : lib?.instructions ?? [];
+  const mistakes = lib?.mistakes ?? [];
+
+  const addToWorkout = () => {
+    if (!lib) return;
+    const { routines } = useRoutineStore.getState();
+    const toNew = () => {
+      useRoutineStore.getState().newDraft([lib.key]);
+      navigation.navigate('RoutineEditor');
+    };
+    if (!routines.length) return toNew();
+    Alert.alert('Add to workout', lib.name, [
+      ...routines.slice(0, 5).map((r) => ({
+        text: r.name,
+        onPress: () => {
+          useRoutineStore.getState().addToRoutine(r.id, lib.key);
+          haptic.success();
+          toast(`Added to ${r.name}`, { icon: 'check' });
+        },
+      })),
+      { text: 'New workout', onPress: toNew },
+      { text: 'Cancel', style: 'cancel' as const },
+    ]);
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: bottomContentPadding }]}>
-        {/* Hero */}
-        <Animated.View style={[styles.hero, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
-          <GameIcon name={exercise.illustration || exercise.category} size={56} color={colors.accent} style={styles.illustration} />
-          <Text style={styles.name} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{exercise.name}</Text>
-          <Text style={styles.category} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{exercise.category.toUpperCase()}</Text>
-        </Animated.View>
+    <View style={styles.screen}>
+      <NavHeader title={lib && fromLibrary ? GROUP_LABEL[lib.group] : cap(ex.category)} />
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + (fromLibrary ? 120 : space.xxl) }} showsVerticalScrollIndicator={false}>
+        <ExerciseVideo exercise={ex} active={focused} style={{ width, height: width * 0.62 }} />
+        <View style={styles.body}>
+          <Text variant="title">{ex.name}</Text>
+          {ex.description ? (
+            <Text variant="body" tone="secondary" style={{ marginTop: space.sm }}>
+              {ex.description}
+            </Text>
+          ) : null}
 
-        {/* Quick Stats */}
-        <View style={styles.statsRow}>
-          {exercise.sets && (
-            <View style={styles.statPill}>
-              <Text style={styles.statValue}>{exercise.sets}</Text>
-              <Text style={styles.statLabel}>SETS</Text>
-            </View>
-          )}
-          {exercise.reps && (
-            <View style={styles.statPill}>
-              <Text style={styles.statValue}>{exercise.reps}</Text>
-              <Text style={styles.statLabel}>REPS</Text>
-            </View>
-          )}
-          {exercise.duration_seconds && (
-            <View style={styles.statPill}>
-              <Text style={styles.statValue}>{exercise.duration_seconds}s</Text>
-              <Text style={styles.statLabel}>TIME</Text>
-            </View>
-          )}
-          {exercise.distance && (
-            <View style={styles.statPill}>
-              <Text style={styles.statValue}>{exercise.distance}</Text>
-              <Text style={styles.statLabel}>DIST</Text>
-            </View>
-          )}
-          {exercise.rest_seconds > 0 && (
-            <View style={[styles.statPill, styles.restPill]}>
-              <Text style={[styles.statValue, styles.restValue]}>{exercise.rest_seconds}s</Text>
-              <Text style={styles.statLabel}>REST</Text>
-            </View>
-          )}
-          <View style={styles.statPill}>
-            <Text style={[styles.statValue, { color: colors.accentGold }]}>{exercise.xp_value}</Text>
-            <Text style={styles.statLabel}>XP</Text>
+          <View style={styles.stats}>
+            {stats.map((s, i) => (
+              <Stat key={s.label} label={s.label} value={s.value} accent={i === 0} style={{ flex: 1 }} />
+            ))}
           </View>
-        </View>
+          <Hairline />
 
-        {typeof exercise.video_asset === 'number' || exercise.video_url || exercise.demo_url ? (
-          <ExerciseVideoPlayer
-            exerciseName={exercise.name}
-            videoAsset={exercise.video_asset}
-            videoUrl={exercise.video_url}
-            demoUrl={exercise.demo_url}
-          />
-        ) : null}
-
-        {/* Description */}
-        <Card title="Description" style={styles.sectionCard}>
-          <Text style={styles.description}>{exercise.description}</Text>
-        </Card>
-
-        {/* Step-by-Step */}
-        {exercise.steps && exercise.steps.length > 0 && (
-          <Card title="How To Perform" style={styles.sectionCard}>
-            {exercise.steps.map((step, i) => (
-              <View key={i} style={styles.stepRow}>
-                <View style={styles.stepNumber}>
-                  <Text style={styles.stepNumberText}>{i + 1}</Text>
+          {muscles.length ? (
+            <>
+              <Text variant="section" style={styles.h}>
+                Muscles
+              </Text>
+              <View style={styles.muscleRow}>
+                <View style={styles.bodyTile}>
+                  <MuscleBodyMap muscles={heat} scale={0.42} side={side} variant="soft" />
                 </View>
-                <Text style={styles.stepText}>{step}</Text>
+                <View style={{ flex: 1, gap: 6 }}>
+                  {lib ? (
+                    <>
+                      <Text variant="footnote" tone="tertiary">
+                        Primary
+                      </Text>
+                      <Text variant="headline">{lib.primary.join(', ')}</Text>
+                      {lib.secondary.length ? (
+                        <>
+                          <Text variant="footnote" tone="tertiary" style={{ marginTop: 6 }}>
+                            Secondary
+                          </Text>
+                          <Text variant="callout" tone="secondary">
+                            {lib.secondary.join(', ')}
+                          </Text>
+                        </>
+                      ) : null}
+                    </>
+                  ) : (
+                    <View style={styles.chips}>
+                      {muscles.map((m) => (
+                        <View key={m} style={styles.chip}>
+                          <Text variant="subhead">{muscleLabel(m)}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
               </View>
-            ))}
-          </Card>
-        )}
+            </>
+          ) : null}
 
-        {/* Form Tips */}
-        {exercise.form_tips.length > 0 && (
-          <Card title="Form Tips" style={styles.sectionCard}>
-            {exercise.form_tips.map((tip, i) => (
-              <View key={i} style={styles.tipRow}>
-                <Ionicons name="checkmark-circle" size={14} color={colors.accentGreen} />
-                <Text style={styles.tipText}>{tip}</Text>
-              </View>
-            ))}
-          </Card>
-        )}
+          {steps.length ? (
+            <>
+              <Text variant="section" style={styles.h}>
+                How to
+              </Text>
+              {steps.map((step, i) => (
+                <Animated.View key={i} entering={FadeInDown.delay(i * 50).duration(300)} style={styles.step}>
+                  <View style={styles.num}>
+                    <Text variant="subhead" tabular>
+                      {i + 1}
+                    </Text>
+                  </View>
+                  <Text variant="body" style={{ flex: 1 }}>
+                    {step}
+                  </Text>
+                </Animated.View>
+              ))}
+            </>
+          ) : null}
 
-        {/* Muscle Groups */}
-        {exercise.muscle_groups && exercise.muscle_groups.length > 0 && (
-          <Card title="Muscle Groups" style={styles.sectionCard}>
-            <View style={styles.pillRow}>
-              {exercise.muscle_groups.map((group, i) => (
-                <View key={i} style={styles.musclePill}>
-                  <Text style={styles.musclePillText}>{group}</Text>
+          {mistakes.length ? (
+            <>
+              <Text variant="section" style={styles.h}>
+                Common mistakes
+              </Text>
+              {mistakes.map((m, i) => (
+                <View key={i} style={styles.tip}>
+                  <Icon name="alert" size={17} color={color.flame} style={{ marginTop: 2 }} />
+                  <Text variant="body" tone="secondary" style={{ flex: 1 }}>
+                    {m}
+                  </Text>
                 </View>
               ))}
-            </View>
-          </Card>
-        )}
+            </>
+          ) : null}
 
-        {/* Equipment */}
-        {exercise.equipment.length > 0 && (
-          <Card title="Equipment Needed" style={styles.sectionCard}>
-            {exercise.equipment.map((eq, i) => (
-              <View key={i} style={styles.tipRow}>
-                <Ionicons name="barbell-outline" size={14} color={colors.textMuted} />
-                <Text style={styles.tipText}>{eq}</Text>
+          {!lib?.mistakes.length && ex.form_tips.length ? (
+            <>
+              <Text variant="section" style={styles.h}>
+                Form cues
+              </Text>
+              {ex.form_tips.map((tip, i) => (
+                <View key={i} style={styles.tip}>
+                  <View style={styles.dot} />
+                  <Text variant="body" tone="secondary" style={{ flex: 1 }}>
+                    {tip}
+                  </Text>
+                </View>
+              ))}
+            </>
+          ) : null}
+
+          {fromLibrary && lib?.benefits.length ? (
+            <>
+              <Text variant="section" style={styles.h}>
+                Why it works
+              </Text>
+              {lib.benefits.map((b, i) => (
+                <View key={i} style={styles.tip}>
+                  <Icon name="check" size={16} color={color.accent} weight="bold" style={{ marginTop: 3 }} />
+                  <Text variant="body" tone="secondary" style={{ flex: 1 }}>
+                    {b}
+                  </Text>
+                </View>
+              ))}
+            </>
+          ) : null}
+
+          {!fromLibrary && ex.equipment.length ? (
+            <>
+              <Text variant="section" style={styles.h}>
+                Equipment
+              </Text>
+              <View style={styles.chips}>
+                {ex.equipment.map((e) => (
+                  <View key={e} style={styles.chip}>
+                    <Text variant="subhead">{cap(e)}</Text>
+                  </View>
+                ))}
               </View>
-            ))}
-            <Text style={styles.equipmentAccess}>
-              Access level: {exercise.equipment_access.toUpperCase()}
-            </Text>
-          </Card>
-        )}
+            </>
+          ) : null}
 
-        {/* Progression */}
-        {exercise.progression_rules && (
-          <Card title="Progression" style={styles.sectionCard}>
-            <Text style={styles.description}>
-              Increase by{' '}
-              {exercise.progression_rules.increment_reps
-                ? `${exercise.progression_rules.increment_reps} reps`
-                : exercise.progression_rules.increment_duration
-                ? `${exercise.progression_rules.increment_duration} seconds`
-                : `${exercise.progression_rules.increment_sets} sets`}
-              {' '}every {exercise.progression_rules.frequency}.
-            </Text>
-          </Card>
-        )}
-
-        {/* Log Button */}
-        <TouchableOpacity style={styles.logBtn} onPress={() => { hapticMedium(); setShowLogModal(true); }}>
-          <Text style={styles.logBtnText} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>Log Exercise</Text>
-        </TouchableOpacity>
+          {usedIn.length ? (
+            <>
+              <Text variant="section" style={styles.h}>
+                In your programs
+              </Text>
+              {usedIn.map((e) => (
+                <Text key={e.id} variant="body" tone="secondary" style={{ marginBottom: 6 }}>
+                  {e.name}
+                </Text>
+              ))}
+            </>
+          ) : null}
+        </View>
       </ScrollView>
 
-      {showLogModal && (
-        <RepLogModal
-          visible={showLogModal}
-          exercise={exercise}
-          onSave={handleLog}
-          onClose={() => setShowLogModal(false)}
-        />
-      )}
-    </SafeAreaView>
+      {fromLibrary ? (
+        <View style={[styles.footer, { paddingBottom: insets.bottom + space.xs }]}>
+          <Button title="Add to a workout" icon="plus" onPress={addToWorkout} />
+        </View>
+      ) : null}
+    </View>
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    padding: spacing.md,
-    paddingBottom: spacing.xxl,
-  },
-  sectionCard: {
-    marginBottom: spacing.lg,
-  },
-  emptyContainer: {
-    flex: 1,
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: color.bg },
+  body: { paddingHorizontal: space.gutter + 4, paddingTop: space.lg },
+  stats: { flexDirection: 'row', paddingVertical: space.lg, marginTop: space.sm },
+  h: { marginTop: space.xl, marginBottom: space.md },
+  muscleRow: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
+  bodyTile: {
+    width: 110,
+    height: 150,
+    borderRadius: radius.md,
+    borderCurve: 'continuous',
+    backgroundColor: color.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing.lg,
-    gap: spacing.sm,
+    overflow: 'hidden',
   },
-  errorTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: colors.textPrimary,
-    textAlign: 'center',
-  },
-  errorText: {
-    color: colors.textMuted,
-    textAlign: 'center',
-    fontSize: 16,
-    lineHeight: 22,
-    maxWidth: 320,
-  },
-  errorButton: {
-    width: '100%',
-    maxWidth: 320,
-    marginTop: spacing.md,
-  },
-  hero: {
-    alignItems: 'center',
-    paddingVertical: spacing.lg,
-  },
-  illustration: {
-    marginBottom: spacing.sm,
-  },
-  name: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    textAlign: 'center',
-  },
-  category: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.textMuted,
-    letterSpacing: 1.2,
-    marginTop: spacing.xs,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.md,
-  },
-  statPill: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.sm,
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: spacing.xs + 2,
-    alignItems: 'center',
-    minWidth: 54,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.cardBorder,
-  },
-  restPill: {
-    borderColor: colors.cardBorder,
-  },
-  statValue: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  restValue: {
-    color: colors.accent,
-  },
-  statLabel: {
-    fontSize: 10,
-    fontWeight: '500',
-    color: colors.textMuted,
-    letterSpacing: 1,
-    marginTop: 2,
-    textTransform: 'uppercase',
-  },
-  description: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
-  stepRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: spacing.sm + 2,
-    gap: spacing.sm,
-  },
-  stepNumber: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: `${colors.accent}1A`,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepNumberText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.accent,
-  },
-  stepText: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.textPrimary,
-    lineHeight: 20,
-  },
-  tipRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.xs + 2,
-  },
-  tipText: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  pillRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-  },
-  musclePill: {
-    backgroundColor: colors.backgroundSecondary,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.cardBorder,
-    borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-  },
-  musclePillText: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: colors.textSecondary,
-    textTransform: 'capitalize',
-  },
-  equipmentAccess: {
-    fontSize: 11,
-    color: colors.textMuted,
-    marginTop: spacing.sm,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
-  demoBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.card,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.cardBorder,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.sm + 2,
-    marginBottom: spacing.md,
-  },
-  demoBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
-  logBtn: {
-    backgroundColor: colors.accent,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.sm + 4,
-    alignItems: 'center',
-    marginTop: spacing.lg,
-  },
-  logBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.background,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
+  step: { flexDirection: 'row', gap: 14, marginBottom: 14, alignItems: 'flex-start' },
+  num: { width: 30, height: 30, borderRadius: 15, backgroundColor: color.surface, alignItems: 'center', justifyContent: 'center' },
+  tip: { flexDirection: 'row', gap: 12, marginBottom: 12, alignItems: 'flex-start' },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: color.accent, marginTop: 9 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: { height: 34, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: color.surface, justifyContent: 'center' },
+  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: space.md, paddingTop: space.md, backgroundColor: color.bg },
 });

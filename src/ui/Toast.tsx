@@ -1,0 +1,79 @@
+import React, { useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { create } from 'zustand';
+import { Icon, type IconName } from './Icon';
+import { Text } from './Text';
+import { color, motion, space } from './tokens';
+
+type Tone = 'success' | 'info' | 'error';
+interface ToastState {
+  id: number;
+  message: string | null;
+  tone: Tone;
+  icon?: IconName;
+  show: (message: string, opts?: { tone?: Tone; icon?: IconName }) => void;
+  clear: () => void;
+}
+
+export const useToast = create<ToastState>((set) => ({
+  id: 0,
+  message: null,
+  tone: 'success',
+  show: (message, opts) => set((s) => ({ id: s.id + 1, message, tone: opts?.tone ?? 'success', icon: opts?.icon })),
+  clear: () => set({ message: null }),
+}));
+
+export const toast = (message: string, opts?: { tone?: Tone; icon?: IconName }) => useToast.getState().show(message, opts);
+
+const tones: Record<Tone, string> = { success: '#1FA84F', info: color.accent, error: color.danger };
+
+/** Full-width banner that drops from under the status bar, then retreats. */
+export function ToastHost() {
+  const { id, message, tone, icon, clear } = useToast();
+  const insets = useSafeAreaInsets();
+  const y = useSharedValue(-160);
+
+  useEffect(() => {
+    if (!message) return;
+    y.set(-160);
+    y.set(withSpring(0, motion.sheet));
+    y.set(
+      withDelay(
+        2600,
+        withTiming(-160, { duration: 260, easing: motion.easeOut }, (done) => {
+          if (done) scheduleOnRN(clear);
+        }),
+      ),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  const style = useAnimatedStyle(() => ({ transform: [{ translateY: y.get() }] }));
+  if (!message) return null;
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      accessibilityLiveRegion="polite"
+      style={[styles.toast, { paddingTop: insets.top + 6, backgroundColor: tones[tone] }, style]}
+    >
+      <View style={styles.row}>
+        <View style={styles.check}>
+          <Icon name={icon ?? (tone === 'error' ? 'alert' : 'check')} size={15} color={tones[tone]} weight="bold" />
+        </View>
+        <Text variant="headline" style={{ flex: 1 }} numberOfLines={2}>
+          {message}
+        </Text>
+      </View>
+    </Animated.View>
+  );
+}
+
+const styles = StyleSheet.create({
+  toast: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1000, paddingBottom: 14, paddingHorizontal: space.gutter },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  check: { width: 26, height: 26, borderRadius: 13, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+});

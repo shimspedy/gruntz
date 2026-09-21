@@ -1,352 +1,128 @@
-import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRoute, useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RouteProp } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
-import { hapticLight } from '../utils/haptics';
-import { useFadeInUp } from '../utils/animations';
-import type { ThemeColors } from '../theme';
-import { Card } from '../components/Card';
-import { GameIcon } from '../components/GameIcon';
-import { MissionButton } from '../components/MissionButton';
-import { getMovementCard } from '../data/movementCards';
+import React from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { getExerciseById } from '../data/exercises';
-import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
-import type { MissionsStackParamList } from '../types/navigation';
-
-type CardDetailRoute = RouteProp<MissionsStackParamList, 'CardDetail'>;
-type Nav = NativeStackNavigationProp<MissionsStackParamList, 'CardDetail'>;
+import { getMovementCard } from '../data/movementCards';
+import { muscleLabel } from '../features/plan';
+import type { RootStackParamList } from '../types/navigation';
+import { ExerciseThumb } from '../ui/ExerciseArt';
+import { Icon } from '../ui/Icon';
+import { EmptyState, Hairline, NavHeader, Stat } from '../ui/Layout';
+import { Tap } from '../ui/Pressable';
+import { Text } from '../ui/Text';
+import { color, motion, radius, space } from '../ui/tokens';
 
 export default function CardDetailScreen() {
-  const colors = useColors();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-  const heroAnim = useFadeInUp(500);
-  const route = useRoute<CardDetailRoute>();
-  const navigation = useNavigation<Nav>();
-  const card = getMovementCard(route.params.cardId);
-  const { bottomContentPadding } = useFloatingTabBarSpacing();
+  const navigation = useNavigation();
+  const { params } = useRoute<RouteProp<RootStackParamList, 'CardDetail'>>();
+  const insets = useSafeAreaInsets();
+  const card = getMovementCard(params.cardId);
 
   if (!card) {
     return (
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.emptyContainer}>
-          <Text style={styles.errorTitle}>Card unavailable</Text>
-          <Text style={styles.errorText}>
-            This training card could not be loaded. Go back to the card library and reopen it.
-          </Text>
-          <MissionButton title="BACK TO CARDS" onPress={() => navigation.navigate('WorkoutCards')} style={styles.errorButton} />
-        </View>
-      </SafeAreaView>
+      <View style={styles.screen}>
+        <NavHeader />
+        <EmptyState icon="alert" title="Card unavailable" body="This training card couldn’t be loaded. Go back and open it again." />
+      </View>
     );
   }
 
-  const navigateToExercise = (exerciseId: string) => {
-    hapticLight();
-    navigation.navigate('ExerciseDetail', { exerciseId });
-  };
+  const exerciseCount = card.sections.reduce((n, s) => n + s.exercises.length, 0);
+  let row = 0;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: bottomContentPadding }]}>
-        {/* Hero */}
-        <Animated.View style={[styles.hero, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
-          <GameIcon name={card.icon} size={48} color={colors.accent} style={styles.icon} />
-          <Text style={styles.cardLabel} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>
-            {card.category === 'swim' ? 'SWIM' : 'MOVEMENT'} CARD #{card.card_number}
+    <View style={styles.screen}>
+      <NavHeader title={`${card.category === 'swim' ? 'Swim' : 'Movement'} card ${card.card_number}`} />
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + space.xxl }} showsVerticalScrollIndicator={false}>
+        <View style={styles.head}>
+          <Text variant="title">{card.name}</Text>
+          <Text variant="body" tone="secondary" style={{ marginTop: 6 }}>
+            {card.description}
           </Text>
-          <Text style={styles.cardName} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{card.name}</Text>
-          <Text style={styles.description}>{card.description}</Text>
-        </Animated.View>
-
-        {/* Quick Stats */}
-        <View style={styles.statsRow}>
-          <View style={styles.statPill}>
-            <Text style={styles.statValue}>{card.estimated_duration}</Text>
-            <Text style={styles.statLabel}>MIN</Text>
+          <View style={styles.stats}>
+            <Stat label="Duration" value={`${card.estimated_duration} min`} accent style={{ flex: 1 }} />
+            <Stat label="Exercises" value={String(exerciseCount)} style={{ flex: 1 }} />
+            <Stat label="Level" value={card.difficulty.charAt(0).toUpperCase() + card.difficulty.slice(1)} style={{ flex: 1 }} />
           </View>
-          <View style={styles.statPill}>
-            <Text style={styles.statValue}>{card.total_rounds}</Text>
-            <Text style={styles.statLabel}>ROUNDS</Text>
-          </View>
-          <View style={styles.statPill}>
-            <Text style={styles.statValue}>{card.sections.reduce((sum, s) => sum + s.exercises.length, 0)}</Text>
-            <Text style={styles.statLabel}>EXERCISES</Text>
-          </View>
-          <View style={[styles.statPill, styles.diffPill]}>
-            <Text style={[styles.statValue, { fontSize: 12 }]}>{card.difficulty.toUpperCase()}</Text>
-            <Text style={styles.statLabel}>LEVEL</Text>
-          </View>
-        </View>
-
-        {/* Muscle Groups */}
-        <View style={styles.muscleRow}>
-          {card.target_muscle_groups.map((group, i) => (
-            <View key={i} style={styles.musclePill}>
-              <Text style={styles.musclePillText}>{group}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Sections */}
-        {card.sections.map((section) => (
-          <View key={section.id} style={styles.sectionContainer}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionName}>{section.name}</Text>
-              <View style={styles.sectionMeta}>
-                <Text style={styles.sectionRounds}>{section.rounds} round{section.rounds > 1 ? 's' : ''}</Text>
-                {section.rest_between_rounds && (
-                  <View style={styles.restWrap}>
-                    <GameIcon name="time" size={12} color={colors.accent} variant="minimal" />
-                    <Text style={styles.sectionRest}>{section.rest_between_rounds}s rest</Text>
-                  </View>
-                )}
+          <Hairline />
+          <View style={styles.chips}>
+            {card.target_muscle_groups.map((m) => (
+              <View key={m} style={styles.chip}>
+                <Text variant="subhead">{muscleLabel(m)}</Text>
               </View>
+            ))}
+          </View>
+        </View>
+
+        {card.sections.map((section) => (
+          <View key={section.id} style={{ marginTop: space.xl }}>
+            <View style={styles.sectionHead}>
+              <Text variant="section">{section.name}</Text>
+              <Text variant="subhead" tone="secondary">
+                {section.rounds > 1 ? `${section.rounds} rounds` : '1 round'}
+                {section.rest_between_rounds ? ` · ${section.rest_between_rounds}s rest` : ''}
+              </Text>
             </View>
-            {section.notes && (
-              <Text style={styles.sectionNotes}>{section.notes}</Text>
-            )}
-            <Card>
-              {section.exercises.map((cardEx, i) => {
-                const exercise = getExerciseById(cardEx.exercise_id);
-                if (!exercise) return null;
-                const detail = cardEx.prescribed_reps
-                  ? `${cardEx.prescribed_sets || 1} × ${cardEx.prescribed_reps} reps`
-                  : cardEx.prescribed_duration
-                  ? `${cardEx.prescribed_duration}s`
-                  : exercise.distance || '';
-                return (
-                  <TouchableOpacity
-                    key={`${cardEx.exercise_id}_${i}`}
-                    style={styles.exerciseRow}
-                    activeOpacity={0.7}
-                    onPress={() => navigateToExercise(cardEx.exercise_id)}
+            {section.notes ? (
+              <Text variant="callout" tone="tertiary" style={{ paddingHorizontal: space.gutter + 4, marginBottom: space.sm }}>
+                {section.notes}
+              </Text>
+            ) : null}
+            {section.exercises.map((ce, i) => {
+              const ex = getExerciseById(ce.exercise_id);
+              if (!ex) return null;
+              const detail = ce.prescribed_reps
+                ? `${ce.prescribed_sets || 1} ${(ce.prescribed_sets || 1) === 1 ? 'set' : 'sets'} x ${ce.prescribed_reps} reps`
+                : ce.prescribed_duration
+                  ? `${ce.prescribed_duration}s`
+                  : ex.distance || '';
+              const delay = Math.min(row++, 8) * motion.stagger;
+              return (
+                <Animated.View key={`${ce.exercise_id}-${i}`} entering={FadeInDown.delay(delay).duration(300)}>
+                  <Tap
+                    feedback="highlight"
+                    baseColor={color.bg}
+                    pressedColor={color.bgRaised}
+                    style={styles.row}
+                    onPress={() => navigation.navigate('ExerciseDetail', { exerciseId: ex.id })}
+                    accessibilityLabel={`${ex.name}, ${detail}`}
                   >
-                    <GameIcon name={exercise.illustration || exercise.category} size={20} color={colors.textMuted} style={styles.exIcon} />
-                    <View style={styles.exInfo}>
-                      <Text style={styles.exName}>{exercise.name}</Text>
-                      <View style={styles.exDetailRow}>
-                        {detail ? <Text style={styles.exDetail}>{detail}</Text> : null}
-                        {exercise.rest_seconds > 0 && (
-                          <View style={styles.restWrap}>
-                            <GameIcon name="time" size={12} color={colors.accent} variant="minimal" />
-                            <Text style={styles.exRest}>{exercise.rest_seconds}s rest</Text>
-                          </View>
-                        )}
-                      </View>
-                      {cardEx.notes && (
-                        <Text style={styles.exNotes}>{cardEx.notes}</Text>
-                      )}
+                    <ExerciseThumb exercise={ex} size={72} />
+                    <View style={{ flex: 1, marginLeft: space.md }}>
+                      {detail ? (
+                        <Text variant="callout" tone="secondary">
+                          {detail}
+                        </Text>
+                      ) : null}
+                      <Text variant="headline" style={{ fontSize: 18, marginTop: 2 }} numberOfLines={2}>
+                        {ex.name}
+                      </Text>
+                      {ce.notes ? (
+                        <Text variant="footnote" tone="tertiary" style={{ marginTop: 2 }} numberOfLines={2}>
+                          {ce.notes}
+                        </Text>
+                      ) : null}
                     </View>
-                    <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
-                  </TouchableOpacity>
-                );
-              })}
-            </Card>
+                    <Icon name="info" size={22} color={color.textSecondary} />
+                  </Tap>
+                </Animated.View>
+              );
+            })}
           </View>
         ))}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    padding: spacing.md,
-    paddingBottom: spacing.xxl,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.lg,
-    gap: spacing.sm,
-  },
-  errorTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: colors.textPrimary,
-    textAlign: 'center',
-  },
-  errorText: {
-    color: colors.textMuted,
-    textAlign: 'center',
-    fontSize: 16,
-    lineHeight: 22,
-    maxWidth: 320,
-  },
-  errorButton: {
-    width: '100%',
-    maxWidth: 320,
-    marginTop: spacing.md,
-  },
-  hero: {
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-  },
-  icon: {
-    marginBottom: spacing.xs,
-  },
-  cardLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.textMuted,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
-  cardName: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginTop: spacing.xs,
-    lineHeight: 28,
-  },
-  description: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 19,
-    marginTop: spacing.sm,
-    paddingHorizontal: spacing.md,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.md,
-  },
-  statPill: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.sm,
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: spacing.xs + 2,
-    alignItems: 'center',
-    minWidth: 56,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.cardBorder,
-  },
-  diffPill: {
-    borderColor: colors.cardBorder,
-  },
-  statValue: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  statLabel: {
-    fontSize: 10,
-    fontWeight: '500',
-    color: colors.textMuted,
-    letterSpacing: 1,
-    marginTop: 2,
-    textTransform: 'uppercase',
-  },
-  muscleRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.md,
-  },
-  musclePill: {
-    backgroundColor: colors.backgroundSecondary,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.cardBorder,
-    borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-  },
-  musclePillText: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: colors.textSecondary,
-    textTransform: 'capitalize',
-  },
-  sectionContainer: {
-    marginBottom: spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.xs,
-  },
-  sectionName: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
-  },
-  sectionMeta: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    alignItems: 'center',
-  },
-  sectionRounds: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: colors.textSecondary,
-  },
-  sectionRest: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: colors.accent,
-  },
-  restWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  sectionNotes: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginBottom: spacing.sm,
-  },
-  exerciseRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.sm + 2,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.cardBorder,
-    gap: spacing.sm + 2,
-  },
-  exIcon: {
-    marginRight: 0,
-  },
-  exInfo: {
-    flex: 1,
-  },
-  exName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  exDetailRow: {
-    flexDirection: 'row',
-    gap: spacing.sm + 2,
-    marginTop: 2,
-  },
-  exDetail: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  exRest: {
-    fontSize: 11,
-    color: colors.accent,
-  },
-  exNotes: {
-    fontSize: 11,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: color.bg },
+  head: { paddingHorizontal: space.gutter + 4, paddingTop: space.md },
+  stats: { flexDirection: 'row', paddingVertical: space.lg, marginTop: space.sm },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: space.lg },
+  chip: { height: 34, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: color.surface, justifyContent: 'center' },
+  sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', paddingHorizontal: space.gutter + 4, marginBottom: space.sm },
+  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.gutter + 4, paddingVertical: 12 },
 });

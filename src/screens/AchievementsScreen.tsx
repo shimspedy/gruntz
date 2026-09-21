@@ -1,188 +1,139 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, CommonActions } from '@react-navigation/native';
-import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
-import type { ThemeColors } from '../theme';
-import { Card } from '../components/Card';
-import { GameIcon } from '../components/GameIcon';
-import { MissionButton } from '../components/MissionButton';
+import { SectionList, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { achievements } from '../data/achievements';
 import { useUserStore } from '../store/useUserStore';
-import { achievements as allAchievements } from '../data/achievements';
-import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
+import type { Achievement, UserProgress } from '../types';
+import { Icon, type IconName } from '../ui/Icon';
+import { NavHeader } from '../ui/Layout';
+import { Bar } from '../ui/Progress';
+import { Text } from '../ui/Text';
+import { color, radius, space } from '../ui/tokens';
+
+const CATEGORY: Record<Achievement['category'], { label: string; icon: IconName }> = {
+  workout: { label: 'Missions', icon: 'dumbbell' },
+  streak: { label: 'Streaks', icon: 'flame' },
+  xp: { label: 'Experience', icon: 'bolt' },
+  rank: { label: 'Rank', icon: 'medal' },
+  record: { label: 'Volume', icon: 'chart' },
+  program: { label: 'Programs', icon: 'calendar' },
+};
+
+function currentValue(a: Achievement, p: UserProgress): number | null {
+  switch (a.condition_type) {
+    case 'workouts_completed':
+      return p.workouts_completed;
+    case 'streak_days':
+      return p.streak_days;
+    case 'total_xp':
+      return p.current_xp;
+    case 'level':
+      return p.current_level;
+    default:
+      if (a.condition_type.startsWith('exercise_total_')) {
+        const id = a.condition_type.replace('exercise_total_', '');
+        const ids = id === 'pushups' ? ['pushups', 'strict_pushups', 'close_grip_pushups'] : [id];
+        return ids.reduce((s, x) => s + (p.exercises_completed[x] || 0), 0);
+      }
+      return null;
+  }
+}
 
 export default function AchievementsScreen() {
-  const colors = useColors();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-  const userAchievements = useUserStore((s) => s.achievements);
-  const navigation = useNavigation();
-  const { bottomContentPadding } = useFloatingTabBarSpacing();
+  const insets = useSafeAreaInsets();
+  const progress = useUserStore((s) => s.progress);
+  const unlockedList = useUserStore((s) => s.achievements);
+  const unlocked = useMemo(() => new Map(unlockedList.filter((a) => a.unlocked).map((a) => [a.achievement_id, a.unlocked_at])), [unlockedList]);
 
-  const isUnlocked = (achievementId: string) =>
-    userAchievements.some((a) => a.achievement_id === achievementId && a.unlocked);
-
-  const unlockedCount = userAchievements.filter((a) => a.unlocked).length;
-  const hasNoUnlocks = unlockedCount === 0;
+  const sections = useMemo(() => {
+    const groups = new Map<Achievement['category'], Achievement[]>();
+    achievements.forEach((a) => groups.set(a.category, [...(groups.get(a.category) ?? []), a]));
+    return Array.from(groups.entries()).map(([cat, data]) => ({
+      title: CATEGORY[cat]?.label ?? cat,
+      icon: CATEGORY[cat]?.icon ?? 'trophy',
+      data: [...data].sort((a, b) => Number(unlocked.has(b.id)) - Number(unlocked.has(a.id)) || a.condition_value - b.condition_value),
+    }));
+  }, [unlocked]);
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: bottomContentPadding }]}>
-        <Text style={styles.title} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>Achievements</Text>
-        <Text style={styles.subtitle}>
-          {unlockedCount} / {allAchievements.length} Unlocked
-        </Text>
-
-        {hasNoUnlocks && (
-          <View style={styles.emptyHero}>
-            <View style={styles.emptyIcon}>
-              <GameIcon name="trophy" size={36} color={colors.accentGold} />
+    <View style={styles.screen}>
+      <NavHeader title="Achievements" />
+      <SectionList
+        sections={sections}
+        keyExtractor={(a) => a.id}
+        stickySectionHeadersEnabled={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + space.xxl, paddingHorizontal: space.md }}
+        ListHeaderComponent={
+          <View style={styles.summary}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
+              <Text variant="title" tabular>
+                {unlocked.size}
+                <Text variant="body" tone="secondary">
+                  {' '}
+                  of {achievements.length} unlocked
+                </Text>
+              </Text>
             </View>
-            <Text style={styles.emptyTitle}>No Unlocks Yet</Text>
-            <Text style={styles.emptyBody}>
-              Complete your first mission to unlock the Starter badge and begin filling your trophy wall.
+            <Bar progress={unlocked.size / achievements.length} height={6} style={{ marginTop: space.md }} />
+          </View>
+        }
+        renderSectionHeader={({ section }) => (
+          <View style={styles.sectionHead}>
+            <Icon name={section.icon as IconName} size={18} color={color.textSecondary} />
+            <Text variant="overline" tone="secondary">
+              {section.title}
             </Text>
-            <MissionButton
-              title="START FIRST MISSION"
-              onPress={() =>
-                navigation.dispatch(
-                  CommonActions.navigate({ name: 'HomeTab' as never }),
-                )
-              }
-              variant="primary"
-              style={{ marginTop: spacing.lg }}
-            />
           </View>
         )}
-
-        {allAchievements.map((achievement) => {
-          const unlocked = isUnlocked(achievement.id);
+        renderItem={({ item, index, section }) => {
+          const got = unlocked.has(item.id);
+          const value = currentValue(item, progress);
+          const ratio = got ? 1 : value != null ? Math.min(1, value / item.condition_value) : 0;
+          const first = index === 0;
+          const last = index === section.data.length - 1;
           return (
-            <Card
-              key={achievement.id}
-              style={[styles.achievementCard, unlocked && styles.achievementUnlocked]}
-            >
-              <View style={styles.row}>
-                <GameIcon
-                  name={achievement.icon}
-                  size={24}
-                  color={unlocked ? colors.accentGold : colors.textMuted}
-                  style={[styles.icon, !unlocked && styles.iconLocked]}
-                />
-                <View style={styles.info}>
-                  <Text style={[styles.name, !unlocked && styles.nameLocked]}>
-                    {achievement.name}
-                  </Text>
-                  <Text style={styles.description}>{achievement.description}</Text>
-                </View>
-                {unlocked ? (
-                  <GameIcon name="check" size={14} color={colors.accentGreen} style={styles.unlockedBadge} />
-                ) : (
-                  <Text style={styles.xpReward}>+{achievement.xp_reward} XP</Text>
-                )}
+            <View style={[styles.row, first && styles.first, last && styles.last, !last && styles.divider]}>
+              <View style={[styles.badge, got ? styles.badgeOn : null]}>
+                <Icon name={got ? 'trophy' : 'lock'} size={20} color={got ? color.accent : color.textTertiary} />
               </View>
-            </Card>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
+                  <Text variant="headline" style={{ flex: 1, color: got ? color.text : color.textSecondary }} numberOfLines={1}>
+                    {item.name}
+                  </Text>
+                  <Text variant="subhead" tone={got ? 'accent' : 'tertiary'} tabular>
+                    +{item.xp_reward} XP
+                  </Text>
+                </View>
+                <Text variant="subhead" tone="tertiary" style={{ marginTop: 2 }} numberOfLines={2}>
+                  {item.description}
+                </Text>
+                {!got && value != null ? (
+                  <View style={styles.progress}>
+                    <Bar progress={ratio} height={4} style={{ flex: 1 }} trackColor={color.surfaceHigh} />
+                    <Text variant="caption" tone="tertiary" tabular>
+                      {Math.min(value, item.condition_value).toLocaleString()}/{item.condition_value.toLocaleString()}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+            </View>
           );
-        })}
-      </ScrollView>
-    </SafeAreaView>
+        }}
+      />
+    </View>
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    padding: spacing.md,
-    paddingBottom: spacing.xxl,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.xs,
-    lineHeight: 30,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginBottom: spacing.lg,
-  },
-  emptyHero: {
-    alignItems: 'center',
-    padding: spacing.lg,
-    borderRadius: borderRadius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.cardBorder,
-    backgroundColor: colors.card,
-    marginBottom: spacing.lg,
-  },
-  emptyIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: borderRadius.full,
-    backgroundColor: `${colors.accentGold}0D`,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
-  },
-  emptyTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
-  },
-  emptyBody: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 19,
-  },
-  achievementCard: {
-    marginBottom: spacing.sm,
-    opacity: 0.6,
-  },
-  achievementUnlocked: {
-    opacity: 1,
-    borderColor: `${colors.accentGold}55`,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  icon: {
-    marginRight: spacing.sm + 2,
-  },
-  iconLocked: {
-    opacity: 0.4,
-  },
-  info: {
-    flex: 1,
-  },
-  name: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  nameLocked: {
-    color: colors.textMuted,
-  },
-  description: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: 2,
-    lineHeight: 17,
-  },
-  unlockedBadge: {
-    marginLeft: spacing.sm,
-  },
-  xpReward: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.accentGold,
-  },
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: color.bg },
+  summary: { paddingHorizontal: 8, paddingTop: space.md, paddingBottom: space.md },
+  sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 8, marginTop: space.xl, marginBottom: 10 },
+  row: { flexDirection: 'row', gap: 14, padding: space.md, backgroundColor: color.surface },
+  first: { borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg },
+  last: { borderBottomLeftRadius: radius.lg, borderBottomRightRadius: radius.lg },
+  divider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: color.line },
+  badge: { width: 44, height: 44, borderRadius: 22, backgroundColor: color.surfaceHigh, alignItems: 'center', justifyContent: 'center' },
+  badgeOn: { backgroundColor: color.accentSoft },
+  progress: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10 },
 });

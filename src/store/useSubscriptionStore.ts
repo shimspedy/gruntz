@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { GRUNTZ_TRIAL_DAYS } from '../config/monetization';
+import { GRUNTZ_TRIAL_DAYS, DEV_UNLOCK } from '../config/monetization';
 import {
   addRevenueCatCustomerInfoListener,
   getEntitlementAccess,
@@ -103,11 +103,11 @@ export function hasTrialAccess(trialStartedAt: string | null) {
 }
 
 export function hasTrainingAccess(state: Pick<SubscriptionState, 'trialStartedAt' | 'entitlementActive'>) {
-  return state.entitlementActive || hasTrialAccess(state.trialStartedAt);
+  return DEV_UNLOCK || state.entitlementActive || hasTrialAccess(state.trialStartedAt);
 }
 
 export function getAccessState(state: Pick<SubscriptionState, 'trialStartedAt' | 'entitlementActive'>): AccessState {
-  if (state.entitlementActive) {
+  if (DEV_UNLOCK || state.entitlementActive) {
     return 'subscriber';
   }
   if (hasTrialAccess(state.trialStartedAt)) {

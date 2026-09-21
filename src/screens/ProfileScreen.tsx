@@ -1,521 +1,284 @@
-import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
-import { useFadeInUp } from '../utils/animations';
-import { useColors, spacing, borderRadius, MAX_FONT_MULTIPLIER } from '../theme';
-import type { ThemeColors } from '../theme';
-import { GlassCard } from '../components/GlassCard';
-import { GameIcon } from '../components/GameIcon';
-import { XPBar } from '../components/XPBar';
-import { useUserStore } from '../store/useUserStore';
-import { useProgramStore } from '../store/useProgramStore';
-import { getXPToNextLevel } from '../utils/xp';
-import { getRankInfo } from '../data/ranks';
+import React, { useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useNavigation, useScrollToTop } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { getProgramById } from '../data/programs';
-import { getDisplayedMonthlyPrice } from '../config/monetization';
-import { hapticLight } from '../utils/haptics';
-import { shareStreak } from '../utils/socialActions';
-import { useAdaptiveLayout } from '../hooks/useAdaptiveLayout';
-import { useFloatingTabBarSpacing } from '../hooks/useFloatingTabBarSpacing';
+import { claimedDates } from '../features/plan';
+import { useTabChromeInset } from '../navigation/TabBar';
+import { useProgramStore } from '../store/useProgramStore';
 import { getAccessState, getTrialDaysRemaining, useSubscriptionStore } from '../store/useSubscriptionStore';
-import type { ProfileStackParamList } from '../types/navigation';
+import { useUserStore } from '../store/useUserStore';
+import { Button } from '../ui/Button';
+import { Icon, type IconName } from '../ui/Icon';
+import { Group, IconButton, Row } from '../ui/Layout';
+import { Tap } from '../ui/Pressable';
+import { RankBadge } from '../ui/RankBadge';
+import { Sheet } from '../ui/Sheet';
+import { Text } from '../ui/Text';
+import { haptic } from '../ui/haptics';
+import { toast } from '../ui/Toast';
+import { color, font, motion, radius, space } from '../ui/tokens';
+import { getLocalDateKey } from '../utils/dateKey';
+import { shareStreak } from '../utils/socialActions';
 
-type Nav = NativeStackNavigationProp<ProfileStackParamList, 'Profile'>;
+const WEEKS = 8;
 
-function formatChallengeTime(seconds: number) {
-  if (!Number.isFinite(seconds) || seconds <= 0) {
-    return '0m';
-  }
-
-  const totalMinutes = Math.round(seconds / 60);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-
-  if (hours === 0) {
-    return `${minutes}m`;
-  }
-
-  return `${hours}h ${minutes}m`;
+function weeklyMissions(dates: Set<string>) {
+  const monday = new Date();
+  monday.setHours(12, 0, 0, 0);
+  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+  return Array.from({ length: WEEKS }, (_, w) => {
+    const start = new Date(monday);
+    start.setDate(monday.getDate() - (WEEKS - 1 - w) * 7);
+    let count = 0;
+    for (let d = 0; d < 7; d++) {
+      const day = new Date(start);
+      day.setDate(start.getDate() + d);
+      if (dates.has(getLocalDateKey(day))) count++;
+    }
+    return { start, count };
+  });
 }
 
 export default function ProfileScreen() {
-  const colors = useColors();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-  const heroAnim = useFadeInUp(500);
-  const { contentMaxWidth, horizontalPadding } = useAdaptiveLayout();
-  const { bottomContentPadding } = useFloatingTabBarSpacing(140);
-  const navigation = useNavigation<Nav>();
-  const { progress, profile } = useUserStore();
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+  const bottom = useTabChromeInset();
+  const ref = React.useRef<ScrollView>(null);
+  useScrollToTop(ref);
+  const profile = useUserStore((s) => s.profile);
+  const setProfile = useUserStore((s) => s.setProfile);
+  const progress = useUserStore((s) => s.progress);
+  const program = useProgramStore((s) => s.selectedProgram);
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
   const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
-  const currentOffering = useSubscriptionStore((s) => s.currentOffering);
   const openCustomerCenter = useSubscriptionStore((s) => s.openCustomerCenter);
   const openSubscriptionManagement = useSubscriptionStore((s) => s.openSubscriptionManagement);
-  const xpInfo = getXPToNextLevel(progress.current_xp);
-  const rankInfo = getRankInfo(progress.current_rank);
-  const accessState = getAccessState({ trialStartedAt, entitlementActive });
-  const trialDaysRemaining = getTrialDaysRemaining(trialStartedAt);
-  const monthlyPrice = getDisplayedMonthlyPrice(currentOffering);
+  const access = getAccessState({ trialStartedAt, entitlementActive });
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(profile?.display_name ?? '');
 
-  const { selectedProgram } = useProgramStore();
-  const activeProgram = selectedProgram ? getProgramById(selectedProgram) : null;
-  const hasAnyActivity = progress.workouts_completed > 0 || progress.total_reps > 0;
+  const weeks = useMemo(() => weeklyMissions(claimedDates(progress.claimed_missions)), [progress.claimed_missions]);
+  const thisWeek = weeks[WEEKS - 1].count;
+  const lastWeek = weeks[WEEKS - 2].count;
+  const delta = lastWeek > 0 ? Math.round(((thisWeek - lastWeek) / lastWeek) * 100) : thisWeek > 0 ? 100 : 0;
+  const max = Math.max(3, ...weeks.map((w) => w.count));
+  const fmt = (d: Date) => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const rangeEnd = new Date(weeks[WEEKS - 1].start);
+  rangeEnd.setDate(rangeEnd.getDate() + 6);
+  const programInfo = program ? getProgramById(program) : undefined;
+  const displayName = profile?.display_name || 'Recruit';
 
-  const handleMembershipPress = async () => {
-    if (accessState === 'subscriber') {
-      const result = await openCustomerCenter();
-      if (result === 'unavailable' || result === 'error') {
-        await openSubscriptionManagement();
-      }
+  const membership = async () => {
+    if (access === 'subscriber') {
+      const r = await openCustomerCenter();
+      if (r === 'unavailable' || r === 'error') await openSubscriptionManagement();
       return;
     }
     navigation.navigate('Paywall');
   };
 
-  const menuItems = [
-    {
-      label: accessState === 'subscriber' ? 'Manage Gruntz Pro' : 'Upgrade to Pro',
-      icon: 'rank',
-      onPress: async () => {
-        if (accessState === 'subscriber') {
-          const result = await openCustomerCenter();
-          if (result === 'unavailable' || result === 'error') {
-            await openSubscriptionManagement();
-          }
-          return;
-        }
-        navigation.navigate('Paywall');
-      },
-    },
-    { label: activeProgram ? `Program: ${activeProgram.name}` : 'Choose Program', icon: 'program', screen: 'ProgramSelect' as const },
-    { label: 'Service & Test Profile', icon: 'mission', screen: 'ServiceProfile' as const },
-    { label: 'Achievements', icon: 'achievement', screen: 'Achievements' as const },
-    { label: 'Leader Tools', icon: 'mission', screen: 'LeaderTools' as const },
-    {
-      label: 'Share My Streak',
-      icon: 'streak',
-      onPress: async () => {
-        await shareStreak(progress.streak_days, progress.current_rank);
-      },
-    },
-    { label: 'Settings', icon: 'settings', screen: 'Settings' as const },
-  ];
-
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[
-          styles.content,
-          {
-            maxWidth: contentMaxWidth,
-            alignSelf: 'center',
-            paddingHorizontal: horizontalPadding,
-            paddingBottom: bottomContentPadding,
-          },
-        ]}
-      >
-        {/* Profile Header */}
-        <Animated.View style={[styles.header, { opacity: heroAnim.opacity, transform: heroAnim.transform }]}>
-          <View style={styles.avatarCircle}>
-            <View style={styles.avatarGlow} />
-            <GameIcon name={rankInfo?.icon || 'rank'} size={36} color={colors.accent} style={styles.avatarEmoji} />
-          </View>
-          <Text style={styles.displayName} maxFontSizeMultiplier={MAX_FONT_MULTIPLIER}>{profile?.display_name || 'Recruit'}</Text>
-          <Text style={styles.rankText}>{progress.current_rank}</Text>
-          <Text style={styles.levelText}>Level {progress.current_level}</Text>
-          <View style={styles.streakBadge}>
-            <GameIcon name="streak" size={12} color={colors.streakFire} variant="minimal" />
-            <Text style={styles.streakText}>{progress.streak_days}-day streak</Text>
-          </View>
-        </Animated.View>
+    <ScrollView ref={ref} style={styles.screen} contentContainerStyle={{ paddingTop: insets.top, paddingBottom: bottom }} showsVerticalScrollIndicator={false}>
+      <View style={styles.topBar}>
+        <IconButton icon="pencil" label="Edit profile" onPress={() => { setName(profile?.display_name ?? ''); setEditing(true); }} />
+        <IconButton icon="gear" label="Settings" size={26} onPress={() => navigation.navigate('Settings')} />
+      </View>
 
-        {/* XP Card */}
-        <GlassCard style={styles.section}>
-          <XPBar current={xpInfo.current} required={xpInfo.required} level={progress.current_level} />
-          <Text style={styles.totalXP}>{progress.current_xp.toLocaleString()} Total XP</Text>
-        </GlassCard>
-
-        {!hasAnyActivity && (
-          <TouchableOpacity
-            style={styles.setupPrompt}
-            activeOpacity={0.85}
-            onPress={() => {
-              hapticLight();
-              navigation.navigate('ProgramSelect');
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Choose a training program"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <View style={styles.setupIcon}>
-              <GameIcon name="program" size={18} color={colors.accent} variant="minimal" animated={false} />
-            </View>
-            <View style={styles.setupBody}>
-              <Text style={styles.setupTitle}>Set your training path</Text>
-              <Text style={styles.setupText}>Pick a program so your stats and scores calibrate from real work.</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
-          </TouchableOpacity>
-        )}
-
-        {/* Membership Card */}
-        <GlassCard
-          style={styles.section}
-          variant={accessState === 'subscriber' ? 'default' : 'accent'}
-          onPress={handleMembershipPress}
-        >
-          <View style={styles.membershipBadge}>
-            {accessState === 'subscriber' ? (
-              <>
-                <GameIcon name="check" size={12} color={colors.accentGreen} variant="minimal" animated={false} />
-                <Text style={[styles.membershipBadgeText, { color: colors.accentGreen }]}>PRO</Text>
-              </>
-            ) : (
-              <>
-                <GameIcon name="lock" size={12} color={colors.accent} variant="minimal" animated={false} />
-                <Text style={styles.membershipBadgeText}>FREE</Text>
-              </>
-            )}
+      <View style={styles.identity}>
+        <View style={styles.avatar}>
+          <Text style={styles.initial}>{displayName.charAt(0).toUpperCase()}</Text>
+          <View style={styles.avatarBadge}>
+            <RankBadge rank={progress.current_rank} size={38} locked={progress.current_xp === 0} />
           </View>
-          <Text style={styles.membershipTitle}>
-            {accessState === 'subscriber'
-              ? 'Pro Member'
-              : accessState === 'trial'
-                ? `${trialDaysRemaining} Days Remaining`
-                : 'Upgrade Required'}
+        </View>
+        <View style={{ flex: 1, marginLeft: space.lg }}>
+          <Text variant="headline" style={{ fontSize: 21 }} numberOfLines={1}>
+            {displayName}
           </Text>
-          <Text style={styles.membershipText}>
-            {accessState === 'subscriber'
-              ? 'All programs, daily missions, and training cards are unlocked.'
-              : accessState === 'trial'
-                ? `Included access is active. Pro starts after trial at ${monthlyPrice}.`
-                : `Subscribe for ${monthlyPrice} to unlock all training.`}
+          <View style={styles.stats}>
+            <MiniStat label="Missions" value={progress.workouts_completed} />
+            <MiniStat label="Streak" value={progress.streak_days} />
+            <MiniStat label="Level" value={progress.current_level} />
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.chartHead}>
+        <View>
+          <Text variant="callout" tone="secondary">
+            Missions
           </Text>
-        </GlassCard>
-
-        {/* Fitness Scores */}
-        <GlassCard style={styles.section}>
-          <Text style={styles.sectionLabel}>Fitness Scores</Text>
-          {!hasAnyActivity && (
-            <Text style={styles.scoreHint}>Scores unlock after your first completed mission.</Text>
-          )}
-          <View style={styles.scoreGrid}>
-            <View style={styles.scoreItem}>
-              <Text style={[styles.scoreValue, { color: colors.accent }]}>{progress.strength_score}</Text>
-              <Text style={styles.scoreLabel}>Strength</Text>
-            </View>
-            <View style={styles.scoreItem}>
-              <Text style={[styles.scoreValue, { color: colors.accentGreen }]}>{progress.endurance_score}</Text>
-              <Text style={styles.scoreLabel}>Endurance</Text>
-            </View>
-            <View style={styles.scoreItem}>
-              <Text style={[styles.scoreValue, { color: colors.accentOrange }]}>{progress.stamina_score}</Text>
-              <Text style={styles.scoreLabel}>Stamina</Text>
-            </View>
-            <View style={styles.scoreItem}>
-              <Text style={[styles.scoreValue, { color: colors.accentGold }]}>{progress.consistency_score}</Text>
-              <Text style={styles.scoreLabel}>Consistency</Text>
+          <View style={styles.valueRow}>
+            <Text style={styles.value} tabular>
+              {thisWeek} this week
+            </Text>
+            <View style={styles.delta}>
+              <Text variant="subhead" tabular style={{ color: delta >= 0 ? color.text : color.textSecondary }}>
+                {delta > 0 ? '+' : ''}
+                {delta}%
+              </Text>
             </View>
           </View>
-        </GlassCard>
-
-        {/* Stats */}
-        <GlassCard style={styles.section}>
-          <Text style={styles.sectionLabel}>Overall Stats</Text>
-          <View style={styles.statRow}>
-            <Text style={styles.statLabel}>Missions Completed</Text>
-            <Text style={styles.statValue}>{progress.workouts_completed}</Text>
+          <Text variant="footnote" tone="tertiary">
+            {fmt(weeks[0].start)} – {fmt(rangeEnd)}
+          </Text>
+        </View>
+        <View style={{ alignItems: 'flex-end' }}>
+          <Text variant="callout" tone="secondary">
+            Period
+          </Text>
+          <Text variant="bodyMedium" style={{ marginTop: 4 }}>
+            {WEEKS} weeks
+          </Text>
+        </View>
+      </View>
+      <View style={styles.chart} accessibilityLabel={`Missions per week, last ${WEEKS} weeks`}>
+        {weeks.map((w, i) => (
+          <View key={i} style={styles.col}>
+            <ChartBar ratio={w.count / max} index={i} highlight={i === WEEKS - 1} />
+            <Text variant="caption" tone="tertiary" style={{ marginTop: 8 }}>
+              {i === WEEKS - 1 ? 'NOW' : `${WEEKS - 1 - i}W`}
+            </Text>
           </View>
-          <View style={styles.statRow}>
-            <Text style={styles.statLabel}>Current Streak</Text>
-            <Text style={styles.statValue}>{progress.streak_days} days</Text>
-          </View>
-          <View style={styles.statRow}>
-            <Text style={styles.statLabel}>Total Reps</Text>
-            <Text style={styles.statValue}>{progress.total_reps.toLocaleString()}</Text>
-          </View>
-          <View style={styles.statRow}>
-            <Text style={styles.statLabel}>Daily Challenges</Text>
-            <Text style={styles.statValue}>{progress.challenges_completed}</Text>
-          </View>
-          <View style={styles.statRow}>
-            <Text style={styles.statLabel}>Challenge Streak</Text>
-            <Text style={styles.statValue}>{progress.challenge_streak_days} days</Text>
-          </View>
-          <View style={styles.statRow}>
-            <Text style={styles.statLabel}>Challenge XP Earned</Text>
-            <Text style={styles.statValue}>{progress.challenge_xp_earned.toLocaleString()}</Text>
-          </View>
-          <View style={styles.statRow}>
-            <Text style={styles.statLabel}>Challenge Time Logged</Text>
-            <Text style={styles.statValue}>{formatChallengeTime(progress.challenge_time_seconds_logged)}</Text>
-          </View>
-          <View style={[styles.statRow, { borderBottomWidth: 0 }]}>
-            <Text style={styles.statLabel}>Total Distance</Text>
-            <Text style={styles.statValue}>{progress.total_distance_miles} mi</Text>
-          </View>
-        </GlassCard>
-
-        {/* Menu Items */}
-        {menuItems.map((item) => (
-          <TouchableOpacity
-            key={item.label}
-            style={styles.menuItem}
-            onPress={() => {
-              hapticLight();
-              if (typeof item.onPress === 'function') {
-                void item.onPress();
-                return;
-              }
-              navigation.navigate(item.screen);
-            }}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel={item.label}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <View style={styles.menuLeft}>
-              <View style={styles.menuIcon}>
-                <GameIcon name={item.icon} size={16} color={colors.textSecondary} variant="minimal" animated={false} />
-              </View>
-              <Text style={styles.menuLabel}>{item.label}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
-          </TouchableOpacity>
         ))}
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+
+      <View style={styles.tiles}>
+        <Tile icon="flame" label="Streak" onPress={() => navigation.navigate('Streak')} />
+        <Tile icon="trophy" label="Trophies" onPress={() => navigation.navigate('Achievements')} />
+        <Tile icon="calendar" label={programInfo?.name ?? 'Program'} onPress={() => navigation.navigate('ProgramSelect')} />
+        <Tile icon="chart" label="Stats" onPress={() => navigation.navigate('Stats')} />
+      </View>
+
+      <Group style={styles.group}>
+        <Row
+          icon="starFill"
+          title={access === 'subscriber' ? 'Manage Gruntz Pro' : access === 'trial' ? 'Gruntz Pro' : 'Upgrade to Pro'}
+          value={access === 'trial' ? `${getTrialDaysRemaining(trialStartedAt)} days left` : access === 'subscriber' ? 'Active' : undefined}
+          onPress={membership}
+        />
+        <Row icon="flag" title="Service & test profile" onPress={() => navigation.navigate('ServiceProfile')} />
+        <Row icon="people" title="Leader tools" onPress={() => navigation.navigate('LeaderTools')} />
+        <Row icon="share" title="Share my streak" onPress={() => void shareStreak(progress.streak_days, progress.current_rank)} />
+      </Group>
+
+      <Sheet visible={editing} onClose={() => setEditing(false)} title="Edit profile" avoidKeyboard>
+        <View style={{ paddingHorizontal: space.gutter, paddingTop: space.md }}>
+          <Text variant="subhead" tone="secondary" style={{ marginBottom: 8 }}>
+            Callsign
+          </Text>
+          <TextInput
+            value={name}
+            onChangeText={setName}
+            placeholder="Recruit"
+            placeholderTextColor={color.textTertiary}
+            maxLength={24}
+            autoFocus
+            autoCapitalize="words"
+            autoCorrect={false}
+            returnKeyType="done"
+            style={styles.input}
+            selectionColor={color.accent}
+          />
+          <Button
+            title="Save"
+            style={{ marginTop: space.lg }}
+            onPress={() => {
+              if (profile) setProfile({ ...profile, display_name: name.trim() || 'Recruit' });
+              haptic.success();
+              setEditing(false);
+              toast('Profile updated');
+            }}
+          />
+        </View>
+      </Sheet>
+    </ScrollView>
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
+function MiniStat({ label, value }: { label: string; value: number }) {
+  return (
+    <View style={{ flex: 1 }}>
+      <Text variant="callout" tone="secondary">
+        {label}
+      </Text>
+      <Text variant="headline" tabular style={{ marginTop: 4, fontSize: 19 }}>
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+function ChartBar({ ratio, index, highlight }: { ratio: number; index: number; highlight: boolean }) {
+  const h = useSharedValue(0);
+  React.useEffect(() => {
+    h.set(withDelay(index * 40, withTiming(ratio, { duration: 600, easing: motion.easeOut })));
+  }, [ratio, index, h]);
+  const style = useAnimatedStyle(() => ({ height: 4 + h.get() * 176 }));
+  return <Animated.View style={[styles.bar, { backgroundColor: highlight ? color.accent : '#1F5FAF' }, style]} />;
+}
+
+function Tile({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
+  return (
+    <Tap onPress={onPress} scaleTo={0.97} style={styles.tile} accessibilityLabel={label}>
+      <Icon name={icon} size={26} color={color.text} weight="light" />
+      <Text variant="headline" style={{ fontSize: 16, flex: 1 }} numberOfLines={1}>
+        {label}
+      </Text>
+    </Tap>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: color.bg },
+  topBar: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, paddingHorizontal: space.md, height: 52, alignItems: 'center' },
+  identity: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.gutter + 4, marginTop: space.xs },
+  avatar: { width: 112, height: 112, borderRadius: 56, backgroundColor: '#F5F5F7', alignItems: 'center', justifyContent: 'center' },
+  initial: { fontFamily: font.bold, fontSize: 48, color: '#000' },
+  avatarBadge: { position: 'absolute', right: -6, bottom: -4 },
+  stats: { flexDirection: 'row', marginTop: space.md },
+  chartHead: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: space.gutter + 4, marginTop: space.xxl },
+  valueRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4, marginBottom: 4 },
+  value: { fontFamily: font.bold, fontSize: 22, color: color.text },
+  delta: { paddingHorizontal: 8, height: 28, borderRadius: 7, backgroundColor: color.surface, justifyContent: 'center' },
+  chart: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    height: 230,
+    marginHorizontal: space.gutter,
+    marginTop: space.md,
+    paddingHorizontal: space.sm,
+    paddingBottom: space.sm,
+    borderRadius: radius.md,
+    backgroundColor: color.bgRaised,
   },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    padding: spacing.lg,
-  },
-  header: {
-    alignItems: 'center',
-    marginTop: spacing.md,
-    marginBottom: spacing.xl,
-  },
-  avatarCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
-    position: 'relative',
-  },
-  avatarGlow: {
-    position: 'absolute',
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    backgroundColor: colors.accent,
-    opacity: 0.08,
-  },
-  avatarEmoji: {
-  },
-  displayName: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.xs,
-  },
-  rankText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textMuted,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
-  levelText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  streakBadge: {
+  col: { flex: 1, alignItems: 'center', justifyContent: 'flex-end' },
+  bar: { width: 22, borderRadius: 6 },
+  tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingHorizontal: space.md, marginTop: space.xl },
+  tile: {
+    flexBasis: '46%', flexGrow: 1,
+    height: 76,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.sm,
-    backgroundColor: `${colors.streakFire}0D`,
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: 3,
-    borderRadius: borderRadius.full,
-  },
-  streakText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.streakFire,
-    letterSpacing: 0.3,
-  },
-  section: {
-    marginBottom: spacing.md,
-  },
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.textMuted,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    marginBottom: spacing.md,
-  },
-  totalXP: {
-    fontSize: 12,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing.sm,
-    fontVariant: ['tabular-nums'],
-  },
-  setupPrompt: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    backgroundColor: `${colors.accent}0D`,
-    borderRadius: borderRadius.md,
+    gap: 12,
+    paddingHorizontal: space.md,
+    borderRadius: radius.lg,
+    borderCurve: 'continuous',
+    backgroundColor: color.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: `${colors.accent}45`,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    marginBottom: spacing.md,
+    borderColor: color.line,
   },
-  setupIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: borderRadius.sm,
-    backgroundColor: `${colors.accent}12`,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  setupBody: {
-    flex: 1,
-  },
-  setupTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 2,
-  },
-  setupText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    lineHeight: 17,
-  },
-  membershipBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    alignSelf: 'flex-start',
-    backgroundColor: `${colors.accent}0D`,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: borderRadius.full,
-    marginBottom: spacing.sm,
-  },
-  membershipBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.accent,
-    letterSpacing: 1,
-  },
-  membershipTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.xs,
-  },
-  membershipText: {
-    fontSize: 12,
-    lineHeight: 18,
-    color: colors.textMuted,
-  },
-  scoreGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  scoreHint: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    lineHeight: 17,
-    marginTop: -spacing.xs,
-    marginBottom: spacing.sm,
-  },
-  scoreItem: {
-    width: '48%',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-  },
-  scoreValue: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  scoreLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: colors.textMuted,
-    marginTop: spacing.xs,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-  },
-  statRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.sm + 2,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.cardBorder,
-  },
-  statLabel: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    fontWeight: '400',
-  },
-  statValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
-    marginBottom: spacing.sm,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.cardBorder,
-  },
-  menuLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm + 2,
-    flex: 1,
-  },
-  menuIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: borderRadius.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  menuLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.textPrimary,
+  group: { marginHorizontal: space.md, marginTop: space.xl },
+  input: {
+    height: 56,
+    borderRadius: radius.md,
+    borderCurve: 'continuous',
+    backgroundColor: color.surface,
+    paddingHorizontal: space.md,
+    color: color.text,
+    fontFamily: font.medium,
+    fontSize: 18,
   },
 });
