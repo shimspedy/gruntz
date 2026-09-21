@@ -216,7 +216,7 @@ export function Stat({ label, value, accent, style }: { label: string; value: st
       <Text variant="callout" tone="secondary">
         {label}
       </Text>
-      <Text variant="headline" tabular style={{ marginTop: 6, fontSize: 19, color: accent ? color.accent : color.text }}>
+      <Text variant="headline" tabular numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ marginTop: 6, fontSize: 19, color: accent ? color.accent : color.text }}>
         {value}
       </Text>
     </View>

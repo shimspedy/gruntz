@@ -269,7 +269,7 @@ export default function ExerciseDetailScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: color.bg },
   body: { paddingHorizontal: space.gutter + 4, paddingTop: space.lg },
-  stats: { flexDirection: 'row', paddingVertical: space.lg, marginTop: space.sm },
+  stats: { flexDirection: 'row', gap: space.md, paddingVertical: space.lg, marginTop: space.sm },
   h: { marginTop: space.xl, marginBottom: space.md },
   muscleRow: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
   bodyTile: {
