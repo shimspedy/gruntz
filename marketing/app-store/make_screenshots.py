@@ -7,12 +7,14 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # Raw simulator captures and stock photos live outside the repo; point these at your working copies.
 SHOTS = os.environ.get('SHOTS_DIR', os.path.join(HERE, 'shots'))
 STOCK = os.environ.get('STOCK_DIR', os.path.join(HERE, 'stock'))
-IPAD = os.environ.get('DEVICE') == 'ipad'
-OUT = os.path.join(HERE, 'ipad-13' if IPAD else 'iphone-6.9')
+DEVICE = os.environ.get('DEVICE', 'iphone')
+IPAD = DEVICE == 'ipad'
+ANDROID = DEVICE == 'android'
+OUT = os.path.join(HERE, {'ipad': 'ipad-13', 'android': 'play-phone'}.get(DEVICE, 'iphone-6.9'))
 FONTS = '/Users/johnhashim/Desktop/MVPapp/gruntz/node_modules/@expo-google-fonts/dm-sans'
 CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 # App Store sizes: iPhone 6.9\" 1320x2868, iPad 13\" 2064x2752.
-W, H = (2064, 2752) if IPAD else (1320, 2868)
+W, H = (2064, 2752) if IPAD else (1080, 1920) if ANDROID else (1320, 2868)
 
 SLIDES = [
     ('01', 'Train like<br>a soldier', 'a_train', '01', 'center 35%'),
@@ -24,7 +26,7 @@ SLIDES = [
     ('07', '412 exercise<br>videos', 'a_lib', '39', 'center 35%'),
 ]
 
-SCREEN_W = 860 if IPAD else 900
+SCREEN_W = 860 if IPAD else 560 if ANDROID else 900
 SCREEN_H = round(SCREEN_W * 2622 / 1206)
 BEZEL = 30
 SCALE = SCREEN_W / 402  # points -> px inside the frame
@@ -41,19 +43,19 @@ def html(title, shot, photo, pos):
     return f'''<!doctype html><html><head><meta charset="utf-8"><style>
 @font-face {{ font-family: DM; font-weight: 800; src: url('file://{FONTS}/800ExtraBold/DMSans_800ExtraBold.ttf'); }}
 html, body {{ margin: 0; width: {W}px; height: {H}px; background: #000; overflow: hidden; }}
-.photo {{ position: absolute; left: 0; right: 0; top: 520px; bottom: 0; background-size: cover;
+.photo {{ position: absolute; left: 0; right: 0; top: {340 if ANDROID else 520}px; bottom: 0; background-size: cover;
   filter: grayscale(0.2) brightness(0.8) contrast(1.1); }}
 .shade {{ position: absolute; inset: 0; background: linear-gradient(to bottom, #000 0px, #000 520px, rgba(0,0,0,0.25) 1000px,
   rgba(0,0,0,0.1) 1900px, rgba(0,0,0,0.55) 2600px, #000 {H}px); }}
 .glow {{ position: absolute; left: 50%; top: 1250px; width: 1400px; height: 1400px; transform: translate(-50%, -50%);
   background: radial-gradient(closest-side, rgba(45,140,255,0.28), rgba(45,140,255,0) 70%); }}
-h1 {{ position: absolute; top: 150px; left: 0; right: 0; margin: 0; text-align: center; color: #fff;
-  font: 800 {150 if IPAD else 132}px/1.04 DM, sans-serif; letter-spacing: -2px; }}
-.phone {{ position: absolute; left: 50%; top: {560 if IPAD else 610}px; transform: translateX(-50%);
-  width: {SCREEN_W}px; height: {SCREEN_H}px; padding: {BEZEL}px; border-radius: 156px; background: #070708;
+h1 {{ position: absolute; top: {100 if ANDROID else 150}px; left: 0; right: 0; margin: 0; text-align: center; color: #fff;
+  font: 800 {150 if IPAD else 96 if ANDROID else 132}px/1.04 DM, sans-serif; letter-spacing: -2px; }}
+.phone {{ position: absolute; left: 50%; top: {560 if IPAD else 400 if ANDROID else 610}px; transform: translateX(-50%);
+  width: {SCREEN_W}px; height: {SCREEN_H}px; padding: {round(SCREEN_W * 0.033)}px; border-radius: {round(SCREEN_W * 0.173)}px; background: #070708;
   box-shadow: 0 0 0 6px #2b2d31, 0 0 0 13px #c9ccd1, 0 0 0 16px #8d9097, 0 50px 140px rgba(0,0,0,0.75); }}
 .btn {{ position: absolute; width: 12px; background: linear-gradient(to right, #9ea1a7, #d7d9dd); border-radius: 6px; }}
-.screen {{ position: relative; width: {SCREEN_W}px; height: {SCREEN_H}px; border-radius: 128px; overflow: hidden; background: #000; }}
+.screen {{ position: relative; width: {SCREEN_W}px; height: {SCREEN_H}px; border-radius: {round(SCREEN_W * 0.142)}px; overflow: hidden; background: #000; }}
 .screen img {{ width: 100%; height: 100%; display: block; }}
 .island {{ position: absolute; left: 50%; top: {round(11 * SCALE)}px; transform: translateX(-50%);
   width: {round(125 * SCALE)}px; height: {round(37 * SCALE)}px; border-radius: 999px; background: #000; }}

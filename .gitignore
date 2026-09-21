@@ -43,3 +43,6 @@ ai-proxy/node_modules/
 # generated native folders
 /ios
 /android
+marketing/play/build/
+
+secrets/

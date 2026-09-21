@@ -34,6 +34,11 @@
         "appleId": "johnnyhashim@gmail.com",
         "ascAppId": "6761699137",
         "appleTeamId": "YY96MFYC96"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./secrets/play-service-account.json",
+        "track": "internal",
+        "releaseStatus": "draft"
       }
     }
   }
