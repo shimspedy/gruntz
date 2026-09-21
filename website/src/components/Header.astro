@@ -1,30 +1,27 @@
 ---
 import { navLinks, site } from '../data/site';
+
+// Build output uses directory URLs (/support/), so compare without the trailing slash.
+const path = Astro.url.pathname.replace(/(.)\/$/, '$1');
 ---
 
 <header class="site-header">
-  <div class="site-shell header-inner">
+  <div class="header-inner">
     <a class="brand-lockup" href="/" aria-label="Gruntz home">
-      <img src="/brand/gruntz-icon.png" alt="" width="44" height="44" />
-      <span>
-        <strong>Gruntz</strong>
-        <small>gruntzfit.com</small>
-      </span>
+      <img src="/brand/gruntz-icon.png" alt="" width="32" height="32" />
+      <span>Gruntz</span>
     </a>
 
     <nav class="site-nav" aria-label="Primary">
       {navLinks.map((link) => (
-        <a href={link.href}>{link.label}</a>
+        <a href={link.href} aria-current={link.href === path ? 'page' : undefined}>
+          {link.label}
+        </a>
       ))}
     </nav>
 
-    <a
-      class="button button-primary header-cta"
-      href={site.appStoreUrl}
-      target="_blank"
-      rel="noopener"
-    >
-      Get on the App Store
+    <a class="button button-primary header-cta" href={site.appStoreUrl} target="_blank" rel="noopener">
+      Download
     </a>
   </div>
 </header>

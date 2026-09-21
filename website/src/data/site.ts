@@ -2,10 +2,10 @@ export const site = {
   name: 'Gruntz',
   domain: 'gruntzfit.com',
   url: 'https://gruntzfit.com',
-  title: 'Gruntz | Daily Tactical Fitness Missions',
+  title: 'Gruntz — Military Fitness & PT Test Training App',
   description:
-    'Gruntz turns selection prep, readiness blocks, and hard-event training into one clear daily mission with streaks, XP, training cards, and simple membership pricing.',
-  tagline: 'Daily tactical prep missions that keep the streak alive.',
+    'Train like a soldier. Gruntz gives you a daily military fitness program, PT test readiness tracking for the Army AFT, Marine PFT, Navy PRT and Air Force PT, a fast workout log and 412 exercise videos.',
+  tagline: 'Military fitness, one mission a day.',
   price: '$4.99/month',
   trialDays: 15,
   supportEmail: 'johnnyhashim@gmail.com',
@@ -18,173 +18,152 @@ export const site = {
 } as const;
 
 export const navLinks = [
-  { label: 'Mission Flow', href: '/#mission-flow' },
-  { label: 'Screens', href: '/#screens' },
-  { label: 'Pricing', href: '/#pricing' },
-  { label: 'Privacy', href: '/privacy-policy' },
+  { label: 'Home', href: '/' },
+  { label: 'Features', href: '/#features' },
+  { label: 'FAQ', href: '/#faq' },
+  { label: 'Support', href: '/support' },
 ] as const;
 
-export const statChips = [
-  `${site.trialDays}-day full access`,
-  site.price,
-  'Local-first core loop',
-  'Built for iPhone and Android',
+/** Real product numbers only — no download or rating claims. */
+export const heroStats = [
+  { value: '412', label: 'Exercise videos' },
+  { value: '8', label: 'Fitness tests' },
+  { value: '7', label: 'Ranks to earn' },
+  { value: `${site.trialDays}`, label: 'Days free' },
 ] as const;
 
-export const audienceCards = [
-  {
-    label: 'Selection Prep',
-    title: 'Structure for people chasing hard standards.',
-    copy:
-      'Use Gruntz to stay inside a daily rhythm when you are preparing for selection, military readiness, or tactical schools.',
-  },
-  {
-    label: 'Readiness',
-    title: 'One mission per day beats vague motivation.',
-    copy:
-      'The app keeps the work tight: today’s mission, your streak, your XP, and the next block of progress.',
-  },
-  {
-    label: 'Hybrid Events',
-    title: 'Useful for OCR, rucks, and hard-event training.',
-    copy:
-      'Programs, movement cards, and run tracking stay focused on adherence instead of bloated wellness dashboards.',
-  },
-] as const;
-
-export const missionSteps = [
+export const steps = [
   {
     step: '01',
-    title: 'Pick the program',
-    copy: 'Start with Raider or Recon and lock in the training lane that fits the mission.',
+    title: 'Know exactly where you stand',
+    copy:
+      'Log your event scores for the Army Fitness Test, Marine PFT and CFT, Navy PRT, Air Force PT and more. Gruntz turns them into one readiness score and shows the event holding you back.',
+    photo: '/photos/p08.jpg',
+    alt: 'Recruits doing push-ups in formation',
   },
   {
     step: '02',
-    title: 'Load today’s work',
-    copy: 'Open the command center, pull today’s mission, and move straight into the session.',
+    title: 'Follow a mission, not a mood',
+    copy:
+      'Structured 8-week programs put today’s workout in front of you the moment you open the app. Show up, do the work, keep the streak alive.',
+    photo: '/photos/p39.jpg',
+    alt: 'Soldier walking a coastal trail with a ruck',
   },
   {
     step: '03',
-    title: 'Log the result',
-    copy: 'Complete the work, record the effort, and keep the streak moving forward.',
-  },
-  {
-    step: '04',
-    title: 'Track the intel',
-    copy: 'XP, rank, history, and movement cards make it easy to see what is improving and what is lagging.',
+    title: 'Train every rep the right way',
+    copy:
+      'A custom video for all 412 movements, with the muscles worked, step-by-step form and the mistakes to avoid. Fewer injuries, more progress.',
+    photo: '/photos/p84.jpg',
+    alt: 'Athlete doing pull-ups in a dark gym',
   },
 ] as const;
 
-export const screenshotSlides = [
+export const audiences = [
   {
-    src: '/screenshots/01-home.png',
-    label: 'Command Center',
-    title: 'Home stays focused on today.',
-    copy: 'Mission status, level progress, and target areas stay visible without burying the user in extra UI.',
+    chip: 'Recruits & candidates',
+    title: 'Ship ready',
+    copy: 'Build the base for basic training, OCS or selection and walk in already passing your test.',
+    photo: '/photos/p60.jpg',
+    alt: 'Group holding a plank together outdoors',
   },
   {
-    src: '/screenshots/02-missions.png',
-    label: 'Reference Cards',
-    title: 'Training content is one tap away.',
-    copy: 'Workout cards, movement breakdowns, and mission support content live in a dedicated reference area.',
+    chip: 'Service members',
+    title: 'Stay test ready',
+    copy: 'Keep your score up year round with a plan that targets your weakest event.',
+    photo: '/photos/p71.jpg',
+    alt: 'Athlete doing a bear crawl on grass',
   },
   {
-    src: '/screenshots/03-progress.png',
-    label: 'Progress Intel',
-    title: 'XP, streaks, reps, and focus areas.',
-    copy: 'Progress is tied to completed work, not vague wellness trends.',
-  },
-  {
-    src: '/screenshots/04-profile.png',
-    label: 'Operator Profile',
-    title: 'Membership, settings, and identity in one place.',
-    copy: 'Profile surfaces program switching, reminders, support actions, and account-level status clearly.',
-  },
-  {
-    src: '/screenshots/05-daily-mission.png',
-    label: 'Daily Mission',
-    title: 'The workout flow is direct and task-driven.',
-    copy: 'Users can move through exercises, progression, and completion without leaving the mission context.',
+    chip: 'Tactical athletes',
+    title: 'Built for hard days',
+    copy: 'Police, fire and anyone who trains for a job where fitness is not optional.',
+    photo: '/photos/p64.jpg',
+    alt: 'Coach leading a group through push-ups',
   },
 ] as const;
 
-export const featureCards = [
+export const features = [
   {
-    eyebrow: 'Today',
-    title: 'Daily missions built around adherence.',
-    copy:
-      'Gruntz is intentionally narrow. The product is meant to get someone into today’s work quickly and back tomorrow.',
-    tone: 'lime',
-    size: 'wide',
+    icon: 'target',
+    name: 'Daily program',
+    short: 'Today’s mission is ready when you are',
+    headline: 'A structured program that tells you exactly what to do today.',
+    copy: 'Pick a program and Gruntz lines up every session for the next 8 weeks. Open the app, start the mission, done.',
+    screen: '/app/train.jpg',
   },
   {
-    eyebrow: 'Progress',
-    title: 'XP, rank, streaks, and mission history.',
-    copy:
-      'The progress model rewards consistency and makes it obvious when volume, streak, or total reps are slipping.',
-    tone: 'cyan',
-    size: 'normal',
+    icon: 'gauge',
+    name: 'Test readiness',
+    short: 'Your score for every service test',
+    headline: 'See how ready you are for test day — as a single number.',
+    copy: 'Track each event against the standard, count down to your test date and train the event that moves your score most.',
+    screen: '/app/test.jpg',
   },
   {
-    eyebrow: 'Programs',
-    title: 'Raider and Recon training paths.',
-    copy:
-      'Program selection and progression are part of the core loop instead of being buried in settings or static PDFs.',
-    tone: 'orange',
-    size: 'normal',
+    icon: 'list',
+    name: 'Workout log',
+    short: 'Log sets in a tap, rest timer built in',
+    headline: 'The fastest way to log weight, reps and time.',
+    copy: 'Check off each set, let the rest timer run, and add or swap exercises without leaving the workout.',
+    screen: '/app/log.jpg',
   },
   {
-    eyebrow: 'Tracking',
-    title: 'Run and ruck support when it matters.',
-    copy:
-      'Distance, pace, steps, and elevation are available for run-tracker sessions without turning the app into a generic activity feed.',
-    tone: 'lime',
-    size: 'normal',
+    icon: 'play',
+    name: 'Exercise videos',
+    short: '412 movements with form and muscles',
+    headline: 'A custom video for every movement you will ever do.',
+    copy: 'Search by name, muscle or equipment. Every exercise shows the muscles worked, the steps and the common mistakes.',
+    screen: '/app/detail.jpg',
   },
   {
-    eyebrow: 'Content',
-    title: 'Workout cards and movement references.',
-    copy:
-      'Movement support is built in so users can review the day’s work, reference cards, and unlock progression without leaving the app.',
-    tone: 'cyan',
-    size: 'wide',
+    icon: 'calendar',
+    name: 'Workout planner',
+    short: 'Build and schedule your own workouts',
+    headline: 'Plan your own workouts and put them on your training days.',
+    copy: 'Pick exercises from the full library, set sets, reps and rest, and see the muscle split before you start.',
+    screen: '/app/routine.jpg',
   },
   {
-    eyebrow: 'Pricing',
-    title: 'Straight pricing with one simple monthly plan.',
-    copy:
-      'New users get a 15-day full-access window. After that, premium access continues through Gruntz Pro at $4.99 per month.',
-    tone: 'orange',
-    size: 'normal',
+    icon: 'badge',
+    name: 'Ranks & streaks',
+    short: 'Climb from Recruit to Apex',
+    headline: 'Earn your rank. Every session counts toward the next one.',
+    copy: 'XP, levels, achievements and a muscle map of everything you have trained keep you coming back tomorrow.',
+    screen: '/app/ranks.jpg',
   },
 ] as const;
 
 export const privacyHighlights = [
-  'The current app is primarily local-first for core training data.',
-  'No third-party advertising SDKs are used in the current build.',
+  'The app is local-first: your training data stays on your device.',
+  'No third-party advertising SDKs are used.',
   'Billing and entitlement checks run through RevenueCat and the app stores.',
   'Location and motion permissions are used only for fitness features that need them.',
 ] as const;
 
 export const faqItems = [
   {
-    question: 'Does Gruntz require an account to use the core training loop?',
+    question: 'Which fitness tests does Gruntz support?',
     answer:
-      'The current build is designed as a local-first app. Core progress, settings, and mission state are stored on the device instead of requiring a mandatory social or cloud account for basic use.',
+      'The Army Fitness Test (AFT), Marine Corps PFT and CFT, Navy PRT, Air Force and Space Force assessments, Coast Guard PFT prep, and a general tactical readiness test. Always confirm the current standards with your service.',
   },
   {
-    question: 'What data leaves the device?',
+    question: 'Do I need gym equipment?',
     answer:
-      'The main external service in the current app flow is RevenueCat for subscriptions and entitlements. Apple App Store or Google Play also handle transaction processing for in-app purchases.',
+      'No. The library covers bodyweight, dumbbell, kettlebell, barbell, band and machine movements, and you can build workouts around whatever you have.',
   },
   {
-    question: 'Why does the app ask for location or motion access?',
-    answer:
-      'Location is used when someone chooses to track a run or ruck. Motion-related sensors such as pedometer and barometer support workout and run-tracker metrics where available.',
+    question: 'How much does it cost?',
+    answer: `New users get ${site.trialDays} days of full access. After that, Gruntz Pro is ${site.price}, billed through the App Store. Cancel anytime in your App Store settings.`,
   },
   {
-    question: 'Which links should I use for App Store review fields?',
+    question: 'Does it work offline?',
     answer:
-      'Use the homepage for marketing, /privacy-policy for the privacy policy, and /support for the support URL. Terms live at /terms-of-use for subscription and legal reference.',
+      'Yes. Workouts, exercise videos and your progress live on your device, so you can train in the field or a basement gym with no signal.',
+  },
+  {
+    question: 'Is Gruntz affiliated with the military?',
+    answer:
+      'No. Gruntz is an independent training app and is not affiliated with or endorsed by the U.S. Department of Defense or any military branch.',
   },
 ] as const;

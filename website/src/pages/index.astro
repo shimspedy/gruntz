@@ -1,256 +1,297 @@
 ---
+import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
-import ScreenshotCarousel from '../components/ScreenshotCarousel.astro';
-import BaseLayout from '../layouts/BaseLayout.astro';
-import {
-  audienceCards,
-  faqItems,
-  featureCards,
-  missionSteps,
-  privacyHighlights,
-  site,
-  statChips,
-} from '../data/site';
+import { audiences, faqItems, features, heroStats, site, steps } from '../data/site';
+
+const icons: Record<string, string> = {
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>',
+  gauge: '<path d="M4 16a8 8 0 1 1 16 0"/><path d="m12 16 4-5"/>',
+  list: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17"/>',
+  play: '<rect x="3" y="4" width="18" height="16" rx="3"/><path d="m10 9 5 3-5 3z"/>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  badge: '<path d="M12 2.5 20 7v10l-8 4.5L4 17V7z"/><path d="m12 8 1.2 2.5 2.8.4-2 2 .5 2.8-2.5-1.3-2.5 1.3.5-2.8-2-2 2.8-.4z"/>',
+};
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Gruntz: Military Fitness & PT',
+  operatingSystem: 'iOS',
+  applicationCategory: 'HealthApplication',
+  description: site.description,
+  url: site.url,
+  downloadUrl: site.appStoreUrl,
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+};
 ---
 
-<BaseLayout title={site.title} description={site.description}>
+<BaseLayout>
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
   <Header />
 
   <main>
+    <!-- Hero -->
     <section class="hero">
       <div class="site-shell hero-grid">
-        <div class="hero-copy">
-          <p class="eyebrow">Daily tactical fitness, simplified</p>
-          <h1>One mission. One streak. No wasted motion.</h1>
-          <p>
-            Gruntz is a clean tactical training app for selection prep, readiness work, and hard
-            events. Open the app, see today’s mission, complete the work, stack XP, and come back
-            tomorrow.
+        <div class="hero-copy reveal">
+          <span class="eyebrow">Military fitness app</span>
+          <h1>Train like a soldier. Pass your PT test.</h1>
+          <p class="hero-lede">
+            A daily program, a readiness score for your service’s fitness test, and a workout log built for hard
+            days — all in one app.
           </p>
 
-          <div class="hero-actions">
-            <a
-              class="button button-primary"
-              href={site.appStoreUrl}
-              target="_blank"
-              rel="noopener"
-            >
-              Get it on the App Store
-            </a>
-            <a class="button button-secondary" href="#screens">View the app screens</a>
+          <div class="stat-row">
+            {heroStats.map((s) => (
+              <div class="stat">
+                <strong>{s.value}</strong>
+                <span>{s.label}</span>
+              </div>
+            ))}
           </div>
 
-          <div class="tag-row">
-            {statChips.map((chip) => (
-              <span class="tag">{chip}</span>
-            ))}
+          <div class="hero-actions">
+            <a class="store-badge" href={site.appStoreUrl} target="_blank" rel="noopener">
+              <img src="/brand/app-store-badge.svg" alt="Download on the App Store" width="162" height="54" />
+            </a>
+            <small>{site.trialDays} days free, then {site.price}</small>
           </div>
         </div>
 
-        <div class="hero-visual" aria-hidden="true">
-          <div class="hero-device">
-            <div class="hero-device-shell">
-              <img
-                src="/screenshots/01-home.png"
-                alt="Gruntz home screen with level progress and movement targets"
-              />
-            </div>
+        <div class="hero-visual reveal" aria-hidden="true">
+          <div class="hero-photo">
+            <img src="/photos/p01.jpg" alt="" loading="eager" fetchpriority="high" />
           </div>
-
-          <div class="floating-card card-alpha">
-            <span>Mission Doctrine</span>
-            <strong>Show up today.</strong>
-            <p>Lead with adherence, progress, and tactical readiness instead of generic wellness.</p>
+          <div class="phone">
+            <div class="phone-screen"><img src="/app/train.jpg" alt="" /></div>
           </div>
-
-          <div class="floating-card card-beta">
-            <span>Product Scope</span>
-            <strong>{site.trialDays} days free, then {site.price}</strong>
-            <p>One simple membership path with a focused product loop and no ad clutter.</p>
+          <div class="float-chip chip-a">
+            <span class="chip-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2.5 20 7v10l-8 4.5L4 17V7z" /></svg>
+            </span>
+            <span><strong>Operator</strong><small>Level 18 · 12-day streak</small></span>
+          </div>
+          <div class="float-chip chip-b">
+            <span class="chip-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 16a8 8 0 1 1 16 0" /><path d="m12 16 4-5" /></svg>
+            </span>
+            <span><strong>Army Fitness Test</strong><small>78% ready · 24 days out</small></span>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="section">
+    <!-- 3 steps -->
+    <section class="section" id="how">
       <div class="site-shell">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">Built For</p>
-            <h2>Selection prep, readiness, and hard-event athletes.</h2>
-          </div>
-          <p>
-            The product positioning is narrow on purpose. Gruntz is not trying to be a broad
-            wellness platform. It is built to keep tactical-style training structured and visible.
-          </p>
+        <div class="section-head reveal">
+          <h2>Mission ready <span>in 3 steps</span></h2>
+          <p>The three things that get people through test day: knowing the gap, showing up, and training right.</p>
+          <div class="section-rule"></div>
+        </div>
+
+        <div class="steps">
+          {steps.map((s) => (
+            <article class="step reveal">
+              <div class="step-media">
+                <img src={s.photo} alt={s.alt} loading="lazy" />
+                <span class="step-num">{s.step}</span>
+              </div>
+              <div>
+                <span class="eyebrow">Step {s.step}</span>
+                <h3>{s.title}</h3>
+                <p>{s.copy}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div class="cta-center reveal">
+          <a class="button button-primary" href={site.appStoreUrl} target="_blank" rel="noopener">
+            Start your {site.trialDays} days free
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+          </a>
+          <small>No commitment. Cancel anytime in your App Store settings.</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- Who it's for -->
+    <section class="section" id="who">
+      <div class="site-shell">
+        <div class="section-head reveal">
+          <h2>Built for people <span>who can’t fail the test</span></h2>
+          <p>Whether you ship next month or test every six months, Gruntz keeps you on standard.</p>
+          <div class="section-rule"></div>
         </div>
 
         <div class="audience-grid">
-          {audienceCards.map((card) => (
-            <article class="panel audience-card">
-              <span>{card.label}</span>
-              <h3>{card.title}</h3>
-              <p>{card.copy}</p>
+          {audiences.map((a) => (
+            <article class="audience-card reveal">
+              <div class="audience-photo">
+                <img src={a.photo} alt={a.alt} loading="lazy" />
+                <span class="audience-chip">{a.chip}</span>
+              </div>
+              <div class="audience-body">
+                <h3>{a.title}</h3>
+                <p>{a.copy}</p>
+              </div>
             </article>
           ))}
         </div>
       </div>
     </section>
 
-    <section id="mission-flow" class="section">
+    <!-- Features -->
+    <section class="section" id="features">
       <div class="site-shell">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">Mission Flow</p>
-            <h2>The app loop stays sharp.</h2>
-          </div>
-          <p>
-            Gruntz is strongest when it keeps the user inside a simple repeatable cycle: program,
-            mission, completion, progress, repeat.
-          </p>
-        </div>
-
-        <div class="mission-grid">
-          {missionSteps.map((item) => (
-            <article class="panel process-card">
-              <span class="process-step">{item.step}</span>
-              <strong>{item.title}</strong>
-              <p>{item.copy}</p>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-
-    <section id="screens" class="section">
-      <div class="site-shell">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">App Screens</p>
-            <h2>Real screenshots from the product.</h2>
-          </div>
-          <p>
-            The site uses actual app images from the current build so the marketing layer stays
-            grounded in the product instead of mockups or placeholder UI.
-          </p>
-        </div>
-
-        <ScreenshotCarousel />
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="site-shell">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">Core Value</p>
-            <h2>Everything here supports the day’s work.</h2>
-          </div>
-          <p>
-            The design language follows the app: dark surfaces, high-contrast tactical accents, and
-            direct information hierarchy instead of decorative noise.
-          </p>
+        <div class="section-head reveal">
+          <h2>Everything you need <span>in one app</span></h2>
+          <p>From today’s workout to test day, without five different apps.</p>
+          <div class="section-rule"></div>
         </div>
 
         <div class="feature-grid">
-          {featureCards.map((card) => (
-            <article class="panel feature-card" data-tone={card.tone} data-size={card.size}>
-              <span>{card.eyebrow}</span>
-              <h3>{card.title}</h3>
-              <p>{card.copy}</p>
-            </article>
-          ))}
+          <div class="feature-list reveal">
+            <h3>Main features</h3>
+            <p>Tap a feature to see it in the app</p>
+            <div role="tablist" aria-label="Gruntz features">
+              {features.map((f, i) => (
+                <button
+                  class="feature-tab"
+                  role="tab"
+                  id={`tab-${i}`}
+                  aria-selected={i === 0 ? 'true' : 'false'}
+                  aria-controls="feature-panel"
+                  tabindex={i === 0 ? 0 : -1}
+                  data-index={i}
+                >
+                  <span class="tab-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={icons[f.icon]} />
+                  </span>
+                  <span>
+                    <strong>{f.name}</strong>
+                    <small>{f.short}</small>
+                  </span>
+                  <span class="tab-dot"></span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div class="feature-stage reveal" id="feature-panel" role="tabpanel" aria-labelledby="tab-0">
+            <div class="phone">
+              <div class="phone-screen">
+                <img id="feature-screen" src={features[0].screen} alt={`${features[0].name} screen in the Gruntz app`} />
+              </div>
+            </div>
+            <div class="feature-copy">
+              <h3 id="feature-headline">{features[0].headline}</h3>
+              <p id="feature-text">{features[0].copy}</p>
+              <span class="eyebrow" id="feature-count">Feature 01</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-    <section id="pricing" class="section">
-      <div class="site-shell pricing-grid">
-        <article class="panel pricing-card">
-          <span class="pricing-micro">Membership</span>
-          <h2>Simple pricing for launch.</h2>
-          <p>
-            New users get a full-access window first. After that, Gruntz Pro continues premium
-            training access through one monthly plan.
-          </p>
-
-          <div class="price-mark">
-            <strong>{site.price}</strong>
-            <small>after the {site.trialDays}-day app access window</small>
-          </div>
-
-          <ul class="check-list">
-            <li>Daily missions, streaks, XP, and progress intel</li>
-            <li>Workout cards, movement references, and premium program access</li>
-            <li>RevenueCat-backed subscription management through the app stores</li>
-          </ul>
-        </article>
-
-        <article class="panel link-card">
-          <span class="pricing-micro">App Review Links</span>
-          <h3>Everything needed for store-facing website fields lives here.</h3>
-          <p>
-            Use these routes for your marketing site, privacy policy, subscription terms, and
-            support URL requirements.
-          </p>
-
-          <div class="link-stack">
-            <a class="link-chip" href="/">
-              <span>Marketing site</span>
-              <span>/</span>
-            </a>
-            <a class="link-chip" href="/privacy-policy">
-              <span>Privacy policy</span>
-              <span>/privacy-policy</span>
-            </a>
-            <a class="link-chip" href="/terms-of-use">
-              <span>Terms of use</span>
-              <span>/terms-of-use</span>
-            </a>
-            <a class="link-chip" href="/support">
-              <span>Support</span>
-              <span>/support</span>
-            </a>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section id="privacy" class="section">
-      <div class="site-shell privacy-grid">
-        <article class="panel privacy-card">
-          <p class="eyebrow">Privacy</p>
-          <h2>Local-first where it counts.</h2>
-          <p>
-            The current Gruntz app is designed so core training logic and saved progress stay close
-            to the device. External services are limited and directly tied to billing or platform
-            features.
-          </p>
-
-          <ul class="check-list">
-            {privacyHighlights.map((item) => (
-              <li>{item}</li>
-            ))}
-          </ul>
-
-          <div class="hero-actions">
-            <a class="button button-primary" href="/privacy-policy">Full privacy policy</a>
-            <a class="button button-ghost" href="/support">Support contact</a>
-          </div>
-        </article>
-
-        <div class="faq-stack">
-          {faqItems.map((faq) => (
-            <details class="panel faq-card">
-              <summary>{faq.question}</summary>
-              <p>{faq.answer}</p>
+    <!-- FAQ -->
+    <section class="section" id="faq">
+      <div class="site-shell">
+        <div class="section-head reveal">
+          <h2>Questions, <span>answered</span></h2>
+          <div class="section-rule"></div>
+        </div>
+        <div class="faq reveal">
+          {faqItems.map((f) => (
+            <details>
+              <summary>{f.question}</summary>
+              <p>{f.answer}</p>
             </details>
           ))}
         </div>
       </div>
     </section>
+
+    <!-- Final CTA -->
+    <section class="final-cta">
+      <div class="final-cta-photo" aria-hidden="true">
+        <img src="/photos/p68.jpg" alt="" loading="lazy" />
+      </div>
+      <div class="site-shell reveal">
+        <span class="pill">Report for duty</span>
+        <h2>Your mission starts today</h2>
+        <p>Download Gruntz, pick your test and get today’s workout in under a minute.</p>
+        <a class="store-badge" href={site.appStoreUrl} target="_blank" rel="noopener">
+          <img src="/brand/app-store-badge.svg" alt="Download on the App Store" width="162" height="54" />
+        </a>
+        <ul class="checks">
+          {[`${site.trialDays} days free`, 'Cancel anytime', 'Works offline'].map((c) => (
+            <li>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+              {c}
+            </li>
+          ))}
+        </ul>
+        <p class="fine-print">Gruntz Pro is {site.price} after the free period, billed through the App Store.</p>
+      </div>
+    </section>
   </main>
 
   <Footer />
+
+  <script define:vars={{ features }}>
+    // Feature tabs: swap the phone screen and copy, with arrow-key support.
+    const tabs = Array.from(document.querySelectorAll('.feature-tab'));
+    const screen = document.getElementById('feature-screen');
+    const headline = document.getElementById('feature-headline');
+    const text = document.getElementById('feature-text');
+    const count = document.getElementById('feature-count');
+    const panel = document.getElementById('feature-panel');
+
+    const select = (i, focus) => {
+      tabs.forEach((t, j) => {
+        t.setAttribute('aria-selected', String(i === j));
+        t.tabIndex = i === j ? 0 : -1;
+      });
+      const f = features[i];
+      screen.style.opacity = '0';
+      setTimeout(() => {
+        screen.src = f.screen;
+        screen.alt = `${f.name} screen in the Gruntz app`;
+        screen.style.opacity = '1';
+      }, 180);
+      headline.textContent = f.headline;
+      text.textContent = f.copy;
+      count.textContent = `Feature ${String(i + 1).padStart(2, '0')}`;
+      panel.setAttribute('aria-labelledby', tabs[i].id);
+      if (focus) tabs[i].focus();
+    };
+
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => select(i, false));
+      t.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); select((i + 1) % tabs.length, true); }
+        if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); select((i - 1 + tabs.length) % tabs.length, true); }
+      });
+    });
+
+    // Preload the other screens so switching tabs is instant.
+    features.slice(1).forEach((f) => { const img = new Image(); img.src = f.screen; });
+  </script>
+
+  <script>
+    // Fade sections in as they scroll into view.
+    const els = document.querySelectorAll('.reveal');
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver(
+        (entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); } }),
+        { rootMargin: '0px 0px -6% 0px', threshold: 0.04 },
+      );
+      els.forEach((el) => io.observe(el));
+    } else {
+      els.forEach((el) => el.classList.add('is-visible'));
+    }
+  </script>
 </BaseLayout>
