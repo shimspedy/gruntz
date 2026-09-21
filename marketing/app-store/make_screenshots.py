@@ -4,12 +4,15 @@ bold two-line headline, silver iPhone frame, optional dimmed stock photo behind 
 import os, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SHOTS = os.path.join(HERE, '..', 'shots')
-STOCK = os.path.join(HERE, 'stock', 'hi')
-OUT = os.path.join(HERE, 'out')
+# Raw simulator captures and stock photos live outside the repo; point these at your working copies.
+SHOTS = os.environ.get('SHOTS_DIR', os.path.join(HERE, 'shots'))
+STOCK = os.environ.get('STOCK_DIR', os.path.join(HERE, 'stock'))
+IPAD = os.environ.get('DEVICE') == 'ipad'
+OUT = os.path.join(HERE, 'ipad-13' if IPAD else 'iphone-6.9')
 FONTS = '/Users/johnhashim/Desktop/MVPapp/gruntz/node_modules/@expo-google-fonts/dm-sans'
 CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-W, H = 1320, 2868
+# App Store sizes: iPhone 6.9\" 1320x2868, iPad 13\" 2064x2752.
+W, H = (2064, 2752) if IPAD else (1320, 2868)
 
 SLIDES = [
     ('01', 'Train like<br>a soldier', 'a_train', '01', 'center 35%'),
@@ -21,7 +24,7 @@ SLIDES = [
     ('07', '412 exercise<br>videos', 'a_lib', '39', 'center 35%'),
 ]
 
-SCREEN_W = 900
+SCREEN_W = 860 if IPAD else 900
 SCREEN_H = round(SCREEN_W * 2622 / 1206)
 BEZEL = 30
 SCALE = SCREEN_W / 402  # points -> px inside the frame
@@ -45,8 +48,8 @@ html, body {{ margin: 0; width: {W}px; height: {H}px; background: #000; overflow
 .glow {{ position: absolute; left: 50%; top: 1250px; width: 1400px; height: 1400px; transform: translate(-50%, -50%);
   background: radial-gradient(closest-side, rgba(45,140,255,0.28), rgba(45,140,255,0) 70%); }}
 h1 {{ position: absolute; top: 150px; left: 0; right: 0; margin: 0; text-align: center; color: #fff;
-  font: 800 132px/1.04 DM, sans-serif; letter-spacing: -2px; }}
-.phone {{ position: absolute; left: 50%; top: 610px; transform: translateX(-50%);
+  font: 800 {150 if IPAD else 132}px/1.04 DM, sans-serif; letter-spacing: -2px; }}
+.phone {{ position: absolute; left: 50%; top: {560 if IPAD else 610}px; transform: translateX(-50%);
   width: {SCREEN_W}px; height: {SCREEN_H}px; padding: {BEZEL}px; border-radius: 156px; background: #070708;
   box-shadow: 0 0 0 6px #2b2d31, 0 0 0 13px #c9ccd1, 0 0 0 16px #8d9097, 0 50px 140px rgba(0,0,0,0.75); }}
 .btn {{ position: absolute; width: 12px; background: linear-gradient(to right, #9ea1a7, #d7d9dd); border-radius: 6px; }}
@@ -73,7 +76,7 @@ def main():
     for n, title, shot, photo, pos in SLIDES:
         if only and n not in only:
             continue
-        page = os.path.join(OUT, f'{n}.html')
+        page = os.path.join('/tmp' if not os.environ.get('TMPDIR') else os.environ['TMPDIR'], f'gruntz-slide-{n}.html')
         with open(page, 'w') as f:
             f.write(html(title, shot, photo, pos))
         png = os.path.join(OUT, f'{n}.png')
