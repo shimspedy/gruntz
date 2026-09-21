@@ -149,6 +149,40 @@ p {
   color: #000;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lang-switch {
+  display: flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.lang-switch a {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 28px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-3);
+  transition: color 0.2s, background 0.2s;
+}
+
+.lang-switch a:hover {
+  color: var(--text);
+}
+
+.lang-switch a[aria-current='true'] {
+  background: var(--surface-high);
+  color: var(--text);
+}
+
 /* ---------- Buttons ---------- */
 .button {
   display: inline-flex;
@@ -457,6 +491,67 @@ p {
   border-radius: 999px;
   background: #000;
   z-index: 2;
+}
+
+.built-by {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+.built-by svg {
+  color: var(--accent);
+}
+
+/* ---------- Founder ---------- */
+.founder {
+  padding: 40px 0 0;
+}
+
+.founder-card {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 56px 48px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(600px 240px at 50% 0%, rgba(45, 140, 255, 0.12), transparent 70%),
+    var(--bg-raised);
+  text-align: center;
+}
+
+.founder-mark {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 22px;
+  border-radius: 18px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.founder-card h2 {
+  margin-top: 16px;
+  font-size: clamp(30px, 4vw, 44px);
+  font-weight: 800;
+}
+
+.founder-card p {
+  margin: 18px auto 0;
+  max-width: 620px;
+  color: var(--text-2);
+}
+
+.founder-card small {
+  display: block;
+  margin-top: 22px;
+  font-size: 13px;
+  color: var(--text-3);
 }
 
 /* ---------- Steps ---------- */
@@ -1164,5 +1259,13 @@ html.js .reveal.is-visible {
 
   .header-inner {
     padding-left: 12px;
+  }
+
+  .header-cta {
+    padding: 0 14px;
+  }
+
+  .founder-card {
+    padding: 40px 22px;
   }
 }

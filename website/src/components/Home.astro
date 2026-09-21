@@ -1,0 +1,330 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from './Header.astro';
+import Footer from './Footer.astro';
+import { site } from '../data/site';
+import { content, type Lang } from '../i18n/content';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props as Props;
+const t = content[lang];
+const pad = (i: number) => String(i + 1).padStart(2, '0');
+
+const icons: Record<string, string> = {
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>',
+  gauge: '<path d="M4 16a8 8 0 1 1 16 0"/><path d="m12 16 4-5"/>',
+  list: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17"/>',
+  play: '<rect x="3" y="4" width="18" height="16" rx="3"/><path d="m10 9 5 3-5 3z"/>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  badge: '<path d="M12 2.5 20 7v10l-8 4.5L4 17V7z"/><path d="m12 8 1.2 2.5 2.8.4-2 2 .5 2.8-2.5-1.3-2.5 1.3.5-2.8-2-2 2.8-.4z"/>',
+};
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Gruntz: Military Fitness & PT',
+  operatingSystem: 'iOS',
+  applicationCategory: 'HealthApplication',
+  inLanguage: lang,
+  description: t.meta.description,
+  url: site.url,
+  downloadUrl: site.appStoreUrl,
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+};
+
+const featureData = {
+  features: t.features.map((f) => ({ name: f.name, headline: f.headline, copy: f.copy, screen: f.screen })),
+  counter: t.featuresHead.counter,
+  screenAlt: t.featuresHead.screenAlt,
+};
+---
+
+<BaseLayout lang={lang} title={t.meta.title} description={t.meta.description} ogLocale={t.meta.ogLocale}>
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  <Header lang={lang} />
+
+  <main>
+    <!-- Hero -->
+    <section class="hero">
+      <div class="site-shell hero-grid">
+        <div class="hero-copy reveal">
+          <span class="eyebrow">{t.hero.eyebrow}</span>
+          <h1>{t.hero.title}</h1>
+          <p class="hero-lede">{t.hero.lede}</p>
+
+          <div class="stat-row">
+            {t.stats.map((s) => (
+              <div class="stat">
+                <strong>{s.value}</strong>
+                <span>{s.label}</span>
+              </div>
+            ))}
+          </div>
+
+          <div class="hero-actions">
+            <a class="store-badge" href={site.appStoreUrl} target="_blank" rel="noopener">
+              <img src="/brand/app-store-badge.svg" alt={t.hero.badgeAlt} width="162" height="54" />
+            </a>
+            <small>{t.hero.priceNote}</small>
+          </div>
+
+          <p class="built-by">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5 20 6v6c0 4.7-3.4 8.3-8 9.5C7.4 20.3 4 16.7 4 12V6z" /><path d="m8.5 12 2.5 2.5 4.5-5" /></svg>
+            {t.hero.builtBy}
+          </p>
+        </div>
+
+        <div class="hero-visual reveal" aria-hidden="true">
+          <div class="hero-photo">
+            <img src="/photos/p01.jpg" alt="" loading="eager" fetchpriority="high" />
+          </div>
+          <div class="phone">
+            <div class="phone-screen"><img src="/app/train.jpg" alt="" /></div>
+          </div>
+          <div class="float-chip chip-a">
+            <span class="chip-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2.5 20 7v10l-8 4.5L4 17V7z" /></svg>
+            </span>
+            <span><strong>{t.hero.chipRank.title}</strong><small>{t.hero.chipRank.sub}</small></span>
+          </div>
+          <div class="float-chip chip-b">
+            <span class="chip-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 16a8 8 0 1 1 16 0" /><path d="m12 16 4-5" /></svg>
+            </span>
+            <span><strong>{t.hero.chipTest.title}</strong><small>{t.hero.chipTest.sub}</small></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 steps -->
+    <section class="section" id="how">
+      <div class="site-shell">
+        <div class="section-head reveal">
+          <h2>{t.stepsHead.title} <span>{t.stepsHead.accent}</span></h2>
+          <p>{t.stepsHead.sub}</p>
+          <div class="section-rule"></div>
+        </div>
+
+        <div class="steps">
+          {t.steps.map((s, i) => (
+            <article class="step reveal">
+              <div class="step-media">
+                <img src={s.photo} alt={s.alt} loading="lazy" />
+                <span class="step-num">{pad(i)}</span>
+              </div>
+              <div>
+                <span class="eyebrow">{t.stepsHead.label} {pad(i)}</span>
+                <h3>{s.title}</h3>
+                <p>{s.copy}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div class="cta-center reveal">
+          <a class="button button-primary" href={site.appStoreUrl} target="_blank" rel="noopener">
+            {t.stepsHead.cta}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+          </a>
+          <small>{t.stepsHead.ctaNote}</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- Who it's for -->
+    <section class="section" id="who">
+      <div class="site-shell">
+        <div class="section-head reveal">
+          <h2>{t.audienceHead.title} <span>{t.audienceHead.accent}</span></h2>
+          <p>{t.audienceHead.sub}</p>
+          <div class="section-rule"></div>
+        </div>
+
+        <div class="audience-grid">
+          {t.audiences.map((a) => (
+            <article class="audience-card reveal">
+              <div class="audience-photo">
+                <img src={a.photo} alt={a.alt} loading="lazy" />
+                <span class="audience-chip">{a.chip}</span>
+              </div>
+              <div class="audience-body">
+                <h3>{a.title}</h3>
+                <p>{a.copy}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- Founder -->
+    <section class="founder" id="founder">
+      <div class="site-shell">
+        <div class="founder-card reveal">
+          <span class="founder-mark" aria-hidden="true">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 20 6v6c0 4.7-3.4 8.3-8 9.5C7.4 20.3 4 16.7 4 12V6z" /><path d="m8.5 12 2.5 2.5 4.5-5" /></svg>
+          </span>
+          <span class="eyebrow">{t.founder.eyebrow}</span>
+          <h2>{t.founder.title}</h2>
+          <p>{t.founder.copy}</p>
+          <small>{t.founder.note}</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section" id="features">
+      <div class="site-shell">
+        <div class="section-head reveal">
+          <h2>{t.featuresHead.title} <span>{t.featuresHead.accent}</span></h2>
+          <p>{t.featuresHead.sub}</p>
+          <div class="section-rule"></div>
+        </div>
+
+        <div class="feature-grid">
+          <div class="feature-list reveal">
+            <h3>{t.featuresHead.listTitle}</h3>
+            <p>{t.featuresHead.listSub}</p>
+            <div role="tablist" aria-label={t.featuresHead.tablistLabel}>
+              {t.features.map((f, i) => (
+                <button
+                  class="feature-tab"
+                  role="tab"
+                  id={`tab-${i}`}
+                  aria-selected={i === 0 ? 'true' : 'false'}
+                  aria-controls="feature-panel"
+                  tabindex={i === 0 ? 0 : -1}
+                >
+                  <span class="tab-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={icons[f.icon]} />
+                  </span>
+                  <span>
+                    <strong>{f.name}</strong>
+                    <small>{f.short}</small>
+                  </span>
+                  <span class="tab-dot"></span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div class="feature-stage reveal" id="feature-panel" role="tabpanel" aria-labelledby="tab-0">
+            <div class="phone">
+              <div class="phone-screen">
+                <img id="feature-screen" src={t.features[0].screen} alt={`${t.features[0].name} ${t.featuresHead.screenAlt}`} />
+              </div>
+            </div>
+            <div class="feature-copy">
+              <h3 id="feature-headline">{t.features[0].headline}</h3>
+              <p id="feature-text">{t.features[0].copy}</p>
+              <span class="eyebrow" id="feature-count">{t.featuresHead.counter} 01</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section" id="faq">
+      <div class="site-shell">
+        <div class="section-head reveal">
+          <h2>{t.faqHead.title} <span>{t.faqHead.accent}</span></h2>
+          <div class="section-rule"></div>
+        </div>
+        <div class="faq reveal">
+          {t.faq.map((f) => (
+            <details>
+              <summary>{f.q}</summary>
+              <p>{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="final-cta">
+      <div class="final-cta-photo" aria-hidden="true">
+        <img src="/photos/p68.jpg" alt="" loading="lazy" />
+      </div>
+      <div class="site-shell reveal">
+        <span class="pill">{t.cta.pill}</span>
+        <h2>{t.cta.title}</h2>
+        <p>{t.cta.sub}</p>
+        <a class="store-badge" href={site.appStoreUrl} target="_blank" rel="noopener">
+          <img src="/brand/app-store-badge.svg" alt={t.hero.badgeAlt} width="162" height="54" />
+        </a>
+        <ul class="checks">
+          {t.cta.checks.map((c) => (
+            <li>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+              {c}
+            </li>
+          ))}
+        </ul>
+        <p class="fine-print">{t.cta.fine}</p>
+      </div>
+    </section>
+  </main>
+
+  <Footer lang={lang} />
+
+  <script define:vars={{ featureData }}>
+    // Feature tabs: swap the phone screen and copy, with arrow-key support.
+    const { features, counter, screenAlt } = featureData;
+    const tabs = Array.from(document.querySelectorAll('.feature-tab'));
+    const screen = document.getElementById('feature-screen');
+    const headline = document.getElementById('feature-headline');
+    const text = document.getElementById('feature-text');
+    const count = document.getElementById('feature-count');
+    const panel = document.getElementById('feature-panel');
+
+    const select = (i, focus) => {
+      tabs.forEach((t, j) => {
+        t.setAttribute('aria-selected', String(i === j));
+        t.tabIndex = i === j ? 0 : -1;
+      });
+      const f = features[i];
+      screen.style.opacity = '0';
+      setTimeout(() => {
+        screen.src = f.screen;
+        screen.alt = `${f.name} ${screenAlt}`;
+        screen.style.opacity = '1';
+      }, 180);
+      headline.textContent = f.headline;
+      text.textContent = f.copy;
+      count.textContent = `${counter} ${String(i + 1).padStart(2, '0')}`;
+      panel.setAttribute('aria-labelledby', tabs[i].id);
+      if (focus) tabs[i].focus();
+    };
+
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => select(i, false));
+      t.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); select((i + 1) % tabs.length, true); }
+        if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); select((i - 1 + tabs.length) % tabs.length, true); }
+      });
+    });
+
+    // Preload the other screens so switching tabs is instant.
+    features.slice(1).forEach((f) => { const img = new Image(); img.src = f.screen; });
+  </script>
+
+  <script>
+    // Fade sections in as they scroll into view.
+    const els = document.querySelectorAll('.reveal');
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver(
+        (entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); } }),
+        { rootMargin: '0px 0px -6% 0px', threshold: 0.04 },
+      );
+      els.forEach((el) => io.observe(el));
+    } else {
+      els.forEach((el) => el.classList.add('is-visible'));
+    }
+  </script>
+</BaseLayout>

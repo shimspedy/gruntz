@@ -1,27 +1,60 @@
 ---
-import { navLinks, site } from '../data/site';
+import { site } from '../data/site';
+import { content, languages, localePath, type Lang } from '../i18n/content';
+
+interface Props {
+  lang?: Lang;
+}
+
+const { lang = 'en' } = Astro.props as Props;
+const t = content[lang].nav;
 
 // Build output uses directory URLs (/support/), so compare without the trailing slash.
 const path = Astro.url.pathname.replace(/(.)\/$/, '$1');
+const home = localePath(lang, '/').replace(/(.)\/$/, '$1');
+
+// Legal pages are English-only, so they stay unprefixed in both languages.
+const links = [
+  { label: t.home, href: localePath(lang, '/') },
+  { label: t.features, href: localePath(lang, '/#features') },
+  { label: t.faq, href: localePath(lang, '/#faq') },
+  { label: t.support, href: '/support' },
+];
+
+// The language switch always lands on the matching homepage.
+const switchTo = (l: Lang) => localePath(l, '/');
 ---
 
 <header class="site-header">
   <div class="header-inner">
-    <a class="brand-lockup" href="/" aria-label="Gruntz home">
+    <a class="brand-lockup" href={localePath(lang, '/')} aria-label="Gruntz">
       <img src="/brand/gruntz-icon.png" alt="" width="32" height="32" />
       <span>Gruntz</span>
     </a>
 
     <nav class="site-nav" aria-label="Primary">
-      {navLinks.map((link) => (
-        <a href={link.href} aria-current={link.href === path ? 'page' : undefined}>
-          {link.label}
-        </a>
-      ))}
+      {links.map((link) => {
+        const target = link.href.replace(/(.)\/$/, '$1');
+        const current = target === path || (target === home && path === home);
+        return (
+          <a href={link.href} aria-current={current ? 'page' : undefined}>
+            {link.label}
+          </a>
+        );
+      })}
     </nav>
 
-    <a class="button button-primary header-cta" href={site.appStoreUrl} target="_blank" rel="noopener">
-      Download
-    </a>
+    <div class="header-actions">
+      <div class="lang-switch" role="group" aria-label={t.language}>
+        {(Object.keys(languages) as Lang[]).map((l) => (
+          <a href={switchTo(l)} hreflang={l} lang={l} aria-current={l === lang ? 'true' : undefined}>
+            {languages[l]}
+          </a>
+        ))}
+      </div>
+      <a class="button button-primary header-cta" href={site.appStoreUrl} target="_blank" rel="noopener">
+        {t.download}
+      </a>
+    </div>
   </div>
 </header>

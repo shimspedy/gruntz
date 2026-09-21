@@ -1,25 +1,37 @@
 ---
 import '../styles/global.css';
 import { site } from '../data/site';
+import { content, languages, localePath, type Lang } from '../i18n/content';
 
 interface Props {
   title?: string;
   description?: string;
   image?: string;
+  lang?: Lang;
+  ogLocale?: string;
 }
 
 const {
-  title = site.title,
-  description = site.description,
+  lang = 'en',
+  title = content[lang].meta.title,
+  description = content[lang].meta.description,
   image = '/og/gruntz-home.png',
+  ogLocale = content[lang].meta.ogLocale,
 } = Astro.props as Props;
 
 const canonical = new URL(Astro.url.pathname, site.url).toString();
 const ogImage = new URL(image, site.url).toString();
+
+// Only the homepage exists in every language; legal pages are English-only.
+const path = Astro.url.pathname;
+const isHome = (Object.keys(languages) as Lang[]).some((l) => localePath(l, '/') === path);
+const alternates = isHome
+  ? (Object.keys(languages) as Lang[]).map((l) => ({ lang: l, href: new URL(localePath(l, '/'), site.url).toString() }))
+  : [];
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -29,6 +41,8 @@ const ogImage = new URL(image, site.url).toString();
     <meta name="theme-color" content="#070708" />
     <script is:inline>document.documentElement.classList.add('js');</script>
     <link rel="canonical" href={canonical} />
+    {alternates.map((a) => <link rel="alternate" hreflang={a.lang} href={a.href} />)}
+    {isHome ? <link rel="alternate" hreflang="x-default" href={new URL('/', site.url).toString()} /> : null}
     <link rel="icon" type="image/png" href="/brand/gruntz-favicon.png" />
     <link rel="apple-touch-icon" href="/brand/gruntz-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
@@ -38,6 +52,7 @@ const ogImage = new URL(image, site.url).toString();
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={ogImage} />
     <meta property="og:site_name" content={site.name} />
+    <meta property="og:locale" content={ogLocale} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
