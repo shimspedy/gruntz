@@ -10,7 +10,7 @@ import { Text } from '../ui/Text';
 import { color, radius, space } from '../ui/tokens';
 
 /** Portrait cover card for carousels ("Matched to you", onboarding). */
-export function PlanCard({
+function PlanCardBase({
   plan,
   width,
   tag,
@@ -64,9 +64,9 @@ export function PlanCard({
 }
 
 /** Compact list row for browsing. */
-export function PlanRow({ plan, last, badge, onPress }: { plan: WorkoutPlan; last?: boolean; badge?: string | null; onPress: () => void }) {
+function PlanRowBase({ plan, last, badge, onOpen }: { plan: WorkoutPlan; last?: boolean; badge?: string | null; onOpen: (plan: WorkoutPlan) => void }) {
   return (
-    <Tap feedback="highlight" baseColor={color.bg} pressedColor={color.bgRaised} onPress={onPress} style={styles.row} accessibilityLabel={plan.title}>
+    <Tap feedback="highlight" baseColor={color.bg} pressedColor={color.bgRaised} onPress={() => onOpen(plan)} style={styles.row} accessibilityLabel={plan.title}>
       <HeroArt exercise={planHero(plan)} style={styles.thumb} />
       <View style={[styles.rowBody, !last && styles.divider]}>
         <View style={{ flex: 1 }}>
@@ -118,3 +118,9 @@ const styles = StyleSheet.create({
   rowBody: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.sm, marginLeft: space.md, paddingRight: space.gutter, minHeight: 128, paddingVertical: space.md },
   divider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: color.line },
 });
+
+// Memoised: the browse list is 528 plans, and every keystroke in its search box
+// re-rendered each mounted row (each of which derives its cover art from the plan).
+// Plans are immutable bundled data, so identity comparison is enough.
+export const PlanCard = React.memo(PlanCardBase);
+export const PlanRow = React.memo(PlanRowBase);

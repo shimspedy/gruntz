@@ -28,6 +28,15 @@ export default function LibraryPlanDayScreen() {
   const session = useSessionStore();
   const following = usePlanLibraryStore((s) => s.activePlanId === params.planId);
   const done = usePlanLibraryStore((s) => s.completedDayIds.includes(params.dayId));
+  // How many exercises share each superset letter. Every row used to re-scan the
+  // whole day to answer that, which is O(n squared) on a 25-exercise day.
+  const groupSizes = React.useMemo(() => {
+    const sizes = new Map<string, number>();
+    for (const slot of day?.exercises ?? []) {
+      if (slot.superset_group) sizes.set(slot.superset_group, (sizes.get(slot.superset_group) ?? 0) + 1);
+    }
+    return sizes;
+  }, [day]);
 
   if (!plan || !day) {
     return (
@@ -79,6 +88,7 @@ export default function LibraryPlanDayScreen() {
         </View>
 
         {day.exercises.map((slot, i) => {
+          // Counted once per day, not re-scanned for every row it is drawn in.
           const info = getPlanExercise(slot);
           const nextSlot = day.exercises[i + 1];
           const pairedWithNext = !!slot.superset_group && nextSlot?.superset_group === slot.superset_group;
@@ -97,7 +107,7 @@ export default function LibraryPlanDayScreen() {
                   <View style={{ flex: 1 }}>
                     {slot.superset_group ? (
                       <Text variant="caption" tone="accent" style={{ marginBottom: 2 }}>
-                        {day.exercises.filter((e) => e.superset_group === slot.superset_group).length > 2 ? 'CIRCUIT' : 'SUPERSET'} {slot.superset_group}
+                        {(groupSizes.get(slot.superset_group) ?? 0) > 2 ? 'CIRCUIT' : 'SUPERSET'} {slot.superset_group}
                       </Text>
                     ) : null}
                     <Text variant="headline" numberOfLines={2}>

@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -78,7 +78,8 @@ export default function PlanBrowseScreen() {
     resetTop();
   };
 
-  const open = (plan: WorkoutPlan) => navigation.navigate('LibraryPlanDetail', { planId: plan.id });
+  // Stable identity, so the memoised rows are not invalidated on every render.
+  const open = useCallback((plan: WorkoutPlan) => navigation.navigate('LibraryPlanDetail', { planId: plan.id }), [navigation]);
   const cardWidth = Math.round(width * 0.62);
 
   const header = (
@@ -175,7 +176,7 @@ export default function PlanBrowseScreen() {
         keyExtractor={(p) => p.id}
         ListHeaderComponent={header}
         renderItem={({ item, index }) => (
-          <PlanRow plan={item} last={index === plans.length - 1} badge={item.id === activeId ? 'Following' : null} onPress={() => open(item)} />
+          <PlanRow plan={item} last={index === plans.length - 1} badge={item.id === activeId ? 'Following' : null} onOpen={open} />
         )}
         ListEmptyComponent={
           <EmptyState icon="list" title="No plans match" body="Nothing here fits those filters.">

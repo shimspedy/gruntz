@@ -87,22 +87,33 @@ export default function RoutineDetailScreen() {
     ]);
   };
 
+  const duplicate = () => {
+    const st = useRoutineStore.getState();
+    st.newDraft(routine.items.map((it) => it.key));
+    st.updateDraft({ name: `${routine.name} copy`, days: [...routine.days], items: routine.items.map((it) => ({ ...it, uid: `${it.uid}c` })) });
+    navigation.navigate('RoutineEditor');
+  };
+
   const more = () => {
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         { options: ['Edit workout', 'Duplicate', 'Delete workout', 'Cancel'], destructiveButtonIndex: 2, cancelButtonIndex: 3, userInterfaceStyle: 'dark' },
         (i) => {
           if (i === 0) edit();
-          if (i === 1) {
-            const st = useRoutineStore.getState();
-            st.newDraft(routine.items.map((it) => it.key));
-            st.updateDraft({ name: `${routine.name} copy`, days: [...routine.days], items: routine.items.map((it) => ({ ...it, uid: `${it.uid}c` })) });
-            navigation.navigate('RoutineEditor');
-          }
+          if (i === 1) duplicate();
           if (i === 2) remove();
         },
       );
-    } else remove();
+      return;
+    }
+    // Android used to fall straight through to the delete confirmation, so Edit and
+    // Duplicate could not be reached from this menu at all.
+    Alert.alert(routine.name, undefined, [
+      { text: 'Edit workout', onPress: edit },
+      { text: 'Duplicate', onPress: duplicate },
+      { text: 'Delete workout', style: 'destructive', onPress: remove },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   const start = () => {

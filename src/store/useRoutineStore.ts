@@ -135,5 +135,8 @@ export const useRoutineStore = create<RoutineState>()(
 /** Rough duration: work at ~40s per set plus the prescribed rest. */
 export function routineMinutes(r: Pick<Routine, 'items'>) {
   const secs = r.items.reduce((t, i) => t + i.sets * 40 + Math.max(0, i.sets - 1) * i.rest, 0);
-  return Math.max(5, Math.round(secs / 60 / 5) * 5);
+  // Round to 5 for anything substantial, but keep short routines honest: a single
+  // set of one movement claimed "5 min" because the floor and the step were the same.
+  const minutes = secs / 60;
+  return minutes < 5 ? Math.max(1, Math.round(minutes)) : Math.round(minutes / 5) * 5;
 }
