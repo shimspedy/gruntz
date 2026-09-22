@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { BackHandler, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -170,7 +170,23 @@ function OnboardingFlow() {
   const step = steps[index];
   const questionSteps = steps.filter((x) => !['welcome', 'story1', 'story2', 'generating', 'ready', 'commit'].includes(x));
   const qIndex = questionSteps.indexOf(step);
-  const progress = qIndex >= 0 ? (qIndex + 1) / questionSteps.length : 1;
+  // Picking Military Prep inserts extra questions, which grew the denominator and
+  // visibly slid the bar backwards. Measure against the longest the flow can get,
+  // so answering a question never looks like losing ground.
+  const maxQuestions = useRef(questionSteps.length);
+  maxQuestions.current = Math.max(maxQuestions.current, questionSteps.length);
+  const progress = qIndex >= 0 ? (qIndex + 1) / maxQuestions.current : 1;
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return undefined;
+    // Without this, back exited the app mid-onboarding instead of going a step back.
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (index <= 0) return false;
+      go(-1);
+      return true;
+    });
+    return () => sub.remove();
+  });
 
   const go = useCallback(
     (delta: 1 | -1) => {

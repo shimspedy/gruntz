@@ -104,7 +104,7 @@ export function SessionSummary({ onBack, onDone }: { onBack: () => void; onDone:
             Rewards
           </Text>
           <XpRow label={`Exercises · ${doneExercises.length} of ${s.exercises.length}`} value={mission?.total_xp ?? 0} />
-          <XpRow label={mission?.is_perfect ? 'Perfect mission bonus' : 'Completion bonus'} value={mission?.completion_bonus ?? 0} />
+          <XpRow label={mission?.is_perfect ? 'Perfect workout bonus' : 'Completion bonus'} value={mission?.completion_bonus ?? 0} />
           {mission?.has_personal_record ? (
             <XpRow
               label={`Personal record · ${mission.exercises.filter((e) => e.is_personal_record).length}`}

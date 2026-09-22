@@ -64,7 +64,7 @@ export default function CelebrationScreen() {
     transform: [{ scale: 0.6 + badge.get() * 0.4 }, { rotate: `${(1 - badge.get()) * -12}deg` }],
   }));
 
-  const headline = rankUp ? 'New rank' : levelUp ? `Level ${params.levelAfter}` : 'Mission complete';
+  const headline = rankUp ? 'New rank' : levelUp ? `Level ${params.levelAfter}` : 'Workout complete';
   const sub = rankUp ? `${params.rankAfter} · ${RANK_TIERS[params.rankAfter].name} tier` : params.title;
 
   return (

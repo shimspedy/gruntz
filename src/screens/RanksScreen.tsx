@@ -98,7 +98,7 @@ export default function RanksScreen() {
             </View>
             <Text style={[styles.rankName, fresh && { color: color.textTertiary }]}>{rankTitle(progress.current_rank, military)}</Text>
             <Text variant="callout" tone="secondary" style={{ marginTop: 2 }}>
-              {fresh ? 'Complete a mission to start climbing' : `Level ${progress.current_level} · ${RANK_TIERS[progress.current_rank].name} tier`}
+              {fresh ? 'Complete a workout to start climbing' : `Level ${progress.current_level} · ${RANK_TIERS[progress.current_rank].name} tier`}
             </Text>
           </View>
           <RankBadge rank={progress.current_rank} size={92} locked={fresh} />

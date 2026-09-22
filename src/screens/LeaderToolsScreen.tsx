@@ -22,7 +22,8 @@ export default function LeaderToolsScreen() {
   const [name, setName] = useState(teamName);
   const [code, setCode] = useState(teamCode);
   const readiness = calculateDailyReadiness(getTodaysCheckIn(checkIns));
-  const status = readiness >= 75 ? 'Green' : readiness >= 50 ? 'Amber' : 'Private';
+  // Green / Amber / Red is the scale; "Private" was a rank sitting in a list of statuses.
+  const status = readiness >= 75 ? 'Green' : readiness >= 50 ? 'Amber' : 'Red';
 
   return (
     <View style={styles.screen}>
@@ -81,7 +82,7 @@ export default function LeaderToolsScreen() {
           <View style={styles.vr} />
           <Metric label="Streak" value={`${progress.streak_days}d`} />
           <View style={styles.vr} />
-          <Metric label="Status" value={status} tint={status === 'Green' ? color.success : status === 'Amber' ? color.flame : color.textSecondary} />
+          <Metric label="Status" value={status} tint={status === 'Green' ? color.success : status === 'Amber' ? color.flame : color.danger} />
         </View>
         <Text variant="footnote" tone="tertiary" style={{ marginTop: space.md, paddingHorizontal: 6 }}>
           No cloud roster is connected in this release. Shared rosters will use this same permission model.

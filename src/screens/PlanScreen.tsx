@@ -70,7 +70,7 @@ export default function PlanScreen() {
           </Text>
           <View style={styles.progressRow}>
             <Text variant="subhead" tone="secondary" tabular>
-              {done} of {trainingDays.length} missions
+              {done} of {trainingDays.length} workouts
             </Text>
             <Text variant="subhead" tone={readiness < 50 ? 'danger' : 'secondary'}>
               {readiness < 50 ? 'Recovery bias today' : phase?.focus ?? ''}

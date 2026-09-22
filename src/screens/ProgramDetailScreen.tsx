@@ -55,7 +55,7 @@ export default function ProgramDetailScreen() {
       navigation.navigate('Paywall');
       return;
     }
-    Alert.alert(`Start ${program.name}?`, 'Your plan restarts at week one. Completed missions and XP stay with you.', [
+    Alert.alert(`Start ${program.name}?`, 'Your plan restarts at week one. Completed workouts and XP stay with you.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Start program',

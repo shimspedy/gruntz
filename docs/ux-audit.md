@@ -3,8 +3,8 @@
 Six audits of the app (workout player, onboarding/paywall, plans & library, navigation/state/performance,
 copy & accessibility, data correctness), scored by how much each one would annoy a real user.
 
-- **Fixed: 168** — the 55 first-pass fixes, plus 113 of the numbered items below.
-- **Open: 9** — including 5 that need a device or account.
+- **Fixed: 172** — the 55 first-pass fixes, plus all 117 numbered items below.
+- **Open: 5** — 5 that need a device or App Store account, and nothing else.
 
 Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[dev]` needs a device or account to verify.
 
@@ -195,17 +195,17 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 87. [x] Run tracker exit alert traps the user with a single "OK" (`RunTrackerScreen.tsx:140`).
 88. [x] Challenge sheet silently ignores invalid input (`ChallengeSheet.tsx:111`).
 89. [x] `Linking.openURL` unguarded in the Test screen (`TestScreen.tsx:190`).
-90. [ ] Remaining military wording for general users: Welcome slides, Test tab, "Private" readiness tier, "Alpha Section" placeholder, "Branch" link.
+90. [x] Remaining military wording for general users: Welcome slides, Test tab, "Private" readiness tier, "Alpha Section" placeholder, "Branch" link.
 91. [x] Stats renders six zeros on a fresh install with no empty state; Streak screen has no zero state and pages into empty future months.
 92. [x] Imperial hardcoded in Stats pack weight, Run tracker elevation and pack input, Test screen units; `units: 'imperial'` is assumed at profile creation.
 93. [x] `textTertiary` (~4.1:1) and `textQuaternary` (~2.3:1) fail WCAG AA on black, used in 40 files — including inactive tab labels and Settings values.
-94. [ ] Paywall: Restore/Terms/Privacy are bare text under 44 pt; the auto-renew disclosure is 10 pt grey; a stale cached price can render.
+94. [x] Paywall: Restore/Terms/Privacy are bare text under 44 pt; the auto-renew disclosure is 10 pt grey; a stale cached price can render.
 95. [x] `Text` caps Dynamic Type at 1.3×, below iOS accessibility sizes.
 96. [x] Ranks screen: ALL-CAPS level line, "0/100" on every skill for new users, and a dead info icon.
 97. [x] Profile: sheet discards typed name on backdrop tap; Save toasts success when the write is a no-op; 24-char names truncate; per-bar chart values not exposed to VoiceOver.
 98. [x] Service profile: picking a branch silently resets a deliberate test choice; every row is a no-op when the profile is null; no test date editor.
-99. [ ] Onboarding: progress bar shrinks when Military Prep adds steps; no Android hardware back; 3.4 s fake "building your plan" with no skip; weeks-to-test ruler is unusable with VoiceOver; carousel auto-advances mid-sentence with no reduce-motion check; no "Already subscribed? Restore" before 13 questions.
-100. [ ] Inconsistent date formats and terminology (workout/mission/session/routine/plan/program) across screens.
+99. [x] Onboarding: progress bar shrinks when Military Prep adds steps; no Android hardware back; 3.4 s fake "building your plan" with no skip; weeks-to-test ruler is unusable with VoiceOver; carousel auto-advances mid-sentence with no reduce-motion check; no "Already subscribed? Restore" before 13 questions.
+100. [x] Inconsistent date formats and terminology (workout/mission/session/routine/plan/program) across screens.
 
 ## Open — data correctness
 

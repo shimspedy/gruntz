@@ -8,10 +8,11 @@ import { LogoMark } from '../../ui/Logo';
 import { Text } from '../../ui/Text';
 import { color, motion, space } from '../../ui/tokens';
 
+// Shown before anyone has picked a goal, so the copy cannot assume a military one.
 const SLIDES = [
-  { title: 'Log every set', body: 'Reps, load and rest for every movement in your mission.' },
-  { title: 'Climb the ranks', body: 'Every mission earns XP. Recruit to Apex, one day at a time.' },
-  { title: 'Reach your goal', body: 'Plans matched to your goals, days and gear, with military test prep when you need it.' },
+  { title: 'Log every set', body: 'Reps, load and rest for every movement in your workout.' },
+  { title: 'Climb the levels', body: 'Every workout earns XP. Beginner to Apex, one day at a time.' },
+  { title: 'Reach your goal', body: 'Plans matched to your goals, days and gear — with military test prep if that is what you are training for.' },
 ];
 
 export function Welcome({ onStart }: { onStart: () => void }) {

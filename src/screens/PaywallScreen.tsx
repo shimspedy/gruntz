@@ -21,7 +21,7 @@ import { openExternalUrl } from '../utils/externalLinks';
 const perMonth = (p: string) => `${p.replace(/\s*\/\s*(mo|month)\.?$/i, '')} / month`;
 
 const BENEFITS = [
-  'Daily missions built around your test',
+  'Daily workouts built around your goal',
   'Base Camp, Raider and Recon programs',
   'Run and ruck tracking with audio splits',
   'Ranks, streaks and daily challenges',
@@ -157,7 +157,7 @@ export default function PaywallScreen() {
               : access === 'locked'
                 ? 'Your included access has ended'
                 : access === 'subscriber'
-                  ? 'Every program and mission is unlocked'
+                  ? 'Every program and workout is unlocked'
                   : `${GRUNTZ_TRIAL_DAYS} days of full access included`}
           </Text>
         </Animated.View>
@@ -205,9 +205,13 @@ export default function PaywallScreen() {
           </View>
         ) : null}
 
-        <Text variant="caption" tone="tertiary" align="center" style={styles.legal}>
+        {/* Never quote a price the store has not confirmed: with no live offering
+            this rendered a placeholder inside a binding auto-renew disclosure. */}
+        <Text variant="caption" tone="secondary" align="center" style={styles.legal}>
           {access === 'subscriber'
             ? `Manage or cancel anytime in your ${store} account settings.`
+            : !offering
+            ? 'Pricing is loading from the App Store.'
             : `${GRUNTZ_PRO_LABEL} is an auto-renewing ${plan === 'annual' && annual ? 'yearly' : 'monthly'} subscription at ${selectedPrice}. Payment is charged to your ${store} account at confirmation and renews unless cancelled at least 24 hours before the period ends. Manage or cancel anytime in account settings.`}
         </Text>
       </ScrollView>
@@ -226,24 +230,25 @@ export default function PaywallScreen() {
           </Text>
         </View>
         <View style={styles.links}>
-          <Tap feedback="opacity" onPress={() => void restore()} accessibilityLabel="Restore purchases">
-            <Text variant="footnote" tone="tertiary">
+          {/* These were bare text well under the 44pt minimum. */}
+          <Tap feedback="opacity" hitSlop={12} onPress={() => void restore()} style={styles.link} accessibilityLabel="Restore purchases">
+            <Text variant="footnote" tone="secondary">
               Restore
             </Text>
           </Tap>
           <Text variant="footnote" tone="quaternary">
             ·
           </Text>
-          <Tap feedback="opacity" onPress={() => void open(GRUNTZ_TERMS_OF_USE_URL)} accessibilityLabel="Terms of use">
-            <Text variant="footnote" tone="tertiary">
+          <Tap feedback="opacity" hitSlop={12} onPress={() => void open(GRUNTZ_TERMS_OF_USE_URL)} style={styles.link} accessibilityLabel="Terms of use">
+            <Text variant="footnote" tone="secondary">
               Terms
             </Text>
           </Tap>
           <Text variant="footnote" tone="quaternary">
             ·
           </Text>
-          <Tap feedback="opacity" onPress={() => void open(GRUNTZ_PRIVACY_POLICY_URL)} accessibilityLabel="Privacy policy">
-            <Text variant="footnote" tone="tertiary">
+          <Tap feedback="opacity" hitSlop={12} onPress={() => void open(GRUNTZ_PRIVACY_POLICY_URL)} style={styles.link} accessibilityLabel="Privacy policy">
+            <Text variant="footnote" tone="secondary">
               Privacy
             </Text>
           </Tap>
@@ -337,7 +342,9 @@ const styles = StyleSheet.create({
   planBody: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.lg, paddingVertical: 18 },
   planTitle: { fontFamily: font.bold, fontSize: 24 },
   warning: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: space.lg, padding: space.md, borderRadius: radius.md, backgroundColor: color.surface },
-  legal: { marginTop: space.lg, lineHeight: 17, fontSize: 12 },
+  // The auto-renew disclosure is the one block a buyer must be able to read.
+  legal: { marginTop: space.lg, lineHeight: 19, fontSize: 13 },
+  link: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: space.md, paddingTop: space.md, backgroundColor: 'rgba(0,0,0,0.92)' },
   reassure: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 14 },
   links: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginTop: 10 },

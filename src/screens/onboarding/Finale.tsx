@@ -19,6 +19,7 @@ import type { TrainingProgram } from '../../types';
 import { HeroArt } from '../../ui/ExerciseArt';
 import { Icon } from '../../ui/Icon';
 import { LogoMark } from '../../ui/Logo';
+import { Tap } from '../../ui/Pressable';
 import { Bar } from '../../ui/Progress';
 import { Text } from '../../ui/Text';
 import { haptic } from '../../ui/haptics';
@@ -60,6 +61,20 @@ export function Generating({ onDone, military }: { onDone: () => void; military?
         Building your plan…
       </Text>
       <Bar progress={pct / 100} height={6} duration={120} style={styles.genBar} />
+      {/* The wait is theatre, not work — anyone who does not want it can leave. */}
+      <Tap
+        feedback="opacity"
+        hitSlop={12}
+        style={{ marginTop: space.lg }}
+        accessibilityLabel="Skip"
+        onPress={() => {
+          if (done.current) return;
+          done.current = true;
+          onDone();
+        }}
+      >
+        <Text variant="subhead" tone="secondary">Skip</Text>
+      </Tap>
       <View style={{ marginTop: space.xl, gap: 10, alignSelf: 'center', alignItems: 'flex-start' }}>
         {steps.map((s, i) => {
           const lit = pct >= (i + 1) * 30;
