@@ -14,7 +14,7 @@ import type {
 } from 'react-native-purchases';
 
 export type PurchaseStatus = 'purchased' | 'cancelled' | 'unavailable' | 'error';
-export type RestoreStatus = 'restored' | 'unavailable' | 'error';
+export type RestoreStatus = 'restored' | 'none' | 'unavailable' | 'error';
 
 export interface OfferingSnapshot {
   offeringIdentifier: string;
@@ -383,6 +383,11 @@ export async function restoreRevenueCatPurchases(): Promise<{
 
   try {
     const customerInfo = await purchasesModule.default.restorePurchases();
+    // Restoring "successfully" with nothing to restore left paying users locked out with a
+    // success message, so only report 'restored' when an entitlement really came back.
+    if (!getEntitlementAccess(customerInfo)?.isActive) {
+      return { status: 'none', customerInfo, message: 'No active subscription was found for this account.' };
+    }
     return { status: 'restored', customerInfo };
   } catch (error) {
     const err = error as { message?: string };

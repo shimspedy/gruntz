@@ -1,18 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useIsFocused, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { ExerciseCharts, ExerciseHistory, ExerciseRecords, useExerciseSessions } from '../components/ExerciseProgress';
 import { ExerciseVideo } from '../components/ExerciseVideo';
 import { MuscleBodyMap } from '../components/MuscleBodyMap';
 import { exercises, getExerciseById, libraryExerciseId } from '../data/exercises';
 import { appMuscles, getLibraryItem } from '../data/exerciseLibrary';
 import { muscleLabel } from '../features/plan';
 import { useRoutineStore } from '../store/useRoutineStore';
+import { useExerciseNotesStore } from '../store/useExerciseNotesStore';
+import { useUserStore } from '../store/useUserStore';
 import type { RootStackParamList } from '../types/navigation';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { EmptyState, Hairline, NavHeader, Stat } from '../ui/Layout';
+import { Segmented } from '../ui/Segmented';
 import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
 import { toast } from '../ui/Toast';
@@ -22,6 +26,14 @@ import { GROUP_LABEL } from './ExerciseLibraryScreen';
 const BACK = new Set(['back', 'hamstrings', 'glutes', 'triceps', 'lats', 'calves', 'lower_back', 'traps']);
 const FRONT = new Set(['chest', 'quads', 'core', 'biceps', 'shoulders', 'adductors']);
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+type Tab = 'about' | 'history' | 'charts' | 'records';
+const TABS: { value: Tab; label: string }[] = [
+  { value: 'about', label: 'About' },
+  { value: 'history', label: 'History' },
+  { value: 'charts', label: 'Charts' },
+  { value: 'records', label: 'Records' },
+];
 
 export default function ExerciseDetailScreen() {
   const navigation = useNavigation();
@@ -37,6 +49,11 @@ export default function ExerciseDetailScreen() {
       ? getExerciseById(libraryExerciseId(params.mediaKey))
       : undefined;
   const lib = ex?.media_key ? getLibraryItem(ex.media_key) : undefined;
+  const [tab, setTab] = useState<Tab>('about');
+  const unit = useUserStore((u) => (u.profile?.settings.units === 'metric' ? 'kg' : 'lb'));
+  // Same key the workout log uses: the clip, so an app exercise and its library clip share history.
+  const sessions = useExerciseSessions(ex ? (ex.media_key ?? ex.id) : undefined, unit);
+  const note = useExerciseNotesStore((n) => (ex ? n.notes[ex.media_key ?? ex.id] : undefined));
 
   if (!ex) {
     return (
@@ -111,149 +128,169 @@ export default function ExerciseDetailScreen() {
             </Text>
           ) : null}
 
-          <View style={styles.stats}>
-            {stats.map((s, i) => (
-              <Stat key={s.label} label={s.label} value={s.value} accent={i === 0} style={{ flex: 1 }} />
-            ))}
-          </View>
-          <Hairline />
-
-          {muscles.length ? (
-            <>
-              <Text variant="section" style={styles.h}>
-                Muscles
+          {note ? (
+            <View style={styles.noteCard}>
+              <Icon name="pencil" size={14} color={color.textSecondary} style={{ marginTop: 3 }} />
+              <Text variant="callout" tone="secondary" style={{ flex: 1 }}>
+                {note}
               </Text>
-              <View style={styles.muscleRow}>
-                <View style={styles.bodyTile}>
-                  <MuscleBodyMap muscles={heat} scale={0.42} side={side} variant="soft" />
-                </View>
-                <View style={{ flex: 1, gap: 6 }}>
-                  {lib ? (
-                    <>
-                      <Text variant="footnote" tone="tertiary">
-                        Primary
-                      </Text>
-                      <Text variant="headline">{lib.primary.join(', ')}</Text>
-                      {lib.secondary.length ? (
-                        <>
-                          <Text variant="footnote" tone="tertiary" style={{ marginTop: 6 }}>
-                            Secondary
-                          </Text>
-                          <Text variant="callout" tone="secondary">
-                            {lib.secondary.join(', ')}
-                          </Text>
-                        </>
-                      ) : null}
-                    </>
-                  ) : (
-                    <View style={styles.chips}>
-                      {muscles.map((m) => (
-                        <View key={m} style={styles.chip}>
-                          <Text variant="subhead">{muscleLabel(m)}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  )}
-                </View>
-              </View>
-            </>
+            </View>
           ) : null}
 
-          {steps.length ? (
+          <Segmented options={TABS} value={tab} onChange={setTab} style={{ marginTop: space.lg }} />
+          {tab === 'about' ? (
             <>
-              <Text variant="section" style={styles.h}>
-                How to
-              </Text>
-              {steps.map((step, i) => (
-                <Animated.View key={i} entering={FadeInDown.delay(i * 50).duration(300)} style={styles.step}>
-                  <View style={styles.num}>
-                    <Text variant="subhead" tabular>
-                      {i + 1}
+            <View style={styles.stats}>
+              {stats.map((s, i) => (
+                <Stat key={s.label} label={s.label} value={s.value} accent={i === 0} style={{ flex: 1 }} />
+              ))}
+            </View>
+            <Hairline />
+
+            {muscles.length ? (
+              <>
+                <Text variant="section" style={styles.h}>
+                  Muscles
+                </Text>
+                <View style={styles.muscleRow}>
+                  <View style={styles.bodyTile}>
+                    <MuscleBodyMap muscles={heat} scale={0.42} side={side} variant="soft" />
+                  </View>
+                  <View style={{ flex: 1, gap: 6 }}>
+                    {lib ? (
+                      <>
+                        <Text variant="footnote" tone="tertiary">
+                          Primary
+                        </Text>
+                        <Text variant="headline">{lib.primary.join(', ')}</Text>
+                        {lib.secondary.length ? (
+                          <>
+                            <Text variant="footnote" tone="tertiary" style={{ marginTop: 6 }}>
+                              Secondary
+                            </Text>
+                            <Text variant="callout" tone="secondary">
+                              {lib.secondary.join(', ')}
+                            </Text>
+                          </>
+                        ) : null}
+                      </>
+                    ) : (
+                      <View style={styles.chips}>
+                        {muscles.map((m) => (
+                          <View key={m} style={styles.chip}>
+                            <Text variant="subhead">{muscleLabel(m)}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                </View>
+              </>
+            ) : null}
+
+            {steps.length ? (
+              <>
+                <Text variant="section" style={styles.h}>
+                  How to
+                </Text>
+                {steps.map((step, i) => (
+                  <Animated.View key={i} entering={FadeInDown.delay(i * 50).duration(300)} style={styles.step}>
+                    <View style={styles.num}>
+                      <Text variant="subhead" tabular>
+                        {i + 1}
+                      </Text>
+                    </View>
+                    <Text variant="body" style={{ flex: 1 }}>
+                      {step}
+                    </Text>
+                  </Animated.View>
+                ))}
+              </>
+            ) : null}
+
+            {mistakes.length ? (
+              <>
+                <Text variant="section" style={styles.h}>
+                  Common mistakes
+                </Text>
+                {mistakes.map((m, i) => (
+                  <View key={i} style={styles.tip}>
+                    <Icon name="alert" size={17} color={color.flame} style={{ marginTop: 2 }} />
+                    <Text variant="body" tone="secondary" style={{ flex: 1 }}>
+                      {m}
                     </Text>
                   </View>
-                  <Text variant="body" style={{ flex: 1 }}>
-                    {step}
-                  </Text>
-                </Animated.View>
-              ))}
-            </>
-          ) : null}
+                ))}
+              </>
+            ) : null}
 
-          {mistakes.length ? (
-            <>
-              <Text variant="section" style={styles.h}>
-                Common mistakes
-              </Text>
-              {mistakes.map((m, i) => (
-                <View key={i} style={styles.tip}>
-                  <Icon name="alert" size={17} color={color.flame} style={{ marginTop: 2 }} />
-                  <Text variant="body" tone="secondary" style={{ flex: 1 }}>
-                    {m}
-                  </Text>
-                </View>
-              ))}
-            </>
-          ) : null}
-
-          {!lib?.mistakes.length && ex.form_tips.length ? (
-            <>
-              <Text variant="section" style={styles.h}>
-                Form cues
-              </Text>
-              {ex.form_tips.map((tip, i) => (
-                <View key={i} style={styles.tip}>
-                  <View style={styles.dot} />
-                  <Text variant="body" tone="secondary" style={{ flex: 1 }}>
-                    {tip}
-                  </Text>
-                </View>
-              ))}
-            </>
-          ) : null}
-
-          {fromLibrary && lib?.benefits.length ? (
-            <>
-              <Text variant="section" style={styles.h}>
-                Why it works
-              </Text>
-              {lib.benefits.map((b, i) => (
-                <View key={i} style={styles.tip}>
-                  <Icon name="check" size={16} color={color.accent} weight="bold" style={{ marginTop: 3 }} />
-                  <Text variant="body" tone="secondary" style={{ flex: 1 }}>
-                    {b}
-                  </Text>
-                </View>
-              ))}
-            </>
-          ) : null}
-
-          {!fromLibrary && ex.equipment.length ? (
-            <>
-              <Text variant="section" style={styles.h}>
-                Equipment
-              </Text>
-              <View style={styles.chips}>
-                {ex.equipment.map((e) => (
-                  <View key={e} style={styles.chip}>
-                    <Text variant="subhead">{cap(e)}</Text>
+            {!lib?.mistakes.length && ex.form_tips.length ? (
+              <>
+                <Text variant="section" style={styles.h}>
+                  Form cues
+                </Text>
+                {ex.form_tips.map((tip, i) => (
+                  <View key={i} style={styles.tip}>
+                    <View style={styles.dot} />
+                    <Text variant="body" tone="secondary" style={{ flex: 1 }}>
+                      {tip}
+                    </Text>
                   </View>
                 ))}
-              </View>
-            </>
-          ) : null}
+              </>
+            ) : null}
 
-          {usedIn.length ? (
-            <>
-              <Text variant="section" style={styles.h}>
-                In your programs
-              </Text>
-              {usedIn.map((e) => (
-                <Text key={e.id} variant="body" tone="secondary" style={{ marginBottom: 6 }}>
-                  {e.name}
+            {fromLibrary && lib?.benefits.length ? (
+              <>
+                <Text variant="section" style={styles.h}>
+                  Why it works
                 </Text>
-              ))}
+                {lib.benefits.map((b, i) => (
+                  <View key={i} style={styles.tip}>
+                    <Icon name="check" size={16} color={color.accent} weight="bold" style={{ marginTop: 3 }} />
+                    <Text variant="body" tone="secondary" style={{ flex: 1 }}>
+                      {b}
+                    </Text>
+                  </View>
+                ))}
+              </>
+            ) : null}
+
+            {!fromLibrary && ex.equipment.length ? (
+              <>
+                <Text variant="section" style={styles.h}>
+                  Equipment
+                </Text>
+                <View style={styles.chips}>
+                  {ex.equipment.map((e) => (
+                    <View key={e} style={styles.chip}>
+                      <Text variant="subhead">{cap(e)}</Text>
+                    </View>
+                  ))}
+                </View>
+              </>
+            ) : null}
+
+            {usedIn.length ? (
+              <>
+                <Text variant="section" style={styles.h}>
+                  In your programs
+                </Text>
+                {usedIn.map((e) => (
+                  <Text key={e.id} variant="body" tone="secondary" style={{ marginBottom: 6 }}>
+                    {e.name}
+                  </Text>
+                ))}
+              </>
+            ) : null}
             </>
-          ) : null}
+          ) : (
+            <View style={{ marginTop: space.lg }}>
+              {tab === 'history' ? <ExerciseHistory sessions={sessions} unit={unit} /> : null}
+              {tab === 'charts' ? <ExerciseCharts sessions={sessions} unit={unit} /> : null}
+              {tab === 'records' ? <ExerciseRecords sessions={sessions} unit={unit} /> : null}
+            </View>
+          )}
         </View>
       </ScrollView>
 
@@ -286,6 +323,15 @@ const styles = StyleSheet.create({
   num: { width: 30, height: 30, borderRadius: 15, backgroundColor: color.surface, alignItems: 'center', justifyContent: 'center' },
   tip: { flexDirection: 'row', gap: 12, marginBottom: 12, alignItems: 'flex-start' },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: color.accent, marginTop: 9 },
+  noteCard: {
+    flexDirection: 'row',
+    gap: space.sm,
+    marginTop: space.lg,
+    padding: space.md,
+    borderRadius: radius.md,
+    borderCurve: 'continuous',
+    backgroundColor: color.surface,
+  },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { height: 34, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: color.surface, justifyContent: 'center' },
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: space.md, paddingTop: space.md, backgroundColor: color.bg },

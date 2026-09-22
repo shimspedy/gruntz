@@ -168,14 +168,9 @@ export const useUserStore = create<UserState>()(
       setHydrated: (hydrated) => set({ hasHydrated: hydrated }),
 
       addXP: (amount) => {
-        set((state) => {
-          return {
-            progress: {
-              ...state.progress,
-              ...applyXP(state.progress, amount),
-            },
-          };
-        });
+        const safe = Number.isFinite(amount) ? Math.max(0, Math.round(amount)) : 0;
+        if (!safe) return;
+        set((state) => ({ progress: { ...state.progress, ...applyXP(state.progress, safe) } }));
       },
 
       recordChallengeActivity: (challenge, amount) => {
@@ -282,9 +277,14 @@ export const useUserStore = create<UserState>()(
 
           const today = mission.mission_date || getLocalDateKey();
           const wasStreakAlive = state.progress.last_workout_date
-            ? isStreakAlive(state.progress.last_workout_date)
+            ? isStreakAlive(state.progress.last_workout_date, state.profile?.workout_days_per_week)
             : false;
-          const newStreak = wasStreakAlive ? state.progress.streak_days + 1 : 1;
+          const alreadyToday = state.progress.last_workout_date === today;
+          const newStreak = alreadyToday
+            ? Math.max(1, state.progress.streak_days)
+            : wasStreakAlive
+              ? state.progress.streak_days + 1
+              : 1;
           const streakBonus = calculateStreakBonus(newStreak);
 
           const totalXP = mission.total_xp + mission.completion_bonus + mission.pr_bonus + streakBonus;
@@ -305,7 +305,7 @@ export const useUserStore = create<UserState>()(
               ...state.progress,
               ...applyXP(state.progress, totalXP),
               streak_days: newStreak,
-              last_workout_date: today,
+              last_workout_date: state.progress.last_workout_date && state.progress.last_workout_date > today ? state.progress.last_workout_date : today,
               workouts_completed: state.progress.workouts_completed + 1,
               total_reps: state.progress.total_reps + totalNewReps,
               exercises_completed: newExercisesCompleted,
@@ -317,11 +317,12 @@ export const useUserStore = create<UserState>()(
 
       updateStreak: () => {
         set((state) => {
-          if (state.progress.last_workout_date && !isStreakAlive(state.progress.last_workout_date)) {
+          if (state.progress.last_workout_date && !isStreakAlive(state.progress.last_workout_date, state.profile?.workout_days_per_week)) {
             return {
               progress: {
                 ...state.progress,
                 streak_days: 0,
+                last_workout_date: null,
               },
             };
           }
@@ -385,7 +386,12 @@ export const useUserStore = create<UserState>()(
         });
 
         if (newUnlocks.length > 0) {
-          set({ achievements: currentAchievements });
+          // Unlock screens advertise "+250 XP"; pay it, instead of only recording the badge.
+          const reward = newUnlocks.reduce((sum, id) => sum + (achievements.find((a) => a.id === id)?.xp_reward ?? 0), 0);
+          set((state) => ({
+            achievements: currentAchievements,
+            progress: reward > 0 ? { ...state.progress, ...applyXP(state.progress, reward) } : state.progress,
+          }));
         }
         return newUnlocks;
       },

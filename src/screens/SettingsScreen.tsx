@@ -6,16 +6,23 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 import { GRUNTZ_PRIVACY_POLICY_URL, GRUNTZ_SUPPORT_URL, GRUNTZ_TERMS_OF_USE_URL } from '../config/legal';
+import { Linking } from 'react-native';
 import {
   cancelDailyReminder,
+  cancelRestDone,
+  cancelTrialEndingReminder,
   cancelWeeklyRecap,
+  setNotificationsEnabled,
   requestNotificationPermission,
   scheduleDailyReminder,
   scheduleWeeklyRecap,
   setupNotificationChannels,
 } from '../services/notifications';
 import { useReadinessStore } from '../store/useReadinessStore';
-import { useSessionStore } from '../store/useSessionStore';
+import { useExerciseLogStore } from '../store/useExerciseLogStore';
+import { useExerciseNotesStore } from '../store/useExerciseNotesStore';
+import { usePlanLibraryStore } from '../store/usePlanLibraryStore';
+import { convertSessionWeights, useSessionStore } from '../store/useSessionStore';
 import { getAccessState, useSubscriptionStore } from '../store/useSubscriptionStore';
 import { useUserStore } from '../store/useUserStore';
 import { Group, NavHeader, Row } from '../ui/Layout';
@@ -58,18 +65,27 @@ export default function SettingsScreen() {
         const granted = await requestNotificationPermission();
         if (!granted) {
           updateSettings({ notifications_enabled: false });
-          Alert.alert('Notifications are off', 'Turn on notifications for Gruntz in iOS Settings to get mission reminders.');
+          setNotificationsEnabled(false);
+          Alert.alert('Notifications are off', 'Gruntz needs permission in Settings before it can remind you.', [
+            { text: 'Not now', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => void Linking.openSettings() },
+          ]);
           return;
         }
         await setupNotificationChannels();
         await scheduleDailyReminder(7, 0);
         await scheduleWeeklyRecap();
         updateSettings({ notifications_enabled: true, reminder_time: '07:00' });
+        setNotificationsEnabled(true);
         toast('Reminders on · 7:00 AM daily', { icon: 'bell' });
         return;
       }
+      // Turning reminders off must silence everything, including the trial nudge and rest alert.
       await cancelDailyReminder();
       await cancelWeeklyRecap();
+      await cancelTrialEndingReminder();
+      await cancelRestDone();
+      setNotificationsEnabled(false);
       updateSettings({ notifications_enabled: false });
     } catch {
       Alert.alert('Couldn’t update reminders', 'Try again in a moment.');
@@ -80,7 +96,7 @@ export default function SettingsScreen() {
     haptic.warning();
     Alert.alert(
       'Delete all data?',
-      'This erases your profile, missions, streaks, challenges and achievements on this device. It can’t be undone. Your subscription is managed by the App Store and must be cancelled separately.',
+      'This erases your profile, workouts, streaks, challenges and achievements on this device. It can’t be undone. Your subscription is managed by the App Store and must be cancelled separately.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -94,7 +110,13 @@ export default function SettingsScreen() {
                 const ours = keys.filter((k) => k.startsWith('@gruntz'));
                 if (ours.length) await AsyncStorage.multiRemove(ours);
                 await SecureStore.deleteItemAsync('gruntz_assessment').catch(() => {});
-                await Promise.all([cancelDailyReminder(), cancelWeeklyRecap()]);
+                await Promise.all([cancelDailyReminder(), cancelWeeklyRecap(), cancelTrialEndingReminder(), cancelRestDone()]);
+                setNotificationsEnabled(false);
+                // Stores hold their own copies in memory; without this they re-persist after the wipe.
+                useSessionStore.getState().discard();
+                usePlanLibraryStore.getState().unfollow();
+                useExerciseLogStore.setState({ logs: {} });
+                useExerciseNotesStore.setState({ notes: {} });
                 useSessionStore.getState().discard();
                 // RootNavigator watches isOnboarded and returns to onboarding.
                 resetUser();
@@ -113,9 +135,16 @@ export default function SettingsScreen() {
       <NavHeader title="Settings" />
       <ScrollView contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]} showsVerticalScrollIndicator={false}>
         <Group label="Profile and training">
+          <Row icon="dumbbell" title="Training preferences" subtitle="Goals, days, session length, equipment" onPress={() => navigation.navigate('TrainingPreferences')} />
           <Row icon="flag" title="Service & test profile" onPress={() => navigation.navigate('ServiceProfile')} />
           <Row icon="calendar" title="Program" onPress={() => navigation.navigate('ProgramSelect')} />
-          <Row icon="bell" title="Mission reminders" subtitle="Daily at 7:00 AM, weekly recap" toggle={notifications} onToggle={(v) => void toggleNotifications(v)} />
+          <Row
+            icon="bell"
+            title="Workout reminders"
+            subtitle={notifications ? `Daily at ${profile?.settings.reminder_time ?? '7:00 AM'}, weekly recap` : 'Off'}
+            toggle={notifications}
+            onToggle={(v) => void toggleNotifications(v)}
+          />
         </Group>
 
         <Group label="Preferences" style={styles.group}>
@@ -124,8 +153,24 @@ export default function SettingsScreen() {
             title="Units"
             value={imperial ? 'Imperial · lb, mi' : 'Metric · kg, km'}
             onPress={() => {
-              haptic.selection();
-              updateSettings({ units: imperial ? 'metric' : 'imperial' });
+              const to = imperial ? 'metric' : 'imperial';
+              // Weights are stored as typed, so switching without converting would relabel
+              // a 135 lb bench as "135 kg" and poison every record.
+              Alert.alert(
+                `Switch to ${to === 'metric' ? 'metric' : 'imperial'}?`,
+                'Weights you already logged keep their real value and are converted for display.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Switch',
+                    onPress: () => {
+                      haptic.selection();
+                      updateSettings({ units: to });
+                      convertSessionWeights(to === 'metric' ? 'kg' : 'lb');
+                    },
+                  },
+                ],
+              );
             }}
           />
         </Group>
@@ -145,7 +190,8 @@ export default function SettingsScreen() {
             onPress={() => {
               void restore().then((r) => {
                 if (r === 'restored') toast('Purchases restored');
-                else Alert.alert('Nothing to restore', 'No active Gruntz Pro subscription was found for this Apple ID.');
+                else if (r === 'none') Alert.alert('Nothing to restore', 'No active Gruntz Pro subscription was found for this Apple ID.');
+                else Alert.alert('Restore didn’t finish', 'We couldn’t reach the App Store. Check your connection and try again.');
               });
             }}
           />

@@ -139,3 +139,8 @@ export function formatMinutes(min: number) {
 export function claimedDates(claimed: Set<string>): Set<string> {
   return new Set(Array.from(claimed).map((k) => k.split(':')[0]));
 }
+
+/** "1 exercise" / "2 exercises" — a hardcoded plural reads as broken UI. */
+export function plural(count: number, one: string, many = `${one}s`) {
+  return `${count} ${count === 1 ? one : many}`;
+}

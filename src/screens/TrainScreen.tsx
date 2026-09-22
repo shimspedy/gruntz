@@ -6,6 +6,7 @@ import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanim
 import { LinearGradient } from 'expo-linear-gradient';
 import { MyWorkouts } from '../components/MyWorkouts';
 import { PlanCarousel } from '../components/PlanCarousel';
+import { PlanCompleteCard } from '../components/PlanCompleteCard';
 import { TabHeader } from '../components/TabHeader';
 import { getExerciseById } from '../data/exercises';
 import { EXERCISE_LIBRARY } from '../data/exerciseLibrary';
@@ -13,6 +14,9 @@ import { getAllMovementCards, getAllSwimCards } from '../data/movementCards';
 import { getProgramById } from '../data/programs';
 import { getPlanWeek, pickHero } from '../features/plan';
 import { useTabChromeInset } from '../navigation/TabBar';
+import { PLAN_COUNT, type WorkoutPlan } from '../data/workoutPlans';
+import { planDayHero } from '../features/planDisplay';
+import { nextPlanDay, useActivePlan, usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { useProgramStore } from '../store/useProgramStore';
 import { calculateDailyReadiness, getTodaysCheckIn, useReadinessStore } from '../store/useReadinessStore';
 import { useUiStore } from '../store/useUiStore';
@@ -57,6 +61,8 @@ export default function TrainScreen() {
   const today = getTodaysCheckIn(checkIns);
   const readiness = calculateDailyReadiness(today);
   const programInfo = program ? getProgramById(program) : undefined;
+  const activePlan = useActivePlan();
+  const justCompleted = usePlanLibraryStore((s) => s.justCompleted);
 
   return (
     <ScrollView
@@ -69,20 +75,30 @@ export default function TrainScreen() {
 
       <SectionTitle
         title="Your Plan"
-        action={program ? 'See More' : undefined}
-        onAction={() => navigation.navigate('Plan')}
+        action={activePlan ? 'See plan' : program ? 'See More' : 'Browse'}
+        onAction={() =>
+          activePlan
+            ? navigation.navigate('LibraryPlanDetail', { planId: activePlan.id })
+            : program
+              ? navigation.navigate('Plan')
+              : navigation.navigate('PlanBrowse')
+        }
         style={styles.section}
       />
-      {program ? (
+      {justCompleted ? (
+        <PlanCompleteCard />
+      ) : activePlan ? (
+        <ActivePlanCard plan={activePlan} onOpen={(dayId) => navigation.navigate('LibraryPlanDay', { planId: activePlan.id, dayId })} />
+      ) : program ? (
         days.some((d) => d.workout) ? (
           <PlanCarousel days={days} onOpen={(d) => navigation.navigate('WorkoutDetail', { workoutId: d.workout!.id, dateKey: d.dateKey })} />
         ) : (
           <EmptyPlan title="Recovery week" body="No missions are scheduled this week. Rest, then come back ready." />
         )
       ) : (
-        <ChooseProgram onPress={() => navigation.navigate('ProgramSelect')} />
+        <ChooseProgram onPress={() => navigation.navigate('PlanBrowse')} />
       )}
-      {programInfo ? (
+      {!activePlan && programInfo ? (
         <Text variant="footnote" tone="tertiary" align="center" style={{ marginTop: space.md }}>
           {programInfo.name} · Week {week} of {programInfo.duration_weeks}
         </Text>
@@ -117,7 +133,8 @@ export default function TrainScreen() {
           onPress={() => useUiStore.getState().setReadiness(true)}
         />
         <ToolRow icon="list" title="Exercise library" subtitle={`${EXERCISE_LIBRARY.length} movements with video`} onPress={() => navigation.navigate('ExerciseLibrary')} />
-        <ToolRow icon="calendar" title="Weekly plan" subtitle="Seven days at a glance" onPress={() => navigation.navigate(program ? 'Plan' : 'ProgramSelect')} />
+        <ToolRow icon="book" title="Workout plans" subtitle={`${PLAN_COUNT} plans with video`} onPress={() => navigation.navigate('PlanBrowse')} />
+        {program && !activePlan ? <ToolRow icon="calendar" title="Weekly plan" subtitle="Seven days at a glance" onPress={() => navigation.navigate('Plan')} /> : null}
       </View>
     </ScrollView>
   );
@@ -169,17 +186,44 @@ function ChooseProgram({ onPress }: { onPress: () => void }) {
       <HeroArt exercise={getExerciseById('deadlift')} style={StyleSheet.absoluteFill} />
       <LinearGradient colors={['rgba(0,0,0,0.1)', 'rgba(8,9,11,0.97)']} locations={[0.3, 0.85]} style={StyleSheet.absoluteFill} />
       <View style={styles.emptyBottom}>
-        <Text variant="hero">PICK YOUR PROGRAM</Text>
+        <Text variant="hero">PICK YOUR PLAN</Text>
         <Text variant="callout" tone="secondary" style={{ marginTop: 8, marginBottom: space.lg }}>
-          Base Camp, Raider or Recon. Missions start the day you choose.
+          Hundreds of plans with video, matched to your goals, days and gear.
         </Text>
-        <Button title="Choose program" onPress={onPress} size="md" />
+        <Button title="Browse plans" onPress={onPress} size="md" />
       </View>
     </View>
   );
 }
 
-function EmptyPlan({ title, body }: { title: string; body: string }) {
+/** The followed library plan: its next day as a hero card. */
+function ActivePlanCard({ plan, onOpen }: { plan: WorkoutPlan; onOpen: (dayId: string) => void }) {
+  const { width } = useWindowDimensions();
+  const completed = usePlanLibraryStore((s) => s.completedDayIds);
+  const cycle = usePlanLibraryStore((s) => s.cycle);
+  const day = nextPlanDay(plan, completed);
+  const w = Math.round(width * 0.8);
+  return (
+    <Tap onPress={() => onOpen(day.id)} scaleTo={0.98} style={[styles.emptyCard, { width: w, height: Math.round(w * 1.1) }]} accessibilityLabel={`Next workout, ${day.title}`}>
+      <HeroArt exercise={planDayHero(day)} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['rgba(0,0,0,0.1)', 'rgba(8,9,11,0.97)']} locations={[0.3, 0.85]} style={StyleSheet.absoluteFill} />
+      <View style={styles.emptyBottom}>
+        <Text variant="overline" tone="accent">
+          {plan.days.length > 1 ? `${day.label} of ${plan.days.length}${cycle ? ` · Round ${cycle + 1}` : ''}` : 'Up next'}
+        </Text>
+        <Text variant="hero" style={{ marginTop: 6 }} numberOfLines={2}>
+          {day.title.toUpperCase()}
+        </Text>
+        <Text variant="callout" tone="secondary" style={{ marginTop: 6 }} numberOfLines={1}>
+          {plan.title} · ~{day.estimated_minutes} min
+        </Text>
+        <Button title="Start workout" icon="play" onPress={() => onOpen(day.id)} size="md" style={{ marginTop: space.lg }} />
+      </View>
+    </Tap>
+  );
+}
+
+function EmptyPlan({ title, body, action, onAction }: { title: string; body: string; action?: string; onAction?: () => void }) {
   return (
     <View style={[styles.restCard]}>
       <Icon name="moon" size={30} color={color.textSecondary} />
@@ -189,6 +233,7 @@ function EmptyPlan({ title, body }: { title: string; body: string }) {
       <Text variant="callout" tone="secondary" align="center" style={{ marginTop: 6 }}>
         {body}
       </Text>
+      {action && onAction ? <Button title={action} variant="secondary" size="md" onPress={onAction} style={{ marginTop: space.lg }} /> : null}
     </View>
   );
 }

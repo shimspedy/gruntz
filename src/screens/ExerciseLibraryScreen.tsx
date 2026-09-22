@@ -33,6 +33,28 @@ export const GROUP_LABEL: Record<LibraryGroup, string> = {
 const ROW = 84;
 
 /** Every movement in the bundled video library, searchable and filterable by equipment. */
+/** What people type vs what the library calls it. */
+const SEARCH_SYNONYMS: Record<string, string> = {
+  abs: 'core',
+  ab: 'core',
+  stomach: 'core',
+  obliques: 'core',
+  lats: 'back',
+  pecs: 'chest',
+  quads: 'quadriceps',
+  hams: 'hamstrings',
+  glute: 'glutes',
+  bum: 'glutes',
+  delts: 'shoulders',
+  traps: 'trapezius',
+  bi: 'biceps',
+  tri: 'triceps',
+  cardio: 'cardio',
+  db: 'dumbbell',
+  bb: 'barbell',
+  kb: 'kettlebell',
+};
+
 export default function ExerciseLibraryScreen() {
   const navigation = useNavigation();
   const { params } = useRoute<RouteProp<RootStackParamList, 'ExerciseLibrary'>>();
@@ -55,13 +77,17 @@ export default function ExerciseLibraryScreen() {
   }, []);
 
   const items = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const raw = query.trim().toLowerCase();
+    // "abs" used to miss most core work, and "dumbbell" matched nothing.
+    const q = SEARCH_SYNONYMS[raw] ?? raw;
     return EXERCISE_LIBRARY.filter(
       (i) =>
         (group === 'all' || i.group === group) &&
         (!q ||
           i.name.toLowerCase().includes(q) ||
           i.primary.some((m) => m.toLowerCase().includes(q)) ||
+          i.secondary.some((m) => m.toLowerCase().includes(q)) ||
+          i.equipment.some((e) => e.toLowerCase().includes(q)) ||
           i.tags.some((t) => t.toLowerCase().includes(q))),
     );
   }, [query, group]);
@@ -76,6 +102,10 @@ export default function ExerciseLibraryScreen() {
         if (!picking) return navigation.navigate('ExerciseDetail', { mediaKey: item.key });
         haptic.selection();
         setPicked((p) => (p.includes(item.key) ? p.filter((k) => k !== item.key) : [...p, item.key]));
+      }}
+      onLongPress={() => {
+        haptic.light();
+        navigation.navigate('ExerciseDetail', { mediaKey: item.key });
       }}
       accessibilityLabel={item.name}
       accessibilityState={picking ? { checked: picked.includes(item.key) } : undefined}

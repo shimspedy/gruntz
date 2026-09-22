@@ -48,6 +48,13 @@ export function Sheet({ visible, onClose, title, children, plainHeader, onDismis
   useEffect(() => {
     if (visible) {
       setMounted(true);
+      // Re-arm the entrance on every open: the height is remembered from last time, so
+      // without this the second open stayed off-screen behind a tap-swallowing backdrop.
+      if (sheetH.get() > 0) {
+        offset.set(sheetH.get() + 40);
+        offset.set(withSpring(0, motion.sheet));
+        progress.set(withTiming(1, { duration: motion.base, easing: motion.easeOut }));
+      }
     } else if (mounted) {
       progress.set(withTiming(0, { duration: 200, easing: motion.easeOut }));
       offset.set(

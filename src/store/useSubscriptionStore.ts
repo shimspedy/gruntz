@@ -43,7 +43,7 @@ interface SubscriptionState {
   loadOffering: () => Promise<void>;
   purchaseMonthly: () => Promise<'purchased' | 'cancelled' | 'unavailable' | 'error'>;
   purchaseAnnual: () => Promise<'purchased' | 'cancelled' | 'unavailable' | 'error'>;
-  restoreAccess: () => Promise<'restored' | 'unavailable' | 'error'>;
+  restoreAccess: () => Promise<'restored' | 'none' | 'unavailable' | 'error'>;
   openCustomerCenter: () => Promise<'presented' | 'unavailable' | 'error'>;
   openSubscriptionManagement: () => Promise<void>;
   clearError: () => void;

@@ -92,8 +92,13 @@ export default function PaywallScreen() {
     if (r === 'restored') {
       toast('Purchases restored');
       dismiss();
+    } else if (r === 'none') {
+      Alert.alert('Nothing to restore', 'No active subscription was found for this account. If you subscribed with a different Apple ID, sign in with that one and try again.');
     } else {
-      Alert.alert('Nothing to restore', 'No active subscription was found for this account.');
+      Alert.alert('Restore didn’t finish', 'We couldn’t reach the App Store. Check your connection and try again — you won’t be charged twice.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Try again', onPress: () => void restore() },
+      ]);
     }
   };
 
@@ -131,7 +136,7 @@ export default function PaywallScreen() {
           </Text>
           <Text variant="callout" tone="secondary" align="center" style={{ marginTop: space.sm }}>
             {access === 'trial'
-              ? `${trialLeft} of ${GRUNTZ_TRIAL_DAYS} days of full access left`
+              ? `${trialLeft} of ${GRUNTZ_TRIAL_DAYS} free days left · subscribing now starts billing today`
               : access === 'locked'
                 ? 'Your included access has ended'
                 : access === 'subscriber'
@@ -315,7 +320,7 @@ const styles = StyleSheet.create({
   planBody: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.lg, paddingVertical: 18 },
   planTitle: { fontFamily: font.bold, fontSize: 24 },
   warning: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: space.lg, padding: space.md, borderRadius: radius.md, backgroundColor: color.surface },
-  legal: { marginTop: space.lg, lineHeight: 15, fontSize: 10 },
+  legal: { marginTop: space.lg, lineHeight: 17, fontSize: 12 },
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: space.md, paddingTop: space.md, backgroundColor: 'rgba(0,0,0,0.92)' },
   reassure: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 14 },
   links: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginTop: 10 },

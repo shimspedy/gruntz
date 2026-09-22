@@ -163,6 +163,7 @@ export function Row({
       ) : null}
       {typeof toggle === 'boolean' ? (
         <Switch
+          accessibilityLabel={title}
           value={toggle}
           onValueChange={(v) => {
             haptic.selection();

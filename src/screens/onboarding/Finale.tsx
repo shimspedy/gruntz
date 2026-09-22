@@ -25,10 +25,12 @@ import { haptic } from '../../ui/haptics';
 import { color, font, motion, radius, space } from '../../ui/tokens';
 import { getExerciseById } from '../../data/exercises';
 
-const STEPS = ['Reading your answers…', 'Matching your branch standard…', 'Building week one…'];
+const STEPS = ['Reading your answers…', 'Matching plans to your goals…', 'Building week one…'];
+const MILITARY_STEPS = ['Reading your answers…', 'Matching your branch standard…', 'Building week one…'];
 
 /** Big counter, blue bar, three checklist lines that light up in turn. */
-export function Generating({ onDone }: { onDone: () => void }) {
+export function Generating({ onDone, military }: { onDone: () => void; military?: boolean }) {
+  const steps = military ? MILITARY_STEPS : STEPS;
   const [pct, setPct] = useState(0);
   const done = useRef(false);
   useEffect(() => {
@@ -59,7 +61,7 @@ export function Generating({ onDone }: { onDone: () => void }) {
       </Text>
       <Bar progress={pct / 100} height={6} duration={120} style={styles.genBar} />
       <View style={{ marginTop: space.xl, gap: 10, alignSelf: 'center', alignItems: 'flex-start' }}>
-        {STEPS.map((s, i) => {
+        {steps.map((s, i) => {
           const lit = pct >= (i + 1) * 30;
           return (
             <View key={s} style={styles.genRow}>
@@ -156,6 +158,7 @@ export function Commit({ days, onSigned }: { days: number; onSigned: () => void 
 
   // The fill itself is the timer: reaching 100% signs; letting go early drains it.
   const signedRef = useRef(false);
+  const lastTap = useRef(0);
   const pressIn = () => {
     if (signedRef.current) return;
     haptic.soft();
@@ -220,10 +223,16 @@ export function Commit({ days, onSigned }: { days: number; onSigned: () => void 
           onPressOut={pressOut}
           onLongPress={() => {}}
           delayLongPress={5000}
+          // A sustained hold is hard with a tremor or one hand: a double tap does it too.
+          onPress={() => {
+            const now = Date.now();
+            if (now - lastTap.current < 400) complete();
+            lastTap.current = now;
+          }}
           style={styles.signTarget}
           accessibilityRole="button"
           accessibilityLabel="Press and hold to commit"
-          accessibilityHint="Hold for about a second"
+          accessibilityHint="Hold for about a second, or double tap"
           onAccessibilityTap={complete}
         >
           <Animated.View style={[styles.signRing, ring]} />

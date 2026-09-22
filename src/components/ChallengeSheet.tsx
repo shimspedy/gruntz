@@ -110,7 +110,12 @@ export function ChallengeSheet() {
 
   const submitCustom = () => {
     const v = Number.parseFloat(custom);
-    if (!Number.isFinite(v) || v <= 0) return;
+    if (!Number.isFinite(v) || v <= 0) {
+      // Silently doing nothing reads as a broken button.
+      haptic.warning();
+      toast('Enter a number above zero', { tone: 'error', icon: 'alert' });
+      return;
+    }
     add(v);
     setCustom('');
   };

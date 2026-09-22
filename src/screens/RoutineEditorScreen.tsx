@@ -155,6 +155,7 @@ function ItemRow({ item, index, last }: { item: RoutineItem; index: number; last
   const moveItem = useRoutineStore((s) => s.moveItem);
   const lib = getLibraryItem(item.key);
   const cardio = lib?.group === 'cardio' || lib?.group === 'swim';
+  const isLast = last;
   return (
     <Animated.View
       entering={FadeInDown.delay(Math.min(index, 6) * motion.stagger).duration(280)}
@@ -173,10 +174,30 @@ function ItemRow({ item, index, last }: { item: RoutineItem; index: number; last
             {cardio ? '' : ` x ${item.reps} reps`} · {item.rest}s rest
           </Text>
         </View>
-        <Tap feedback="opacity" hitSlop={6} onPress={() => moveItem(item.uid, -1)} disabled={index === 0} style={styles.iconBtn} accessibilityLabel="Move up">
+        <Tap feedback="opacity" hitSlop={10} onPress={() => moveItem(item.uid, -1)} disabled={index === 0} style={styles.iconBtn} accessibilityLabel="Move up">
           <Icon name="chevronUp" size={17} color={index === 0 ? color.textQuaternary : color.textSecondary} />
         </Tap>
-        <Tap feedback="opacity" hitSlop={6} onPress={() => { haptic.light(); removeItem(item.uid); }} style={styles.iconBtn} accessibilityLabel="Remove">
+        <Tap feedback="opacity" hitSlop={10} onPress={() => moveItem(item.uid, 1)} disabled={isLast} style={styles.iconBtn} accessibilityLabel="Move down">
+          <Icon name="chevronDown" size={17} color={isLast ? color.textQuaternary : color.textSecondary} />
+        </Tap>
+        <Tap
+          feedback="opacity"
+          hitSlop={10}
+          onPress={() => {
+            // Removing used to be instant and unrecoverable; put it back on one tap.
+            const removed = { ...item };
+            const at = index;
+            haptic.light();
+            removeItem(item.uid);
+            toast(`${lib?.name ?? 'Exercise'} removed`, {
+              tone: 'info',
+              icon: 'trash',
+              action: { label: 'Undo', onPress: () => useRoutineStore.getState().insertItem(removed, at) },
+            });
+          }}
+          style={styles.iconBtn}
+          accessibilityLabel="Remove"
+        >
           <Icon name="trash" size={17} color={color.danger} />
         </Tap>
       </View>

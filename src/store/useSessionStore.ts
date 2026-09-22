@@ -1,8 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AppState } from 'react-native';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { getExerciseById, libraryExerciseId } from '../data/exercises';
 import { routineMinutes, type Routine } from './useRoutineStore';
+import { parsePlanSessionId, planSessionId, usePlanLibraryStore } from './usePlanLibraryStore';
+import { useExerciseLogStore } from './useExerciseLogStore';
+import { useUserStore } from './useUserStore';
+import { cancelRestDone } from '../services/notifications';
+import type { PlanDay, WorkoutPlan } from '../data/workoutPlans';
 import type { CompletedExercise, CompletedMission, Exercise, WorkoutDay } from '../types';
 
 /**
@@ -14,6 +20,8 @@ export type SetKind = 'reps' | 'time' | 'distance';
 
 export interface SessionSet {
   id: string;
+  /** Ramp-up sets: they don't count toward the exercise's required sets and aren't logged. */
+  warmup?: boolean;
   reps?: number;
   weight?: number;
   seconds?: number;
@@ -32,6 +40,8 @@ export interface SessionExercise {
 }
 
 export interface PreviousSet {
+  /** The unit the weight was logged in, so a later unit switch doesn't relabel old numbers. */
+  unit?: 'lb' | 'kg';
   reps?: number;
   weight?: number;
   seconds?: number;
@@ -51,15 +61,22 @@ interface SessionState {
   startedAt: number | null;
   restEndsAt: number | null;
   restTotal: number;
+  /** The set whose completion started the current rest. */
+  restSetId: string | null;
   restOverrides: Record<string, number>;
   previous: Record<string, PreviousSet[]>;
 
   start: (day: WorkoutDay, missionDate: string) => void;
   startRoutine: (routine: Routine, missionDate: string) => void;
+  /** Runs one day of a library plan with its own sets, reps, times and rest. */
+  startPlanDay: (plan: WorkoutPlan, day: PlanDay, missionDate: string) => void;
   setIndex: (index: number) => void;
   updateSet: (exKey: string, setId: string, patch: Partial<SessionSet>) => void;
   toggleSet: (exKey: string, setId: string) => { completedExercise: boolean; startedRest: boolean };
   addSet: (exKey: string) => void;
+  removeSet: (exKey: string, setId: string) => void;
+  /** Prepends light ramp-up sets worked back from the first working set. */
+  addWarmupSets: (exKey: string, count?: number) => void;
   removeExercise: (exKey: string) => void;
   replaceExercise: (exKey: string, nextId: string) => void;
   /** Appends library clips to the running workout and jumps to the first one added. */
@@ -87,6 +104,43 @@ function kindFor(ex: Exercise): SetKind {
   if (ex.distance) return 'distance';
   return 'reps';
 }
+
+const STALE_SESSION_MS = 12 * 60 * 60 * 1000;
+
+/**
+ * Typing a weight rewrote the whole workout to disk on every keystroke. Writes are coalesced
+ * to one per second, and flushed immediately when the app leaves the foreground so nothing
+ * in flight is lost if iOS kills us.
+ */
+const debouncedStorage = (() => {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let pending: [string, string] | null = null;
+  const flush = () => {
+    clearTimeout(timer);
+    timer = undefined;
+    if (!pending) return;
+    const [key, value] = pending;
+    pending = null;
+    void AsyncStorage.setItem(key, value);
+  };
+  AppState.addEventListener('change', (next) => {
+    if (next !== 'active') flush();
+  });
+  return {
+    getItem: (key: string) => AsyncStorage.getItem(key),
+    setItem: (key: string, value: string) => {
+      pending = [key, value];
+      if (!timer) timer = setTimeout(flush, 1000);
+      return Promise.resolve();
+    },
+    removeItem: (key: string) => {
+      pending = null;
+      clearTimeout(timer);
+      timer = undefined;
+      return AsyncStorage.removeItem(key);
+    },
+  };
+})();
 
 let setSeq = 0;
 const newSetId = () => `s${Date.now().toString(36)}${(setSeq++).toString(36)}`;
@@ -126,7 +180,20 @@ export function buildSessionExercises(day: WorkoutDay, previous: Record<string, 
   return list;
 }
 
-export const isExerciseDone = (e: SessionExercise) => e.sets.filter((s) => s.done).length >= e.requiredSets;
+const KG_PER_LB = 0.45359237;
+
+/** Converts the running workout's weights when the user changes units mid-session. */
+export function convertSessionWeights(to: 'lb' | 'kg') {
+  const round = (n: number) => Math.round(n * 2) / 2;
+  useSessionStore.setState((s) => ({
+    exercises: s.exercises.map((e) => ({
+      ...e,
+      sets: e.sets.map((st) => (st.weight ? { ...st, weight: round(to === 'kg' ? st.weight * KG_PER_LB : st.weight / KG_PER_LB) } : st)),
+    })),
+  }));
+}
+
+export const isExerciseDone = (e: SessionExercise) => e.sets.filter((s) => s.done && !s.warmup).length >= e.requiredSets;
 
 const initial = {
   active: false,
@@ -141,6 +208,7 @@ const initial = {
   startedAt: null,
   restEndsAt: null,
   restTotal: 0,
+  restSetId: null as string | null,
 };
 
 export const useSessionStore = create<SessionState>()(
@@ -198,6 +266,52 @@ export const useSessionStore = create<SessionState>()(
         });
       },
 
+      startPlanDay: (plan, day, missionDate) => {
+        const previous = get().previous;
+        const overrides = { ...get().restOverrides };
+        const exercisesList: SessionExercise[] = day.exercises.flatMap((slot, i) => {
+          if (!slot.video_key) return [];
+          const id = libraryExerciseId(slot.video_key);
+          const ex = getExerciseById(id);
+          if (!ex) return [];
+          const kind: SetKind = slot.measure === 'time' ? 'time' : slot.measure === 'distance' ? 'distance' : 'reps';
+          const sets = Array.from({ length: Math.max(1, slot.sets) }, (_, n) => {
+            const prev = previous[id]?.[n] ?? previous[id]?.[previous[id].length - 1];
+            return {
+              id: newSetId(),
+              reps: kind === 'reps' ? (slot.rep_scheme?.[n] ?? slot.reps) : undefined,
+              seconds: kind === 'time' ? slot.duration_seconds : undefined,
+              distance: kind === 'distance' && slot.distance_meters ? `${slot.distance_meters} m` : undefined,
+              weight: prev?.weight,
+              done: false,
+            };
+          });
+          overrides[id] = slot.rest_seconds;
+          if (slot.warmup_sets) {
+            const w = Math.min(3, slot.warmup_sets);
+            const fr = [0.5, 0.7, 0.85].slice(-w);
+            const rp = [8, 5, 3].slice(-w);
+            sets.unshift(...fr.map((_, n) => ({ id: newSetId(), warmup: true, reps: rp[n], seconds: undefined, distance: undefined, weight: undefined, done: false })));
+          }
+          return [{ key: `${day.id}:${i}:${slot.video_key}`, exerciseId: id, section: day.title, kind, weighted: isWeighted(ex), requiredSets: sets.length, sets }];
+        });
+        set({
+          active: true,
+          minimized: false,
+          workoutDayId: planSessionId(plan.id, day.id),
+          missionDate,
+          title: `${plan.title} · ${day.title}`,
+          estimatedMinutes: day.estimated_minutes,
+          rewardXp: 20 + exercisesList.length * 5,
+          exercises: exercisesList,
+          index: 0,
+          startedAt: Date.now(),
+          restEndsAt: null,
+          restTotal: 0,
+          restOverrides: overrides,
+        });
+      },
+
       setIndex: (index) => set({ index: Math.max(0, Math.min(index, get().exercises.length - 1)) }),
 
       updateSet: (exKey, setId, patch) =>
@@ -218,24 +332,59 @@ export const useSessionStore = create<SessionState>()(
         set({ exercises });
         const after = exercises.find((e) => e.key === exKey)!;
         const completedExercise = nowDone && isExerciseDone(after) && !isExerciseDone(before);
+        // Un-logging the set that started the rest cancels that rest.
+        if (!nowDone && get().restSetId === setId) get().endRest();
         let startedRest = false;
-        if (nowDone && !completedExercise) {
+        // Resting after the last set matters too (circuits, supersets, next exercise).
+        if (nowDone) {
           const ex = getExerciseById(after.exerciseId);
           const rest = get().restOverrides[after.exerciseId] ?? ex?.rest_seconds ?? 0;
           if (rest > 0) {
             get().startRest(rest);
+            set({ restSetId: setId });
             startedRest = true;
           }
         }
         return { completedExercise, startedRest };
       },
 
+      removeSet: (exKey, setId) =>
+        set((s) => ({
+          exercises: s.exercises.map((e) =>
+            e.key !== exKey || e.sets.length <= 1 ? e : { ...e, sets: e.sets.filter((st) => st.id !== setId) },
+          ),
+          ...(s.restSetId === setId ? { restEndsAt: null, restTotal: 0, restSetId: null } : {}),
+        })),
+
+      addWarmupSets: (exKey, count = 3) => {
+        const fractions = [0.5, 0.7, 0.85].slice(-count);
+        const reps = [8, 5, 3].slice(-count);
+        set((s) => ({
+          exercises: s.exercises.map((e) => {
+            if (e.key !== exKey || e.sets.some((st) => st.warmup)) return e;
+            const work = e.sets.find((st) => !st.warmup);
+            const warmups: SessionSet[] = fractions.map((f, i) => ({
+              id: newSetId(),
+              warmup: true,
+              reps: reps[i],
+              weight: work?.weight ? Math.max(5, Math.round((work.weight * f) / 5) * 5) : undefined,
+              seconds: work?.seconds,
+              done: false,
+            }));
+            return { ...e, sets: [...warmups, ...e.sets] };
+          }),
+        }));
+      },
+
       addSet: (exKey) =>
         set((s) => ({
           exercises: s.exercises.map((e) => {
             if (e.key !== exKey) return e;
-            const last = e.sets[e.sets.length - 1];
-            return { ...e, sets: [...e.sets, { ...last, id: newSetId(), done: false }] };
+            const last = [...e.sets].reverse().find((st) => !st.warmup) ?? e.sets[e.sets.length - 1];
+            return {
+              ...e,
+              sets: [...e.sets, { id: newSetId(), reps: last?.reps, weight: last?.weight, seconds: last?.seconds, done: false }],
+            };
           }),
         })),
 
@@ -251,14 +400,16 @@ export const useSessionStore = create<SessionState>()(
             if (e.key !== exKey) return e;
             const ex = getExerciseById(nextId);
             if (!ex) return e;
+            // Keep the sets already logged: swapping used to wipe them with no undo.
+            const logged = e.sets.filter((st) => st.done);
+            const keep = logged.length ? logged : e.sets;
             return {
               ...e,
-              key: `${e.key}>${nextId}`,
               exerciseId: nextId,
               kind: kindFor(ex),
               weighted: isWeighted(ex),
-              requiredSets: Math.max(1, ex.sets || 1),
-              sets: buildSets(ex, Math.max(1, ex.sets || 1), s.previous[nextId]),
+              requiredSets: Math.max(logged.length, e.requiredSets),
+              sets: keep,
             };
           }),
         })),
@@ -282,9 +433,14 @@ export const useSessionStore = create<SessionState>()(
         set((s) => {
           if (!s.restEndsAt) return s;
           const next = Math.max(Date.now() + 1000, s.restEndsAt + delta * 1000);
-          return { restEndsAt: next, restTotal: Math.max(1, s.restTotal + delta) };
+          // Keep the ring honest: total must cover what's actually left.
+          const remaining = Math.ceil((next - Date.now()) / 1000);
+          return { restEndsAt: next, restTotal: Math.max(remaining, s.restTotal + delta) };
         }),
-      endRest: () => set({ restEndsAt: null, restTotal: 0 }),
+      endRest: () => {
+        set({ restEndsAt: null, restTotal: 0, restSetId: null });
+        void cancelRestDone();
+      },
       minimize: () => set({ minimized: true }),
       expand: () => set({ minimized: false }),
 
@@ -326,26 +482,48 @@ export const useSessionStore = create<SessionState>()(
       },
 
       finish: () => {
+        void cancelRestDone();
+        // Every completed set goes into the exercise's own history (History, Charts, Records).
+        const at = new Date().toISOString();
+        const unit = useUserStore.getState().profile?.settings.units === 'metric' ? 'kg' : 'lb';
+        const log = useExerciseLogStore.getState();
+        get().exercises.forEach((e) => {
+          const sets = e.sets.filter((st) => st.done && !st.warmup).map(({ reps, weight, seconds, distance }) => ({ reps, weight, seconds, distance }));
+          if (!sets.length) return;
+          const key = getExerciseById(e.exerciseId)?.media_key ?? e.exerciseId;
+          log.record(key, { id: `${get().startedAt ?? at}:${e.key}`, at, workoutTitle: get().title, unit, sets });
+        });
+
+        const planDay = parsePlanSessionId(get().workoutDayId);
+        if (planDay && get().exercises.some((e) => e.sets.some((st) => st.done))) {
+          usePlanLibraryStore.getState().markDayDone(planDay.dayId);
+        }
         // Remember what was lifted so the next session can show it in the "Previous" column.
         const previous = { ...get().previous };
         get().exercises.forEach((e) => {
-          const done = e.sets.filter((st) => st.done);
+          const done = e.sets.filter((st) => st.done && !st.warmup);
           if (done.length) {
-            previous[e.exerciseId] = done.map(({ reps, weight, seconds, distance }) => ({ reps, weight, seconds, distance }));
+            previous[e.exerciseId] = done.map(({ reps, weight, seconds, distance }) => ({ reps, weight, seconds, distance, unit }));
           }
         });
-        set({ ...initial, previous });
+        // Keep the most recent exercises only: this blob is rewritten on every set logged.
+        const trimmed = Object.fromEntries(Object.entries(previous).slice(-200));
+        set({ ...initial, previous: trimmed });
       },
 
-      discard: () => set({ ...initial }),
+      discard: () => {
+        void cancelRestDone();
+        set({ ...initial });
+      },
     }),
     {
       name: '@gruntz_session',
       version: 1,
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => debouncedStorage),
       partialize: (s) => ({
         active: s.active,
-        minimized: s.active ? true : false,
+        // Reopen exactly as the user left it (full screen mid-set, or the mini bar).
+        minimized: s.active ? s.minimized : false,
         workoutDayId: s.workoutDayId,
         missionDate: s.missionDate,
         title: s.title,
@@ -356,7 +534,19 @@ export const useSessionStore = create<SessionState>()(
         startedAt: s.startedAt,
         restOverrides: s.restOverrides,
         previous: s.previous,
+        // Rest is a wall-clock deadline, so it keeps counting down while the phone is locked.
+        restEndsAt: s.restEndsAt,
+        restTotal: s.restTotal,
+        restSetId: s.restSetId,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (!state?.active) return;
+        const patch: Partial<SessionState> = {};
+        if (state.restEndsAt && state.restEndsAt <= Date.now()) Object.assign(patch, { restEndsAt: null, restTotal: 0 });
+        // A workout left open overnight comes back as the mini bar, not full screen.
+        if (state.startedAt && Date.now() - state.startedAt > STALE_SESSION_MS) patch.minimized = true;
+        if (Object.keys(patch).length) useSessionStore.setState(patch);
+      },
     },
   ),
 );

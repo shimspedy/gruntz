@@ -25,10 +25,11 @@ export function SessionSummary({ onBack, onDone }: { onBack: () => void; onDone:
   const setsDone = s.exercises.reduce((sum, e) => sum + e.sets.filter((st) => st.done).length, 0);
   const reps = s.exercises.reduce((sum, e) => sum + (e.kind === 'reps' ? e.sets.filter((st) => st.done).reduce((a, st) => a + (st.reps ?? 0), 0) : 0), 0);
   const minutes = s.startedAt ? Math.max(1, Math.round((Date.now() - s.startedAt) / 60000)) : 0;
-  const streakNext = progress.last_workout_date && isStreakAlive(progress.last_workout_date) ? progress.streak_days + 1 : 1;
+  const daysPerWeek = useUserStore((u) => u.profile?.workout_days_per_week);
+  const streakNext = progress.last_workout_date && isStreakAlive(progress.last_workout_date, daysPerWeek) ? progress.streak_days + 1 : 1;
   const streakBonus = calculateStreakBonus(streakNext);
   const xp = mission ? mission.total_xp + mission.completion_bonus + streakBonus : 0;
-  const canSave = doneExercises.length > 0;
+  const canSave = setsDone > 0;
   const date = new Date();
 
   const save = () => {

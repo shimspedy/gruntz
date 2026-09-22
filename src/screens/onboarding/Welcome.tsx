@@ -11,7 +11,7 @@ import { color, motion, space } from '../../ui/tokens';
 const SLIDES = [
   { title: 'Log every set', body: 'Reps, load and rest for every movement in your mission.' },
   { title: 'Climb the ranks', body: 'Every mission earns XP. Recruit to Apex, one day at a time.' },
-  { title: 'Pass your test', body: 'Track each event against your branch standard.' },
+  { title: 'Reach your goal', body: 'Plans matched to your goals, days and gear, with military test prep when you need it.' },
 ];
 
 export function Welcome({ onStart }: { onStart: () => void }) {

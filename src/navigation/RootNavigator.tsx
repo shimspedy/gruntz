@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
-import { DarkTheme, NavigationContainer } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { DarkTheme, NavigationContainer, type InitialState, type NavigationState } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -19,7 +20,10 @@ import RoutineDetailScreen from '../screens/RoutineDetailScreen';
 import RoutineEditorScreen from '../screens/RoutineEditorScreen';
 import LeaderToolsScreen from '../screens/LeaderToolsScreen';
 import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
+import LibraryPlanDayScreen from '../screens/LibraryPlanDayScreen';
+import LibraryPlanDetailScreen from '../screens/LibraryPlanDetailScreen';
 import PaywallScreen from '../screens/PaywallScreen';
+import PlanBrowseScreen from '../screens/PlanBrowseScreen';
 import PlanScreen from '../screens/PlanScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ProgramDetailScreen from '../screens/ProgramDetailScreen';
@@ -31,9 +35,12 @@ import SettingsScreen from '../screens/SettingsScreen';
 import StatsScreen from '../screens/StatsScreen';
 import StreakScreen from '../screens/StreakScreen';
 import TestScreen from '../screens/TestScreen';
+import TrainingPreferencesScreen from '../screens/TrainingPreferencesScreen';
 import TrainScreen from '../screens/TrainScreen';
 import WorkoutDetailScreen from '../screens/WorkoutDetailScreen';
 import { useChallengeStore } from '../store/useChallengeStore';
+import { useOnboardingDraftStore } from '../store/useOnboardingDraftStore';
+import { setNotificationsEnabled } from '../services/notifications';
 import { useSubscriptionStore } from '../store/useSubscriptionStore';
 import { useUserStore } from '../store/useUserStore';
 import type { OnboardingStackParamList, RootStackParamList, TabParamList } from '../types/navigation';
@@ -53,6 +60,8 @@ const theme = {
 
 function MainTabs() {
   const insets = useSafeAreaInsets();
+  // The branch fitness-test board only makes sense for Military Prep; everyone else gets Plans.
+  const military = useUserStore((s) => !!s.profile?.goals.includes('Military Prep'));
   return (
     <Animated.View entering={FadeIn.duration(420)} style={styles.fill}>
       <Tabs.Navigator
@@ -61,7 +70,7 @@ function MainTabs() {
       >
         <Tabs.Screen name="Train" component={TrainScreen} />
         <Tabs.Screen name="Ranks" component={RanksScreen} />
-        <Tabs.Screen name="Test" component={TestScreen} />
+        {military ? <Tabs.Screen name="Test" component={TestScreen} /> : <Tabs.Screen name="Plans" component={PlanBrowseScreen} />}
         <Tabs.Screen name="Profile" component={ProfileScreen} />
       </Tabs.Navigator>
       {/* Content scrolls under the status bar into black, never behind the clock. */}
@@ -83,6 +92,9 @@ function AppStack() {
       <Stack.Screen name="Plan" component={PlanScreen} />
       <Stack.Screen name="ProgramSelect" component={ProgramSelectScreen} />
       <Stack.Screen name="ProgramDetail" component={ProgramDetailScreen} />
+      <Stack.Screen name="PlanBrowse" component={PlanBrowseScreen} />
+      <Stack.Screen name="LibraryPlanDetail" component={LibraryPlanDetailScreen} />
+      <Stack.Screen name="LibraryPlanDay" component={LibraryPlanDayScreen} />
       <Stack.Screen name="CardLibrary" component={CardLibraryScreen} />
       <Stack.Screen name="CardDetail" component={CardDetailScreen} />
       <Stack.Screen name="ExerciseDetail" component={ExerciseDetailScreen} />
@@ -98,6 +110,7 @@ function AppStack() {
       <Stack.Screen name="Stats" component={StatsScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="ServiceProfile" component={ServiceProfileScreen} />
+      <Stack.Screen name="TrainingPreferences" component={TrainingPreferencesScreen} />
       <Stack.Screen name="LeaderTools" component={LeaderToolsScreen} />
       <Stack.Group screenOptions={{ presentation: 'fullScreenModal', gestureEnabled: false }}>
         <Stack.Screen name="Paywall" component={PaywallScreen} />
@@ -121,6 +134,49 @@ function OnboardingFlow() {
   );
 }
 
+const NAV_KEY = '@gruntz_nav_state';
+const NAV_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+/** Screens that only make sense in the moment they were opened; never restored after a relaunch. */
+const TRANSIENT = new Set(['Celebration', 'Paywall', 'RunTracker', 'RoutineEditor']);
+const isTransient = (r: { name: string; params?: object }) =>
+  TRANSIENT.has(r.name) || (r.name === 'ExerciseLibrary' && !!(r.params as { pick?: boolean } | undefined)?.pick);
+
+/** Drop transient screens (and anything stacked above them) from a saved navigation state. */
+function restorable(state: InitialState | undefined): InitialState | undefined {
+  const routes = state?.routes;
+  if (!routes?.length) return undefined;
+  const cut = routes.findIndex(isTransient);
+  const kept = cut === -1 ? routes : routes.slice(0, cut);
+  if (!kept.length) return undefined;
+  return { ...state, routes: kept, index: kept.length - 1 } as InitialState;
+}
+
+/** Reopen on the screen the user left, if iOS closed the app while it was in the background. */
+function useSavedNavigation(hydrated: boolean, onboarded: boolean) {
+  const [ready, setReady] = useState(false);
+  const [initial, setInitial] = useState<InitialState | undefined>();
+  useEffect(() => {
+    if (!hydrated || ready) return;
+    if (!onboarded) return setReady(true);
+    let cancelled = false;
+    AsyncStorage.getItem(NAV_KEY)
+      .then((raw) => {
+        if (!raw || cancelled) return;
+        const saved = JSON.parse(raw) as { savedAt: number; state: InitialState };
+        if (Date.now() - saved.savedAt < NAV_MAX_AGE_MS) setInitial(restorable(saved.state));
+      })
+      .catch(() => undefined)
+      .finally(() => !cancelled && setReady(true));
+    return () => {
+      cancelled = true;
+    };
+  }, [hydrated, onboarded, ready]);
+  const save = (state: NavigationState | undefined) => {
+    if (state) void AsyncStorage.setItem(NAV_KEY, JSON.stringify({ savedAt: Date.now(), state })).catch(() => undefined);
+  };
+  return { ready, initial, save };
+}
+
 /** Same frame as the native splash, held until persisted state resolves: no flash, no jump. */
 function Boot() {
   return (
@@ -137,8 +193,18 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   const subscriptionHydrated = useSubscriptionStore((s) => s.hasHydrated);
   const initializeSubscription = useSubscriptionStore((s) => s.initialize);
   const resetDailyChallenge = useChallengeStore((s) => s.resetDaily);
+  const nav = useSavedNavigation(hasHydrated, isOnboarded);
+  const remindersOn = useUserStore((s) => s.profile?.settings.notifications_enabled ?? true);
+  useEffect(() => {
+    setNotificationsEnabled(remindersOn);
+  }, [remindersOn]);
   // Safety valve: never hold the splash more than 3 s on a slow store.
   const [timedOut, setTimedOut] = useState(false);
+
+  // Saved onboarding answers are only needed until the user is in (they survive the paywall step).
+  useEffect(() => {
+    if (hasHydrated && isOnboarded) useOnboardingDraftStore.getState().clear();
+  }, [hasHydrated, isOnboarded]);
 
   useEffect(() => {
     if (subscriptionHydrated) return;
@@ -162,11 +228,16 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
     return () => sub.remove();
   }, [hasHydrated, subscriptionHydrated, initializeSubscription, updateStreak, resetDailyChallenge]);
 
-  if (!fontsReady || !hasHydrated || (!subscriptionHydrated && !timedOut)) return <Boot />;
+  if (!fontsReady || !hasHydrated || !nav.ready || (!subscriptionHydrated && !timedOut)) return <Boot />;
 
   return (
     <View style={styles.fill}>
-      <NavigationContainer ref={navigationRef} theme={theme}>
+      <NavigationContainer
+        ref={navigationRef}
+        theme={theme}
+        initialState={isOnboarded ? nav.initial : undefined}
+        onStateChange={isOnboarded ? nav.save : undefined}
+      >
         {isOnboarded ? <AppStack /> : <OnboardingFlow />}
       </NavigationContainer>
       {isOnboarded ? (

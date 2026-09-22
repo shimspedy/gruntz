@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { appMuscles, getLibraryItem } from '../data/exerciseLibrary';
 import { MuscleBodyMap } from '../components/MuscleBodyMap';
-import { muscleLabel } from '../features/plan';
+import { muscleLabel, plural } from '../features/plan';
 import { routineMinutes, useRoutineStore } from '../store/useRoutineStore';
 import { useSessionStore } from '../store/useSessionStore';
 import type { RootStackParamList } from '../types/navigation';
@@ -73,10 +73,15 @@ export default function RoutineDetailScreen() {
         text: 'Delete',
         style: 'destructive',
         onPress: () => {
+          const snapshot = { ...routine, items: routine.items.map((i) => ({ ...i })) };
           haptic.warning();
           navigation.goBack();
           useRoutineStore.getState().deleteRoutine(routine.id);
-          toast('Workout deleted', { tone: 'info', icon: 'trash' });
+          toast('Workout deleted', {
+            tone: 'info',
+            icon: 'trash',
+            action: { label: 'Undo', onPress: () => useRoutineStore.getState().restoreRoutine(snapshot) },
+          });
         },
       },
     ]);
@@ -103,9 +108,18 @@ export default function RoutineDetailScreen() {
   const start = () => {
     if (running) return session.expand();
     if (session.active) {
-      Alert.alert('Workout in progress', 'Finish or discard your current workout first.', [
+      Alert.alert('Another workout is running', `Finish ${session.title || 'it'} first, or discard it and start this one.`, [
         { text: 'Open it', onPress: () => session.expand() },
-        { text: 'OK', style: 'cancel' },
+        {
+          text: 'Discard and start',
+          style: 'destructive',
+          onPress: () => {
+            session.discard();
+            haptic.medium();
+            session.startRoutine(routine, getLocalDateKey());
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
       ]);
       return;
     }
@@ -120,7 +134,7 @@ export default function RoutineDetailScreen() {
         <View style={styles.head}>
           <Text variant="title">{routine.name}</Text>
           <Text variant="body" tone="secondary" style={{ marginTop: 6, fontSize: 17 }}>
-            {routine.items.length} exercises, {routineMinutes(routine)} min
+            {plural(routine.items.length, 'exercise')}, {routineMinutes(routine)} min
           </Text>
           <View style={styles.schedule}>
             <Icon name="calendar" size={16} color={color.accent} />

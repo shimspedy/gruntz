@@ -86,7 +86,9 @@ function areConsecutiveDates(dateA: string, dateB: string): boolean {
     return false;
   }
 
-  return Math.abs(b.getTime() - a.getTime()) === DAY_MS;
+  // Daylight-saving days are 23 or 25 hours long, so an exact-millisecond comparison
+  // silently broke every challenge streak twice a year.
+  return Math.round(Math.abs(b.getTime() - a.getTime()) / DAY_MS) === 1;
 }
 
 export const useChallengeStore = create<ChallengeState>()(

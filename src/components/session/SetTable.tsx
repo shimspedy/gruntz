@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import Animated, { FadeInDown, interpolateColor, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import type { PreviousSet, SessionExercise, SessionSet } from '../../store/useSessionStore';
@@ -17,6 +17,10 @@ interface Props {
   onAdd: () => void;
 }
 
+const MAX_WEIGHT = 2000;
+const MAX_REPS = 999;
+const MAX_SECONDS = 4 * 60 * 60;
+
 function formatSeconds(sec?: number) {
   if (!sec) return '';
   const m = Math.floor(sec / 60);
@@ -32,12 +36,24 @@ function parseSeconds(text: string) {
   return Number(text.replace(/[^0-9]/g, '')) || 0;
 }
 
-function prevLabel(p: PreviousSet | undefined, ex: SessionExercise, unit: string) {
+const KG_PER_LB = 0.45359237;
+
+function prevLabel(p: PreviousSet | undefined, ex: SessionExercise, unit: 'lb' | 'kg') {
   if (!p) return '–';
   if (ex.kind === 'time') return p.seconds ? `${formatSeconds(p.seconds)}${p.seconds < 60 ? 's' : ''}` : '–';
   if (ex.kind === 'distance') return p.distance ?? '–';
-  if (p.weight && p.reps) return `${p.weight} ${unit} x ${p.reps}`;
+  if (p.weight && p.reps) {
+    // Older rows remember the unit they were lifted in, so switching lb/kg converts instead of relabelling.
+    const from = p.unit ?? unit;
+    const w = from === unit ? p.weight : from === 'lb' ? p.weight * KG_PER_LB : p.weight / KG_PER_LB;
+    return `${Math.round(w * 10) / 10} ${unit} x ${p.reps}`;
+  }
   return p.reps ? `${p.reps} reps` : '–';
+}
+
+/** Index into last session's sets: warm-up rows have no history and must not shift the column. */
+function workingIndex(exercise: SessionExercise, rowIndex: number) {
+  return exercise.sets.slice(0, rowIndex).filter((st) => !st.warmup).length;
 }
 
 /** SET · PREVIOUS · [LB] · REPS|TIME|DIST · ✓ — completed rows flood navy. */
@@ -68,9 +84,15 @@ export function SetTable({ exercise, previous, units, onChange, onToggle, onAdd 
         <SetRow
           key={set.id}
           index={i}
+          label={set.warmup ? 'W' : String(exercise.sets.slice(0, i + 1).filter((st) => !st.warmup).length)}
+          spokenLabel={
+            set.warmup
+              ? `Warm-up ${exercise.sets.slice(0, i + 1).filter((st) => st.warmup).length}`
+              : `Set ${exercise.sets.slice(0, i + 1).filter((st) => !st.warmup).length}`
+          }
           set={set}
           exercise={exercise}
-          prev={prevLabel(previous?.[i], exercise, unit)}
+          prev={prevLabel(set.warmup ? undefined : previous?.[workingIndex(exercise, i)], exercise, unit)}
           onChange={(patch) => onChange(set.id, patch)}
           onToggle={() => onToggle(set.id)}
         />
@@ -84,6 +106,8 @@ export function SetTable({ exercise, previous, units, onChange, onToggle, onAdd 
 }
 
 function SetRow({
+  label,
+  spokenLabel,
   index,
   set,
   exercise,
@@ -92,6 +116,10 @@ function SetRow({
   onToggle,
 }: {
   index: number;
+  /** Row label: the working-set number, or W for a warm-up. */
+  label: string;
+  /** What VoiceOver reads — "W" three times in a row tells the user nothing. */
+  spokenLabel: string;
   set: SessionSet;
   exercise: SessionExercise;
   prev: string;
@@ -120,14 +148,36 @@ function SetRow({
     backgroundColor: interpolateColor(done.get(), [0, 1], [color.surface, 'rgba(0,0,0,0)']),
   }));
 
-  const value =
-    exercise.kind === 'time' ? formatSeconds(set.seconds) : exercise.kind === 'distance' ? set.distance ?? '' : set.reps != null ? String(set.reps) : '';
+  // Inputs hold raw text while focused so "22.5" and "1:30" can be typed; the store gets the
+  // parsed number on blur. Controlled-on-every-keystroke re-formatting made both impossible.
+  const stored =
+    exercise.kind === 'time' ? formatSeconds(set.seconds) : exercise.kind === 'distance' ? (set.distance ?? '') : set.reps != null ? String(set.reps) : '';
+  const storedWeight = set.weight != null ? String(set.weight) : '';
+  const [valueDraft, setValueDraft] = useState<string | null>(null);
+  const [weightDraft, setWeightDraft] = useState<string | null>(null);
+  const value = valueDraft ?? stored;
+  const weightValue = weightDraft ?? storedWeight;
+
+  const commitWeight = (t: string) => {
+    setWeightDraft(null);
+    const n = Number(t.replace(/[^0-9.]/g, '').replace(/\.(?=.*\.)/g, ''));
+    onChange({ weight: t.trim() && Number.isFinite(n) && n > 0 ? Math.min(n, MAX_WEIGHT) : undefined });
+  };
+  const commitValue = (t: string) => {
+    setValueDraft(null);
+    if (exercise.kind === 'time') onChange({ seconds: Math.min(parseSeconds(t), MAX_SECONDS) || undefined });
+    else if (exercise.kind === 'distance') onChange({ distance: t.trim() || undefined });
+    else {
+      const n = Number(t.replace(/[^0-9]/g, ''));
+      onChange({ reps: t.trim() && Number.isFinite(n) && n > 0 ? Math.min(n, MAX_REPS) : undefined });
+    }
+  };
 
   return (
     <Animated.View entering={index > 0 ? FadeInDown.duration(220) : undefined} style={[styles.row, rowStyle]}>
-      <View style={[styles.colSet, styles.setBadge]}>
-        <Text variant="headline" tabular>
-          {index + 1}
+      <View style={[styles.colSet, styles.setBadge, set.warmup && styles.setBadgeWarmup]}>
+        <Text variant="headline" tone={set.warmup ? 'secondary' : 'primary'} tabular>
+          {label}
         </Text>
       </View>
       <Text variant="callout" tone="tertiary" numberOfLines={1} style={styles.colPrev}>
@@ -136,31 +186,33 @@ function SetRow({
       {exercise.weighted ? (
         <Animated.View style={[styles.colInput, styles.inputBox, inputStyle]}>
           <TextInput
-            value={set.weight != null ? String(set.weight) : ''}
-            onChangeText={(t) => onChange({ weight: t ? Number(t.replace(/[^0-9.]/g, '')) || 0 : undefined })}
+            value={weightValue}
+            onChangeText={setWeightDraft}
+            onBlur={() => commitWeight(weightValue)}
+            onSubmitEditing={() => commitWeight(weightValue)}
+            maxLength={7}
             placeholder="0"
             placeholderTextColor={color.textTertiary}
             keyboardType="decimal-pad"
             selectTextOnFocus
             style={styles.input}
             selectionColor={color.accent}
-            accessibilityLabel={`Set ${index + 1} weight`}
+            accessibilityLabel={`${spokenLabel} weight`}
           />
         </Animated.View>
       ) : null}
       <Animated.View style={[styles.colInput, styles.inputBox, inputStyle]}>
         <TextInput
           value={value}
-          onChangeText={(t) => {
-            if (exercise.kind === 'time') onChange({ seconds: parseSeconds(t) });
-            else if (exercise.kind === 'distance') onChange({ distance: t });
-            else onChange({ reps: t ? Number(t.replace(/[^0-9]/g, '')) || 0 : undefined });
-          }}
+          onChangeText={setValueDraft}
+          onBlur={() => commitValue(value)}
+          onSubmitEditing={() => commitValue(value)}
+          maxLength={exercise.kind === 'distance' ? 24 : 7}
           keyboardType={exercise.kind === 'distance' ? 'default' : exercise.kind === 'time' ? 'numbers-and-punctuation' : 'number-pad'}
           selectTextOnFocus
           style={styles.input}
           selectionColor={color.accent}
-          accessibilityLabel={`Set ${index + 1} ${exercise.kind}`}
+          accessibilityLabel={`${spokenLabel} ${exercise.kind}`}
         />
       </Animated.View>
       <View style={styles.colCheck}>
@@ -173,7 +225,7 @@ function SetRow({
           }}
           accessibilityRole="checkbox"
           accessibilityState={{ checked: set.done }}
-          accessibilityLabel={`Complete set ${index + 1}`}
+          accessibilityLabel={`Complete ${spokenLabel.toLowerCase()}`}
         >
           <Animated.View style={[styles.check, checkStyle]}>
             <Icon name="check" size={18} color="#FFFFFF" weight="bold" />
@@ -185,27 +237,28 @@ function SetRow({
 }
 
 const styles = StyleSheet.create({
-  headRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.gutter, height: 44 },
-  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.gutter, height: 72 },
-  colSet: { width: 48, marginRight: 8 },
+  headRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.gutter, height: 32 },
+  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.gutter, height: 52 },
+  colSet: { width: 40, marginRight: 8 },
   colPrev: { flex: 1.25, textAlign: 'center' },
   colInput: { flex: 1, marginHorizontal: 5, textAlign: 'center' },
-  colCheck: { width: 48, alignItems: 'flex-end' },
+  colCheck: { width: 40, alignItems: 'flex-end' },
   setBadge: {
-    height: 48,
+    height: 40,
     borderRadius: 10,
     borderCurve: 'continuous',
     backgroundColor: color.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  inputBox: { height: 48, borderRadius: radius.sm, borderCurve: 'continuous', justifyContent: 'center' },
-  input: { color: color.text, fontFamily: font.medium, fontSize: 19, textAlign: 'center', height: 48, fontVariant: ['tabular-nums'] },
-  check: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  setBadgeWarmup: { backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth, borderColor: color.lineStrong },
+  inputBox: { height: 40, borderRadius: radius.sm, borderCurve: 'continuous', justifyContent: 'center' },
+  input: { color: color.text, fontFamily: font.medium, fontSize: 18, textAlign: 'center', height: 40, fontVariant: ['tabular-nums'] },
+  check: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   addSet: {
     marginHorizontal: space.gutter,
-    marginTop: space.md,
-    height: 56,
+    marginTop: space.sm,
+    height: 48,
     borderRadius: radius.md,
     borderCurve: 'continuous',
     backgroundColor: color.surface,

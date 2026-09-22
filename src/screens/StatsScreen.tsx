@@ -29,13 +29,14 @@ export default function StatsScreen() {
   const dist = (mi: number) => (km ? `${(mi * 1.609).toFixed(1)} km` : `${mi.toFixed(1)} mi`);
 
   const tiles = [
-    { label: 'Missions', value: p.workouts_completed.toLocaleString() },
+    { label: 'Workouts', value: p.workouts_completed.toLocaleString() },
     { label: 'Total reps', value: p.total_reps.toLocaleString() },
     { label: 'Distance', value: dist(p.total_distance_miles) },
     { label: 'Total XP', value: p.current_xp.toLocaleString() },
     { label: 'Challenges', value: p.challenges_completed.toLocaleString() },
-    { label: 'Challenge streak', value: `${p.challenge_streak_days} d` },
+    { label: 'Challenge streak', value: p.challenge_streak_days === 1 ? '1 day' : `${p.challenge_streak_days} days` },
   ];
+  const isNew = p.workouts_completed === 0 && p.challenges_completed === 0 && p.current_xp === 0;
   const records = [
     ...Object.entries(p.best_run_times).map(([k, v]) => ({ label: `Run · ${k}`, v })),
     ...Object.entries(p.best_ruck_times).map(([k, v]) => ({ label: `Ruck · ${k}`, v })),
@@ -50,6 +51,11 @@ export default function StatsScreen() {
     <View style={styles.screen}>
       <NavHeader title="Stats" />
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + space.xxl }} showsVerticalScrollIndicator={false}>
+        {isNew ? (
+          <Text variant="callout" tone="secondary" style={styles.intro}>
+            Nothing here yet. Finish your first workout and your totals, records and field sessions start filling in.
+          </Text>
+        ) : null}
         <View style={styles.grid}>
           {tiles.map((t) => (
             <View key={t.label} style={styles.tile}>
@@ -146,6 +152,7 @@ export default function StatsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: color.bg },
+  intro: { paddingHorizontal: space.gutter, paddingBottom: space.md },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingHorizontal: space.md, paddingTop: space.md },
   tile: {
     flexBasis: '46%', flexGrow: 1,

@@ -17,7 +17,7 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { getExerciseById } from '../../data/exercises';
 import { navigationRef } from '../../navigation/ref';
 import { formatClock, useNow } from '../../hooks/useNow';
-import { clearWorkoutProgress, showWorkoutProgress } from '../../services/notifications';
+import { cancelRestDone, clearWorkoutProgress, notificationsEnabled, scheduleRestDone, showWorkoutProgress } from '../../services/notifications';
 import { useReadinessStore } from '../../store/useReadinessStore';
 import { isExerciseDone, useSessionStore, type SessionExercise } from '../../store/useSessionStore';
 import { useUserStore } from '../../store/useUserStore';
@@ -29,10 +29,10 @@ import { haptic } from '../../ui/haptics';
 import { toast } from '../../ui/Toast';
 import { color, font, motion, radius, space } from '../../ui/tokens';
 import { ExerciseVideo } from '../ExerciseVideo';
-import { GuideSheet } from './GuideSheet';
 import { RestBanner } from './RestBanner';
 import { RestSheet } from './RestSheet';
 import { SessionSummary } from './SessionSummary';
+import { ExerciseInsights } from './ExerciseInsights';
 import { SetTable } from './SetTable';
 
 const BUBBLE = 68;
@@ -71,14 +71,14 @@ export function WorkoutSessionHost() {
   }, [active, minimized, mounted, height, y]);
 
   useEffect(() => {
-    if (active && keepAwake) {
+    if (active && keepAwake && !minimized) {
       void activateKeepAwakeAsync(KEEP_AWAKE_TAG);
       return () => {
         void deactivateKeepAwake(KEEP_AWAKE_TAG);
       };
     }
     return undefined;
-  }, [active, keepAwake]);
+  }, [active, keepAwake, minimized]);
 
   const pan = Gesture.Pan()
     .activeOffsetY(8)
@@ -114,9 +114,10 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
   const units = useUserStore((u) => u.profile?.settings.units ?? 'imperial');
   const now = useNow(visible);
   const [phase, setPhase] = useState<'log' | 'summary'>('log');
-  const [guideFor, setGuideFor] = useState<string | null>(null);
   const [restFor, setRestFor] = useState<string | null>(null);
   const pager = useRef<FlatList<SessionExercise>>(null);
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(advanceTimer.current), []);
   const carousel = useRef<ScrollView>(null);
   const summaryX = useSharedValue(0);
 
@@ -130,12 +131,21 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
   useEffect(() => {
     const sub = AppState.addEventListener('change', (next) => {
       const l = latest.current;
-      if (next === 'background' && l.active && l.completed > 0) void showWorkoutProgress(l.completed, l.total, l.title);
-      if (next === 'active') void clearWorkoutProgress();
+      if (next === 'background' && l.active && l.completed > 0 && notificationsEnabled()) void showWorkoutProgress(l.completed, l.total, l.title);
+      if (next === 'background' && l.active && notificationsEnabled()) {
+        const st = useSessionStore.getState();
+        const upNext = st.exercises[st.index];
+        if (st.restEndsAt) void scheduleRestDone(st.restEndsAt, upNext ? getExerciseById(upNext.exerciseId)?.name : undefined);
+      }
+      if (next === 'active') {
+        void clearWorkoutProgress();
+        void cancelRestDone();
+      }
     });
     return () => {
       sub.remove();
       void clearWorkoutProgress();
+      void cancelRestDone();
     };
   }, []);
 
@@ -167,7 +177,11 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
         const fallback = state.exercises.findIndex((e) => !isExerciseDone(e));
         const target = nextIndex >= 0 ? nextIndex : fallback;
         if (target >= 0) {
-          setTimeout(() => useSessionStore.getState().setIndex(target), 650);
+          clearTimeout(advanceTimer.current);
+          advanceTimer.current = setTimeout(() => {
+            const st = useSessionStore.getState();
+            if (st.active && st.exercises.length > target) st.setIndex(target);
+          }, 650);
         } else {
           toast('Every exercise logged. Finish when ready.', { tone: 'info', icon: 'flag' });
         }
@@ -233,7 +247,7 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
               >
                 <Icon name="stopwatch" size={24} color={color.textSecondary} />
               </Tap>
-              <Text variant="headline" tabular style={styles.clock} accessibilityLabel="Elapsed time">
+              <Text variant="headline" tabular style={styles.clock} accessibilityLabel={`Elapsed time ${s.startedAt ? formatClock(now - s.startedAt) : '0:00'}`}>
                 {s.startedAt ? formatClock(now - s.startedAt) : '0:00'}
               </Text>
               {allDone ? (
@@ -325,7 +339,6 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
               width={width}
               units={units}
               bottomPad={insets.bottom + 120}
-              onGuide={() => setGuideFor(item.exerciseId)}
               onRest={() => setRestFor(item.exerciseId)}
               onToggle={(setId) => handleToggle(item, setId)}
             />
@@ -338,7 +351,6 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
         {phase === 'summary' ? <SessionSummary onBack={() => setPhase('log')} onDone={() => setPhase('log')} /> : null}
       </Animated.View>
 
-      <GuideSheet exerciseId={guideFor} onClose={() => setGuideFor(null)} />
       <RestSheet exerciseId={restFor} onClose={() => setRestFor(null)} />
     </View>
   );
@@ -350,7 +362,6 @@ function ExercisePage({
   width,
   units,
   bottomPad,
-  onGuide,
   onRest,
   onToggle,
 }: {
@@ -359,7 +370,6 @@ function ExercisePage({
   width: number;
   units: 'imperial' | 'metric';
   bottomPad: number;
-  onGuide: () => void;
   onRest: () => void;
   onToggle: (setId: string) => void;
 }) {
@@ -390,18 +400,32 @@ function ExercisePage({
     haptic.light();
     const name = ex?.name ?? 'This exercise';
     const message = `Removing ${name} means it won’t count toward today’s mission.`;
-    const options = [...(alternative ? [`Replace with ${alternative.name}`] : []), 'Remove exercise', 'Cancel'];
+    const canWarmup = !exercise.sets.some((st) => st.warmup);
+    const warmupLabel = 'Add warm-up sets';
+    const options = [
+      ...(canWarmup ? [warmupLabel] : []),
+      ...(alternative ? [`Replace with ${alternative.name}`] : []),
+      'Remove exercise',
+      'Cancel',
+    ];
+    const addWarmup = () => {
+      haptic.light();
+      useSessionStore.getState().addWarmupSets(exercise.key);
+    };
     if (process.env.EXPO_OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         { title: name, message, options, destructiveButtonIndex: options.length - 2, cancelButtonIndex: options.length - 1, userInterfaceStyle: 'dark' },
         (i) => {
-          if (alternative && i === 0) replace();
-          else if (i === options.length - 2) remove();
+          const chosen = options[i];
+          if (chosen === warmupLabel) addWarmup();
+          else if (alternative && chosen?.startsWith('Replace with')) replace();
+          else if (chosen === 'Remove exercise') remove();
         },
       );
       return;
     }
     Alert.alert(name, message, [
+      ...(canWarmup ? [{ text: warmupLabel, onPress: addWarmup }] : []),
       ...(alternative ? [{ text: `Replace with ${alternative.name}`, onPress: replace }] : []),
       { text: 'Remove exercise', style: 'destructive' as const, onPress: remove },
       { text: 'Cancel', style: 'cancel' as const },
@@ -417,15 +441,7 @@ function ExercisePage({
       keyboardDismissMode="on-drag"
       automaticallyAdjustKeyboardInsets
     >
-      <View>
-        <ExerciseVideo exercise={ex} active={active} style={{ width, height: videoH }} />
-        <Tap onPress={onGuide} scaleTo={0.95} style={styles.guide} accessibilityLabel="Guide">
-          <Icon name="play" size={12} color="#FFFFFF" weight="semibold" />
-          <Text variant="subhead" style={{ fontFamily: font.semibold }}>
-            Guide
-          </Text>
-        </Tap>
-      </View>
+      <ExerciseVideo exercise={ex} active={active} style={{ width, height: videoH }} />
 
       <View style={styles.nameRow}>
         <Text variant="title" style={styles.name} numberOfLines={2}>
@@ -458,6 +474,8 @@ function ExercisePage({
         onToggle={onToggle}
         onAdd={() => addSet(exercise.key)}
       />
+
+      <ExerciseInsights exercise={ex} exerciseKey={exercise.key} unit={units === 'metric' ? 'kg' : 'lb'} />
     </ScrollView>
   );
 }
@@ -499,18 +517,6 @@ const styles = StyleSheet.create({
     borderColor: color.bg,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  guide: {
-    position: 'absolute',
-    top: space.sm,
-    right: space.gutter,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    height: 34,
-    paddingHorizontal: 14,
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(28,28,30,0.86)',
   },
   nameRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.gutter, marginTop: space.md },
   name: { flex: 1, fontSize: 25, lineHeight: 30 },

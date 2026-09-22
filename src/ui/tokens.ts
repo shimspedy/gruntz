@@ -17,8 +17,8 @@ export const color = {
 
   text: '#FFFFFF',
   textSecondary: '#A1A1A6',
-  textTertiary: '#6E6E73',
-  textQuaternary: '#48484A',
+  textTertiary: '#8A8A8F',
+  textQuaternary: '#6E6E73',
 
   accent: '#2D8CFF',
   accentPressed: '#1F7AEB',

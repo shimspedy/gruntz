@@ -41,6 +41,7 @@ export function Tap({
   ...rest
 }: TapProps) {
   const pressed = useSharedValue(0);
+  const lastPress = React.useRef(0);
 
   const animatedStyle = useAnimatedStyle(() => {
     const p = pressed.get();
@@ -71,6 +72,10 @@ export function Tap({
         onPressOut?.(e);
       }}
       onPress={(e) => {
+        // Swallow the second of a double tap: it used to push two copies of the same screen.
+        const now = Date.now();
+        if (now - lastPress.current < 450) return;
+        lastPress.current = now;
         if (hapticOnPress) haptic[hapticOnPress]();
         onPress?.(e);
       }}

@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { getExerciseById } from '../data/exercises';
 import { getProgramById } from '../data/programs';
+import { usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { useProgramStore } from '../store/useProgramStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { hasTrainingAccess, useSubscriptionStore } from '../store/useSubscriptionStore';
@@ -62,6 +63,7 @@ export default function ProgramDetailScreen() {
           if (useSessionStore.getState().active) useSessionStore.getState().discard();
           useProgramStore.getState().selectProgram(program.id as ProgramId);
           useProgramStore.getState().setHasSeenProgramSelect(true);
+          usePlanLibraryStore.getState().unfollow();
           haptic.success();
           navigation.dispatch(StackActions.popToTop());
           toast(`${program.name} is your new program`, { icon: 'check' });

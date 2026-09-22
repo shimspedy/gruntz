@@ -60,8 +60,20 @@ export function calculateStreakBonus(streakDays: number): number {
   return 0;
 }
 
-export function isStreakAlive(lastWorkoutDate: string): boolean {
-  return getLocalDayDiffFromToday(lastWorkoutDate) <= 1;
+/**
+ * How many days may pass before a streak breaks, based on how often the user plans to train.
+ * A 3-day-a-week plan has two rest days between sessions, so a strict 1-day rule punished
+ * people for following their own plan.
+ */
+export function streakGraceDays(daysPerWeek?: number | null): number {
+  if (!daysPerWeek || daysPerWeek >= 6) return 1;
+  return Math.min(4, Math.ceil(7 / daysPerWeek) + 1);
+}
+
+export function isStreakAlive(lastWorkoutDate: string, daysPerWeek?: number | null): boolean {
+  // A date in the future (travel, clock change) must not keep a streak alive forever.
+  const diff = getLocalDayDiffFromToday(lastWorkoutDate);
+  return diff >= 0 && diff <= streakGraceDays(daysPerWeek);
 }
 
 export function getDefaultProgress(userId: string): UserProgress {

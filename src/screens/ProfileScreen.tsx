@@ -62,13 +62,14 @@ export default function ProfileScreen() {
   const weeks = useMemo(() => weeklyMissions(claimedDates(progress.claimed_missions)), [progress.claimed_missions]);
   const thisWeek = weeks[WEEKS - 1].count;
   const lastWeek = weeks[WEEKS - 2].count;
-  const delta = lastWeek > 0 ? Math.round(((thisWeek - lastWeek) / lastWeek) * 100) : thisWeek > 0 ? 100 : 0;
+  // Percentages off one or two workouts swing wildly ('+100%'), so compare counts instead.
+  const delta = thisWeek - lastWeek;
   const max = Math.max(3, ...weeks.map((w) => w.count));
   const fmt = (d: Date) => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   const rangeEnd = new Date(weeks[WEEKS - 1].start);
   rangeEnd.setDate(rangeEnd.getDate() + 6);
   const programInfo = program ? getProgramById(program) : undefined;
-  const displayName = profile?.display_name || 'Recruit';
+  const displayName = profile?.display_name || 'Athlete';
 
   const membership = async () => {
     if (access === 'subscriber') {
@@ -98,7 +99,7 @@ export default function ProfileScreen() {
             {displayName}
           </Text>
           <View style={styles.stats}>
-            <MiniStat label="Missions" value={progress.workouts_completed} />
+            <MiniStat label="Workouts" value={progress.workouts_completed} />
             <MiniStat label="Streak" value={progress.streak_days} />
             <MiniStat label="Level" value={progress.current_level} />
           </View>
@@ -108,7 +109,7 @@ export default function ProfileScreen() {
       <View style={styles.chartHead}>
         <View>
           <Text variant="callout" tone="secondary">
-            Missions
+            Workouts
           </Text>
           <View style={styles.valueRow}>
             <Text style={styles.value} tabular>
@@ -117,7 +118,7 @@ export default function ProfileScreen() {
             <View style={styles.delta}>
               <Text variant="subhead" tabular style={{ color: delta >= 0 ? color.text : color.textSecondary }}>
                 {delta > 0 ? '+' : ''}
-                {delta}%
+                {delta} vs last week
               </Text>
             </View>
           </View>
@@ -134,7 +135,7 @@ export default function ProfileScreen() {
           </Text>
         </View>
       </View>
-      <View style={styles.chart} accessibilityLabel={`Missions per week, last ${WEEKS} weeks`}>
+      <View style={styles.chart} accessibilityLabel={`Workouts per week, last ${WEEKS} weeks`}>
         {weeks.map((w, i) => (
           <View key={i} style={styles.col}>
             <ChartBar ratio={w.count / max} index={i} highlight={i === WEEKS - 1} />
@@ -160,14 +161,14 @@ export default function ProfileScreen() {
           onPress={membership}
         />
         <Row icon="flag" title="Service & test profile" onPress={() => navigation.navigate('ServiceProfile')} />
-        <Row icon="people" title="Leader tools" onPress={() => navigation.navigate('LeaderTools')} />
+        <Row icon="people" title="Leader tools" value="Coming soon" onPress={() => navigation.navigate('LeaderTools')} />
         <Row icon="share" title="Share my streak" onPress={() => void shareStreak(progress.streak_days, progress.current_rank)} />
       </Group>
 
       <Sheet visible={editing} onClose={() => setEditing(false)} title="Edit profile" avoidKeyboard>
         <View style={{ paddingHorizontal: space.gutter, paddingTop: space.md }}>
           <Text variant="subhead" tone="secondary" style={{ marginBottom: 8 }}>
-            Callsign
+            Name
           </Text>
           <TextInput
             value={name}
@@ -186,7 +187,7 @@ export default function ProfileScreen() {
             title="Save"
             style={{ marginTop: space.lg }}
             onPress={() => {
-              if (profile) setProfile({ ...profile, display_name: name.trim() || 'Recruit' });
+              if (profile) setProfile({ ...profile, display_name: name.trim() || 'Athlete' });
               haptic.success();
               setEditing(false);
               toast('Profile updated');

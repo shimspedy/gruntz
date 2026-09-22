@@ -11,7 +11,7 @@ import { Text } from '../ui/Text';
 import { color, radius, space } from '../ui/tokens';
 
 const CATEGORY: Record<Achievement['category'], { label: string; icon: IconName }> = {
-  workout: { label: 'Missions', icon: 'dumbbell' },
+  workout: { label: 'Workouts', icon: 'dumbbell' },
   streak: { label: 'Streaks', icon: 'flame' },
   xp: { label: 'Experience', icon: 'bolt' },
   rank: { label: 'Rank', icon: 'medal' },

@@ -11,6 +11,7 @@ import { HeroArt } from '../ui/ExerciseArt';
 import { Icon } from '../ui/Icon';
 import { SectionTitle } from '../ui/Layout';
 import { Tap } from '../ui/Pressable';
+import { plural } from '../features/plan';
 import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
 import { color, radius, space } from '../ui/tokens';
@@ -57,7 +58,7 @@ export function MyWorkouts() {
 function RoutineCard({ routine, onPress }: { routine: Routine; onPress: () => void }) {
   const first = routine.items[0]?.key;
   return (
-    <Tap onPress={onPress} scaleTo={0.96} style={styles.card} accessibilityLabel={`${routine.name}, ${routine.items.length} exercises`}>
+    <Tap onPress={onPress} scaleTo={0.96} style={styles.card} accessibilityLabel={`${routine.name}, ${plural(routine.items.length, 'exercise')}`}>
       {first ? <HeroArt exercise={getExerciseById(libraryExerciseId(first))} style={StyleSheet.absoluteFill} /> : null}
       <LinearGradient colors={['rgba(0,0,0,0)', 'rgba(6,7,9,0.95)']} locations={[0.3, 0.95]} style={StyleSheet.absoluteFill} />
       <View style={styles.cardCopy}>
@@ -65,7 +66,7 @@ function RoutineCard({ routine, onPress }: { routine: Routine; onPress: () => vo
           {routine.name}
         </Text>
         <Text variant="footnote" tone="secondary" style={{ marginTop: 3 }}>
-          {routine.items.length} exercises · {routineMinutes(routine)} min
+          {plural(routine.items.length, 'exercise')} · {routineMinutes(routine)} min
         </Text>
         <Text variant="caption" tone="accent" style={{ marginTop: 4 }} numberOfLines={1}>
           {scheduleLabel(routine.days)}

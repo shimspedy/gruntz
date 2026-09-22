@@ -52,7 +52,7 @@ export function Text({ variant = 'body', tone = 'primary', align, tabular, style
   const fixLine = flat?.fontSize && !flat.lineHeight ? { lineHeight: Math.round(flat.fontSize * 1.22) } : null;
   return (
     <RNText
-      maxFontSizeMultiplier={1.3}
+      maxFontSizeMultiplier={1.8}
       {...rest}
       style={[
         variants[variant],

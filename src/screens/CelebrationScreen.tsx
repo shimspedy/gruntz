@@ -103,7 +103,7 @@ export default function CelebrationScreen() {
               <Icon name="flame" size={22} color={color.flame} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text variant="headline">{params.streak}-day streak</Text>
+              <Text variant="headline">{params.streak > 1 ? `${params.streak}-day streak` : 'Streak started'}</Text>
               <Text variant="subhead" tone="secondary" style={{ marginTop: 2 }}>
                 Train tomorrow to keep it alive
               </Text>

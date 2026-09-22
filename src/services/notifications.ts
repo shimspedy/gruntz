@@ -12,6 +12,15 @@ Notifications.setNotificationHandler({
   }),
 });
 
+/** Set by the app when the user's reminder preference changes; nothing schedules while off. */
+let remindersEnabled = true;
+export function setNotificationsEnabled(enabled: boolean) {
+  remindersEnabled = enabled;
+}
+export function notificationsEnabled() {
+  return remindersEnabled;
+}
+
 async function withNotificationGuard<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
   try {
     return await fn();
@@ -71,24 +80,34 @@ export async function setupNotificationChannels() {
 
 // ─── Daily Mission Reminder ─────────────────────────────────────
 
-export async function scheduleDailyReminder(hour: number, minute: number) {
-  // Cancel existing daily reminders first
+/**
+ * @param weekdays 1 (Sunday) – 7 (Saturday). Empty means every day. Reminding someone who
+ * trains three days a week on all seven is how an app gets its notifications turned off.
+ */
+export async function scheduleDailyReminder(hour: number, minute: number, weekdays: number[] = []) {
   await cancelDailyReminder();
+  if (!remindersEnabled) return;
 
   await withNotificationGuard(async () => {
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'GRUNTZ — Mission Awaits',
-        body: "Your daily mission is ready. Don't break the streak!",
-        data: { type: 'daily-reminder' },
-        ...(Platform.OS === 'android' && { channelId: 'daily-reminder' }),
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DAILY,
-        hour,
-        minute,
-      },
-    });
+    const content: Notifications.NotificationContentInput = {
+      title: 'Time to train',
+      body: 'Your next workout is ready when you are.',
+      data: { type: 'daily-reminder' },
+      ...(Platform.OS === 'android' && { channelId: 'daily-reminder' }),
+    };
+    if (!weekdays.length) {
+      await Notifications.scheduleNotificationAsync({
+        content,
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute },
+      });
+      return;
+    }
+    for (const weekday of weekdays) {
+      await Notifications.scheduleNotificationAsync({
+        content,
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday, hour, minute },
+      });
+    }
   }, undefined);
 }
 
@@ -144,6 +163,34 @@ export async function clearWorkoutProgress() {
     }
     await dismissPresentedNotificationsByType('workout-progress');
   }, undefined);
+}
+
+// ─── Rest timer ─────────────────────────────────────────────────
+
+/** Fires when a rest ends while the app is in the background or the phone is locked. */
+export async function scheduleRestDone(endsAt: number, nextLabel?: string) {
+  await cancelRestDone();
+  if (endsAt <= Date.now() + 1000) return;
+  await withNotificationGuard(async () => {
+    await Notifications.scheduleNotificationAsync({
+      identifier: 'rest-done',
+      content: {
+        title: 'Rest’s up',
+        body: nextLabel ? `Time for your next set: ${nextLabel}` : 'Time for your next set.',
+        data: { type: 'rest-done' },
+        sound: true,
+        ...(Platform.OS === 'android' && { channelId: 'workout-progress' }),
+      },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: new Date(endsAt) },
+    });
+  }, undefined);
+}
+
+export async function cancelRestDone() {
+  await withNotificationGuard(async () => {
+    await Notifications.cancelScheduledNotificationAsync('rest-done');
+  }, undefined);
+  await dismissPresentedNotificationsByType('rest-done');
 }
 
 export async function showWorkoutComplete(xpEarned: number, streakDays: number) {
@@ -205,6 +252,8 @@ export async function scheduleTrialEndingReminder(trialEndsAt: string) {
   const endTime = new Date(trialEndsAt).getTime();
   if (!Number.isFinite(endTime)) return;
   const fireAt = new Date(endTime - 36 * 60 * 60 * 1000);
+  // Nobody wants a sales push at 3am: pull it into the evening of the same day.
+  if (fireAt.getHours() < 9 || fireAt.getHours() > 20) fireAt.setHours(18, 0, 0, 0);
   if (fireAt.getTime() <= Date.now() + 60_000) {
     // Less than a minute away (or in the past) — nothing to schedule.
     return;

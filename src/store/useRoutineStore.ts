@@ -34,11 +34,15 @@ interface RoutineState {
   addToDraft: (keys: string[]) => void;
   updateItem: (uid: string, patch: Partial<RoutineItem>) => void;
   removeItem: (uid: string) => void;
+  /** Puts a removed item back at its old position, for undo. */
+  insertItem: (item: RoutineItem, at: number) => void;
   moveItem: (uid: string, dir: -1 | 1) => void;
   saveDraft: () => Routine | null;
   discardDraft: () => void;
   addToRoutine: (id: string, key: string) => void;
   deleteRoutine: (id: string) => void;
+  /** Puts a deleted workout back, for undo. */
+  restoreRoutine: (routine: Routine) => void;
 }
 
 let seq = 0;
@@ -67,6 +71,14 @@ export const useRoutineStore = create<RoutineState>()(
         set((s) => (s.draft ? { draft: { ...s.draft, items: s.draft.items.map((i) => (i.uid === id ? { ...i, ...patch } : i)) } } : s)),
 
       removeItem: (id) => set((s) => (s.draft ? { draft: { ...s.draft, items: s.draft.items.filter((i) => i.uid !== id) } } : s)),
+
+      insertItem: (item, at) =>
+        set((s) => {
+          if (!s.draft || s.draft.items.some((i) => i.uid === item.uid)) return s;
+          const items = [...s.draft.items];
+          items.splice(Math.max(0, Math.min(at, items.length)), 0, item);
+          return { draft: { ...s.draft, items } };
+        }),
 
       moveItem: (id, dir) =>
         set((s) => {
@@ -107,6 +119,9 @@ export const useRoutineStore = create<RoutineState>()(
         })),
 
       deleteRoutine: (id) => set((s) => ({ routines: s.routines.filter((r) => r.id !== id) })),
+
+      restoreRoutine: (routine) =>
+        set((s) => (s.routines.some((r) => r.id === routine.id) ? s : { routines: [...s.routines, routine] })),
     }),
     {
       name: '@gruntz_routines',

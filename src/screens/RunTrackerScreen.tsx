@@ -137,7 +137,17 @@ export default function RunTrackerScreen() {
 
   const close = () => {
     if (tracker.isTracking) {
-      Alert.alert('Session in progress', 'End the session before closing, or keep tracking.', [{ text: 'OK' }]);
+      Alert.alert('Session in progress', 'End and save this session, or keep tracking.', [
+        { text: 'Keep tracking', style: 'cancel' },
+        {
+          text: 'End session',
+          style: 'destructive',
+          onPress: () => {
+            tracker.stop();
+            navigation.goBack();
+          },
+        },
+      ]);
       return;
     }
     navigation.goBack();

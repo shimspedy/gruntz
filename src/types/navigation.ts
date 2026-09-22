@@ -4,7 +4,9 @@ import type { Rank } from './index';
 export type TabParamList = {
   Train: undefined;
   Ranks: undefined;
+  /** Military Prep only; other users get `Plans` in this slot. */
   Test: undefined;
+  Plans: undefined;
   Profile: undefined;
 };
 
@@ -25,6 +27,10 @@ export type RootStackParamList = {
   Plan: undefined;
   ProgramSelect: undefined;
   ProgramDetail: { programId: string };
+  /** Library plans: browse, one plan, one day of a plan. */
+  PlanBrowse: undefined;
+  LibraryPlanDetail: { planId: string };
+  LibraryPlanDay: { planId: string; dayId: string };
   CardLibrary: { category?: string } | undefined;
   CardDetail: { cardId: string };
   ExerciseDetail: { exerciseId?: string; mediaKey?: string };
@@ -37,6 +43,7 @@ export type RootStackParamList = {
   Stats: undefined;
   Settings: undefined;
   ServiceProfile: undefined;
+  TrainingPreferences: undefined;
   LeaderTools: undefined;
   Paywall: undefined;
   RunTracker: { type?: 'run' | 'ruck' } | undefined;

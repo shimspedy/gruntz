@@ -7,7 +7,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { MuscleBodyMap } from '../components/MuscleBodyMap';
 import { getExerciseById } from '../data/exercises';
 import { getProgramWorkoutDay } from '../data/programWorkouts';
-import { exerciseDetail, formatMinutes, muscleDistribution, muscleLabel, WEEKDAYS, workoutExercises } from '../features/plan';
+import { exerciseDetail, formatMinutes, muscleDistribution, muscleLabel, plural, WEEKDAYS, workoutExercises } from '../features/plan';
 import { useProgramStore } from '../store/useProgramStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { hasTrainingAccess, useSubscriptionStore } from '../store/useSubscriptionStore';
@@ -69,8 +69,9 @@ export default function WorkoutDetailScreen() {
   if (completed) cta = { title: 'Completed today', disabled: true };
   else if (!unlocked) cta = { title: 'Unlock Gruntz Pro', onPress: () => navigation.navigate('Paywall') };
   else if (sameSession) cta = { title: 'Resume Workout', icon: 'play', onPress: () => session.expand() };
-  else if (session.active) cta = { title: 'Finish your current workout first', disabled: true };
-  else if (!isToday) cta = { title: `Scheduled for ${weekday}`, disabled: true };
+  // Both of these used to be dead disabled buttons: one with nowhere to go, one with no way to train early.
+  else if (session.active) cta = { title: 'Go to your current workout', icon: 'play', onPress: () => session.expand() };
+  else if (!isToday) cta = { title: `Do it now · ${weekday}'s workout`, icon: 'play' };
 
   const start = () => {
     if (cta.onPress) return cta.onPress();
@@ -95,7 +96,7 @@ export default function WorkoutDetailScreen() {
         <View style={styles.head}>
           <Text variant="title">{day.title}</Text>
           <Text variant="body" tone="secondary" style={{ marginTop: 6, fontSize: 17 }}>
-            {exercises.length} exercises, {formatMinutes(day.estimated_duration)}
+            {plural(exercises.length, 'exercise')}, {formatMinutes(day.estimated_duration)}
           </Text>
           {day.objective ? (
             <Text variant="callout" tone="tertiary" style={{ marginTop: space.md }}>
@@ -130,7 +131,7 @@ export default function WorkoutDetailScreen() {
         ) : null}
 
         <Text variant="section" style={styles.sectionTitle}>
-          {exercises.length} exercises
+          {plural(exercises.length, 'exercise')}
         </Text>
         {day.sections.map((section) => (
           <View key={section.id}>

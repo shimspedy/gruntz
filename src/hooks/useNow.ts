@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AppState } from 'react-native';
 
 /** Re-renders every `interval` ms while `enabled`. Used by clocks (session, rest, run). */
 export function useNow(enabled = true, interval = 1000) {
@@ -6,8 +7,20 @@ export function useNow(enabled = true, interval = 1000) {
   useEffect(() => {
     if (!enabled) return;
     setNow(Date.now());
-    const id = setInterval(() => setNow(Date.now()), interval);
-    return () => clearInterval(id);
+    let id: ReturnType<typeof setInterval> | undefined = setInterval(() => setNow(Date.now()), interval);
+    // A backgrounded timer only burns battery and drifts; resync when the app comes back.
+    const sub = AppState.addEventListener('change', (next) => {
+      clearInterval(id);
+      id = undefined;
+      if (next === 'active') {
+        setNow(Date.now());
+        id = setInterval(() => setNow(Date.now()), interval);
+      }
+    });
+    return () => {
+      clearInterval(id);
+      sub.remove();
+    };
   }, [enabled, interval]);
   return now;
 }

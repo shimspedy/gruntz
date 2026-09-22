@@ -4,7 +4,9 @@ import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring, with
 import { scheduleOnRN } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { create } from 'zustand';
+import { useSessionStore } from '../store/useSessionStore';
 import { Icon, type IconName } from './Icon';
+import { Tap } from './Pressable';
 import { Text } from './Text';
 import { color, motion, space } from './tokens';
 
@@ -14,7 +16,8 @@ interface ToastState {
   message: string | null;
   tone: Tone;
   icon?: IconName;
-  show: (message: string, opts?: { tone?: Tone; icon?: IconName }) => void;
+  action?: { label: string; onPress: () => void };
+  show: (message: string, opts?: { tone?: Tone; icon?: IconName; action?: { label: string; onPress: () => void } }) => void;
   clear: () => void;
 }
 
@@ -22,17 +25,18 @@ export const useToast = create<ToastState>((set) => ({
   id: 0,
   message: null,
   tone: 'success',
-  show: (message, opts) => set((s) => ({ id: s.id + 1, message, tone: opts?.tone ?? 'success', icon: opts?.icon })),
+  show: (message, opts) => set((s) => ({ id: s.id + 1, message, tone: opts?.tone ?? 'success', icon: opts?.icon, action: opts?.action })),
   clear: () => set({ message: null }),
 }));
 
-export const toast = (message: string, opts?: { tone?: Tone; icon?: IconName }) => useToast.getState().show(message, opts);
+export const toast = (message: string, opts?: { tone?: Tone; icon?: IconName; action?: { label: string; onPress: () => void } }) =>
+  useToast.getState().show(message, opts);
 
 const tones: Record<Tone, string> = { success: '#1FA84F', info: color.accent, error: color.danger };
 
 /** Full-width banner that drops from under the status bar, then retreats. */
 export function ToastHost() {
-  const { id, message, tone, icon, clear } = useToast();
+  const { id, message, tone, icon, action, clear } = useToast();
   const insets = useSafeAreaInsets();
   const y = useSharedValue(-160);
 
@@ -51,14 +55,17 @@ export function ToastHost() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  // While the workout is open its own top bar owns the top of the screen; sliding the toast
+  // under it stops the banner hiding Finish for three seconds.
+  const sessionOpen = useSessionStore((st) => st.active && !st.minimized);
   const style = useAnimatedStyle(() => ({ transform: [{ translateY: y.get() }] }));
   if (!message) return null;
 
   return (
     <Animated.View
-      pointerEvents="none"
+      pointerEvents={action ? 'box-none' : 'none'}
       accessibilityLiveRegion="polite"
-      style={[styles.toast, { paddingTop: insets.top + 6, backgroundColor: tones[tone] }, style]}
+      style={[styles.toast, { paddingTop: insets.top + (sessionOpen ? 62 : 6), backgroundColor: tones[tone] }, style]}
     >
       <View style={styles.row}>
         <View style={styles.check}>
@@ -67,6 +74,22 @@ export function ToastHost() {
         <Text variant="headline" style={{ flex: 1 }} numberOfLines={2}>
           {message}
         </Text>
+        {action ? (
+          <Tap
+            feedback="opacity"
+            hitSlop={12}
+            onPress={() => {
+              action.onPress();
+              clear();
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={action.label}
+          >
+            <Text variant="cta" style={{ fontSize: 15 }}>
+              {action.label}
+            </Text>
+          </Tap>
+        ) : null}
       </View>
     </Animated.View>
   );

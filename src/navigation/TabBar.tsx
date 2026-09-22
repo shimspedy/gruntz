@@ -30,6 +30,7 @@ const TAB_META: Record<string, { label: string; icon?: IconName; iconActive?: Ic
   Train: { label: 'Train', icon: 'dumbbell', iconActive: 'dumbbellFill' },
   Ranks: { label: 'Ranks' },
   Test: { label: 'Test', icon: 'test', iconActive: 'testFill' },
+  Plans: { label: 'Plans', icon: 'book', iconActive: 'book' },
   Profile: { label: 'Profile', icon: 'person', iconActive: 'personFill' },
 };
 
