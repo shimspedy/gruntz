@@ -47,6 +47,15 @@ interface ReadinessState {
 const scale = (value: number | undefined, min: number, max: number, fallback: number) =>
   Number.isFinite(value) ? Math.max(min, Math.min(max, value as number)) : fallback;
 
+/**
+ * Retention caps. These are deliberate, not incidental: a readiness check-in is
+ * only useful against recent training, and the run/ruck list backs the charts.
+ * Named and documented because silently dropping a year-old entry from an
+ * unexplained `slice(0, 60)` is indistinguishable from losing data.
+ */
+const MAX_CHECKINS = 180;
+const MAX_TRACKED_SESSIONS = 400;
+
 export function calculateDailyReadiness(checkIn?: DailyReadinessCheckIn) {
   if (!checkIn) return 70;
   // Every field is clamped and defaulted: one missing value (a check-in saved by an
@@ -66,12 +75,12 @@ export const useReadinessStore = create<ReadinessState>()(
       checkIns: [], testScores: {}, targetScores: {}, fieldMode: false, audioCues: true,
       keepScreenAwake: true, batterySaver: false, trackedSessions: [], teamName: '', teamCode: '',
       saveCheckIn: (checkIn) => set((state) => ({
-        checkIns: [checkIn, ...state.checkIns.filter((item) => item.date !== checkIn.date)].slice(0, 60),
+        checkIns: [checkIn, ...state.checkIns.filter((item) => item.date !== checkIn.date)].slice(0, MAX_CHECKINS),
       })),
       setTestScore: (eventId, value) => set((state) => ({ testScores: { ...state.testScores, [eventId]: value } })),
       setTargetScore: (eventId, value) => set((state) => ({ targetScores: { ...state.targetScores, [eventId]: value } })),
       setFieldPreference: (key, value) => set({ [key]: value }),
-      addTrackedSession: (session) => set((state) => ({ trackedSessions: [session, ...state.trackedSessions].slice(0, 100) })),
+      addTrackedSession: (session) => set((state) => ({ trackedSessions: [session, ...state.trackedSessions].slice(0, MAX_TRACKED_SESSIONS) })),
       setTeam: (teamName, teamCode) => set({ teamName, teamCode }),
     }),
     { name: '@gruntz_readiness', storage: createJSONStorage(() => AsyncStorage) },

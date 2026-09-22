@@ -3,7 +3,10 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { getWorkoutPlan } from '../data/workoutPlans';
+import { Button } from '../ui/Button';
 import { getProgramById } from '../data/programs';
+import { usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { formatMinutes, getPlanWeek, heroExercise, workoutExercises } from '../features/plan';
 import { useProgramStore } from '../store/useProgramStore';
 import { calculateDailyReadiness, getTodaysCheckIn, useReadinessStore } from '../store/useReadinessStore';
@@ -11,7 +14,7 @@ import { useUserStore } from '../store/useUserStore';
 import { routineMinutes, useRoutineStore } from '../store/useRoutineStore';
 import { ExerciseThumb } from '../ui/ExerciseArt';
 import { Icon } from '../ui/Icon';
-import { Group, NavHeader, Row } from '../ui/Layout';
+import { EmptyState, Group, NavHeader, Row } from '../ui/Layout';
 import { Bar } from '../ui/Progress';
 import { Tap } from '../ui/Pressable';
 import { Text } from '../ui/Text';
@@ -33,11 +36,32 @@ export default function PlanScreen() {
   const readiness = calculateDailyReadiness(getTodaysCheckIn(checkIns));
   const phase = info?.phases.find((p) => week >= p.weeks[0] && week <= p.weeks[1]);
   const routines = useRoutineStore((s) => s.routines);
+  // This screen only ever knew about built-in programs. Someone following a plan
+  // from the library saw "Your plan · Week 1 of – · 0 of 0 missions".
+  const libraryPlanId = usePlanLibraryStore((s) => s.activePlanId);
+  const libraryPlan = libraryPlanId ? getWorkoutPlan(libraryPlanId) : undefined;
 
   return (
     <View style={styles.screen}>
       <NavHeader title="This week" />
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + space.xxl }} showsVerticalScrollIndicator={false}>
+        {!program ? (
+          libraryPlan ? (
+            <EmptyState
+              icon="list"
+              title={libraryPlan.title}
+              body="You're following this plan from the library. Your days live on its own screen."
+            >
+              <Button title="Open plan" onPress={() => navigation.navigate('LibraryPlanDetail', { planId: libraryPlan.id })} />
+            </EmptyState>
+          ) : (
+            <EmptyState icon="calendar" title="No plan yet" body="Pick a program or follow a plan from the library and your week shows up here.">
+              <Button title="Browse plans" onPress={() => navigation.navigate('PlanBrowse')} />
+              <Button title="Choose a program" variant="secondary" onPress={() => navigation.navigate('ProgramSelect')} />
+            </EmptyState>
+          )
+        ) : (
+        <>
         <View style={styles.head}>
           <Text variant="title">{info?.name ?? 'Your plan'}</Text>
           <Text variant="body" tone="secondary" style={{ marginTop: 4, fontSize: 17 }}>
@@ -145,6 +169,8 @@ export default function PlanScreen() {
             }}
           />
         </Group>
+        </>
+        )}
       </ScrollView>
     </View>
   );

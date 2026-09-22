@@ -3,8 +3,8 @@
 Six audits of the app (workout player, onboarding/paywall, plans & library, navigation/state/performance,
 copy & accessibility, data correctness), scored by how much each one would annoy a real user.
 
-- **Fixed: 128** — the 55 first-pass fixes, plus 73 of the numbered items below.
-- **Open: 49** — including 5 that need a device or account.
+- **Fixed: 133** — the 55 first-pass fixes, plus 78 of the numbered items below.
+- **Open: 44** — including 5 that need a device or account.
 
 Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[dev]` needs a device or account to verify.
 
@@ -120,7 +120,7 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 ## Open — workout player
 
 23. [x] `SessionBody` subscribes to the whole store: every keystroke re-renders the pager, carousel and clock (`WorkoutSession.tsx:113`).
-24. [ ] Session persists the full exercise array on every keystroke (`useSessionStore.ts:449`) — debounce.
+24. [x] Session persists the full exercise array on every keystroke (`useSessionStore.ts:449`) — debounce.
 25. [x] Number pads have no Done accessory; the keyboard covers the ✓ column (`SetTable.tsx`).
 26. [x] Rest banner is not keyboard-aware: Skip/−15/+15 sit under the keyboard (`WorkoutSession.tsx:341`).
 27. [x] Removing every exercise leaves a blank screen with no empty state (`WorkoutSession.tsx:123`).
@@ -150,8 +150,8 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 48. [x] No search in the 412-exercise library beyond name/primary/tags: "abs" misses most core work (`ExerciseLibraryScreen.tsx:59`).
 49. [ ] 412 items in one flat A–Z list with no section index (`ExerciseLibraryScreen.tsx:127`).
 50. [ ] Pick mode: no preview, no running count, selection lost on unmount (`ExerciseLibraryScreen.tsx:47,75`).
-51. [ ] Plan detail renders up to 29 days flat; `PlanDay.week` exists but isn't used to group.
-52. [ ] Plan detail list re-animates on every back navigation.
+51. [x] Plan detail renders up to 29 days flat; `PlanDay.week` exists but isn't used to group.
+52. [x] Plan detail list re-animates on every back navigation.
 53. [ ] No level / equipment / session-length filters or sort in the plan browser.
 54. [x] `FlatList` has no `getItemLayout` despite fixed-height rows; `PlanRow`/`PlanCard` aren't memoised; `planHero` walks every day on each render.
 55. [ ] Following a plan only toasts: no scheduling, no jump to day one, no explanation of what changes.
@@ -160,7 +160,7 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 58. [ ] Routine editor: delete with no confirm or undo; only "move up"; 40 pt steppers; skeleton rows read as loading; Save disabled with no reason.
 59. [x] Routine detail on Android skips the menu and goes straight to delete confirm.
 60. [x] Deleting a routine is unrecoverable (no soft delete).
-61. [ ] `PlanScreen` ignores a followed library plan and shows "0 of 0" with no empty state.
+61. [x] `PlanScreen` ignores a followed library plan and shows "0 of 0" with no empty state.
 62. [ ] Train's plan card: duplicate a11y targets, no "X of Y days", no way to pick another day, mixed "See plan"/"See More"/"Browse" labels.
 63. [x] `routineMinutes` clamps to a 5-minute floor, so any small routine claims "5 min".
 
@@ -222,7 +222,7 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 111. [x] Military test baselines are pounds-only with no metric conversion.
 112. [x] "Days until test" is off by one in the morning.
 113. [x] Readiness check-ins have no clamps: a missing field renders "NaN%".
-114. [ ] Check-ins cap at 60 and tracked sessions at 100, silently dropping the oldest.
+114. [x] Check-ins cap at 60 and tracked sessions at 100, silently dropping the oldest.
 115. [ ] Exercise log writes the whole blob on every set; `bestSet` mixes scales across set kinds; `recordProgression` skips ties and first-ever zero values.
 116. [x] Charts collapse when all points share a timestamp.
 117. [x] Library-derived exercises are fabricated as "3 sets × 10 reps" and shown as if prescribed.
