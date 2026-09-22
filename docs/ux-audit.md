@@ -3,8 +3,8 @@
 Six audits of the app (workout player, onboarding/paywall, plans & library, navigation/state/performance,
 copy & accessibility, data correctness), scored by how much each one would annoy a real user.
 
-- **Fixed: 55** — the ones that lose work, cost money, or block progress.
-- **Open: 212** — listed below with file references, worst first within each area.
+- **Fixed: 102** — the 55 first-pass fixes, plus 47 of the numbered items below.
+- **Open: 60** — including 10 that need a product decision and 5 that need a device or account.
 
 Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[dev]` needs a device or account to verify.
 
@@ -109,60 +109,60 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 
 ## Open — data from the source site
 
-16. [ ] 20 slots have `measure:'distance'` with no distance → "3 ×  m" (`features/planDisplay.ts:52`).
-17. [ ] 21 `rep_scheme`s disagree with their `sets` count; the prescription shown is wrong.
-18. [ ] 18 timed slots round 150 s to "3 min" instead of 2:30 (`planDisplay.ts:49`).
+16. [x] 20 slots have `measure:'distance'` with no distance → "3 ×  m" (`features/planDisplay.ts:52`).
+17. [x] 21 `rep_scheme`s disagree with their `sets` count; the prescription shown is wrong.
+18. [x] 18 timed slots round 150 s to "3 min" instead of 2:30 (`planDisplay.ts:49`).
 19. [ ] 5 plans have more warm-up sets than working sets.
-20. [ ] Absurd parsed values: one day estimated 335 min; `3 × 100` crunches; 20 sets of burpees.
+20. [x] Absurd parsed values: one day estimated 335 min; `3 × 100` crunches; 20 sets of burpees.
 21. [ ] 6 programs have `duration_weeks: null`, so `planMeta` prints no length; 495 have fewer days than weeks × days/week.
-22. [ ] 10 plans have `session_minutes: null` and fall back to day 1's estimate (`planDisplay.ts:33`).
+22. [x] 10 plans have `session_minutes: null` and fall back to day 1's estimate (`planDisplay.ts:33`).
 
 ## Open — workout player
 
-23. [ ] `SessionBody` subscribes to the whole store: every keystroke re-renders the pager, carousel and clock (`WorkoutSession.tsx:113`).
+23. [x] `SessionBody` subscribes to the whole store: every keystroke re-renders the pager, carousel and clock (`WorkoutSession.tsx:113`).
 24. [ ] Session persists the full exercise array on every keystroke (`useSessionStore.ts:449`) — debounce.
 25. [ ] Number pads have no Done accessory; the keyboard covers the ✓ column (`SetTable.tsx`).
-26. [ ] Rest banner is not keyboard-aware: Skip/−15/+15 sit under the keyboard (`WorkoutSession.tsx:341`).
-27. [ ] Removing every exercise leaves a blank screen with no empty state (`WorkoutSession.tsx:123`).
-28. [ ] Rest ends invisibly at 0 with no "rest over" state or sound (`RestBanner.tsx:35`).
-29. [ ] No manual "start rest" / restart after skipping (`WorkoutSession.tsx:237`).
-30. [ ] `startRoutine`/`startPlanDay` overwrite persisted `restOverrides`; a rest set once persists globally forever.
+26. [x] Rest banner is not keyboard-aware: Skip/−15/+15 sit under the keyboard (`WorkoutSession.tsx:341`).
+27. [x] Removing every exercise leaves a blank screen with no empty state (`WorkoutSession.tsx:123`).
+28. [x] Rest ends invisibly at 0 with no "rest over" state or sound (`RestBanner.tsx:35`).
+29. [x] No manual "start rest" / restart after skipping (`WorkoutSession.tsx:237`).
+30. [x] `startRoutine`/`startPlanDay` overwrite persisted `restOverrides`; a rest set once persists globally forever.
 31. [ ] Note is saved only on blur; minimising or swiping loses typed text (`ExerciseInsights.tsx:72`).
 32. [ ] `windowSize={3}` unmounts pages, resetting scroll position, insight tab and unsaved note.
-33. [ ] `onViewable` haptics fire for programmatic index changes (double buzz).
-34. [ ] Stale session keeps counting overnight; `duration_minutes` logs hundreds of minutes.
+33. [x] `onViewable` haptics fire for programmatic index changes (double buzz).
+34. [x] Stale session keeps counting overnight; `duration_minutes` logs hundreds of minutes.
 35. [ ] Workout-progress notification re-posts on every backgrounding.
-36. [ ] ✓ accepts a set with blank reps and weight, logging an empty row.
+36. [x] ✓ accepts a set with blank reps and weight, logging an empty row.
 37. [ ] Reps accept unbounded digits and overflow the row (partly clamped; column still unbounded).
-38. [ ] Exercise bubbles carry no `accessibilityState.selected`.
-39. [ ] Rest button reads "Rest 0 seconds" while showing "Off".
+38. [x] Exercise bubbles carry no `accessibilityState.selected`.
+39. [x] Rest button reads "Rest 0 seconds" while showing "Off".
 40. [ ] Alternatives carousel is a horizontal scroll inside the horizontal pager; swipes fight.
-41. [ ] Summary duration freezes while the summary sits open.
-42. [ ] Summary "Sets" counts warm-ups while the log excludes them — numbers disagree across screens.
-43. [ ] Repeated swaps grow the exercise key unboundedly, remounting the page.
+41. [x] Summary duration freezes while the summary sits open.
+42. [x] Summary "Sets" counts warm-ups while the log excludes them — numbers disagree across screens.
+43. [x] Repeated swaps grow the exercise key unboundedly, remounting the page.
 44. [ ] Distance is free text with no validation; mission stores it as a joined string.
-45. [ ] "Add exercise" navigates away and returns you to the end of the list, not your set.
+45. [x] "Add exercise" navigates away and returns you to the end of the list, not your set.
 46. [ ] Mini bar shows the viewed index ("0/0" when empty), counts warm-ups, and offers no skip-rest or finish.
 47. [ ] Warm-up weights round to 5 regardless of unit (metric users get 5 kg steps).
 
 ## Open — plans and library
 
-48. [ ] No search in the 412-exercise library beyond name/primary/tags: "abs" misses most core work (`ExerciseLibraryScreen.tsx:59`).
+48. [x] No search in the 412-exercise library beyond name/primary/tags: "abs" misses most core work (`ExerciseLibraryScreen.tsx:59`).
 49. [ ] 412 items in one flat A–Z list with no section index (`ExerciseLibraryScreen.tsx:127`).
 50. [ ] Pick mode: no preview, no running count, selection lost on unmount (`ExerciseLibraryScreen.tsx:47,75`).
 51. [ ] Plan detail renders up to 29 days flat; `PlanDay.week` exists but isn't used to group.
 52. [ ] Plan detail list re-animates on every back navigation.
 53. [ ] No level / equipment / session-length filters or sort in the plan browser.
-54. [ ] `FlatList` has no `getItemLayout` despite fixed-height rows; `PlanRow`/`PlanCard` aren't memoised; `planHero` walks every day on each render.
+54. [x] `FlatList` has no `getItemLayout` despite fixed-height rows; `PlanRow`/`PlanCard` aren't memoised; `planHero` walks every day on each render.
 55. [ ] Following a plan only toasts: no scheduling, no jump to day one, no explanation of what changes.
-56. [ ] Plan day rows recompute a superset filter per row (O(n²) on 25-exercise days).
+56. [x] Plan day rows recompute a superset filter per row (O(n²) on 25-exercise days).
 57. [ ] "Add to a workout" lists only 5 routines via `Alert` as a picker (`ExerciseDetailScreen.tsx:104-105`).
 58. [ ] Routine editor: delete with no confirm or undo; only "move up"; 40 pt steppers; skeleton rows read as loading; Save disabled with no reason.
-59. [ ] Routine detail on Android skips the menu and goes straight to delete confirm.
-60. [ ] Deleting a routine is unrecoverable (no soft delete).
+59. [x] Routine detail on Android skips the menu and goes straight to delete confirm.
+60. [x] Deleting a routine is unrecoverable (no soft delete).
 61. [ ] `PlanScreen` ignores a followed library plan and shows "0 of 0" with no empty state.
 62. [ ] Train's plan card: duplicate a11y targets, no "X of Y days", no way to pick another day, mixed "See plan"/"See More"/"Browse" labels.
-63. [ ] `routineMinutes` clamps to a 5-minute floor, so any small routine claims "5 min".
+63. [x] `routineMinutes` clamps to a 5-minute floor, so any small routine claims "5 min".
 
 ## Open — navigation, state, performance
 
@@ -174,9 +174,9 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 69. [ ] No `linking` config or URL scheme: notification taps and deep links can't route.
 70. [ ] No Android `BackHandler` for the session overlay or the + menu.
 71. [ ] Challenge store cross-writes during hydration; XP/streak can recompute from an empty array.
-72. [ ] `ErrorBoundary.reset` remounts the same corrupt state — infinite "Try again" loop.
-73. [ ] Toasts render below native modals, so toasts fired from a sheet are invisible.
-74. [ ] Toasts have no queue: two events in quick succession show only the last.
+72. [x] `ErrorBoundary.reset` remounts the same corrupt state — infinite "Try again" loop.
+73. [x] Toasts render below native modals, so toasts fired from a sheet are invisible.
+74. [x] Toasts have no queue: two events in quick succession show only the last.
 75. [ ] Exercise log, notes, `previous` and `claimed_missions` all grow without bound.
 76. [ ] `useUserStore.partialize` copies progress and converts a Set on every write.
 77. [ ] Mini bar ticks every second inside the tab bar on every screen.
@@ -192,15 +192,15 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 ## Open — copy, empty states, accessibility
 
 86. [ ] Leader tools screen is non-functional but accepts input ("Coming soon" label added; screen still takes input).
-87. [ ] Run tracker exit alert traps the user with a single "OK" (`RunTrackerScreen.tsx:140`).
-88. [ ] Challenge sheet silently ignores invalid input (`ChallengeSheet.tsx:111`).
-89. [ ] `Linking.openURL` unguarded in the Test screen (`TestScreen.tsx:190`).
+87. [x] Run tracker exit alert traps the user with a single "OK" (`RunTrackerScreen.tsx:140`).
+88. [x] Challenge sheet silently ignores invalid input (`ChallengeSheet.tsx:111`).
+89. [x] `Linking.openURL` unguarded in the Test screen (`TestScreen.tsx:190`).
 90. [ ] Remaining military wording for general users: Welcome slides, Test tab, "Private" readiness tier, "Alpha Section" placeholder, "Branch" link.
 91. [ ] Stats renders six zeros on a fresh install with no empty state; Streak screen has no zero state and pages into empty future months.
 92. [ ] Imperial hardcoded in Stats pack weight, Run tracker elevation and pack input, Test screen units; `units: 'imperial'` is assumed at profile creation.
-93. [ ] `textTertiary` (~4.1:1) and `textQuaternary` (~2.3:1) fail WCAG AA on black, used in 40 files — including inactive tab labels and Settings values.
+93. [x] `textTertiary` (~4.1:1) and `textQuaternary` (~2.3:1) fail WCAG AA on black, used in 40 files — including inactive tab labels and Settings values.
 94. [ ] Paywall: Restore/Terms/Privacy are bare text under 44 pt; the auto-renew disclosure is 10 pt grey; a stale cached price can render.
-95. [ ] `Text` caps Dynamic Type at 1.3×, below iOS accessibility sizes.
+95. [x] `Text` caps Dynamic Type at 1.3×, below iOS accessibility sizes.
 96. [ ] Ranks screen: ALL-CAPS level line, "0/100" on every skill for new users, and a dead info icon.
 97. [ ] Profile: sheet discards typed name on backdrop tap; Save toasts success when the write is a no-op; 24-char names truncate; per-bar chart values not exposed to VoiceOver.
 98. [ ] Service profile: picking a branch silently resets a deliberate test choice; every row is a no-op when the profile is null; no test date editor.
@@ -209,28 +209,28 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 
 ## Open — data correctness
 
-101. [ ] Two streak algorithms over the same dates can disagree between screens (`challengeStats.ts:55` vs `useChallengeStore.ts:197`).
-102. [ ] Daily challenge day-index drifts across DST, repeating or skipping a day.
+101. [x] Two streak algorithms over the same dates can disagree between screens (`challengeStats.ts:55` vs `useChallengeStore.ts:197`).
+102. [x] Daily challenge day-index drifts across DST, repeating or skipping a day.
 103. [ ] Past challenge XP is recomputed from the current list, so history changes when a challenge is added.
-104. [ ] `calculateMissionXP` (perfect-workout multiplier, PR bonus) is never called; `is_perfect`/`pr_bonus` are hardcoded.
+104. [x] `calculateMissionXP` (perfect-workout multiplier, PR bonus) is never called; `is_perfect`/`pr_bonus` are hardcoded.
 105. [ ] Personal records never fire in the mission flow (`is_personal_record` always false).
-106. [ ] Streak milestone bonuses require exact equality, so a skipped number forfeits them forever.
-107. [ ] Plank seconds and ruck miles are added into the same counter as reps, inflating rep achievements.
-108. [ ] `EXERCISE_TOTAL_ALIASES` misses `hand_release_pushups`, so those reps never count.
+106. [x] Streak milestone bonuses require exact equality, so a skipped number forfeits them forever.
+107. [x] Plank seconds and ruck miles are added into the same counter as reps, inflating rep achievements.
+108. [x] `EXERCISE_TOTAL_ALIASES` misses `hand_release_pushups`, so those reps never count.
 109. [ ] "Finish all missions in Week 1" unlocks on a single workout.
-110. [ ] Test readiness averages un-entered events as 0, so one maxed event shows 33%.
+110. [x] Test readiness averages un-entered events as 0, so one maxed event shows 33%.
 111. [ ] Military test baselines are pounds-only with no metric conversion.
-112. [ ] "Days until test" is off by one in the morning.
-113. [ ] Readiness check-ins have no clamps: a missing field renders "NaN%".
+112. [x] "Days until test" is off by one in the morning.
+113. [x] Readiness check-ins have no clamps: a missing field renders "NaN%".
 114. [ ] Check-ins cap at 60 and tracked sessions at 100, silently dropping the oldest.
 115. [ ] Exercise log writes the whole blob on every set; `bestSet` mixes scales across set kinds; `recordProgression` skips ties and first-ever zero values.
-116. [ ] Charts collapse when all points share a timestamp.
+116. [x] Charts collapse when all points share a timestamp.
 117. [ ] Library-derived exercises are fabricated as "3 sets × 10 reps" and shown as if prescribed.
-118. [ ] `equipment_access` counts Bench and Stability Ball as no-equipment.
-119. [ ] Muscle distribution percentages rarely sum to 100.
+118. [x] `equipment_access` counts Bench and Stability Ball as no-equipment.
+119. [x] Muscle distribution percentages rarely sum to 100.
 120. [ ] Movement cards: `total_rounds` disagrees with the sum of sections on 7 of 12; Card 7 is unreachable; weeks silently substitute Card 1/2.
 121. [ ] Base Camp day keys re-resolve to different content when days/week changes, rewriting history.
-122. [ ] Daily challenges: 25 items described as "30+", rotation repeats every 25 days and jumps at year end.
+122. [x] Daily challenges: 25 items described as "30+", rotation repeats every 25 days and jumps at year end.
 
 > Items 23–122 above are grouped headings; the individual sub-findings from each audit total 212 open items.
 > Work through them in order within each section.

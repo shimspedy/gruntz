@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNow } from '../../hooks/useNow';
 import { navigationRef } from '../../navigation/ref';
 import { clearWorkoutProgress } from '../../services/notifications';
 import { useMissionStore } from '../../store/useMissionStore';
@@ -22,9 +23,11 @@ export function SessionSummary({ onBack, onDone }: { onBack: () => void; onDone:
   const progress = useUserStore((u) => u.progress);
   const mission = useMemo(() => s.buildMission(), [s]);
   const doneExercises = s.exercises.filter(isExerciseDone);
-  const setsDone = s.exercises.reduce((sum, e) => sum + e.sets.filter((st) => st.done).length, 0);
+  const setsDone = s.exercises.reduce((sum, e) => sum + e.sets.filter((st) => st.done && !st.warmup).length, 0);
   const reps = s.exercises.reduce((sum, e) => sum + (e.kind === 'reps' ? e.sets.filter((st) => st.done).reduce((a, st) => a + (st.reps ?? 0), 0) : 0), 0);
-  const minutes = s.startedAt ? Math.max(1, Math.round((Date.now() - s.startedAt) / 60000)) : 0;
+  // Ticks while the summary is open; it used to freeze at whatever it read on mount.
+  const now = useNow(true, 1000);
+  const minutes = s.startedAt ? Math.max(1, Math.round((now - s.startedAt) / 60000)) : 0;
   const daysPerWeek = useUserStore((u) => u.profile?.workout_days_per_week);
   const streakNext = progress.last_workout_date && isStreakAlive(progress.last_workout_date, daysPerWeek) ? progress.streak_days + 1 : 1;
   const streakBonus = calculateStreakBonus(streakNext, progress.streak_days);

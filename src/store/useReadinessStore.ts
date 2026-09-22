@@ -43,13 +43,20 @@ interface ReadinessState {
   setTeam: (name: string, code: string) => void;
 }
 
+/** Clamp to a range, falling back when the value is missing or not a number. */
+const scale = (value: number | undefined, min: number, max: number, fallback: number) =>
+  Number.isFinite(value) ? Math.max(min, Math.min(max, value as number)) : fallback;
+
 export function calculateDailyReadiness(checkIn?: DailyReadinessCheckIn) {
   if (!checkIn) return 70;
-  const sleep = Math.min(checkIn.sleepHours / 8, 1) * 30;
-  const energy = (checkIn.energy / 5) * 25;
-  const hydration = (checkIn.hydration / 5) * 15;
-  const soreness = ((6 - checkIn.soreness) / 5) * 15;
-  const stress = ((6 - checkIn.stress) / 5) * 15;
+  // Every field is clamped and defaulted: one missing value (a check-in saved by an
+  // older build, a partially written record) turned the whole sum into NaN, which
+  // reached the UI as "NaN%".
+  const sleep = (scale(checkIn.sleepHours, 0, 8, 7) / 8) * 30;
+  const energy = (scale(checkIn.energy, 1, 5, 3) / 5) * 25;
+  const hydration = (scale(checkIn.hydration, 1, 5, 3) / 5) * 15;
+  const soreness = ((6 - scale(checkIn.soreness, 1, 5, 3)) / 5) * 15;
+  const stress = ((6 - scale(checkIn.stress, 1, 5, 3)) / 5) * 15;
   return Math.round(Math.max(0, Math.min(100, sleep + energy + hydration + soreness + stress)));
 }
 

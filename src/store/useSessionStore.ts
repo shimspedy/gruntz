@@ -477,7 +477,9 @@ export const useSessionStore = create<SessionState>()(
         const completed = s.exercises.filter(isExerciseDone);
         const exercises: CompletedExercise[] = completed.map((e) => {
           const ex = getExerciseById(e.exerciseId);
-          const done = e.sets.filter((st) => st.done);
+          // Working sets only, matching the exercise log and isExerciseDone. Counting
+          // warm-ups here made the summary and the log disagree about the same workout.
+          const done = e.sets.filter((st) => st.done && !st.warmup);
           const reps = done.reduce((sum, st) => sum + (st.reps ?? 0), 0);
           const secs = done.reduce((sum, st) => sum + (st.seconds ?? 0), 0);
           const distances = done.map((st) => st.distance?.trim()).filter((d): d is string => !!d);
