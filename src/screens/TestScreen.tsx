@@ -48,6 +48,8 @@ export function formatEventValue(value: number, unit: string) {
 
 const unitLabel = (u: TestEventDefinition['unit']) => (u === 'seconds' ? 'min:sec' : u === 'pounds' ? 'lb' : u);
 
+const KG_PER_LB = 0.45359237;
+
 /**
  * Whole calendar days until the test. Measuring elapsed milliseconds against noon
  * on the day read "1 day to go" all morning of the test itself, then flipped to 0
@@ -94,6 +96,7 @@ export default function TestScreen() {
   const targetScores = useReadinessStore((s) => s.targetScores);
   const [logging, setLogging] = useState(false);
   const [dateSheet, setDateSheet] = useState(false);
+  const metric = useUserStore((s) => s.profile?.settings.units === 'metric');
 
   const branch = profile?.service_branch ?? 'general';
   const tests = getTestsForBranch(branch);
@@ -193,6 +196,9 @@ export default function TestScreen() {
                   </Text>
                   <Text variant="subhead" tone="secondary" style={{ marginTop: 3 }}>
                     {e.direction === 'higher' ? 'Higher is better' : 'Lower is better'} · {unitLabel(e.unit)}
+                    {/* The official standard is set in pounds, so entry stays in lb;
+                        a metric lifter gets the equivalent rather than a bare number. */}
+                    {e.unit === 'pounds' && metric && target ? ` · target ${Math.round(target * KG_PER_LB)} kg` : ''}
                   </Text>
                 </View>
                 <Text variant="headline" tone={pct >= 100 ? 'accent' : 'primary'} tabular>

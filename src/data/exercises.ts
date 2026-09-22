@@ -1024,6 +1024,9 @@ exercises.forEach(ex => {
 // ============================================================
 
 const LIBRARY_PREFIX = 'lib:';
+
+/** Kit someone can realistically own at home; anything else means a gym. */
+const LIBRARY_HOME_KIT = ['Bodyweight', 'Band', 'Stability Ball', 'Bench', 'Dumbbell', 'Kettlebell', 'Weight Plate', 'Medicine Ball'];
 const libraryCache = new Map<string, Exercise>();
 
 /** Id for a library clip used as an exercise (user-planned workouts). */
@@ -1047,7 +1050,14 @@ function libraryExercise(key: string): Exercise | undefined {
     duration_seconds: timed ? (item.group === 'mobility' ? 45 : 300) : undefined,
     rest_seconds: 60,
     equipment: item.equipment.filter((e) => e !== 'Bodyweight').map((e) => e.toLowerCase()),
-    equipment_access: item.equipment.every((e) => ['Bodyweight', 'Band', 'Stability Ball', 'Bench'].includes(e)) ? 'none' : 'gym',
+    // A band, a ball and a bench are things you have to own. Counting them as
+    // "no equipment" put them in front of people who told us they have nothing,
+    // and there was no 'minimal' tier at all.
+    equipment_access: item.equipment.every((e) => e === 'Bodyweight')
+      ? 'none'
+      : item.equipment.every((e) => LIBRARY_HOME_KIT.includes(e))
+        ? 'minimal'
+        : 'gym',
     xp_value: item.difficulty === 'advanced' ? 15 : item.difficulty === 'intermediate' ? 12 : 10,
     form_tips: item.mistakes.map((m) => `Avoid: ${m.charAt(0).toLowerCase()}${m.slice(1)}`),
     steps: item.instructions,

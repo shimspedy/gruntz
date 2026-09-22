@@ -3,8 +3,8 @@
 Six audits of the app (workout player, onboarding/paywall, plans & library, navigation/state/performance,
 copy & accessibility, data correctness), scored by how much each one would annoy a real user.
 
-- **Fixed: 125** — the 55 first-pass fixes, plus 70 of the numbered items below.
-- **Open: 52** — including 5 that need a device or account.
+- **Fixed: 128** — the 55 first-pass fixes, plus 73 of the numbered items below.
+- **Open: 49** — including 5 that need a device or account.
 
 Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[dev]` needs a device or account to verify.
 
@@ -211,7 +211,7 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 
 101. [x] Two streak algorithms over the same dates can disagree between screens (`challengeStats.ts:55` vs `useChallengeStore.ts:197`).
 102. [x] Daily challenge day-index drifts across DST, repeating or skipping a day.
-103. [ ] Past challenge XP is recomputed from the current list, so history changes when a challenge is added.
+103. [x] Past challenge XP is recomputed from the current list, so history changes when a challenge is added.
 104. [x] `calculateMissionXP` (perfect-workout multiplier, PR bonus) is never called; `is_perfect`/`pr_bonus` are hardcoded.
 105. [x] Personal records never fire in the mission flow (`is_personal_record` always false).
 106. [x] Streak milestone bonuses require exact equality, so a skipped number forfeits them forever.
@@ -219,13 +219,13 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 108. [x] `EXERCISE_TOTAL_ALIASES` misses `hand_release_pushups`, so those reps never count.
 109. [x] "Finish all missions in Week 1" unlocks on a single workout.
 110. [x] Test readiness averages un-entered events as 0, so one maxed event shows 33%.
-111. [ ] Military test baselines are pounds-only with no metric conversion.
+111. [x] Military test baselines are pounds-only with no metric conversion.
 112. [x] "Days until test" is off by one in the morning.
 113. [x] Readiness check-ins have no clamps: a missing field renders "NaN%".
 114. [ ] Check-ins cap at 60 and tracked sessions at 100, silently dropping the oldest.
 115. [ ] Exercise log writes the whole blob on every set; `bestSet` mixes scales across set kinds; `recordProgression` skips ties and first-ever zero values.
 116. [x] Charts collapse when all points share a timestamp.
-117. [ ] Library-derived exercises are fabricated as "3 sets × 10 reps" and shown as if prescribed.
+117. [x] Library-derived exercises are fabricated as "3 sets × 10 reps" and shown as if prescribed.
 118. [x] `equipment_access` counts Bench and Stability Ball as no-equipment.
 119. [x] Muscle distribution percentages rarely sum to 100.
 120. [ ] Movement cards: `total_rounds` disagrees with the sum of sections on 7 of 12; Card 7 is unreachable; weeks silently substitute Card 1/2.

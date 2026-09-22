@@ -288,7 +288,6 @@ export const useUserStore = create<UserState>()(
           if (
             state.progress.challenges_completed === summary.challengesCompleted &&
             state.progress.challenge_streak_days === summary.challengeStreakDays &&
-            state.progress.challenge_xp_earned === summary.challengeXpEarned &&
             state.progress.last_challenge_date === summary.lastChallengeDate
           ) {
             return state;
@@ -299,7 +298,10 @@ export const useUserStore = create<UserState>()(
               ...state.progress,
               challenges_completed: summary.challengesCompleted,
               challenge_streak_days: summary.challengeStreakDays,
-              challenge_xp_earned: summary.challengeXpEarned,
+              // challenge_xp_earned is deliberately NOT synced. It is banked as each
+              // challenge is completed; re-deriving it maps old dates through the
+              // CURRENT challenge list, so adding one challenge silently rewrote how
+              // much XP past days were worth.
               last_challenge_date: summary.lastChallengeDate,
             },
           };
