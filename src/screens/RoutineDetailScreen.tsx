@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { appMuscles, getLibraryItem } from '../data/exerciseLibrary';
 import { MuscleBodyMap } from '../components/MuscleBodyMap';
-import { muscleLabel, plural } from '../features/plan';
+import { muscleLabel, percentShares, plural } from '../features/plan';
 import { routineMinutes, useRoutineStore } from '../store/useRoutineStore';
 import { useSessionStore } from '../store/useSessionStore';
 import type { RootStackParamList } from '../types/navigation';
@@ -54,10 +54,10 @@ export default function RoutineDetailScreen() {
     appMuscles({ ...lib, primary: [] }).forEach((m) => counts.set(m, (counts.get(m) ?? 0) + it.sets));
   });
   const total = Array.from(counts.values()).reduce((a, b) => a + b, 0);
-  const distribution = Array.from(counts.entries())
-    .sort((a, b) => b[1] - a[1])
+  const distribution = percentShares(Array.from(counts.entries()), total)
+    .sort((a, b) => b.pct - a.pct)
     .slice(0, 4)
-    .map(([muscle, n]) => ({ muscle, pct: Math.round((n / total) * 100) }));
+    .map(({ key, pct }) => ({ muscle: key, pct }));
 
   const running = session.active && session.workoutDayId === `routine:${routine.id}`;
 

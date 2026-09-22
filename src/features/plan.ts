@@ -114,6 +114,29 @@ export function muscleLabel(m: string) {
   return MUSCLE_LABELS[m.toLowerCase()] ?? m.charAt(0).toUpperCase() + m.slice(1);
 }
 
+/**
+ * Whole percentages that add up to the same total the exact fractions did.
+ *
+ * Rounding each share on its own drifts — three groups at 33.3% each rendered as
+ * 33/33/33 and visibly lost a point. Largest remainder hands the leftover points
+ * to the entries that were rounded down hardest.
+ *
+ * Note a *sliced* list (top N of more groups) is not meant to reach 100: the
+ * percentages stay shares of all the work, not of the few shown.
+ */
+export function percentShares<T>(entries: [T, number][], total: number): { key: T; pct: number }[] {
+  if (total <= 0) return entries.map(([key]) => ({ key, pct: 0 }));
+  const exact = entries.map(([key, n]) => ({ key, raw: (n / total) * 100 }));
+  const out = exact.map((e) => ({ key: e.key, pct: Math.floor(e.raw), rem: e.raw - Math.floor(e.raw) }));
+  let left = Math.round(exact.reduce((sum, e) => sum + e.raw, 0)) - out.reduce((sum, e) => sum + e.pct, 0);
+  for (const e of [...out].sort((a, b) => b.rem - a.rem)) {
+    if (left <= 0) break;
+    e.pct += 1;
+    left -= 1;
+  }
+  return out.map(({ key, pct }) => ({ key, pct }));
+}
+
 /** Share of total muscle hits per group, top N, as whole percentages. */
 export function muscleDistribution(day: WorkoutDay | null | undefined, top = 3): { muscle: string; pct: number }[] {
   const counts = new Map<string, number>();
@@ -123,10 +146,11 @@ export function muscleDistribution(day: WorkoutDay | null | undefined, top = 3):
   });
   const total = Array.from(counts.values()).reduce((a, b) => a + b, 0);
   if (!total) return [];
-  return Array.from(counts.entries())
-    .sort((a, b) => b[1] - a[1])
+  const shares = percentShares(Array.from(counts.entries()), total);
+  return shares
+    .sort((a, b) => b.pct - a.pct)
     .slice(0, top)
-    .map(([muscle, n]) => ({ muscle, pct: Math.round((n / total) * 100) }));
+    .map(({ key, pct }) => ({ muscle: key, pct }));
 }
 
 export function formatMinutes(min: number) {
