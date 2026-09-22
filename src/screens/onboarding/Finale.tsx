@@ -195,7 +195,9 @@ export function Commit({ days, onSigned }: { days: number; onSigned: () => void 
     };
   });
 
-  const lines = ['I promise to train with Gruntz', `${days} times a week`, 'No excuses, no quitting'];
+  // "No excuses, no quitting" blames the athlete for a lapse before they have had
+  // one. The commitment is to showing up, and to coming back when a week goes wrong.
+  const lines = ['I\u2019m training with Gruntz', `${days} times a week`, 'And I show up again after a miss'];
 
   return (
     <View style={{ flex: 1 }}>

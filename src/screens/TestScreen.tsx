@@ -63,6 +63,17 @@ function daysUntil(date?: string | null) {
   return Math.max(0, Math.round((target - today) / 86400000));
 }
 
+/** How far out people actually schedule a test, plus a way to clear it. */
+const TEST_DATE_CHOICES = [0, 2, 4, 6, 8, 12, 16, 24];
+
+const toDateKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+function weeksOutLabel(weeks: number) {
+  const d = new Date();
+  d.setDate(d.getDate() + weeks * 7);
+  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+}
+
 function parseValue(text: string, unit: string) {
   if (unit === 'seconds' && text.includes(':')) {
     const [m, s] = text.split(':').map((n) => Number(n) || 0);
@@ -82,6 +93,7 @@ export default function TestScreen() {
   const testScores = useReadinessStore((s) => s.testScores);
   const targetScores = useReadinessStore((s) => s.targetScores);
   const [logging, setLogging] = useState(false);
+  const [dateSheet, setDateSheet] = useState(false);
 
   const branch = profile?.service_branch ?? 'general';
   const tests = getTestsForBranch(branch);
@@ -106,9 +118,13 @@ export default function TestScreen() {
             <Text variant="title" style={{ fontSize: 26, marginTop: 4 }}>
               {test.name}
             </Text>
-            <Text variant="callout" tone="secondary" style={{ marginTop: 4 }}>
-              {countdown == null ? 'No test date set' : countdown === 0 ? 'Test day' : `${countdown} days to test`}
-            </Text>
+            {/* The test date could only ever be set during onboarding, leaving this
+                reading "No test date set" with nothing to tap. */}
+            <Tap feedback="opacity" hitSlop={8} onPress={() => setDateSheet(true)} accessibilityLabel="Set test date">
+              <Text variant="callout" tone={countdown == null ? 'accent' : 'secondary'} style={{ marginTop: 4 }}>
+                {countdown == null ? 'Set a test date' : countdown === 0 ? 'Test day' : `${countdown} days to test`}
+              </Text>
+            </Tap>
           </View>
           <Ring progress={readiness.score / 100} size={104} stroke={8} trackColor={color.surfaceHigh}>
             <Text style={styles.pct} tabular>
@@ -220,6 +236,39 @@ export default function TestScreen() {
       </Tap>
 
       <LogScoresSheet visible={logging} onClose={() => setLogging(false)} testId={test.id} events={test.events} />
+
+      <Sheet visible={dateSheet} onClose={() => setDateSheet(false)} title="Test date">
+        <View style={{ paddingBottom: space.sm }}>
+          {TEST_DATE_CHOICES.map((weeks) => (
+            <Tap
+              key={weeks}
+              feedback="highlight"
+              baseColor={color.bgRaised}
+              pressedColor={color.surface}
+              style={styles.dateRow}
+              accessibilityLabel={weeks === 0 ? 'Clear test date' : `${weeks} weeks from today`}
+              onPress={() => {
+                haptic.selection();
+                if (profile) {
+                  const next = new Date();
+                  next.setDate(next.getDate() + weeks * 7);
+                  setProfile({ ...profile, fitness_test_date: weeks === 0 ? null : toDateKey(next) });
+                }
+                setDateSheet(false);
+              }}
+            >
+              <Text variant="bodyMedium" style={{ flex: 1 }}>
+                {weeks === 0 ? 'No test date' : `${weeks} ${weeks === 1 ? 'week' : 'weeks'} from today`}
+              </Text>
+              {weeks > 0 ? (
+                <Text variant="footnote" tone="tertiary">
+                  {weeksOutLabel(weeks)}
+                </Text>
+              ) : null}
+            </Tap>
+          ))}
+        </View>
+      </Sheet>
     </ScrollView>
   );
 }
@@ -303,6 +352,7 @@ function LogScoresSheet({ visible, onClose, testId, events }: { visible: boolean
 }
 
 const styles = StyleSheet.create({
+  dateRow: { height: 54, flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.gutter },
   screen: { flex: 1, backgroundColor: color.bg },
   card: {
     marginHorizontal: space.md,

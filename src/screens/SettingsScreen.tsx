@@ -26,6 +26,9 @@ import { convertSessionWeights, useSessionStore } from '../store/useSessionStore
 import { getAccessState, useSubscriptionStore } from '../store/useSubscriptionStore';
 import { useUserStore } from '../store/useUserStore';
 import { Group, NavHeader, Row } from '../ui/Layout';
+import { Sheet } from '../ui/Sheet';
+import { Tap } from '../ui/Pressable';
+import { Icon } from '../ui/Icon';
 import { Wordmark } from '../ui/Logo';
 import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
@@ -35,7 +38,18 @@ import { color } from '../ui/tokens';
 import { openExternalUrl } from '../utils/externalLinks';
 import { maybeRequestReview } from '../utils/socialActions';
 
+/** Times people actually train. Settings said "change it anytime" while 07:00 was hardcoded. */
+const REMINDER_TIMES = ['05:30', '06:00', '06:30', '07:00', '08:00', '12:00', '17:00', '18:00', '19:00', '20:00'];
+
+function formatTime(value: string) {
+  const [h, m] = value.split(':').map(Number);
+  const suffix = h >= 12 ? 'PM' : 'AM';
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${hour12}:${String(m).padStart(2, '0')} ${suffix}`;
+}
+
 export default function SettingsScreen() {
+  const [timeSheet, setTimeSheet] = React.useState(false);
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const profile = useUserStore((s) => s.profile);
@@ -141,10 +155,18 @@ export default function SettingsScreen() {
           <Row
             icon="bell"
             title="Workout reminders"
-            subtitle={notifications ? `Daily at ${profile?.settings.reminder_time ?? '7:00 AM'}, weekly recap` : 'Off'}
+            subtitle={notifications ? `Daily at ${formatTime(profile?.settings.reminder_time ?? '07:00')}, weekly recap` : 'Off'}
             toggle={notifications}
             onToggle={(v) => void toggleNotifications(v)}
           />
+          {notifications ? (
+            <Row
+              icon="timer"
+              title="Reminder time"
+              value={formatTime(profile?.settings.reminder_time ?? '07:00')}
+              onPress={() => setTimeSheet(true)}
+            />
+          ) : null}
         </Group>
 
         <Group label="Preferences" style={styles.group}>
@@ -218,11 +240,46 @@ export default function SettingsScreen() {
           </Text>
         </View>
       </ScrollView>
+
+      <Sheet visible={timeSheet} onClose={() => setTimeSheet(false)} title="Reminder time">
+        <View style={{ paddingBottom: space.sm }}>
+          {REMINDER_TIMES.map((t) => {
+            const active = (profile?.settings.reminder_time ?? '07:00') === t;
+            return (
+              <Tap
+                key={t}
+                feedback="highlight"
+                baseColor={color.bgRaised}
+                pressedColor={color.surface}
+                style={styles.timeRow}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: active }}
+                onPress={() => {
+                  haptic.selection();
+                  const [h, m] = t.split(':').map(Number);
+                  void cancelDailyReminder()
+                    .then(() => scheduleDailyReminder(h, m))
+                    .catch(() => undefined);
+                  updateSettings({ reminder_time: t });
+                  setTimeSheet(false);
+                  toast(`Reminders at ${formatTime(t)}`, { icon: 'bell' });
+                }}
+              >
+                <Text variant="bodyMedium" style={{ flex: 1 }}>
+                  {formatTime(t)}
+                </Text>
+                {active ? <Icon name="check" size={18} color={color.accent} weight="semibold" /> : null}
+              </Tap>
+            );
+          })}
+        </View>
+      </Sheet>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  timeRow: { height: 54, flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.gutter },
   screen: { flex: 1, backgroundColor: color.bg },
   body: { paddingHorizontal: space.md, paddingTop: space.lg },
   group: { marginTop: space.xl },
