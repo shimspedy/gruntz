@@ -43,6 +43,8 @@ interface UserState {
 
 const initialProgress = getDefaultProgress('local');
 const STORAGE_KEY = '@gruntz_user';
+/** Roughly three years of daily training before the oldest claim is forgotten. */
+const MAX_CLAIMED_MISSIONS = 1000;
 /**
  * Every id that counts toward an "exercise total" achievement.
  *
@@ -454,7 +456,12 @@ export const useUserStore = create<UserState>()(
         profile: state.profile,
         progress: {
           ...state.progress,
-          claimed_missions: Array.from(state.progress.claimed_missions),
+          // Claimed missions only exist to stop a workout being counted twice, and
+          // this Set is converted to an array on every single write. Unbounded, that
+          // cost grew with every workout ever finished. Newest first, capped: a
+          // mission from hundreds of sessions ago cannot be re-claimed anyway, and
+          // unlocked achievements are stored separately.
+          claimed_missions: Array.from(state.progress.claimed_missions).slice(-MAX_CLAIMED_MISSIONS),
         },
         achievements: state.achievements,
         isOnboarded: state.isOnboarded,

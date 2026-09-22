@@ -3,8 +3,8 @@
 Six audits of the app (workout player, onboarding/paywall, plans & library, navigation/state/performance,
 copy & accessibility, data correctness), scored by how much each one would annoy a real user.
 
-- **Fixed: 143** — the 55 first-pass fixes, plus 88 of the numbered items below.
-- **Open: 34** — including 5 that need a device or account.
+- **Fixed: 146** — the 55 first-pass fixes, plus 91 of the numbered items below.
+- **Open: 31** — including 5 that need a device or account.
 
 Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[dev]` needs a device or account to verify.
 
@@ -166,7 +166,7 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 
 ## Open — navigation, state, performance
 
-64. [ ] `exerciseMedia.ts` registers ~1,500 assets at module load on the startup path.
+64. [x] `exerciseMedia.ts` registers ~1,500 assets at module load on the startup path.
 65. [x] Navigation state is written on every screen change (`RootNavigator.tsx:170`) — debounce.
 66. [x] Boot gate waits only on user + subscription stores; program/session/challenge/routine stores can render defaults then jump.
 67. [x] `createActions.ts:32` reads the program store with no hydration check — can dump a returning user into ProgramSelect.
@@ -177,8 +177,8 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 72. [x] `ErrorBoundary.reset` remounts the same corrupt state — infinite "Try again" loop.
 73. [x] Toasts render below native modals, so toasts fired from a sheet are invisible.
 74. [x] Toasts have no queue: two events in quick succession show only the last.
-75. [ ] Exercise log, notes, `previous` and `claimed_missions` all grow without bound.
-76. [ ] `useUserStore.partialize` copies progress and converts a Set on every write.
+75. [x] Exercise log, notes, `previous` and `claimed_missions` all grow without bound.
+76. [x] `useUserStore.partialize` copies progress and converts a Set on every write.
 77. [x] Mini bar ticks every second inside the tab bar on every screen.
 78. [x] `initializeSubscription()` hits RevenueCat on every foreground.
 79. [ ] Restored navigation state doesn't recurse into nested tab state, and 12 h-old date params can show yesterday's workout as today's.

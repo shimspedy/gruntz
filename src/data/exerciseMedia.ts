@@ -2,2069 +2,2080 @@
 // video: 1080px HEVC x-ray loop · poster: dark still (first frame, cropped for hero cards) · thumb: light square
 export interface ExerciseMedia { video: number; poster: number; thumb: number }
 
-const MEDIA: Record<string, ExerciseMedia> = {
-  'abdominals-stretch-variation-four': {
-    video: require('../../assets/exercise-media/dark/abdominals-stretch-variation-four.mp4'),
-    poster: require('../../assets/exercise-media/poster/abdominals-stretch-variation-four.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/abdominals-stretch-variation-four.jpg'),
-  },
-  'abdominals-stretch-variation-one': {
-    video: require('../../assets/exercise-media/dark/abdominals-stretch-variation-one.mp4'),
-    poster: require('../../assets/exercise-media/poster/abdominals-stretch-variation-one.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/abdominals-stretch-variation-one.jpg'),
-  },
-  'abdominals-stretch-variation-three': {
-    video: require('../../assets/exercise-media/dark/abdominals-stretch-variation-three.mp4'),
-    poster: require('../../assets/exercise-media/poster/abdominals-stretch-variation-three.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/abdominals-stretch-variation-three.jpg'),
-  },
-  'abdominals-stretch-variation-two': {
-    video: require('../../assets/exercise-media/dark/abdominals-stretch-variation-two.mp4'),
-    poster: require('../../assets/exercise-media/poster/abdominals-stretch-variation-two.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/abdominals-stretch-variation-two.jpg'),
-  },
-  'arc-trainer': {
-    video: require('../../assets/exercise-media/dark/arc-trainer.mp4'),
-    poster: require('../../assets/exercise-media/poster/arc-trainer.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/arc-trainer.jpg'),
-  },
-  'arnold-press': {
-    video: require('../../assets/exercise-media/dark/arnold-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/arnold-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/arnold-press.jpg'),
-  },
-  'assault-bike': {
-    video: require('../../assets/exercise-media/dark/assault-bike.mp4'),
-    poster: require('../../assets/exercise-media/poster/assault-bike.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/assault-bike.jpg'),
-  },
-  'b-stance-hip-thrust': {
-    video: require('../../assets/exercise-media/dark/b-stance-hip-thrust.mp4'),
-    poster: require('../../assets/exercise-media/poster/b-stance-hip-thrust.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/b-stance-hip-thrust.jpg'),
-  },
-  'back-extension': {
-    video: require('../../assets/exercise-media/dark/back-extension.mp4'),
-    poster: require('../../assets/exercise-media/poster/back-extension.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/back-extension.jpg'),
-  },
-  'backstroke-swim': {
-    video: require('../../assets/exercise-media/dark/backstroke-swim.mp4'),
-    poster: require('../../assets/exercise-media/poster/backstroke-swim.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/backstroke-swim.jpg'),
-  },
-  'band-assisted-pull-up': {
-    video: require('../../assets/exercise-media/dark/band-assisted-pull-up.mp4'),
-    poster: require('../../assets/exercise-media/poster/band-assisted-pull-up.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/band-assisted-pull-up.jpg'),
-  },
-  'band-curl': {
-    video: require('../../assets/exercise-media/dark/band-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/band-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/band-curl.jpg'),
-  },
-  'band-external-rotation': {
-    video: require('../../assets/exercise-media/dark/band-external-rotation.mp4'),
-    poster: require('../../assets/exercise-media/poster/band-external-rotation.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/band-external-rotation.jpg'),
-  },
-  'band-glute-bridge': {
-    video: require('../../assets/exercise-media/dark/band-glute-bridge.mp4'),
-    poster: require('../../assets/exercise-media/poster/band-glute-bridge.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/band-glute-bridge.jpg'),
-  },
-  'band-high-face-pull': {
-    video: require('../../assets/exercise-media/dark/band-high-face-pull.mp4'),
-    poster: require('../../assets/exercise-media/poster/band-high-face-pull.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/band-high-face-pull.jpg'),
-  },
-  'band-hip-abduction': {
-    video: require('../../assets/exercise-media/dark/band-hip-abduction.mp4'),
-    poster: require('../../assets/exercise-media/poster/band-hip-abduction.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/band-hip-abduction.jpg'),
-  },
-  'band-kneeling-pulldown': {
-    video: require('../../assets/exercise-media/dark/band-kneeling-pulldown.mp4'),
-    poster: require('../../assets/exercise-media/poster/band-kneeling-pulldown.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/band-kneeling-pulldown.jpg'),
-  },
-  'band-lateral-raise': {
-    video: require('../../assets/exercise-media/dark/band-lateral-raise.mp4'),
-    poster: require('../../assets/exercise-media/poster/band-lateral-raise.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/band-lateral-raise.jpg'),
-  },
-  'band-leg-curl': {
-    video: require('../../assets/exercise-media/dark/band-leg-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/band-leg-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/band-leg-curl.jpg'),
-  },
-  'band-overhead-press': {
-    video: require('../../assets/exercise-media/dark/band-overhead-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/band-overhead-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/band-overhead-press.jpg'),
-  },
-  'band-pullover': {
-    video: require('../../assets/exercise-media/dark/band-pullover.mp4'),
-    poster: require('../../assets/exercise-media/poster/band-pullover.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/band-pullover.jpg'),
-  },
-  'band-romanian-deadlift': {
-    video: require('../../assets/exercise-media/dark/band-romanian-deadlift.mp4'),
-    poster: require('../../assets/exercise-media/poster/band-romanian-deadlift.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/band-romanian-deadlift.jpg'),
-  },
-  'band-row': {
-    video: require('../../assets/exercise-media/dark/band-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/band-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/band-row.jpg'),
-  },
-  'band-seated-pulldown': {
-    video: require('../../assets/exercise-media/dark/band-seated-pulldown.mp4'),
-    poster: require('../../assets/exercise-media/poster/band-seated-pulldown.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/band-seated-pulldown.jpg'),
-  },
-  'band-shrug': {
-    video: require('../../assets/exercise-media/dark/band-shrug.mp4'),
-    poster: require('../../assets/exercise-media/poster/band-shrug.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/band-shrug.jpg'),
-  },
-  'band-single-arm-lateral-raise': {
-    video: require('../../assets/exercise-media/dark/band-single-arm-lateral-raise.mp4'),
-    poster: require('../../assets/exercise-media/poster/band-single-arm-lateral-raise.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/band-single-arm-lateral-raise.jpg'),
-  },
-  'band-squat': {
-    video: require('../../assets/exercise-media/dark/band-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/band-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/band-squat.jpg'),
-  },
-  'band-wood-chopper': {
-    video: require('../../assets/exercise-media/dark/band-wood-chopper.mp4'),
-    poster: require('../../assets/exercise-media/poster/band-wood-chopper.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/band-wood-chopper.jpg'),
-  },
-  'barbell-banded-back-squat': {
-    video: require('../../assets/exercise-media/dark/barbell-banded-back-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-banded-back-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-banded-back-squat.jpg'),
-  },
-  'barbell-behind-the-back-30-degree-shrug': {
-    video: require('../../assets/exercise-media/dark/barbell-behind-the-back-30-degree-shrug.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-behind-the-back-30-degree-shrug.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-behind-the-back-30-degree-shrug.jpg'),
-  },
-  'barbell-bench-press': {
-    video: require('../../assets/exercise-media/dark/barbell-bench-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-bench-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-bench-press.jpg'),
-  },
-  'barbell-bent-over-row': {
-    video: require('../../assets/exercise-media/dark/barbell-bent-over-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-bent-over-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-bent-over-row.jpg'),
-  },
-  'barbell-bent-over-row-overhand': {
-    video: require('../../assets/exercise-media/dark/barbell-bent-over-row-overhand.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-bent-over-row-overhand.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-bent-over-row-overhand.jpg'),
-  },
-  'barbell-clean-and-press': {
-    video: require('../../assets/exercise-media/dark/barbell-clean-and-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-clean-and-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-clean-and-press.jpg'),
-  },
-  'barbell-close-grip-bench-press': {
-    video: require('../../assets/exercise-media/dark/barbell-close-grip-bench-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-close-grip-bench-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-close-grip-bench-press.jpg'),
-  },
-  'barbell-curl': {
-    video: require('../../assets/exercise-media/dark/barbell-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-curl.jpg'),
-  },
-  'barbell-deadlift': {
-    video: require('../../assets/exercise-media/dark/barbell-deadlift.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-deadlift.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-deadlift.jpg'),
-  },
-  'barbell-drag-curl': {
-    video: require('../../assets/exercise-media/dark/barbell-drag-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-drag-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-drag-curl.jpg'),
-  },
-  'barbell-floor-press': {
-    video: require('../../assets/exercise-media/dark/barbell-floor-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-floor-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-floor-press.jpg'),
-  },
-  'barbell-front-rack-step-up-knee-drive': {
-    video: require('../../assets/exercise-media/dark/barbell-front-rack-step-up-knee-drive.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-front-rack-step-up-knee-drive.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-front-rack-step-up-knee-drive.jpg'),
-  },
-  'barbell-high-incline-bench-press': {
-    video: require('../../assets/exercise-media/dark/barbell-high-incline-bench-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-high-incline-bench-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-high-incline-bench-press.jpg'),
-  },
-  'barbell-hip-thrust': {
-    video: require('../../assets/exercise-media/dark/barbell-hip-thrust.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-hip-thrust.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-hip-thrust.jpg'),
-  },
-  'barbell-incline-bench-press': {
-    video: require('../../assets/exercise-media/dark/barbell-incline-bench-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-incline-bench-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-incline-bench-press.jpg'),
-  },
-  'barbell-muscle-snatch': {
-    video: require('../../assets/exercise-media/dark/barbell-muscle-snatch.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-muscle-snatch.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-muscle-snatch.jpg'),
-  },
-  'barbell-overhead-press': {
-    video: require('../../assets/exercise-media/dark/barbell-overhead-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-overhead-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-overhead-press.jpg'),
-  },
-  'barbell-power-snatch': {
-    video: require('../../assets/exercise-media/dark/barbell-power-snatch.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-power-snatch.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-power-snatch.jpg'),
-  },
-  'barbell-pullover': {
-    video: require('../../assets/exercise-media/dark/barbell-pullover.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-pullover.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-pullover.jpg'),
-  },
-  'barbell-rack-pull': {
-    video: require('../../assets/exercise-media/dark/barbell-rack-pull.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-rack-pull.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-rack-pull.jpg'),
-  },
-  'barbell-reverse-lunge': {
-    video: require('../../assets/exercise-media/dark/barbell-reverse-lunge.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-reverse-lunge.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-reverse-lunge.jpg'),
-  },
-  'barbell-romanian-deadlift': {
-    video: require('../../assets/exercise-media/dark/barbell-romanian-deadlift.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-romanian-deadlift.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-romanian-deadlift.jpg'),
-  },
-  'barbell-shrug': {
-    video: require('../../assets/exercise-media/dark/barbell-shrug.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-shrug.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-shrug.jpg'),
-  },
-  'barbell-snatch': {
-    video: require('../../assets/exercise-media/dark/barbell-snatch.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-snatch.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-snatch.jpg'),
-  },
-  'barbell-spinal-jefferson-curl': {
-    video: require('../../assets/exercise-media/dark/barbell-spinal-jefferson-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-spinal-jefferson-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-spinal-jefferson-curl.jpg'),
-  },
-  'barbell-split-squat': {
-    video: require('../../assets/exercise-media/dark/barbell-split-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-split-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-split-squat.jpg'),
-  },
-  'barbell-squat': {
-    video: require('../../assets/exercise-media/dark/barbell-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-squat.jpg'),
-  },
-  'barbell-step-up-knee-drive': {
-    video: require('../../assets/exercise-media/dark/barbell-step-up-knee-drive.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-step-up-knee-drive.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-step-up-knee-drive.jpg'),
-  },
-  'barbell-stiff-leg-deadlifts': {
-    video: require('../../assets/exercise-media/dark/barbell-stiff-leg-deadlifts.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-stiff-leg-deadlifts.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-stiff-leg-deadlifts.jpg'),
-  },
-  'barbell-thruster': {
-    video: require('../../assets/exercise-media/dark/barbell-thruster.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-thruster.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-thruster.jpg'),
-  },
-  'barbell-upright-row': {
-    video: require('../../assets/exercise-media/dark/barbell-upright-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-upright-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-upright-row.jpg'),
-  },
-  'barbell-wrist-curl': {
-    video: require('../../assets/exercise-media/dark/barbell-wrist-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/barbell-wrist-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/barbell-wrist-curl.jpg'),
-  },
-  'battle-ropes': {
-    video: require('../../assets/exercise-media/dark/battle-ropes.mp4'),
-    poster: require('../../assets/exercise-media/poster/battle-ropes.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/battle-ropes.jpg'),
-  },
-  'bayesian-curl': {
-    video: require('../../assets/exercise-media/dark/bayesian-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/bayesian-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/bayesian-curl.jpg'),
-  },
-  'behind-the-neck-press': {
-    video: require('../../assets/exercise-media/dark/behind-the-neck-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/behind-the-neck-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/behind-the-neck-press.jpg'),
-  },
-  'belt-squat': {
-    video: require('../../assets/exercise-media/dark/belt-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/belt-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/belt-squat.jpg'),
-  },
-  'bench-dips': {
-    video: require('../../assets/exercise-media/dark/bench-dips.mp4'),
-    poster: require('../../assets/exercise-media/poster/bench-dips.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/bench-dips.jpg'),
-  },
-  'bird-dog': {
-    video: require('../../assets/exercise-media/dark/bird-dog.mp4'),
-    poster: require('../../assets/exercise-media/poster/bird-dog.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/bird-dog.jpg'),
-  },
-  'bodyweight-alternating-lateral-lunge': {
-    video: require('../../assets/exercise-media/dark/bodyweight-alternating-lateral-lunge.mp4'),
-    poster: require('../../assets/exercise-media/poster/bodyweight-alternating-lateral-lunge.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/bodyweight-alternating-lateral-lunge.jpg'),
-  },
-  'bodyweight-alternating-reverse-lunges': {
-    video: require('../../assets/exercise-media/dark/bodyweight-alternating-reverse-lunges.mp4'),
-    poster: require('../../assets/exercise-media/poster/bodyweight-alternating-reverse-lunges.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/bodyweight-alternating-reverse-lunges.jpg'),
-  },
-  'bodyweight-box-squat': {
-    video: require('../../assets/exercise-media/dark/bodyweight-box-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/bodyweight-box-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/bodyweight-box-squat.jpg'),
-  },
-  'bodyweight-deadlift': {
-    video: require('../../assets/exercise-media/dark/bodyweight-deadlift.mp4'),
-    poster: require('../../assets/exercise-media/poster/bodyweight-deadlift.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/bodyweight-deadlift.jpg'),
-  },
-  'bodyweight-donkey-calf-raise': {
-    video: require('../../assets/exercise-media/dark/bodyweight-donkey-calf-raise.mp4'),
-    poster: require('../../assets/exercise-media/poster/bodyweight-donkey-calf-raise.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/bodyweight-donkey-calf-raise.jpg'),
-  },
-  'bodyweight-elevated-push-up': {
-    video: require('../../assets/exercise-media/dark/bodyweight-elevated-push-up.mp4'),
-    poster: require('../../assets/exercise-media/poster/bodyweight-elevated-push-up.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/bodyweight-elevated-push-up.jpg'),
-  },
-  'bodyweight-hip-abduction': {
-    video: require('../../assets/exercise-media/dark/bodyweight-hip-abduction.mp4'),
-    poster: require('../../assets/exercise-media/poster/bodyweight-hip-abduction.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/bodyweight-hip-abduction.jpg'),
-  },
-  'bodyweight-knee-push-ups': {
-    video: require('../../assets/exercise-media/dark/bodyweight-knee-push-ups.mp4'),
-    poster: require('../../assets/exercise-media/poster/bodyweight-knee-push-ups.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/bodyweight-knee-push-ups.jpg'),
-  },
-  'bodyweight-reverse-lunge': {
-    video: require('../../assets/exercise-media/dark/bodyweight-reverse-lunge.mp4'),
-    poster: require('../../assets/exercise-media/poster/bodyweight-reverse-lunge.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/bodyweight-reverse-lunge.jpg'),
-  },
-  'bodyweight-russian-twist': {
-    video: require('../../assets/exercise-media/dark/bodyweight-russian-twist.mp4'),
-    poster: require('../../assets/exercise-media/poster/bodyweight-russian-twist.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/bodyweight-russian-twist.jpg'),
-  },
-  'bodyweight-spinal-jefferson-curl': {
-    video: require('../../assets/exercise-media/dark/bodyweight-spinal-jefferson-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/bodyweight-spinal-jefferson-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/bodyweight-spinal-jefferson-curl.jpg'),
-  },
-  'bodyweight-squat': {
-    video: require('../../assets/exercise-media/dark/bodyweight-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/bodyweight-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/bodyweight-squat.jpg'),
-  },
-  'box-jump': {
-    video: require('../../assets/exercise-media/dark/box-jump.mp4'),
-    poster: require('../../assets/exercise-media/poster/box-jump.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/box-jump.jpg'),
-  },
-  'breaststroke-swim': {
-    video: require('../../assets/exercise-media/dark/breaststroke-swim.mp4'),
-    poster: require('../../assets/exercise-media/poster/breaststroke-swim.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/breaststroke-swim.jpg'),
-  },
-  'bulgarian-split-squat': {
-    video: require('../../assets/exercise-media/dark/bulgarian-split-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/bulgarian-split-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/bulgarian-split-squat.jpg'),
-  },
-  'burpee': {
-    video: require('../../assets/exercise-media/dark/burpee.mp4'),
-    poster: require('../../assets/exercise-media/poster/burpee.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/burpee.jpg'),
-  },
-  'butterfly-swim': {
-    video: require('../../assets/exercise-media/dark/butterfly-swim.mp4'),
-    poster: require('../../assets/exercise-media/poster/butterfly-swim.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/butterfly-swim.jpg'),
-  },
-  'cable-30-degree-shrug': {
-    video: require('../../assets/exercise-media/dark/cable-30-degree-shrug.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-30-degree-shrug.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-30-degree-shrug.jpg'),
-  },
-  'cable-bar-curl': {
-    video: require('../../assets/exercise-media/dark/cable-bar-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-bar-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-bar-curl.jpg'),
-  },
-  'cable-bar-face-pull': {
-    video: require('../../assets/exercise-media/dark/cable-bar-face-pull.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-bar-face-pull.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-bar-face-pull.jpg'),
-  },
-  'cable-bar-pushdown': {
-    video: require('../../assets/exercise-media/dark/cable-bar-pushdown.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-bar-pushdown.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-bar-pushdown.jpg'),
-  },
-  'cable-bench-chest-fly': {
-    video: require('../../assets/exercise-media/dark/cable-bench-chest-fly.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-bench-chest-fly.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-bench-chest-fly.jpg'),
-  },
-  'cable-bench-press': {
-    video: require('../../assets/exercise-media/dark/cable-bench-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-bench-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-bench-press.jpg'),
-  },
-  'cable-bench-straight-leg-kickback': {
-    video: require('../../assets/exercise-media/dark/cable-bench-straight-leg-kickback.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-bench-straight-leg-kickback.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-bench-straight-leg-kickback.jpg'),
-  },
-  'cable-chest-press': {
-    video: require('../../assets/exercise-media/dark/cable-chest-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-chest-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-chest-press.jpg'),
-  },
-  'cable-decline-bench-press': {
-    video: require('../../assets/exercise-media/dark/cable-decline-bench-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-decline-bench-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-decline-bench-press.jpg'),
-  },
-  'cable-external-rotation': {
-    video: require('../../assets/exercise-media/dark/cable-external-rotation.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-external-rotation.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-external-rotation.jpg'),
-  },
-  'cable-front-raise': {
-    video: require('../../assets/exercise-media/dark/cable-front-raise.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-front-raise.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-front-raise.jpg'),
-  },
-  'cable-high-to-low-fly': {
-    video: require('../../assets/exercise-media/dark/cable-high-to-low-fly.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-high-to-low-fly.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-high-to-low-fly.jpg'),
-  },
-  'cable-hip-abduction': {
-    video: require('../../assets/exercise-media/dark/cable-hip-abduction.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-hip-abduction.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-hip-abduction.jpg'),
-  },
-  'cable-incline-bench-press': {
-    video: require('../../assets/exercise-media/dark/cable-incline-bench-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-incline-bench-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-incline-bench-press.jpg'),
-  },
-  'cable-kickback': {
-    video: require('../../assets/exercise-media/dark/cable-kickback.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-kickback.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-kickback.jpg'),
-  },
-  'cable-low-single-arm-lateral-raise': {
-    video: require('../../assets/exercise-media/dark/cable-low-single-arm-lateral-raise.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-low-single-arm-lateral-raise.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-low-single-arm-lateral-raise.jpg'),
-  },
-  'cable-low-to-high-fly': {
-    video: require('../../assets/exercise-media/dark/cable-low-to-high-fly.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-low-to-high-fly.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-low-to-high-fly.jpg'),
-  },
-  'cable-overhead-press': {
-    video: require('../../assets/exercise-media/dark/cable-overhead-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-overhead-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-overhead-press.jpg'),
-  },
-  'cable-pec-fly': {
-    video: require('../../assets/exercise-media/dark/cable-pec-fly.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-pec-fly.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-pec-fly.jpg'),
-  },
-  'cable-pull-through': {
-    video: require('../../assets/exercise-media/dark/cable-pull-through.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-pull-through.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-pull-through.jpg'),
-  },
-  'cable-rope-hammer-curl': {
-    video: require('../../assets/exercise-media/dark/cable-rope-hammer-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-rope-hammer-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-rope-hammer-curl.jpg'),
-  },
-  'cable-rope-kneeling-face-pull': {
-    video: require('../../assets/exercise-media/dark/cable-rope-kneeling-face-pull.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-rope-kneeling-face-pull.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-rope-kneeling-face-pull.jpg'),
-  },
-  'cable-rope-overhead-tricep-extension': {
-    video: require('../../assets/exercise-media/dark/cable-rope-overhead-tricep-extension.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-rope-overhead-tricep-extension.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-rope-overhead-tricep-extension.jpg'),
-  },
-  'cable-rope-pullover': {
-    video: require('../../assets/exercise-media/dark/cable-rope-pullover.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-rope-pullover.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-rope-pullover.jpg'),
-  },
-  'cable-rope-pushdown': {
-    video: require('../../assets/exercise-media/dark/cable-rope-pushdown.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-rope-pushdown.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-rope-pushdown.jpg'),
-  },
-  'cable-row-bar-standing-row': {
-    video: require('../../assets/exercise-media/dark/cable-row-bar-standing-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-row-bar-standing-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-row-bar-standing-row.jpg'),
-  },
-  'cable-seated-rope-face-pull': {
-    video: require('../../assets/exercise-media/dark/cable-seated-rope-face-pull.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-seated-rope-face-pull.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-seated-rope-face-pull.jpg'),
-  },
-  'cable-side-bend': {
-    video: require('../../assets/exercise-media/dark/cable-side-bend.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-side-bend.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-side-bend.jpg'),
-  },
-  'cable-single-arm-neutral-grip-row': {
-    video: require('../../assets/exercise-media/dark/cable-single-arm-neutral-grip-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-single-arm-neutral-grip-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-single-arm-neutral-grip-row.jpg'),
-  },
-  'cable-single-arm-rope-pushdown': {
-    video: require('../../assets/exercise-media/dark/cable-single-arm-rope-pushdown.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-single-arm-rope-pushdown.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-single-arm-rope-pushdown.jpg'),
-  },
-  'cable-single-arm-underhand-grip-row': {
-    video: require('../../assets/exercise-media/dark/cable-single-arm-underhand-grip-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-single-arm-underhand-grip-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-single-arm-underhand-grip-row.jpg'),
-  },
-  'cable-single-leg-laying-leg-curl': {
-    video: require('../../assets/exercise-media/dark/cable-single-leg-laying-leg-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-single-leg-laying-leg-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-single-leg-laying-leg-curl.jpg'),
-  },
-  'cable-standing-low-to-high-wood-chopper': {
-    video: require('../../assets/exercise-media/dark/cable-standing-low-to-high-wood-chopper.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-standing-low-to-high-wood-chopper.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-standing-low-to-high-wood-chopper.jpg'),
-  },
-  'cable-standing-single-arm-chest-press': {
-    video: require('../../assets/exercise-media/dark/cable-standing-single-arm-chest-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-standing-single-arm-chest-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-standing-single-arm-chest-press.jpg'),
-  },
-  'cable-supinating-row': {
-    video: require('../../assets/exercise-media/dark/cable-supinating-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-supinating-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-supinating-row.jpg'),
-  },
-  'cable-wood-chopper': {
-    video: require('../../assets/exercise-media/dark/cable-wood-chopper.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-wood-chopper.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-wood-chopper.jpg'),
-  },
-  'cable-wrist-curl': {
-    video: require('../../assets/exercise-media/dark/cable-wrist-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/cable-wrist-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cable-wrist-curl.jpg'),
-  },
-  'captains-chair-knee-raise': {
-    video: require('../../assets/exercise-media/dark/captains-chair-knee-raise.mp4'),
-    poster: require('../../assets/exercise-media/poster/captains-chair-knee-raise.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/captains-chair-knee-raise.jpg'),
-  },
-  'chest-supported-dumbbell-row': {
-    video: require('../../assets/exercise-media/dark/chest-supported-dumbbell-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/chest-supported-dumbbell-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/chest-supported-dumbbell-row.jpg'),
-  },
-  'chest-supported-t-bar-row': {
-    video: require('../../assets/exercise-media/dark/chest-supported-t-bar-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/chest-supported-t-bar-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/chest-supported-t-bar-row.jpg'),
-  },
-  'chin-ups': {
-    video: require('../../assets/exercise-media/dark/chin-ups.mp4'),
-    poster: require('../../assets/exercise-media/poster/chin-ups.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/chin-ups.jpg'),
-  },
-  'close-grip-barbell-curl': {
-    video: require('../../assets/exercise-media/dark/close-grip-barbell-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/close-grip-barbell-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/close-grip-barbell-curl.jpg'),
-  },
-  'cossack-squat': {
-    video: require('../../assets/exercise-media/dark/cossack-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/cossack-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cossack-squat.jpg'),
-  },
-  'cross-body-hammer-curl': {
-    video: require('../../assets/exercise-media/dark/cross-body-hammer-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/cross-body-hammer-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cross-body-hammer-curl.jpg'),
-  },
-  'cuban-press': {
-    video: require('../../assets/exercise-media/dark/cuban-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/cuban-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cuban-press.jpg'),
-  },
-  'cycling-cooldown': {
-    video: require('../../assets/exercise-media/dark/cycling-cooldown.mp4'),
-    poster: require('../../assets/exercise-media/poster/cycling-cooldown.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cycling-cooldown.jpg'),
-  },
-  'cycling-intervals': {
-    video: require('../../assets/exercise-media/dark/cycling-intervals.mp4'),
-    poster: require('../../assets/exercise-media/poster/cycling-intervals.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cycling-intervals.jpg'),
-  },
-  'cycling-sprint': {
-    video: require('../../assets/exercise-media/dark/cycling-sprint.mp4'),
-    poster: require('../../assets/exercise-media/poster/cycling-sprint.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cycling-sprint.jpg'),
-  },
-  'cycling-warmup': {
-    video: require('../../assets/exercise-media/dark/cycling-warmup.mp4'),
-    poster: require('../../assets/exercise-media/poster/cycling-warmup.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/cycling-warmup.jpg'),
-  },
-  'dead-bug': {
-    video: require('../../assets/exercise-media/dark/dead-bug.mp4'),
-    poster: require('../../assets/exercise-media/poster/dead-bug.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dead-bug.jpg'),
-  },
-  'dead-hang': {
-    video: require('../../assets/exercise-media/dark/dead-hang.mp4'),
-    poster: require('../../assets/exercise-media/poster/dead-hang.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dead-hang.jpg'),
-  },
-  'decline-barbell-bench-press': {
-    video: require('../../assets/exercise-media/dark/decline-barbell-bench-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/decline-barbell-bench-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/decline-barbell-bench-press.jpg'),
-  },
-  'decline-crunch': {
-    video: require('../../assets/exercise-media/dark/decline-crunch.mp4'),
-    poster: require('../../assets/exercise-media/poster/decline-crunch.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/decline-crunch.jpg'),
-  },
-  'decline-machine-chest-press': {
-    video: require('../../assets/exercise-media/dark/decline-machine-chest-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/decline-machine-chest-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/decline-machine-chest-press.jpg'),
-  },
-  'decline-push-up': {
-    video: require('../../assets/exercise-media/dark/decline-push-up.mp4'),
-    poster: require('../../assets/exercise-media/poster/decline-push-up.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/decline-push-up.jpg'),
-  },
-  'decline-sit-up': {
-    video: require('../../assets/exercise-media/dark/decline-sit-up.mp4'),
-    poster: require('../../assets/exercise-media/poster/decline-sit-up.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/decline-sit-up.jpg'),
-  },
-  'deficit-deadlift': {
-    video: require('../../assets/exercise-media/dark/deficit-deadlift.mp4'),
-    poster: require('../../assets/exercise-media/poster/deficit-deadlift.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/deficit-deadlift.jpg'),
-  },
-  'deficit-dumbbell-romanian-deadlift': {
-    video: require('../../assets/exercise-media/dark/deficit-dumbbell-romanian-deadlift.mp4'),
-    poster: require('../../assets/exercise-media/poster/deficit-dumbbell-romanian-deadlift.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/deficit-dumbbell-romanian-deadlift.jpg'),
-  },
-  'diamond-push-ups': {
-    video: require('../../assets/exercise-media/dark/diamond-push-ups.mp4'),
-    poster: require('../../assets/exercise-media/poster/diamond-push-ups.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/diamond-push-ups.jpg'),
-  },
-  'dumbbell-alternating-forward-lunge': {
-    video: require('../../assets/exercise-media/dark/dumbbell-alternating-forward-lunge.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-alternating-forward-lunge.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-alternating-forward-lunge.jpg'),
-  },
-  'dumbbell-back-extension': {
-    video: require('../../assets/exercise-media/dark/dumbbell-back-extension.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-back-extension.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-back-extension.jpg'),
-  },
-  'dumbbell-bench-press': {
-    video: require('../../assets/exercise-media/dark/dumbbell-bench-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-bench-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-bench-press.jpg'),
-  },
-  'dumbbell-bulgarian-split-squat': {
-    video: require('../../assets/exercise-media/dark/dumbbell-bulgarian-split-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-bulgarian-split-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-bulgarian-split-squat.jpg'),
-  },
-  'dumbbell-chest-fly': {
-    video: require('../../assets/exercise-media/dark/dumbbell-chest-fly.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-chest-fly.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-chest-fly.jpg'),
-  },
-  'dumbbell-concentration-curl': {
-    video: require('../../assets/exercise-media/dark/dumbbell-concentration-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-concentration-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-concentration-curl.jpg'),
-  },
-  'dumbbell-cossack-squat': {
-    video: require('../../assets/exercise-media/dark/dumbbell-cossack-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-cossack-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-cossack-squat.jpg'),
-  },
-  'dumbbell-cross-body-romanian-deadlift': {
-    video: require('../../assets/exercise-media/dark/dumbbell-cross-body-romanian-deadlift.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-cross-body-romanian-deadlift.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-cross-body-romanian-deadlift.jpg'),
-  },
-  'dumbbell-curl': {
-    video: require('../../assets/exercise-media/dark/dumbbell-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-curl.jpg'),
-  },
-  'dumbbell-deadlift': {
-    video: require('../../assets/exercise-media/dark/dumbbell-deadlift.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-deadlift.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-deadlift.jpg'),
-  },
-  'dumbbell-decline-bench-press': {
-    video: require('../../assets/exercise-media/dark/dumbbell-decline-bench-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-decline-bench-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-decline-bench-press.jpg'),
-  },
-  'dumbbell-decline-chest-fly': {
-    video: require('../../assets/exercise-media/dark/dumbbell-decline-chest-fly.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-decline-chest-fly.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-decline-chest-fly.jpg'),
-  },
-  'dumbbell-decline-skullcrusher': {
-    video: require('../../assets/exercise-media/dark/dumbbell-decline-skullcrusher.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-decline-skullcrusher.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-decline-skullcrusher.jpg'),
-  },
-  'dumbbell-feet-elevated-glute-bridge': {
-    video: require('../../assets/exercise-media/dark/dumbbell-feet-elevated-glute-bridge.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-feet-elevated-glute-bridge.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-feet-elevated-glute-bridge.jpg'),
-  },
-  'dumbbell-figure-four-heels-elevated-hip-thrust': {
-    video: require('../../assets/exercise-media/dark/dumbbell-figure-four-heels-elevated-hip-thrust.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-figure-four-heels-elevated-hip-thrust.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-figure-four-heels-elevated-hip-thrust.jpg'),
-  },
-  'dumbbell-front-raise': {
-    video: require('../../assets/exercise-media/dark/dumbbell-front-raise.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-front-raise.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-front-raise.jpg'),
-  },
-  'dumbbell-front-squat': {
-    video: require('../../assets/exercise-media/dark/dumbbell-front-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-front-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-front-squat.jpg'),
-  },
-  'dumbbell-front-squat-tempo': {
-    video: require('../../assets/exercise-media/dark/dumbbell-front-squat-tempo.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-front-squat-tempo.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-front-squat-tempo.jpg'),
-  },
-  'dumbbell-goblet-alternating-curtsy-lunge': {
-    video: require('../../assets/exercise-media/dark/dumbbell-goblet-alternating-curtsy-lunge.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-goblet-alternating-curtsy-lunge.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-goblet-alternating-curtsy-lunge.jpg'),
-  },
-  'dumbbell-goblet-bulgarian-split-squat': {
-    video: require('../../assets/exercise-media/dark/dumbbell-goblet-bulgarian-split-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-goblet-bulgarian-split-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-goblet-bulgarian-split-squat.jpg'),
-  },
-  'dumbbell-goblet-forward-lunge': {
-    video: require('../../assets/exercise-media/dark/dumbbell-goblet-forward-lunge.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-goblet-forward-lunge.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-goblet-forward-lunge.jpg'),
-  },
-  'dumbbell-goblet-reverse-lunge': {
-    video: require('../../assets/exercise-media/dark/dumbbell-goblet-reverse-lunge.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-goblet-reverse-lunge.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-goblet-reverse-lunge.jpg'),
-  },
-  'dumbbell-goblet-split-squat': {
-    video: require('../../assets/exercise-media/dark/dumbbell-goblet-split-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-goblet-split-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-goblet-split-squat.jpg'),
-  },
-  'dumbbell-goblet-squat': {
-    video: require('../../assets/exercise-media/dark/dumbbell-goblet-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-goblet-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-goblet-squat.jpg'),
-  },
-  'dumbbell-hammer-curl': {
-    video: require('../../assets/exercise-media/dark/dumbbell-hammer-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-hammer-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-hammer-curl.jpg'),
-  },
-  'dumbbell-heels-elevated-hip-thrust': {
-    video: require('../../assets/exercise-media/dark/dumbbell-heels-elevated-hip-thrust.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-heels-elevated-hip-thrust.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-heels-elevated-hip-thrust.jpg'),
-  },
-  'dumbbell-incline-bench-press': {
-    video: require('../../assets/exercise-media/dark/dumbbell-incline-bench-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-incline-bench-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-incline-bench-press.jpg'),
-  },
-  'dumbbell-incline-chest-fly': {
-    video: require('../../assets/exercise-media/dark/dumbbell-incline-chest-fly.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-incline-chest-fly.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-incline-chest-fly.jpg'),
-  },
-  'dumbbell-incline-curl': {
-    video: require('../../assets/exercise-media/dark/dumbbell-incline-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-incline-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-incline-curl.jpg'),
-  },
-  'dumbbell-incline-front-raise': {
-    video: require('../../assets/exercise-media/dark/dumbbell-incline-front-raise.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-incline-front-raise.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-incline-front-raise.jpg'),
-  },
-  'dumbbell-incline-hammer-curl': {
-    video: require('../../assets/exercise-media/dark/dumbbell-incline-hammer-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-incline-hammer-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-incline-hammer-curl.jpg'),
-  },
-  'dumbbell-lateral-lunge': {
-    video: require('../../assets/exercise-media/dark/dumbbell-lateral-lunge.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-lateral-lunge.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-lateral-lunge.jpg'),
-  },
-  'dumbbell-lateral-raise': {
-    video: require('../../assets/exercise-media/dark/dumbbell-lateral-raise.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-lateral-raise.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-lateral-raise.jpg'),
-  },
-  'dumbbell-laying-reverse-fly': {
-    video: require('../../assets/exercise-media/dark/dumbbell-laying-reverse-fly.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-laying-reverse-fly.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-laying-reverse-fly.jpg'),
-  },
-  'dumbbell-leg-curl': {
-    video: require('../../assets/exercise-media/dark/dumbbell-leg-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-leg-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-leg-curl.jpg'),
-  },
-  'dumbbell-overhead-squat': {
-    video: require('../../assets/exercise-media/dark/dumbbell-overhead-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-overhead-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-overhead-squat.jpg'),
-  },
-  'dumbbell-preacher-curl': {
-    video: require('../../assets/exercise-media/dark/dumbbell-preacher-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-preacher-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-preacher-curl.jpg'),
-  },
-  'dumbbell-push-press': {
-    video: require('../../assets/exercise-media/dark/dumbbell-push-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-push-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-push-press.jpg'),
-  },
-  'dumbbell-rear-delt-fly': {
-    video: require('../../assets/exercise-media/dark/dumbbell-rear-delt-fly.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-rear-delt-fly.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-rear-delt-fly.jpg'),
-  },
-  'dumbbell-row-bilateral': {
-    video: require('../../assets/exercise-media/dark/dumbbell-row-bilateral.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-row-bilateral.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-row-bilateral.jpg'),
-  },
-  'dumbbell-row-unilateral': {
-    video: require('../../assets/exercise-media/dark/dumbbell-row-unilateral.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-row-unilateral.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-row-unilateral.jpg'),
-  },
-  'dumbbell-russian-twist': {
-    video: require('../../assets/exercise-media/dark/dumbbell-russian-twist.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-russian-twist.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-russian-twist.jpg'),
-  },
-  'dumbbell-seated-overhead-press': {
-    video: require('../../assets/exercise-media/dark/dumbbell-seated-overhead-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-seated-overhead-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-seated-overhead-press.jpg'),
-  },
-  'dumbbell-seated-overhead-tricep-extension': {
-    video: require('../../assets/exercise-media/dark/dumbbell-seated-overhead-tricep-extension.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-seated-overhead-tricep-extension.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-seated-overhead-tricep-extension.jpg'),
-  },
-  'dumbbell-seated-rear-delt-fly': {
-    video: require('../../assets/exercise-media/dark/dumbbell-seated-rear-delt-fly.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-seated-rear-delt-fly.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-seated-rear-delt-fly.jpg'),
-  },
-  'dumbbell-seated-shrug': {
-    video: require('../../assets/exercise-media/dark/dumbbell-seated-shrug.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-seated-shrug.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-seated-shrug.jpg'),
-  },
-  'dumbbell-shrug': {
-    video: require('../../assets/exercise-media/dark/dumbbell-shrug.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-shrug.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-shrug.jpg'),
-  },
-  'dumbbell-side-bend': {
-    video: require('../../assets/exercise-media/dark/dumbbell-side-bend.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-side-bend.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-side-bend.jpg'),
-  },
-  'dumbbell-single-arm-chest-press': {
-    video: require('../../assets/exercise-media/dark/dumbbell-single-arm-chest-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-single-arm-chest-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-single-arm-chest-press.jpg'),
-  },
-  'dumbbell-single-arm-clean-and-press': {
-    video: require('../../assets/exercise-media/dark/dumbbell-single-arm-clean-and-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-single-arm-clean-and-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-single-arm-clean-and-press.jpg'),
-  },
-  'dumbbell-single-arm-row': {
-    video: require('../../assets/exercise-media/dark/dumbbell-single-arm-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-single-arm-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-single-arm-row.jpg'),
-  },
-  'dumbbell-single-leg-calf-raise': {
-    video: require('../../assets/exercise-media/dark/dumbbell-single-leg-calf-raise.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-single-leg-calf-raise.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-single-leg-calf-raise.jpg'),
-  },
-  'dumbbell-single-leg-hip-thrust': {
-    video: require('../../assets/exercise-media/dark/dumbbell-single-leg-hip-thrust.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-single-leg-hip-thrust.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-single-leg-hip-thrust.jpg'),
-  },
-  'dumbbell-situp': {
-    video: require('../../assets/exercise-media/dark/dumbbell-situp.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-situp.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-situp.jpg'),
-  },
-  'dumbbell-skullcrusher': {
-    video: require('../../assets/exercise-media/dark/dumbbell-skullcrusher.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-skullcrusher.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-skullcrusher.jpg'),
-  },
-  'dumbbell-spinal-jefferson-curl': {
-    video: require('../../assets/exercise-media/dark/dumbbell-spinal-jefferson-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-spinal-jefferson-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-spinal-jefferson-curl.jpg'),
-  },
-  'dumbbell-standing-single-arm-curl': {
-    video: require('../../assets/exercise-media/dark/dumbbell-standing-single-arm-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-standing-single-arm-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-standing-single-arm-curl.jpg'),
-  },
-  'dumbbell-standing-single-arm-hammer-curl': {
-    video: require('../../assets/exercise-media/dark/dumbbell-standing-single-arm-hammer-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-standing-single-arm-hammer-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-standing-single-arm-hammer-curl.jpg'),
-  },
-  'dumbbell-step-up-low': {
-    video: require('../../assets/exercise-media/dark/dumbbell-step-up-low.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-step-up-low.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-step-up-low.jpg'),
-  },
-  'dumbbell-sumo-squat': {
-    video: require('../../assets/exercise-media/dark/dumbbell-sumo-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-sumo-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-sumo-squat.jpg'),
-  },
-  'dumbbell-superman': {
-    video: require('../../assets/exercise-media/dark/dumbbell-superman.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-superman.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-superman.jpg'),
-  },
-  'dumbbell-thruster': {
-    video: require('../../assets/exercise-media/dark/dumbbell-thruster.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-thruster.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-thruster.jpg'),
-  },
-  'dumbbell-tricep-kickback': {
-    video: require('../../assets/exercise-media/dark/dumbbell-tricep-kickback.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-tricep-kickback.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-tricep-kickback.jpg'),
-  },
-  'dumbbell-upright-row': {
-    video: require('../../assets/exercise-media/dark/dumbbell-upright-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-upright-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-upright-row.jpg'),
-  },
-  'dumbbell-wrist-curl': {
-    video: require('../../assets/exercise-media/dark/dumbbell-wrist-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-wrist-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-wrist-curl.jpg'),
-  },
-  'dumbbell-wrist-extension': {
-    video: require('../../assets/exercise-media/dark/dumbbell-wrist-extension.mp4'),
-    poster: require('../../assets/exercise-media/poster/dumbbell-wrist-extension.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/dumbbell-wrist-extension.jpg'),
-  },
-  'elbow-side-plank': {
-    video: require('../../assets/exercise-media/dark/elbow-side-plank.mp4'),
-    poster: require('../../assets/exercise-media/poster/elbow-side-plank.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/elbow-side-plank.jpg'),
-  },
-  'elliptical': {
-    video: require('../../assets/exercise-media/dark/elliptical.mp4'),
-    poster: require('../../assets/exercise-media/poster/elliptical.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/elliptical.jpg'),
-  },
-  'ez-bar-preacher-curl': {
-    video: require('../../assets/exercise-media/dark/ez-bar-preacher-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/ez-bar-preacher-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/ez-bar-preacher-curl.jpg'),
-  },
-  'ez-bar-reverse-preacher-curl': {
-    video: require('../../assets/exercise-media/dark/ez-bar-reverse-preacher-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/ez-bar-reverse-preacher-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/ez-bar-reverse-preacher-curl.jpg'),
-  },
-  'floor-press': {
-    video: require('../../assets/exercise-media/dark/floor-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/floor-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/floor-press.jpg'),
-  },
-  'forward-lunge': {
-    video: require('../../assets/exercise-media/dark/forward-lunge.mp4'),
-    poster: require('../../assets/exercise-media/poster/forward-lunge.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/forward-lunge.jpg'),
-  },
-  'freestyle-swim': {
-    video: require('../../assets/exercise-media/dark/freestyle-swim.mp4'),
-    poster: require('../../assets/exercise-media/poster/freestyle-swim.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/freestyle-swim.jpg'),
-  },
-  'frog-pump': {
-    video: require('../../assets/exercise-media/dark/frog-pump.mp4'),
-    poster: require('../../assets/exercise-media/poster/frog-pump.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/frog-pump.jpg'),
-  },
-  'front-foot-elevated-split-squat': {
-    video: require('../../assets/exercise-media/dark/front-foot-elevated-split-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/front-foot-elevated-split-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/front-foot-elevated-split-squat.jpg'),
-  },
-  'front-plank': {
-    video: require('../../assets/exercise-media/dark/front-plank.mp4'),
-    poster: require('../../assets/exercise-media/poster/front-plank.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/front-plank.jpg'),
-  },
-  'front-squat': {
-    video: require('../../assets/exercise-media/dark/front-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/front-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/front-squat.jpg'),
-  },
-  'glute-bridge': {
-    video: require('../../assets/exercise-media/dark/glute-bridge.mp4'),
-    poster: require('../../assets/exercise-media/poster/glute-bridge.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/glute-bridge.jpg'),
-  },
-  'glute-kickback-machine': {
-    video: require('../../assets/exercise-media/dark/glute-kickback-machine.mp4'),
-    poster: require('../../assets/exercise-media/poster/glute-kickback-machine.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/glute-kickback-machine.jpg'),
-  },
-  'good-mornings': {
-    video: require('../../assets/exercise-media/dark/good-mornings.mp4'),
-    poster: require('../../assets/exercise-media/poster/good-mornings.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/good-mornings.jpg'),
-  },
-  'hammer-strength-high-row': {
-    video: require('../../assets/exercise-media/dark/hammer-strength-high-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/hammer-strength-high-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/hammer-strength-high-row.jpg'),
-  },
-  'hammer-strength-iso-lateral-row': {
-    video: require('../../assets/exercise-media/dark/hammer-strength-iso-lateral-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/hammer-strength-iso-lateral-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/hammer-strength-iso-lateral-row.jpg'),
-  },
-  'hamstring-curl': {
-    video: require('../../assets/exercise-media/dark/hamstring-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/hamstring-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/hamstring-curl.jpg'),
-  },
-  'hand-plank': {
-    video: require('../../assets/exercise-media/dark/hand-plank.mp4'),
-    poster: require('../../assets/exercise-media/poster/hand-plank.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/hand-plank.jpg'),
-  },
-  'hang-clean': {
-    video: require('../../assets/exercise-media/dark/hang-clean.mp4'),
-    poster: require('../../assets/exercise-media/poster/hang-clean.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/hang-clean.jpg'),
-  },
-  'hang-power-clean': {
-    video: require('../../assets/exercise-media/dark/hang-power-clean.mp4'),
-    poster: require('../../assets/exercise-media/poster/hang-power-clean.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/hang-power-clean.jpg'),
-  },
-  'hang-snatch': {
-    video: require('../../assets/exercise-media/dark/hang-snatch.mp4'),
-    poster: require('../../assets/exercise-media/poster/hang-snatch.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/hang-snatch.jpg'),
-  },
-  'hanging-knee-raises': {
-    video: require('../../assets/exercise-media/dark/hanging-knee-raises.mp4'),
-    poster: require('../../assets/exercise-media/poster/hanging-knee-raises.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/hanging-knee-raises.jpg'),
-  },
-  'hiking': {
-    video: require('../../assets/exercise-media/dark/hiking.mp4'),
-    poster: require('../../assets/exercise-media/poster/hiking.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/hiking.jpg'),
-  },
-  'hill-climb-repeats': {
-    video: require('../../assets/exercise-media/dark/hill-climb-repeats.mp4'),
-    poster: require('../../assets/exercise-media/poster/hill-climb-repeats.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/hill-climb-repeats.jpg'),
-  },
-  'hip-hinge-speed-romanian-deadlift': {
-    video: require('../../assets/exercise-media/dark/hip-hinge-speed-romanian-deadlift.mp4'),
-    poster: require('../../assets/exercise-media/poster/hip-hinge-speed-romanian-deadlift.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/hip-hinge-speed-romanian-deadlift.jpg'),
-  },
-  'horizontal-leg-press-calf-press': {
-    video: require('../../assets/exercise-media/dark/horizontal-leg-press-calf-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/horizontal-leg-press-calf-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/horizontal-leg-press-calf-press.jpg'),
-  },
-  'incline-machine-chest-press': {
-    video: require('../../assets/exercise-media/dark/incline-machine-chest-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/incline-machine-chest-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/incline-machine-chest-press.jpg'),
-  },
-  'incline-push-up': {
-    video: require('../../assets/exercise-media/dark/incline-push-up.mp4'),
-    poster: require('../../assets/exercise-media/poster/incline-push-up.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/incline-push-up.jpg'),
-  },
-  'incline-treadmill-walk': {
-    video: require('../../assets/exercise-media/dark/incline-treadmill-walk.mp4'),
-    poster: require('../../assets/exercise-media/poster/incline-treadmill-walk.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/incline-treadmill-walk.jpg'),
-  },
-  'indoor-cycling-spin': {
-    video: require('../../assets/exercise-media/dark/indoor-cycling-spin.mp4'),
-    poster: require('../../assets/exercise-media/poster/indoor-cycling-spin.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/indoor-cycling-spin.jpg'),
-  },
-  'inverted-row': {
-    video: require('../../assets/exercise-media/dark/inverted-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/inverted-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/inverted-row.jpg'),
-  },
-  'jm-press': {
-    video: require('../../assets/exercise-media/dark/jm-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/jm-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/jm-press.jpg'),
-  },
-  'jump-rope': {
-    video: require('../../assets/exercise-media/dark/jump-rope.mp4'),
-    poster: require('../../assets/exercise-media/poster/jump-rope.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/jump-rope.jpg'),
-  },
-  'jump-squats': {
-    video: require('../../assets/exercise-media/dark/jump-squats.mp4'),
-    poster: require('../../assets/exercise-media/poster/jump-squats.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/jump-squats.jpg'),
-  },
-  'jumping-jack': {
-    video: require('../../assets/exercise-media/dark/jumping-jack.mp4'),
-    poster: require('../../assets/exercise-media/poster/jumping-jack.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/jumping-jack.jpg'),
-  },
-  'kettlebell-alternating-curtsy-lunge': {
-    video: require('../../assets/exercise-media/dark/kettlebell-alternating-curtsy-lunge.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-alternating-curtsy-lunge.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-alternating-curtsy-lunge.jpg'),
-  },
-  'kettlebell-assisted-bulgarian-split-squat': {
-    video: require('../../assets/exercise-media/dark/kettlebell-assisted-bulgarian-split-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-assisted-bulgarian-split-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-assisted-bulgarian-split-squat.jpg'),
-  },
-  'kettlebell-bench-press': {
-    video: require('../../assets/exercise-media/dark/kettlebell-bench-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-bench-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-bench-press.jpg'),
-  },
-  'kettlebell-calf-raise': {
-    video: require('../../assets/exercise-media/dark/kettlebell-calf-raise.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-calf-raise.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-calf-raise.jpg'),
-  },
-  'kettlebell-curl': {
-    video: require('../../assets/exercise-media/dark/kettlebell-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-curl.jpg'),
-  },
-  'kettlebell-farmers-carry': {
-    video: require('../../assets/exercise-media/dark/kettlebell-farmers-carry.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-farmers-carry.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-farmers-carry.jpg'),
-  },
-  'kettlebell-front-raise': {
-    video: require('../../assets/exercise-media/dark/kettlebell-front-raise.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-front-raise.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-front-raise.jpg'),
-  },
-  'kettlebell-goblet-curl': {
-    video: require('../../assets/exercise-media/dark/kettlebell-goblet-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-goblet-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-goblet-curl.jpg'),
-  },
-  'kettlebell-goblet-squat': {
-    video: require('../../assets/exercise-media/dark/kettlebell-goblet-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-goblet-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-goblet-squat.jpg'),
-  },
-  'kettlebell-gorilla-row': {
-    video: require('../../assets/exercise-media/dark/kettlebell-gorilla-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-gorilla-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-gorilla-row.jpg'),
-  },
-  'kettlebell-hip-thrust': {
-    video: require('../../assets/exercise-media/dark/kettlebell-hip-thrust.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-hip-thrust.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-hip-thrust.jpg'),
-  },
-  'kettlebell-incline-bench-press': {
-    video: require('../../assets/exercise-media/dark/kettlebell-incline-bench-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-incline-bench-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-incline-bench-press.jpg'),
-  },
-  'kettlebell-push-press': {
-    video: require('../../assets/exercise-media/dark/kettlebell-push-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-push-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-push-press.jpg'),
-  },
-  'kettlebell-romanian-deadlift': {
-    video: require('../../assets/exercise-media/dark/kettlebell-romanian-deadlift.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-romanian-deadlift.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-romanian-deadlift.jpg'),
-  },
-  'kettlebell-row': {
-    video: require('../../assets/exercise-media/dark/kettlebell-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-row.jpg'),
-  },
-  'kettlebell-row-single': {
-    video: require('../../assets/exercise-media/dark/kettlebell-row-single.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-row-single.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-row-single.jpg'),
-  },
-  'kettlebell-seated-overhead-press': {
-    video: require('../../assets/exercise-media/dark/kettlebell-seated-overhead-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-seated-overhead-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-seated-overhead-press.jpg'),
-  },
-  'kettlebell-shrug': {
-    video: require('../../assets/exercise-media/dark/kettlebell-shrug.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-shrug.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-shrug.jpg'),
-  },
-  'kettlebell-single-arm-row': {
-    video: require('../../assets/exercise-media/dark/kettlebell-single-arm-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-single-arm-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-single-arm-row.jpg'),
-  },
-  'kettlebell-spinal-jefferson-curl': {
-    video: require('../../assets/exercise-media/dark/kettlebell-spinal-jefferson-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-spinal-jefferson-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-spinal-jefferson-curl.jpg'),
-  },
-  'kettlebell-sumo-deadlift': {
-    video: require('../../assets/exercise-media/dark/kettlebell-sumo-deadlift.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-sumo-deadlift.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-sumo-deadlift.jpg'),
-  },
-  'kettlebell-swing': {
-    video: require('../../assets/exercise-media/dark/kettlebell-swing.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-swing.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-swing.jpg'),
-  },
-  'kettlebell-thruster': {
-    video: require('../../assets/exercise-media/dark/kettlebell-thruster.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-thruster.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-thruster.jpg'),
-  },
-  'kettlebell-turkish-get-up': {
-    video: require('../../assets/exercise-media/dark/kettlebell-turkish-get-up.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-turkish-get-up.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-turkish-get-up.jpg'),
-  },
-  'kettlebell-windmill': {
-    video: require('../../assets/exercise-media/dark/kettlebell-windmill.mp4'),
-    poster: require('../../assets/exercise-media/poster/kettlebell-windmill.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kettlebell-windmill.jpg'),
-  },
-  'kickstand-dumbbell-romanian-deadlift': {
-    video: require('../../assets/exercise-media/dark/kickstand-dumbbell-romanian-deadlift.mp4'),
-    poster: require('../../assets/exercise-media/poster/kickstand-dumbbell-romanian-deadlift.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kickstand-dumbbell-romanian-deadlift.jpg'),
-  },
-  'kneeling-cable-crunch': {
-    video: require('../../assets/exercise-media/dark/kneeling-cable-crunch.mp4'),
-    poster: require('../../assets/exercise-media/poster/kneeling-cable-crunch.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/kneeling-cable-crunch.jpg'),
-  },
-  'landmine-press': {
-    video: require('../../assets/exercise-media/dark/landmine-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/landmine-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/landmine-press.jpg'),
-  },
-  'landmine-t-bar-rows': {
-    video: require('../../assets/exercise-media/dark/landmine-t-bar-rows.mp4'),
-    poster: require('../../assets/exercise-media/poster/landmine-t-bar-rows.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/landmine-t-bar-rows.jpg'),
-  },
-  'lat-pulldown': {
-    video: require('../../assets/exercise-media/dark/lat-pulldown.mp4'),
-    poster: require('../../assets/exercise-media/poster/lat-pulldown.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/lat-pulldown.jpg'),
-  },
-  'leaning-cable-lateral-raise': {
-    video: require('../../assets/exercise-media/dark/leaning-cable-lateral-raise.mp4'),
-    poster: require('../../assets/exercise-media/poster/leaning-cable-lateral-raise.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/leaning-cable-lateral-raise.jpg'),
-  },
-  'long-run': {
-    video: require('../../assets/exercise-media/dark/long-run.mp4'),
-    poster: require('../../assets/exercise-media/poster/long-run.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/long-run.jpg'),
-  },
-  'lunge-walking': {
-    video: require('../../assets/exercise-media/dark/lunge-walking.mp4'),
-    poster: require('../../assets/exercise-media/poster/lunge-walking.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/lunge-walking.jpg'),
-  },
-  'lying-leg-curl': {
-    video: require('../../assets/exercise-media/dark/lying-leg-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/lying-leg-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/lying-leg-curl.jpg'),
-  },
-  'machine-45-degree-back-extension': {
-    video: require('../../assets/exercise-media/dark/machine-45-degree-back-extension.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-45-degree-back-extension.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-45-degree-back-extension.jpg'),
-  },
-  'machine-assisted-pull-up': {
-    video: require('../../assets/exercise-media/dark/machine-assisted-pull-up.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-assisted-pull-up.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-assisted-pull-up.jpg'),
-  },
-  'machine-cable-v-bar-push-downs': {
-    video: require('../../assets/exercise-media/dark/machine-cable-v-bar-push-downs.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-cable-v-bar-push-downs.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-cable-v-bar-push-downs.jpg'),
-  },
-  'machine-chest-press': {
-    video: require('../../assets/exercise-media/dark/machine-chest-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-chest-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-chest-press.jpg'),
-  },
-  'machine-crunch': {
-    video: require('../../assets/exercise-media/dark/machine-crunch.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-crunch.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-crunch.jpg'),
-  },
-  'machine-dips': {
-    video: require('../../assets/exercise-media/dark/machine-dips.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-dips.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-dips.jpg'),
-  },
-  'machine-face-pulls': {
-    video: require('../../assets/exercise-media/dark/machine-face-pulls.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-face-pulls.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-face-pulls.jpg'),
-  },
-  'machine-front-military-press': {
-    video: require('../../assets/exercise-media/dark/machine-front-military-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-front-military-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-front-military-press.jpg'),
-  },
-  'machine-hack-squat': {
-    video: require('../../assets/exercise-media/dark/machine-hack-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-hack-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-hack-squat.jpg'),
-  },
-  'machine-hip-abduction': {
-    video: require('../../assets/exercise-media/dark/machine-hip-abduction.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-hip-abduction.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-hip-abduction.jpg'),
-  },
-  'machine-hip-adduction': {
-    video: require('../../assets/exercise-media/dark/machine-hip-adduction.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-hip-adduction.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-hip-adduction.jpg'),
-  },
-  'machine-hip-thrust': {
-    video: require('../../assets/exercise-media/dark/machine-hip-thrust.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-hip-thrust.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-hip-thrust.jpg'),
-  },
-  'machine-horizontal-leg-press': {
-    video: require('../../assets/exercise-media/dark/machine-horizontal-leg-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-horizontal-leg-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-horizontal-leg-press.jpg'),
-  },
-  'machine-lat-pullover': {
-    video: require('../../assets/exercise-media/dark/machine-lat-pullover.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-lat-pullover.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-lat-pullover.jpg'),
-  },
-  'machine-lateral-raise': {
-    video: require('../../assets/exercise-media/dark/machine-lateral-raise.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-lateral-raise.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-lateral-raise.jpg'),
-  },
-  'machine-leg-extension': {
-    video: require('../../assets/exercise-media/dark/machine-leg-extension.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-leg-extension.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-leg-extension.jpg'),
-  },
-  'machine-leg-press': {
-    video: require('../../assets/exercise-media/dark/machine-leg-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-leg-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-leg-press.jpg'),
-  },
-  'machine-neutral-row': {
-    video: require('../../assets/exercise-media/dark/machine-neutral-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-neutral-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-neutral-row.jpg'),
-  },
-  'machine-pec-fly': {
-    video: require('../../assets/exercise-media/dark/machine-pec-fly.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-pec-fly.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-pec-fly.jpg'),
-  },
-  'machine-plate-loaded-leg-extension': {
-    video: require('../../assets/exercise-media/dark/machine-plate-loaded-leg-extension.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-plate-loaded-leg-extension.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-plate-loaded-leg-extension.jpg'),
-  },
-  'machine-plate-loaded-t-bar-row': {
-    video: require('../../assets/exercise-media/dark/machine-plate-loaded-t-bar-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-plate-loaded-t-bar-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-plate-loaded-t-bar-row.jpg'),
-  },
-  'machine-preacher-curl': {
-    video: require('../../assets/exercise-media/dark/machine-preacher-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-preacher-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-preacher-curl.jpg'),
-  },
-  'machine-pulldown': {
-    video: require('../../assets/exercise-media/dark/machine-pulldown.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-pulldown.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-pulldown.jpg'),
-  },
-  'machine-seated-cable-row': {
-    video: require('../../assets/exercise-media/dark/machine-seated-cable-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-seated-cable-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-seated-cable-row.jpg'),
-  },
-  'machine-tricep-extension': {
-    video: require('../../assets/exercise-media/dark/machine-tricep-extension.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-tricep-extension.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-tricep-extension.jpg'),
-  },
-  'machine-underhand-row': {
-    video: require('../../assets/exercise-media/dark/machine-underhand-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/machine-underhand-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/machine-underhand-row.jpg'),
-  },
-  'man-maker': {
-    video: require('../../assets/exercise-media/dark/man-maker.mp4'),
-    poster: require('../../assets/exercise-media/poster/man-maker.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/man-maker.jpg'),
-  },
-  'meadows-row': {
-    video: require('../../assets/exercise-media/dark/meadows-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/meadows-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/meadows-row.jpg'),
-  },
-  'mountain-climber': {
-    video: require('../../assets/exercise-media/dark/mountain-climber.mp4'),
-    poster: require('../../assets/exercise-media/poster/mountain-climber.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/mountain-climber.jpg'),
-  },
-  'narrow-pulldown': {
-    video: require('../../assets/exercise-media/dark/narrow-pulldown.mp4'),
-    poster: require('../../assets/exercise-media/poster/narrow-pulldown.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/narrow-pulldown.jpg'),
-  },
-  'neck-curl': {
-    video: require('../../assets/exercise-media/dark/neck-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/neck-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/neck-curl.jpg'),
-  },
-  'neck-extension': {
-    video: require('../../assets/exercise-media/dark/neck-extension.mp4'),
-    poster: require('../../assets/exercise-media/poster/neck-extension.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/neck-extension.jpg'),
-  },
-  'neutral-grip-dumbbell-bench-press': {
-    video: require('../../assets/exercise-media/dark/neutral-grip-dumbbell-bench-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/neutral-grip-dumbbell-bench-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/neutral-grip-dumbbell-bench-press.jpg'),
-  },
-  'neutral-grip-lat-pulldown': {
-    video: require('../../assets/exercise-media/dark/neutral-grip-lat-pulldown.mp4'),
-    poster: require('../../assets/exercise-media/poster/neutral-grip-lat-pulldown.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/neutral-grip-lat-pulldown.jpg'),
-  },
-  'neutral-grip-pull-up': {
-    video: require('../../assets/exercise-media/dark/neutral-grip-pull-up.mp4'),
-    poster: require('../../assets/exercise-media/poster/neutral-grip-pull-up.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/neutral-grip-pull-up.jpg'),
-  },
-  'nordic-hamstring-curl': {
-    video: require('../../assets/exercise-media/dark/nordic-hamstring-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/nordic-hamstring-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/nordic-hamstring-curl.jpg'),
-  },
-  'pallof-press': {
-    video: require('../../assets/exercise-media/dark/pallof-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/pallof-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/pallof-press.jpg'),
-  },
-  'parralel-bar-dips': {
-    video: require('../../assets/exercise-media/dark/parralel-bar-dips.mp4'),
-    poster: require('../../assets/exercise-media/poster/parralel-bar-dips.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/parralel-bar-dips.jpg'),
-  },
-  'pause-squat': {
-    video: require('../../assets/exercise-media/dark/pause-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/pause-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/pause-squat.jpg'),
-  },
-  'pendlay-row': {
-    video: require('../../assets/exercise-media/dark/pendlay-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/pendlay-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/pendlay-row.jpg'),
-  },
-  'pendulum-squat-v-squat': {
-    video: require('../../assets/exercise-media/dark/pendulum-squat-v-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/pendulum-squat-v-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/pendulum-squat-v-squat.jpg'),
-  },
-  'plate-forward-lunge': {
-    video: require('../../assets/exercise-media/dark/plate-forward-lunge.mp4'),
-    poster: require('../../assets/exercise-media/poster/plate-forward-lunge.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/plate-forward-lunge.jpg'),
-  },
-  'plate-front-raise': {
-    video: require('../../assets/exercise-media/dark/plate-front-raise.mp4'),
-    poster: require('../../assets/exercise-media/poster/plate-front-raise.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/plate-front-raise.jpg'),
-  },
-  'plate-pinch': {
-    video: require('../../assets/exercise-media/dark/plate-pinch.mp4'),
-    poster: require('../../assets/exercise-media/poster/plate-pinch.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/plate-pinch.jpg'),
-  },
-  'power-clean': {
-    video: require('../../assets/exercise-media/dark/power-clean.mp4'),
-    poster: require('../../assets/exercise-media/poster/power-clean.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/power-clean.jpg'),
-  },
-  'pull-ups': {
-    video: require('../../assets/exercise-media/dark/pull-ups.mp4'),
-    poster: require('../../assets/exercise-media/poster/pull-ups.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/pull-ups.jpg'),
-  },
-  'push-jerk': {
-    video: require('../../assets/exercise-media/dark/push-jerk.mp4'),
-    poster: require('../../assets/exercise-media/poster/push-jerk.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/push-jerk.jpg'),
-  },
-  'push-up': {
-    video: require('../../assets/exercise-media/dark/push-up.mp4'),
-    poster: require('../../assets/exercise-media/poster/push-up.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/push-up.jpg'),
-  },
-  'reverse-grip-barbell-bench-press': {
-    video: require('../../assets/exercise-media/dark/reverse-grip-barbell-bench-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/reverse-grip-barbell-bench-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/reverse-grip-barbell-bench-press.jpg'),
-  },
-  'reverse-grip-barbell-curl': {
-    video: require('../../assets/exercise-media/dark/reverse-grip-barbell-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/reverse-grip-barbell-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/reverse-grip-barbell-curl.jpg'),
-  },
-  'reverse-grip-tricep-pushdown': {
-    video: require('../../assets/exercise-media/dark/reverse-grip-tricep-pushdown.mp4'),
-    poster: require('../../assets/exercise-media/poster/reverse-grip-tricep-pushdown.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/reverse-grip-tricep-pushdown.jpg'),
-  },
-  'reverse-hack-squat': {
-    video: require('../../assets/exercise-media/dark/reverse-hack-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/reverse-hack-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/reverse-hack-squat.jpg'),
-  },
-  'reverse-hyperextension': {
-    video: require('../../assets/exercise-media/dark/reverse-hyperextension.mp4'),
-    poster: require('../../assets/exercise-media/poster/reverse-hyperextension.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/reverse-hyperextension.jpg'),
-  },
-  'reverse-pec-deck': {
-    video: require('../../assets/exercise-media/dark/reverse-pec-deck.mp4'),
-    poster: require('../../assets/exercise-media/poster/reverse-pec-deck.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/reverse-pec-deck.jpg'),
-  },
-  'romanian-deadlift-hamstring-sweeps': {
-    video: require('../../assets/exercise-media/dark/romanian-deadlift-hamstring-sweeps.mp4'),
-    poster: require('../../assets/exercise-media/poster/romanian-deadlift-hamstring-sweeps.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/romanian-deadlift-hamstring-sweeps.jpg'),
-  },
-  'rowing-intervals': {
-    video: require('../../assets/exercise-media/dark/rowing-intervals.mp4'),
-    poster: require('../../assets/exercise-media/poster/rowing-intervals.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/rowing-intervals.jpg'),
-  },
-  'rowing-machine-steady-state': {
-    video: require('../../assets/exercise-media/dark/rowing-machine-steady-state.mp4'),
-    poster: require('../../assets/exercise-media/poster/rowing-machine-steady-state.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/rowing-machine-steady-state.jpg'),
-  },
-  'rowing-sprint': {
-    video: require('../../assets/exercise-media/dark/rowing-sprint.mp4'),
-    poster: require('../../assets/exercise-media/poster/rowing-sprint.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/rowing-sprint.jpg'),
-  },
-  'running-cooldown': {
-    video: require('../../assets/exercise-media/dark/running-cooldown.mp4'),
-    poster: require('../../assets/exercise-media/poster/running-cooldown.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/running-cooldown.jpg'),
-  },
-  'running-intervals': {
-    video: require('../../assets/exercise-media/dark/running-intervals.mp4'),
-    poster: require('../../assets/exercise-media/poster/running-intervals.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/running-intervals.jpg'),
-  },
-  'seal-row': {
-    video: require('../../assets/exercise-media/dark/seal-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/seal-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/seal-row.jpg'),
-  },
-  'seated-calf-raise': {
-    video: require('../../assets/exercise-media/dark/seated-calf-raise.mp4'),
-    poster: require('../../assets/exercise-media/poster/seated-calf-raise.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/seated-calf-raise.jpg'),
-  },
-  'seated-dumbbell-curl': {
-    video: require('../../assets/exercise-media/dark/seated-dumbbell-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/seated-dumbbell-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/seated-dumbbell-curl.jpg'),
-  },
-  'seated-leg-curl': {
-    video: require('../../assets/exercise-media/dark/seated-leg-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/seated-leg-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/seated-leg-curl.jpg'),
-  },
-  'shadow-boxing': {
-    video: require('../../assets/exercise-media/dark/shadow-boxing.mp4'),
-    poster: require('../../assets/exercise-media/poster/shadow-boxing.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/shadow-boxing.jpg'),
-  },
-  'single-arm-cable-fly': {
-    video: require('../../assets/exercise-media/dark/single-arm-cable-fly.mp4'),
-    poster: require('../../assets/exercise-media/poster/single-arm-cable-fly.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/single-arm-cable-fly.jpg'),
-  },
-  'single-arm-dumbbell-overhead-press': {
-    video: require('../../assets/exercise-media/dark/single-arm-dumbbell-overhead-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/single-arm-dumbbell-overhead-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/single-arm-dumbbell-overhead-press.jpg'),
-  },
-  'single-arm-landmine-press': {
-    video: require('../../assets/exercise-media/dark/single-arm-landmine-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/single-arm-landmine-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/single-arm-landmine-press.jpg'),
-  },
-  'single-arm-lat-pulldown': {
-    video: require('../../assets/exercise-media/dark/single-arm-lat-pulldown.mp4'),
-    poster: require('../../assets/exercise-media/poster/single-arm-lat-pulldown.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/single-arm-lat-pulldown.jpg'),
-  },
-  'single-arm-overhead-cable-extension': {
-    video: require('../../assets/exercise-media/dark/single-arm-overhead-cable-extension.mp4'),
-    poster: require('../../assets/exercise-media/poster/single-arm-overhead-cable-extension.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/single-arm-overhead-cable-extension.jpg'),
-  },
-  'single-arm-tricep-extension': {
-    video: require('../../assets/exercise-media/dark/single-arm-tricep-extension.mp4'),
-    poster: require('../../assets/exercise-media/poster/single-arm-tricep-extension.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/single-arm-tricep-extension.jpg'),
-  },
-  'single-leg-back-extension': {
-    video: require('../../assets/exercise-media/dark/single-leg-back-extension.mp4'),
-    poster: require('../../assets/exercise-media/poster/single-leg-back-extension.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/single-leg-back-extension.jpg'),
-  },
-  'single-leg-dumbbell-romanian-deadlift': {
-    video: require('../../assets/exercise-media/dark/single-leg-dumbbell-romanian-deadlift.mp4'),
-    poster: require('../../assets/exercise-media/poster/single-leg-dumbbell-romanian-deadlift.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/single-leg-dumbbell-romanian-deadlift.jpg'),
-  },
-  'single-leg-glute-bridge': {
-    video: require('../../assets/exercise-media/dark/single-leg-glute-bridge.mp4'),
-    poster: require('../../assets/exercise-media/poster/single-leg-glute-bridge.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/single-leg-glute-bridge.jpg'),
-  },
-  'single-leg-hip-thrust': {
-    video: require('../../assets/exercise-media/dark/single-leg-hip-thrust.mp4'),
-    poster: require('../../assets/exercise-media/poster/single-leg-hip-thrust.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/single-leg-hip-thrust.jpg'),
-  },
-  'single-leg-kettlebell-romanian-deadlift-deficit': {
-    video: require('../../assets/exercise-media/dark/single-leg-kettlebell-romanian-deadlift-deficit.mp4'),
-    poster: require('../../assets/exercise-media/poster/single-leg-kettlebell-romanian-deadlift-deficit.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/single-leg-kettlebell-romanian-deadlift-deficit.jpg'),
-  },
-  'single-leg-press': {
-    video: require('../../assets/exercise-media/dark/single-leg-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/single-leg-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/single-leg-press.jpg'),
-  },
-  'single-leg-standing-calf-raise': {
-    video: require('../../assets/exercise-media/dark/single-leg-standing-calf-raise.mp4'),
-    poster: require('../../assets/exercise-media/poster/single-leg-standing-calf-raise.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/single-leg-standing-calf-raise.jpg'),
-  },
-  'single-leg-step-down': {
-    video: require('../../assets/exercise-media/dark/single-leg-step-down.mp4'),
-    poster: require('../../assets/exercise-media/poster/single-leg-step-down.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/single-leg-step-down.jpg'),
-  },
-  'single-legged-romanian-deadlifts': {
-    video: require('../../assets/exercise-media/dark/single-legged-romanian-deadlifts.mp4'),
-    poster: require('../../assets/exercise-media/poster/single-legged-romanian-deadlifts.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/single-legged-romanian-deadlifts.jpg'),
-  },
-  'sissy-squat': {
-    video: require('../../assets/exercise-media/dark/sissy-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/sissy-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/sissy-squat.jpg'),
-  },
-  'ski-erg': {
-    video: require('../../assets/exercise-media/dark/ski-erg.mp4'),
-    poster: require('../../assets/exercise-media/poster/ski-erg.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/ski-erg.jpg'),
-  },
-  'sled-pull': {
-    video: require('../../assets/exercise-media/dark/sled-pull.mp4'),
-    poster: require('../../assets/exercise-media/poster/sled-pull.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/sled-pull.jpg'),
-  },
-  'sled-push': {
-    video: require('../../assets/exercise-media/dark/sled-push.mp4'),
-    poster: require('../../assets/exercise-media/poster/sled-push.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/sled-push.jpg'),
-  },
-  'smith-machine-bench-press': {
-    video: require('../../assets/exercise-media/dark/smith-machine-bench-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/smith-machine-bench-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/smith-machine-bench-press.jpg'),
-  },
-  'smith-machine-bent-over-row': {
-    video: require('../../assets/exercise-media/dark/smith-machine-bent-over-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/smith-machine-bent-over-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/smith-machine-bent-over-row.jpg'),
-  },
-  'smith-machine-calf-raise': {
-    video: require('../../assets/exercise-media/dark/smith-machine-calf-raise.mp4'),
-    poster: require('../../assets/exercise-media/poster/smith-machine-calf-raise.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/smith-machine-calf-raise.jpg'),
-  },
-  'smith-machine-close-grip-bench-press': {
-    video: require('../../assets/exercise-media/dark/smith-machine-close-grip-bench-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/smith-machine-close-grip-bench-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/smith-machine-close-grip-bench-press.jpg'),
-  },
-  'smith-machine-front-squat': {
-    video: require('../../assets/exercise-media/dark/smith-machine-front-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/smith-machine-front-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/smith-machine-front-squat.jpg'),
-  },
-  'smith-machine-incline-bench-press': {
-    video: require('../../assets/exercise-media/dark/smith-machine-incline-bench-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/smith-machine-incline-bench-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/smith-machine-incline-bench-press.jpg'),
-  },
-  'smith-machine-seated-overhead-press': {
-    video: require('../../assets/exercise-media/dark/smith-machine-seated-overhead-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/smith-machine-seated-overhead-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/smith-machine-seated-overhead-press.jpg'),
-  },
-  'smith-machine-squat': {
-    video: require('../../assets/exercise-media/dark/smith-machine-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/smith-machine-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/smith-machine-squat.jpg'),
-  },
-  'smith-machine-standing-shrugs': {
-    video: require('../../assets/exercise-media/dark/smith-machine-standing-shrugs.mp4'),
-    poster: require('../../assets/exercise-media/poster/smith-machine-standing-shrugs.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/smith-machine-standing-shrugs.jpg'),
-  },
-  'smith-machine-sumo-romanian-deadlift': {
-    video: require('../../assets/exercise-media/dark/smith-machine-sumo-romanian-deadlift.mp4'),
-    poster: require('../../assets/exercise-media/poster/smith-machine-sumo-romanian-deadlift.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/smith-machine-sumo-romanian-deadlift.jpg'),
-  },
-  'snatch-grip-deadlift': {
-    video: require('../../assets/exercise-media/dark/snatch-grip-deadlift.mp4'),
-    poster: require('../../assets/exercise-media/poster/snatch-grip-deadlift.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/snatch-grip-deadlift.jpg'),
-  },
-  'snatch-grip-high-pull': {
-    video: require('../../assets/exercise-media/dark/snatch-grip-high-pull.mp4'),
-    poster: require('../../assets/exercise-media/poster/snatch-grip-high-pull.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/snatch-grip-high-pull.jpg'),
-  },
-  'snatch-pull': {
-    video: require('../../assets/exercise-media/dark/snatch-pull.mp4'),
-    poster: require('../../assets/exercise-media/poster/snatch-pull.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/snatch-pull.jpg'),
-  },
-  'spider-curl': {
-    video: require('../../assets/exercise-media/dark/spider-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/spider-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/spider-curl.jpg'),
-  },
-  'split-jerk': {
-    video: require('../../assets/exercise-media/dark/split-jerk.mp4'),
-    poster: require('../../assets/exercise-media/poster/split-jerk.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/split-jerk.jpg'),
-  },
-  'split-squat-isometric-hold': {
-    video: require('../../assets/exercise-media/dark/split-squat-isometric-hold.mp4'),
-    poster: require('../../assets/exercise-media/poster/split-squat-isometric-hold.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/split-squat-isometric-hold.jpg'),
-  },
-  'stability-ball-leg-curl': {
-    video: require('../../assets/exercise-media/dark/stability-ball-leg-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/stability-ball-leg-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/stability-ball-leg-curl.jpg'),
-  },
-  'stair-climber': {
-    video: require('../../assets/exercise-media/dark/stair-climber.mp4'),
-    poster: require('../../assets/exercise-media/poster/stair-climber.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/stair-climber.jpg'),
-  },
-  'standing-cable-hip-abduction': {
-    video: require('../../assets/exercise-media/dark/standing-cable-hip-abduction.mp4'),
-    poster: require('../../assets/exercise-media/poster/standing-cable-hip-abduction.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/standing-cable-hip-abduction.jpg'),
-  },
-  'standing-calf-raise-machine': {
-    video: require('../../assets/exercise-media/dark/standing-calf-raise-machine.mp4'),
-    poster: require('../../assets/exercise-media/poster/standing-calf-raise-machine.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/standing-calf-raise-machine.jpg'),
-  },
-  'steady-state-ride': {
-    video: require('../../assets/exercise-media/dark/steady-state-ride.mp4'),
-    poster: require('../../assets/exercise-media/poster/steady-state-ride.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/steady-state-ride.jpg'),
-  },
-  'straight-arm-lat-pulldown': {
-    video: require('../../assets/exercise-media/dark/straight-arm-lat-pulldown.mp4'),
-    poster: require('../../assets/exercise-media/poster/straight-arm-lat-pulldown.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/straight-arm-lat-pulldown.jpg'),
-  },
-  'supermans': {
-    video: require('../../assets/exercise-media/dark/supermans.mp4'),
-    poster: require('../../assets/exercise-media/poster/supermans.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/supermans.jpg'),
-  },
-  'swim-kick-drill': {
-    video: require('../../assets/exercise-media/dark/swim-kick-drill.mp4'),
-    poster: require('../../assets/exercise-media/poster/swim-kick-drill.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/swim-kick-drill.jpg'),
-  },
-  'swim-pull-drill': {
-    video: require('../../assets/exercise-media/dark/swim-pull-drill.mp4'),
-    poster: require('../../assets/exercise-media/poster/swim-pull-drill.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/swim-pull-drill.jpg'),
-  },
-  'swim-sprint-intervals': {
-    video: require('../../assets/exercise-media/dark/swim-sprint-intervals.mp4'),
-    poster: require('../../assets/exercise-media/poster/swim-sprint-intervals.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/swim-sprint-intervals.jpg'),
-  },
-  'tate-press': {
-    video: require('../../assets/exercise-media/dark/tate-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/tate-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/tate-press.jpg'),
-  },
-  'tempo-run': {
-    video: require('../../assets/exercise-media/dark/tempo-run.mp4'),
-    poster: require('../../assets/exercise-media/poster/tempo-run.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/tempo-run.jpg'),
-  },
-  'tibialis-raise': {
-    video: require('../../assets/exercise-media/dark/tibialis-raise.mp4'),
-    poster: require('../../assets/exercise-media/poster/tibialis-raise.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/tibialis-raise.jpg'),
-  },
-  'toes-to-bar': {
-    video: require('../../assets/exercise-media/dark/toes-to-bar.mp4'),
-    poster: require('../../assets/exercise-media/poster/toes-to-bar.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/toes-to-bar.jpg'),
-  },
-  'towel-slide-leg-curl': {
-    video: require('../../assets/exercise-media/dark/towel-slide-leg-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/towel-slide-leg-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/towel-slide-leg-curl.jpg'),
-  },
-  'trail-run': {
-    video: require('../../assets/exercise-media/dark/trail-run.mp4'),
-    poster: require('../../assets/exercise-media/poster/trail-run.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/trail-run.jpg'),
-  },
-  'trap-bar-deadlift': {
-    video: require('../../assets/exercise-media/dark/trap-bar-deadlift.mp4'),
-    poster: require('../../assets/exercise-media/poster/trap-bar-deadlift.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/trap-bar-deadlift.jpg'),
-  },
-  'trap-bar-shrug': {
-    video: require('../../assets/exercise-media/dark/trap-bar-shrug.mp4'),
-    poster: require('../../assets/exercise-media/poster/trap-bar-shrug.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/trap-bar-shrug.jpg'),
-  },
-  'treadmill-run': {
-    video: require('../../assets/exercise-media/dark/treadmill-run.mp4'),
-    poster: require('../../assets/exercise-media/poster/treadmill-run.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/treadmill-run.jpg'),
-  },
-  'underhand-barbell-row': {
-    video: require('../../assets/exercise-media/dark/underhand-barbell-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/underhand-barbell-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/underhand-barbell-row.jpg'),
-  },
-  'v-up': {
-    video: require('../../assets/exercise-media/dark/v-up.mp4'),
-    poster: require('../../assets/exercise-media/poster/v-up.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/v-up.jpg'),
-  },
-  'versaclimber': {
-    video: require('../../assets/exercise-media/dark/versaclimber.mp4'),
-    poster: require('../../assets/exercise-media/poster/versaclimber.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/versaclimber.jpg'),
-  },
-  'wall-ball': {
-    video: require('../../assets/exercise-media/dark/wall-ball.mp4'),
-    poster: require('../../assets/exercise-media/poster/wall-ball.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/wall-ball.jpg'),
-  },
-  'wall-sit': {
-    video: require('../../assets/exercise-media/dark/wall-sit.mp4'),
-    poster: require('../../assets/exercise-media/poster/wall-sit.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/wall-sit.jpg'),
-  },
-  'weighted-pull-ups': {
-    video: require('../../assets/exercise-media/dark/weighted-pull-ups.mp4'),
-    poster: require('../../assets/exercise-media/poster/weighted-pull-ups.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/weighted-pull-ups.jpg'),
-  },
-  'wide-grip-barbell-bench-press': {
-    video: require('../../assets/exercise-media/dark/wide-grip-barbell-bench-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/wide-grip-barbell-bench-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/wide-grip-barbell-bench-press.jpg'),
-  },
-  'wide-grip-barbell-curl': {
-    video: require('../../assets/exercise-media/dark/wide-grip-barbell-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/wide-grip-barbell-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/wide-grip-barbell-curl.jpg'),
-  },
-  'wide-grip-lat-pulldown': {
-    video: require('../../assets/exercise-media/dark/wide-grip-lat-pulldown.mp4'),
-    poster: require('../../assets/exercise-media/poster/wide-grip-lat-pulldown.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/wide-grip-lat-pulldown.jpg'),
-  },
-  'wide-grip-pull-up': {
-    video: require('../../assets/exercise-media/dark/wide-grip-pull-up.mp4'),
-    poster: require('../../assets/exercise-media/poster/wide-grip-pull-up.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/wide-grip-pull-up.jpg'),
-  },
-  'wide-grip-seated-cable-row': {
-    video: require('../../assets/exercise-media/dark/wide-grip-seated-cable-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/wide-grip-seated-cable-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/wide-grip-seated-cable-row.jpg'),
-  },
-  'wrist-roller': {
-    video: require('../../assets/exercise-media/dark/wrist-roller.mp4'),
-    poster: require('../../assets/exercise-media/poster/wrist-roller.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/wrist-roller.jpg'),
-  },
-  'yates-row': {
-    video: require('../../assets/exercise-media/dark/yates-row.mp4'),
-    poster: require('../../assets/exercise-media/poster/yates-row.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/yates-row.jpg'),
-  },
-  'z-press': {
-    video: require('../../assets/exercise-media/dark/z-press.mp4'),
-    poster: require('../../assets/exercise-media/poster/z-press.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/z-press.jpg'),
-  },
-  'zercher-squat': {
-    video: require('../../assets/exercise-media/dark/zercher-squat.mp4'),
-    poster: require('../../assets/exercise-media/poster/zercher-squat.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/zercher-squat.jpg'),
-  },
-  'zottman-curl': {
-    video: require('../../assets/exercise-media/dark/zottman-curl.mp4'),
-    poster: require('../../assets/exercise-media/poster/zottman-curl.jpg'),
-    thumb: require('../../assets/exercise-media/thumb/zottman-curl.jpg'),
-  },
-};
+/**
+ * Built on first use, not at import. The table is ~400 entries of three
+ * `require()` calls each and this module sits on the startup path, so
+ * evaluating it eagerly did that work before the first frame was drawn.
+ */
+let MEDIA: Record<string, ExerciseMedia> | null = null;
+
+function mediaIndex(): Record<string, ExerciseMedia> {
+  if (MEDIA) return MEDIA;
+  MEDIA = {
+    'abdominals-stretch-variation-four': {
+      video: require('../../assets/exercise-media/dark/abdominals-stretch-variation-four.mp4'),
+      poster: require('../../assets/exercise-media/poster/abdominals-stretch-variation-four.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/abdominals-stretch-variation-four.jpg'),
+    },
+    'abdominals-stretch-variation-one': {
+      video: require('../../assets/exercise-media/dark/abdominals-stretch-variation-one.mp4'),
+      poster: require('../../assets/exercise-media/poster/abdominals-stretch-variation-one.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/abdominals-stretch-variation-one.jpg'),
+    },
+    'abdominals-stretch-variation-three': {
+      video: require('../../assets/exercise-media/dark/abdominals-stretch-variation-three.mp4'),
+      poster: require('../../assets/exercise-media/poster/abdominals-stretch-variation-three.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/abdominals-stretch-variation-three.jpg'),
+    },
+    'abdominals-stretch-variation-two': {
+      video: require('../../assets/exercise-media/dark/abdominals-stretch-variation-two.mp4'),
+      poster: require('../../assets/exercise-media/poster/abdominals-stretch-variation-two.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/abdominals-stretch-variation-two.jpg'),
+    },
+    'arc-trainer': {
+      video: require('../../assets/exercise-media/dark/arc-trainer.mp4'),
+      poster: require('../../assets/exercise-media/poster/arc-trainer.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/arc-trainer.jpg'),
+    },
+    'arnold-press': {
+      video: require('../../assets/exercise-media/dark/arnold-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/arnold-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/arnold-press.jpg'),
+    },
+    'assault-bike': {
+      video: require('../../assets/exercise-media/dark/assault-bike.mp4'),
+      poster: require('../../assets/exercise-media/poster/assault-bike.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/assault-bike.jpg'),
+    },
+    'b-stance-hip-thrust': {
+      video: require('../../assets/exercise-media/dark/b-stance-hip-thrust.mp4'),
+      poster: require('../../assets/exercise-media/poster/b-stance-hip-thrust.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/b-stance-hip-thrust.jpg'),
+    },
+    'back-extension': {
+      video: require('../../assets/exercise-media/dark/back-extension.mp4'),
+      poster: require('../../assets/exercise-media/poster/back-extension.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/back-extension.jpg'),
+    },
+    'backstroke-swim': {
+      video: require('../../assets/exercise-media/dark/backstroke-swim.mp4'),
+      poster: require('../../assets/exercise-media/poster/backstroke-swim.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/backstroke-swim.jpg'),
+    },
+    'band-assisted-pull-up': {
+      video: require('../../assets/exercise-media/dark/band-assisted-pull-up.mp4'),
+      poster: require('../../assets/exercise-media/poster/band-assisted-pull-up.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/band-assisted-pull-up.jpg'),
+    },
+    'band-curl': {
+      video: require('../../assets/exercise-media/dark/band-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/band-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/band-curl.jpg'),
+    },
+    'band-external-rotation': {
+      video: require('../../assets/exercise-media/dark/band-external-rotation.mp4'),
+      poster: require('../../assets/exercise-media/poster/band-external-rotation.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/band-external-rotation.jpg'),
+    },
+    'band-glute-bridge': {
+      video: require('../../assets/exercise-media/dark/band-glute-bridge.mp4'),
+      poster: require('../../assets/exercise-media/poster/band-glute-bridge.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/band-glute-bridge.jpg'),
+    },
+    'band-high-face-pull': {
+      video: require('../../assets/exercise-media/dark/band-high-face-pull.mp4'),
+      poster: require('../../assets/exercise-media/poster/band-high-face-pull.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/band-high-face-pull.jpg'),
+    },
+    'band-hip-abduction': {
+      video: require('../../assets/exercise-media/dark/band-hip-abduction.mp4'),
+      poster: require('../../assets/exercise-media/poster/band-hip-abduction.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/band-hip-abduction.jpg'),
+    },
+    'band-kneeling-pulldown': {
+      video: require('../../assets/exercise-media/dark/band-kneeling-pulldown.mp4'),
+      poster: require('../../assets/exercise-media/poster/band-kneeling-pulldown.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/band-kneeling-pulldown.jpg'),
+    },
+    'band-lateral-raise': {
+      video: require('../../assets/exercise-media/dark/band-lateral-raise.mp4'),
+      poster: require('../../assets/exercise-media/poster/band-lateral-raise.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/band-lateral-raise.jpg'),
+    },
+    'band-leg-curl': {
+      video: require('../../assets/exercise-media/dark/band-leg-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/band-leg-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/band-leg-curl.jpg'),
+    },
+    'band-overhead-press': {
+      video: require('../../assets/exercise-media/dark/band-overhead-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/band-overhead-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/band-overhead-press.jpg'),
+    },
+    'band-pullover': {
+      video: require('../../assets/exercise-media/dark/band-pullover.mp4'),
+      poster: require('../../assets/exercise-media/poster/band-pullover.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/band-pullover.jpg'),
+    },
+    'band-romanian-deadlift': {
+      video: require('../../assets/exercise-media/dark/band-romanian-deadlift.mp4'),
+      poster: require('../../assets/exercise-media/poster/band-romanian-deadlift.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/band-romanian-deadlift.jpg'),
+    },
+    'band-row': {
+      video: require('../../assets/exercise-media/dark/band-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/band-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/band-row.jpg'),
+    },
+    'band-seated-pulldown': {
+      video: require('../../assets/exercise-media/dark/band-seated-pulldown.mp4'),
+      poster: require('../../assets/exercise-media/poster/band-seated-pulldown.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/band-seated-pulldown.jpg'),
+    },
+    'band-shrug': {
+      video: require('../../assets/exercise-media/dark/band-shrug.mp4'),
+      poster: require('../../assets/exercise-media/poster/band-shrug.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/band-shrug.jpg'),
+    },
+    'band-single-arm-lateral-raise': {
+      video: require('../../assets/exercise-media/dark/band-single-arm-lateral-raise.mp4'),
+      poster: require('../../assets/exercise-media/poster/band-single-arm-lateral-raise.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/band-single-arm-lateral-raise.jpg'),
+    },
+    'band-squat': {
+      video: require('../../assets/exercise-media/dark/band-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/band-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/band-squat.jpg'),
+    },
+    'band-wood-chopper': {
+      video: require('../../assets/exercise-media/dark/band-wood-chopper.mp4'),
+      poster: require('../../assets/exercise-media/poster/band-wood-chopper.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/band-wood-chopper.jpg'),
+    },
+    'barbell-banded-back-squat': {
+      video: require('../../assets/exercise-media/dark/barbell-banded-back-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-banded-back-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-banded-back-squat.jpg'),
+    },
+    'barbell-behind-the-back-30-degree-shrug': {
+      video: require('../../assets/exercise-media/dark/barbell-behind-the-back-30-degree-shrug.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-behind-the-back-30-degree-shrug.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-behind-the-back-30-degree-shrug.jpg'),
+    },
+    'barbell-bench-press': {
+      video: require('../../assets/exercise-media/dark/barbell-bench-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-bench-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-bench-press.jpg'),
+    },
+    'barbell-bent-over-row': {
+      video: require('../../assets/exercise-media/dark/barbell-bent-over-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-bent-over-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-bent-over-row.jpg'),
+    },
+    'barbell-bent-over-row-overhand': {
+      video: require('../../assets/exercise-media/dark/barbell-bent-over-row-overhand.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-bent-over-row-overhand.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-bent-over-row-overhand.jpg'),
+    },
+    'barbell-clean-and-press': {
+      video: require('../../assets/exercise-media/dark/barbell-clean-and-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-clean-and-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-clean-and-press.jpg'),
+    },
+    'barbell-close-grip-bench-press': {
+      video: require('../../assets/exercise-media/dark/barbell-close-grip-bench-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-close-grip-bench-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-close-grip-bench-press.jpg'),
+    },
+    'barbell-curl': {
+      video: require('../../assets/exercise-media/dark/barbell-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-curl.jpg'),
+    },
+    'barbell-deadlift': {
+      video: require('../../assets/exercise-media/dark/barbell-deadlift.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-deadlift.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-deadlift.jpg'),
+    },
+    'barbell-drag-curl': {
+      video: require('../../assets/exercise-media/dark/barbell-drag-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-drag-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-drag-curl.jpg'),
+    },
+    'barbell-floor-press': {
+      video: require('../../assets/exercise-media/dark/barbell-floor-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-floor-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-floor-press.jpg'),
+    },
+    'barbell-front-rack-step-up-knee-drive': {
+      video: require('../../assets/exercise-media/dark/barbell-front-rack-step-up-knee-drive.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-front-rack-step-up-knee-drive.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-front-rack-step-up-knee-drive.jpg'),
+    },
+    'barbell-high-incline-bench-press': {
+      video: require('../../assets/exercise-media/dark/barbell-high-incline-bench-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-high-incline-bench-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-high-incline-bench-press.jpg'),
+    },
+    'barbell-hip-thrust': {
+      video: require('../../assets/exercise-media/dark/barbell-hip-thrust.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-hip-thrust.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-hip-thrust.jpg'),
+    },
+    'barbell-incline-bench-press': {
+      video: require('../../assets/exercise-media/dark/barbell-incline-bench-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-incline-bench-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-incline-bench-press.jpg'),
+    },
+    'barbell-muscle-snatch': {
+      video: require('../../assets/exercise-media/dark/barbell-muscle-snatch.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-muscle-snatch.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-muscle-snatch.jpg'),
+    },
+    'barbell-overhead-press': {
+      video: require('../../assets/exercise-media/dark/barbell-overhead-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-overhead-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-overhead-press.jpg'),
+    },
+    'barbell-power-snatch': {
+      video: require('../../assets/exercise-media/dark/barbell-power-snatch.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-power-snatch.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-power-snatch.jpg'),
+    },
+    'barbell-pullover': {
+      video: require('../../assets/exercise-media/dark/barbell-pullover.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-pullover.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-pullover.jpg'),
+    },
+    'barbell-rack-pull': {
+      video: require('../../assets/exercise-media/dark/barbell-rack-pull.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-rack-pull.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-rack-pull.jpg'),
+    },
+    'barbell-reverse-lunge': {
+      video: require('../../assets/exercise-media/dark/barbell-reverse-lunge.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-reverse-lunge.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-reverse-lunge.jpg'),
+    },
+    'barbell-romanian-deadlift': {
+      video: require('../../assets/exercise-media/dark/barbell-romanian-deadlift.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-romanian-deadlift.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-romanian-deadlift.jpg'),
+    },
+    'barbell-shrug': {
+      video: require('../../assets/exercise-media/dark/barbell-shrug.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-shrug.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-shrug.jpg'),
+    },
+    'barbell-snatch': {
+      video: require('../../assets/exercise-media/dark/barbell-snatch.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-snatch.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-snatch.jpg'),
+    },
+    'barbell-spinal-jefferson-curl': {
+      video: require('../../assets/exercise-media/dark/barbell-spinal-jefferson-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-spinal-jefferson-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-spinal-jefferson-curl.jpg'),
+    },
+    'barbell-split-squat': {
+      video: require('../../assets/exercise-media/dark/barbell-split-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-split-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-split-squat.jpg'),
+    },
+    'barbell-squat': {
+      video: require('../../assets/exercise-media/dark/barbell-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-squat.jpg'),
+    },
+    'barbell-step-up-knee-drive': {
+      video: require('../../assets/exercise-media/dark/barbell-step-up-knee-drive.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-step-up-knee-drive.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-step-up-knee-drive.jpg'),
+    },
+    'barbell-stiff-leg-deadlifts': {
+      video: require('../../assets/exercise-media/dark/barbell-stiff-leg-deadlifts.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-stiff-leg-deadlifts.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-stiff-leg-deadlifts.jpg'),
+    },
+    'barbell-thruster': {
+      video: require('../../assets/exercise-media/dark/barbell-thruster.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-thruster.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-thruster.jpg'),
+    },
+    'barbell-upright-row': {
+      video: require('../../assets/exercise-media/dark/barbell-upright-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-upright-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-upright-row.jpg'),
+    },
+    'barbell-wrist-curl': {
+      video: require('../../assets/exercise-media/dark/barbell-wrist-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/barbell-wrist-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/barbell-wrist-curl.jpg'),
+    },
+    'battle-ropes': {
+      video: require('../../assets/exercise-media/dark/battle-ropes.mp4'),
+      poster: require('../../assets/exercise-media/poster/battle-ropes.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/battle-ropes.jpg'),
+    },
+    'bayesian-curl': {
+      video: require('../../assets/exercise-media/dark/bayesian-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/bayesian-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/bayesian-curl.jpg'),
+    },
+    'behind-the-neck-press': {
+      video: require('../../assets/exercise-media/dark/behind-the-neck-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/behind-the-neck-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/behind-the-neck-press.jpg'),
+    },
+    'belt-squat': {
+      video: require('../../assets/exercise-media/dark/belt-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/belt-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/belt-squat.jpg'),
+    },
+    'bench-dips': {
+      video: require('../../assets/exercise-media/dark/bench-dips.mp4'),
+      poster: require('../../assets/exercise-media/poster/bench-dips.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/bench-dips.jpg'),
+    },
+    'bird-dog': {
+      video: require('../../assets/exercise-media/dark/bird-dog.mp4'),
+      poster: require('../../assets/exercise-media/poster/bird-dog.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/bird-dog.jpg'),
+    },
+    'bodyweight-alternating-lateral-lunge': {
+      video: require('../../assets/exercise-media/dark/bodyweight-alternating-lateral-lunge.mp4'),
+      poster: require('../../assets/exercise-media/poster/bodyweight-alternating-lateral-lunge.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/bodyweight-alternating-lateral-lunge.jpg'),
+    },
+    'bodyweight-alternating-reverse-lunges': {
+      video: require('../../assets/exercise-media/dark/bodyweight-alternating-reverse-lunges.mp4'),
+      poster: require('../../assets/exercise-media/poster/bodyweight-alternating-reverse-lunges.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/bodyweight-alternating-reverse-lunges.jpg'),
+    },
+    'bodyweight-box-squat': {
+      video: require('../../assets/exercise-media/dark/bodyweight-box-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/bodyweight-box-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/bodyweight-box-squat.jpg'),
+    },
+    'bodyweight-deadlift': {
+      video: require('../../assets/exercise-media/dark/bodyweight-deadlift.mp4'),
+      poster: require('../../assets/exercise-media/poster/bodyweight-deadlift.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/bodyweight-deadlift.jpg'),
+    },
+    'bodyweight-donkey-calf-raise': {
+      video: require('../../assets/exercise-media/dark/bodyweight-donkey-calf-raise.mp4'),
+      poster: require('../../assets/exercise-media/poster/bodyweight-donkey-calf-raise.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/bodyweight-donkey-calf-raise.jpg'),
+    },
+    'bodyweight-elevated-push-up': {
+      video: require('../../assets/exercise-media/dark/bodyweight-elevated-push-up.mp4'),
+      poster: require('../../assets/exercise-media/poster/bodyweight-elevated-push-up.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/bodyweight-elevated-push-up.jpg'),
+    },
+    'bodyweight-hip-abduction': {
+      video: require('../../assets/exercise-media/dark/bodyweight-hip-abduction.mp4'),
+      poster: require('../../assets/exercise-media/poster/bodyweight-hip-abduction.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/bodyweight-hip-abduction.jpg'),
+    },
+    'bodyweight-knee-push-ups': {
+      video: require('../../assets/exercise-media/dark/bodyweight-knee-push-ups.mp4'),
+      poster: require('../../assets/exercise-media/poster/bodyweight-knee-push-ups.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/bodyweight-knee-push-ups.jpg'),
+    },
+    'bodyweight-reverse-lunge': {
+      video: require('../../assets/exercise-media/dark/bodyweight-reverse-lunge.mp4'),
+      poster: require('../../assets/exercise-media/poster/bodyweight-reverse-lunge.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/bodyweight-reverse-lunge.jpg'),
+    },
+    'bodyweight-russian-twist': {
+      video: require('../../assets/exercise-media/dark/bodyweight-russian-twist.mp4'),
+      poster: require('../../assets/exercise-media/poster/bodyweight-russian-twist.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/bodyweight-russian-twist.jpg'),
+    },
+    'bodyweight-spinal-jefferson-curl': {
+      video: require('../../assets/exercise-media/dark/bodyweight-spinal-jefferson-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/bodyweight-spinal-jefferson-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/bodyweight-spinal-jefferson-curl.jpg'),
+    },
+    'bodyweight-squat': {
+      video: require('../../assets/exercise-media/dark/bodyweight-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/bodyweight-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/bodyweight-squat.jpg'),
+    },
+    'box-jump': {
+      video: require('../../assets/exercise-media/dark/box-jump.mp4'),
+      poster: require('../../assets/exercise-media/poster/box-jump.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/box-jump.jpg'),
+    },
+    'breaststroke-swim': {
+      video: require('../../assets/exercise-media/dark/breaststroke-swim.mp4'),
+      poster: require('../../assets/exercise-media/poster/breaststroke-swim.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/breaststroke-swim.jpg'),
+    },
+    'bulgarian-split-squat': {
+      video: require('../../assets/exercise-media/dark/bulgarian-split-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/bulgarian-split-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/bulgarian-split-squat.jpg'),
+    },
+    'burpee': {
+      video: require('../../assets/exercise-media/dark/burpee.mp4'),
+      poster: require('../../assets/exercise-media/poster/burpee.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/burpee.jpg'),
+    },
+    'butterfly-swim': {
+      video: require('../../assets/exercise-media/dark/butterfly-swim.mp4'),
+      poster: require('../../assets/exercise-media/poster/butterfly-swim.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/butterfly-swim.jpg'),
+    },
+    'cable-30-degree-shrug': {
+      video: require('../../assets/exercise-media/dark/cable-30-degree-shrug.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-30-degree-shrug.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-30-degree-shrug.jpg'),
+    },
+    'cable-bar-curl': {
+      video: require('../../assets/exercise-media/dark/cable-bar-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-bar-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-bar-curl.jpg'),
+    },
+    'cable-bar-face-pull': {
+      video: require('../../assets/exercise-media/dark/cable-bar-face-pull.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-bar-face-pull.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-bar-face-pull.jpg'),
+    },
+    'cable-bar-pushdown': {
+      video: require('../../assets/exercise-media/dark/cable-bar-pushdown.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-bar-pushdown.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-bar-pushdown.jpg'),
+    },
+    'cable-bench-chest-fly': {
+      video: require('../../assets/exercise-media/dark/cable-bench-chest-fly.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-bench-chest-fly.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-bench-chest-fly.jpg'),
+    },
+    'cable-bench-press': {
+      video: require('../../assets/exercise-media/dark/cable-bench-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-bench-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-bench-press.jpg'),
+    },
+    'cable-bench-straight-leg-kickback': {
+      video: require('../../assets/exercise-media/dark/cable-bench-straight-leg-kickback.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-bench-straight-leg-kickback.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-bench-straight-leg-kickback.jpg'),
+    },
+    'cable-chest-press': {
+      video: require('../../assets/exercise-media/dark/cable-chest-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-chest-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-chest-press.jpg'),
+    },
+    'cable-decline-bench-press': {
+      video: require('../../assets/exercise-media/dark/cable-decline-bench-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-decline-bench-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-decline-bench-press.jpg'),
+    },
+    'cable-external-rotation': {
+      video: require('../../assets/exercise-media/dark/cable-external-rotation.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-external-rotation.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-external-rotation.jpg'),
+    },
+    'cable-front-raise': {
+      video: require('../../assets/exercise-media/dark/cable-front-raise.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-front-raise.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-front-raise.jpg'),
+    },
+    'cable-high-to-low-fly': {
+      video: require('../../assets/exercise-media/dark/cable-high-to-low-fly.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-high-to-low-fly.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-high-to-low-fly.jpg'),
+    },
+    'cable-hip-abduction': {
+      video: require('../../assets/exercise-media/dark/cable-hip-abduction.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-hip-abduction.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-hip-abduction.jpg'),
+    },
+    'cable-incline-bench-press': {
+      video: require('../../assets/exercise-media/dark/cable-incline-bench-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-incline-bench-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-incline-bench-press.jpg'),
+    },
+    'cable-kickback': {
+      video: require('../../assets/exercise-media/dark/cable-kickback.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-kickback.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-kickback.jpg'),
+    },
+    'cable-low-single-arm-lateral-raise': {
+      video: require('../../assets/exercise-media/dark/cable-low-single-arm-lateral-raise.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-low-single-arm-lateral-raise.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-low-single-arm-lateral-raise.jpg'),
+    },
+    'cable-low-to-high-fly': {
+      video: require('../../assets/exercise-media/dark/cable-low-to-high-fly.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-low-to-high-fly.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-low-to-high-fly.jpg'),
+    },
+    'cable-overhead-press': {
+      video: require('../../assets/exercise-media/dark/cable-overhead-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-overhead-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-overhead-press.jpg'),
+    },
+    'cable-pec-fly': {
+      video: require('../../assets/exercise-media/dark/cable-pec-fly.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-pec-fly.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-pec-fly.jpg'),
+    },
+    'cable-pull-through': {
+      video: require('../../assets/exercise-media/dark/cable-pull-through.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-pull-through.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-pull-through.jpg'),
+    },
+    'cable-rope-hammer-curl': {
+      video: require('../../assets/exercise-media/dark/cable-rope-hammer-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-rope-hammer-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-rope-hammer-curl.jpg'),
+    },
+    'cable-rope-kneeling-face-pull': {
+      video: require('../../assets/exercise-media/dark/cable-rope-kneeling-face-pull.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-rope-kneeling-face-pull.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-rope-kneeling-face-pull.jpg'),
+    },
+    'cable-rope-overhead-tricep-extension': {
+      video: require('../../assets/exercise-media/dark/cable-rope-overhead-tricep-extension.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-rope-overhead-tricep-extension.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-rope-overhead-tricep-extension.jpg'),
+    },
+    'cable-rope-pullover': {
+      video: require('../../assets/exercise-media/dark/cable-rope-pullover.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-rope-pullover.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-rope-pullover.jpg'),
+    },
+    'cable-rope-pushdown': {
+      video: require('../../assets/exercise-media/dark/cable-rope-pushdown.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-rope-pushdown.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-rope-pushdown.jpg'),
+    },
+    'cable-row-bar-standing-row': {
+      video: require('../../assets/exercise-media/dark/cable-row-bar-standing-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-row-bar-standing-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-row-bar-standing-row.jpg'),
+    },
+    'cable-seated-rope-face-pull': {
+      video: require('../../assets/exercise-media/dark/cable-seated-rope-face-pull.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-seated-rope-face-pull.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-seated-rope-face-pull.jpg'),
+    },
+    'cable-side-bend': {
+      video: require('../../assets/exercise-media/dark/cable-side-bend.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-side-bend.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-side-bend.jpg'),
+    },
+    'cable-single-arm-neutral-grip-row': {
+      video: require('../../assets/exercise-media/dark/cable-single-arm-neutral-grip-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-single-arm-neutral-grip-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-single-arm-neutral-grip-row.jpg'),
+    },
+    'cable-single-arm-rope-pushdown': {
+      video: require('../../assets/exercise-media/dark/cable-single-arm-rope-pushdown.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-single-arm-rope-pushdown.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-single-arm-rope-pushdown.jpg'),
+    },
+    'cable-single-arm-underhand-grip-row': {
+      video: require('../../assets/exercise-media/dark/cable-single-arm-underhand-grip-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-single-arm-underhand-grip-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-single-arm-underhand-grip-row.jpg'),
+    },
+    'cable-single-leg-laying-leg-curl': {
+      video: require('../../assets/exercise-media/dark/cable-single-leg-laying-leg-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-single-leg-laying-leg-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-single-leg-laying-leg-curl.jpg'),
+    },
+    'cable-standing-low-to-high-wood-chopper': {
+      video: require('../../assets/exercise-media/dark/cable-standing-low-to-high-wood-chopper.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-standing-low-to-high-wood-chopper.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-standing-low-to-high-wood-chopper.jpg'),
+    },
+    'cable-standing-single-arm-chest-press': {
+      video: require('../../assets/exercise-media/dark/cable-standing-single-arm-chest-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-standing-single-arm-chest-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-standing-single-arm-chest-press.jpg'),
+    },
+    'cable-supinating-row': {
+      video: require('../../assets/exercise-media/dark/cable-supinating-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-supinating-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-supinating-row.jpg'),
+    },
+    'cable-wood-chopper': {
+      video: require('../../assets/exercise-media/dark/cable-wood-chopper.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-wood-chopper.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-wood-chopper.jpg'),
+    },
+    'cable-wrist-curl': {
+      video: require('../../assets/exercise-media/dark/cable-wrist-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/cable-wrist-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cable-wrist-curl.jpg'),
+    },
+    'captains-chair-knee-raise': {
+      video: require('../../assets/exercise-media/dark/captains-chair-knee-raise.mp4'),
+      poster: require('../../assets/exercise-media/poster/captains-chair-knee-raise.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/captains-chair-knee-raise.jpg'),
+    },
+    'chest-supported-dumbbell-row': {
+      video: require('../../assets/exercise-media/dark/chest-supported-dumbbell-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/chest-supported-dumbbell-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/chest-supported-dumbbell-row.jpg'),
+    },
+    'chest-supported-t-bar-row': {
+      video: require('../../assets/exercise-media/dark/chest-supported-t-bar-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/chest-supported-t-bar-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/chest-supported-t-bar-row.jpg'),
+    },
+    'chin-ups': {
+      video: require('../../assets/exercise-media/dark/chin-ups.mp4'),
+      poster: require('../../assets/exercise-media/poster/chin-ups.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/chin-ups.jpg'),
+    },
+    'close-grip-barbell-curl': {
+      video: require('../../assets/exercise-media/dark/close-grip-barbell-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/close-grip-barbell-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/close-grip-barbell-curl.jpg'),
+    },
+    'cossack-squat': {
+      video: require('../../assets/exercise-media/dark/cossack-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/cossack-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cossack-squat.jpg'),
+    },
+    'cross-body-hammer-curl': {
+      video: require('../../assets/exercise-media/dark/cross-body-hammer-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/cross-body-hammer-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cross-body-hammer-curl.jpg'),
+    },
+    'cuban-press': {
+      video: require('../../assets/exercise-media/dark/cuban-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/cuban-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cuban-press.jpg'),
+    },
+    'cycling-cooldown': {
+      video: require('../../assets/exercise-media/dark/cycling-cooldown.mp4'),
+      poster: require('../../assets/exercise-media/poster/cycling-cooldown.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cycling-cooldown.jpg'),
+    },
+    'cycling-intervals': {
+      video: require('../../assets/exercise-media/dark/cycling-intervals.mp4'),
+      poster: require('../../assets/exercise-media/poster/cycling-intervals.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cycling-intervals.jpg'),
+    },
+    'cycling-sprint': {
+      video: require('../../assets/exercise-media/dark/cycling-sprint.mp4'),
+      poster: require('../../assets/exercise-media/poster/cycling-sprint.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cycling-sprint.jpg'),
+    },
+    'cycling-warmup': {
+      video: require('../../assets/exercise-media/dark/cycling-warmup.mp4'),
+      poster: require('../../assets/exercise-media/poster/cycling-warmup.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/cycling-warmup.jpg'),
+    },
+    'dead-bug': {
+      video: require('../../assets/exercise-media/dark/dead-bug.mp4'),
+      poster: require('../../assets/exercise-media/poster/dead-bug.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dead-bug.jpg'),
+    },
+    'dead-hang': {
+      video: require('../../assets/exercise-media/dark/dead-hang.mp4'),
+      poster: require('../../assets/exercise-media/poster/dead-hang.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dead-hang.jpg'),
+    },
+    'decline-barbell-bench-press': {
+      video: require('../../assets/exercise-media/dark/decline-barbell-bench-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/decline-barbell-bench-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/decline-barbell-bench-press.jpg'),
+    },
+    'decline-crunch': {
+      video: require('../../assets/exercise-media/dark/decline-crunch.mp4'),
+      poster: require('../../assets/exercise-media/poster/decline-crunch.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/decline-crunch.jpg'),
+    },
+    'decline-machine-chest-press': {
+      video: require('../../assets/exercise-media/dark/decline-machine-chest-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/decline-machine-chest-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/decline-machine-chest-press.jpg'),
+    },
+    'decline-push-up': {
+      video: require('../../assets/exercise-media/dark/decline-push-up.mp4'),
+      poster: require('../../assets/exercise-media/poster/decline-push-up.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/decline-push-up.jpg'),
+    },
+    'decline-sit-up': {
+      video: require('../../assets/exercise-media/dark/decline-sit-up.mp4'),
+      poster: require('../../assets/exercise-media/poster/decline-sit-up.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/decline-sit-up.jpg'),
+    },
+    'deficit-deadlift': {
+      video: require('../../assets/exercise-media/dark/deficit-deadlift.mp4'),
+      poster: require('../../assets/exercise-media/poster/deficit-deadlift.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/deficit-deadlift.jpg'),
+    },
+    'deficit-dumbbell-romanian-deadlift': {
+      video: require('../../assets/exercise-media/dark/deficit-dumbbell-romanian-deadlift.mp4'),
+      poster: require('../../assets/exercise-media/poster/deficit-dumbbell-romanian-deadlift.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/deficit-dumbbell-romanian-deadlift.jpg'),
+    },
+    'diamond-push-ups': {
+      video: require('../../assets/exercise-media/dark/diamond-push-ups.mp4'),
+      poster: require('../../assets/exercise-media/poster/diamond-push-ups.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/diamond-push-ups.jpg'),
+    },
+    'dumbbell-alternating-forward-lunge': {
+      video: require('../../assets/exercise-media/dark/dumbbell-alternating-forward-lunge.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-alternating-forward-lunge.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-alternating-forward-lunge.jpg'),
+    },
+    'dumbbell-back-extension': {
+      video: require('../../assets/exercise-media/dark/dumbbell-back-extension.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-back-extension.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-back-extension.jpg'),
+    },
+    'dumbbell-bench-press': {
+      video: require('../../assets/exercise-media/dark/dumbbell-bench-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-bench-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-bench-press.jpg'),
+    },
+    'dumbbell-bulgarian-split-squat': {
+      video: require('../../assets/exercise-media/dark/dumbbell-bulgarian-split-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-bulgarian-split-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-bulgarian-split-squat.jpg'),
+    },
+    'dumbbell-chest-fly': {
+      video: require('../../assets/exercise-media/dark/dumbbell-chest-fly.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-chest-fly.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-chest-fly.jpg'),
+    },
+    'dumbbell-concentration-curl': {
+      video: require('../../assets/exercise-media/dark/dumbbell-concentration-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-concentration-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-concentration-curl.jpg'),
+    },
+    'dumbbell-cossack-squat': {
+      video: require('../../assets/exercise-media/dark/dumbbell-cossack-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-cossack-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-cossack-squat.jpg'),
+    },
+    'dumbbell-cross-body-romanian-deadlift': {
+      video: require('../../assets/exercise-media/dark/dumbbell-cross-body-romanian-deadlift.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-cross-body-romanian-deadlift.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-cross-body-romanian-deadlift.jpg'),
+    },
+    'dumbbell-curl': {
+      video: require('../../assets/exercise-media/dark/dumbbell-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-curl.jpg'),
+    },
+    'dumbbell-deadlift': {
+      video: require('../../assets/exercise-media/dark/dumbbell-deadlift.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-deadlift.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-deadlift.jpg'),
+    },
+    'dumbbell-decline-bench-press': {
+      video: require('../../assets/exercise-media/dark/dumbbell-decline-bench-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-decline-bench-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-decline-bench-press.jpg'),
+    },
+    'dumbbell-decline-chest-fly': {
+      video: require('../../assets/exercise-media/dark/dumbbell-decline-chest-fly.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-decline-chest-fly.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-decline-chest-fly.jpg'),
+    },
+    'dumbbell-decline-skullcrusher': {
+      video: require('../../assets/exercise-media/dark/dumbbell-decline-skullcrusher.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-decline-skullcrusher.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-decline-skullcrusher.jpg'),
+    },
+    'dumbbell-feet-elevated-glute-bridge': {
+      video: require('../../assets/exercise-media/dark/dumbbell-feet-elevated-glute-bridge.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-feet-elevated-glute-bridge.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-feet-elevated-glute-bridge.jpg'),
+    },
+    'dumbbell-figure-four-heels-elevated-hip-thrust': {
+      video: require('../../assets/exercise-media/dark/dumbbell-figure-four-heels-elevated-hip-thrust.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-figure-four-heels-elevated-hip-thrust.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-figure-four-heels-elevated-hip-thrust.jpg'),
+    },
+    'dumbbell-front-raise': {
+      video: require('../../assets/exercise-media/dark/dumbbell-front-raise.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-front-raise.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-front-raise.jpg'),
+    },
+    'dumbbell-front-squat': {
+      video: require('../../assets/exercise-media/dark/dumbbell-front-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-front-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-front-squat.jpg'),
+    },
+    'dumbbell-front-squat-tempo': {
+      video: require('../../assets/exercise-media/dark/dumbbell-front-squat-tempo.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-front-squat-tempo.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-front-squat-tempo.jpg'),
+    },
+    'dumbbell-goblet-alternating-curtsy-lunge': {
+      video: require('../../assets/exercise-media/dark/dumbbell-goblet-alternating-curtsy-lunge.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-goblet-alternating-curtsy-lunge.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-goblet-alternating-curtsy-lunge.jpg'),
+    },
+    'dumbbell-goblet-bulgarian-split-squat': {
+      video: require('../../assets/exercise-media/dark/dumbbell-goblet-bulgarian-split-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-goblet-bulgarian-split-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-goblet-bulgarian-split-squat.jpg'),
+    },
+    'dumbbell-goblet-forward-lunge': {
+      video: require('../../assets/exercise-media/dark/dumbbell-goblet-forward-lunge.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-goblet-forward-lunge.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-goblet-forward-lunge.jpg'),
+    },
+    'dumbbell-goblet-reverse-lunge': {
+      video: require('../../assets/exercise-media/dark/dumbbell-goblet-reverse-lunge.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-goblet-reverse-lunge.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-goblet-reverse-lunge.jpg'),
+    },
+    'dumbbell-goblet-split-squat': {
+      video: require('../../assets/exercise-media/dark/dumbbell-goblet-split-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-goblet-split-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-goblet-split-squat.jpg'),
+    },
+    'dumbbell-goblet-squat': {
+      video: require('../../assets/exercise-media/dark/dumbbell-goblet-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-goblet-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-goblet-squat.jpg'),
+    },
+    'dumbbell-hammer-curl': {
+      video: require('../../assets/exercise-media/dark/dumbbell-hammer-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-hammer-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-hammer-curl.jpg'),
+    },
+    'dumbbell-heels-elevated-hip-thrust': {
+      video: require('../../assets/exercise-media/dark/dumbbell-heels-elevated-hip-thrust.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-heels-elevated-hip-thrust.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-heels-elevated-hip-thrust.jpg'),
+    },
+    'dumbbell-incline-bench-press': {
+      video: require('../../assets/exercise-media/dark/dumbbell-incline-bench-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-incline-bench-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-incline-bench-press.jpg'),
+    },
+    'dumbbell-incline-chest-fly': {
+      video: require('../../assets/exercise-media/dark/dumbbell-incline-chest-fly.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-incline-chest-fly.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-incline-chest-fly.jpg'),
+    },
+    'dumbbell-incline-curl': {
+      video: require('../../assets/exercise-media/dark/dumbbell-incline-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-incline-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-incline-curl.jpg'),
+    },
+    'dumbbell-incline-front-raise': {
+      video: require('../../assets/exercise-media/dark/dumbbell-incline-front-raise.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-incline-front-raise.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-incline-front-raise.jpg'),
+    },
+    'dumbbell-incline-hammer-curl': {
+      video: require('../../assets/exercise-media/dark/dumbbell-incline-hammer-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-incline-hammer-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-incline-hammer-curl.jpg'),
+    },
+    'dumbbell-lateral-lunge': {
+      video: require('../../assets/exercise-media/dark/dumbbell-lateral-lunge.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-lateral-lunge.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-lateral-lunge.jpg'),
+    },
+    'dumbbell-lateral-raise': {
+      video: require('../../assets/exercise-media/dark/dumbbell-lateral-raise.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-lateral-raise.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-lateral-raise.jpg'),
+    },
+    'dumbbell-laying-reverse-fly': {
+      video: require('../../assets/exercise-media/dark/dumbbell-laying-reverse-fly.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-laying-reverse-fly.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-laying-reverse-fly.jpg'),
+    },
+    'dumbbell-leg-curl': {
+      video: require('../../assets/exercise-media/dark/dumbbell-leg-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-leg-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-leg-curl.jpg'),
+    },
+    'dumbbell-overhead-squat': {
+      video: require('../../assets/exercise-media/dark/dumbbell-overhead-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-overhead-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-overhead-squat.jpg'),
+    },
+    'dumbbell-preacher-curl': {
+      video: require('../../assets/exercise-media/dark/dumbbell-preacher-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-preacher-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-preacher-curl.jpg'),
+    },
+    'dumbbell-push-press': {
+      video: require('../../assets/exercise-media/dark/dumbbell-push-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-push-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-push-press.jpg'),
+    },
+    'dumbbell-rear-delt-fly': {
+      video: require('../../assets/exercise-media/dark/dumbbell-rear-delt-fly.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-rear-delt-fly.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-rear-delt-fly.jpg'),
+    },
+    'dumbbell-row-bilateral': {
+      video: require('../../assets/exercise-media/dark/dumbbell-row-bilateral.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-row-bilateral.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-row-bilateral.jpg'),
+    },
+    'dumbbell-row-unilateral': {
+      video: require('../../assets/exercise-media/dark/dumbbell-row-unilateral.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-row-unilateral.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-row-unilateral.jpg'),
+    },
+    'dumbbell-russian-twist': {
+      video: require('../../assets/exercise-media/dark/dumbbell-russian-twist.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-russian-twist.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-russian-twist.jpg'),
+    },
+    'dumbbell-seated-overhead-press': {
+      video: require('../../assets/exercise-media/dark/dumbbell-seated-overhead-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-seated-overhead-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-seated-overhead-press.jpg'),
+    },
+    'dumbbell-seated-overhead-tricep-extension': {
+      video: require('../../assets/exercise-media/dark/dumbbell-seated-overhead-tricep-extension.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-seated-overhead-tricep-extension.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-seated-overhead-tricep-extension.jpg'),
+    },
+    'dumbbell-seated-rear-delt-fly': {
+      video: require('../../assets/exercise-media/dark/dumbbell-seated-rear-delt-fly.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-seated-rear-delt-fly.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-seated-rear-delt-fly.jpg'),
+    },
+    'dumbbell-seated-shrug': {
+      video: require('../../assets/exercise-media/dark/dumbbell-seated-shrug.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-seated-shrug.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-seated-shrug.jpg'),
+    },
+    'dumbbell-shrug': {
+      video: require('../../assets/exercise-media/dark/dumbbell-shrug.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-shrug.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-shrug.jpg'),
+    },
+    'dumbbell-side-bend': {
+      video: require('../../assets/exercise-media/dark/dumbbell-side-bend.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-side-bend.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-side-bend.jpg'),
+    },
+    'dumbbell-single-arm-chest-press': {
+      video: require('../../assets/exercise-media/dark/dumbbell-single-arm-chest-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-single-arm-chest-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-single-arm-chest-press.jpg'),
+    },
+    'dumbbell-single-arm-clean-and-press': {
+      video: require('../../assets/exercise-media/dark/dumbbell-single-arm-clean-and-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-single-arm-clean-and-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-single-arm-clean-and-press.jpg'),
+    },
+    'dumbbell-single-arm-row': {
+      video: require('../../assets/exercise-media/dark/dumbbell-single-arm-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-single-arm-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-single-arm-row.jpg'),
+    },
+    'dumbbell-single-leg-calf-raise': {
+      video: require('../../assets/exercise-media/dark/dumbbell-single-leg-calf-raise.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-single-leg-calf-raise.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-single-leg-calf-raise.jpg'),
+    },
+    'dumbbell-single-leg-hip-thrust': {
+      video: require('../../assets/exercise-media/dark/dumbbell-single-leg-hip-thrust.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-single-leg-hip-thrust.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-single-leg-hip-thrust.jpg'),
+    },
+    'dumbbell-situp': {
+      video: require('../../assets/exercise-media/dark/dumbbell-situp.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-situp.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-situp.jpg'),
+    },
+    'dumbbell-skullcrusher': {
+      video: require('../../assets/exercise-media/dark/dumbbell-skullcrusher.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-skullcrusher.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-skullcrusher.jpg'),
+    },
+    'dumbbell-spinal-jefferson-curl': {
+      video: require('../../assets/exercise-media/dark/dumbbell-spinal-jefferson-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-spinal-jefferson-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-spinal-jefferson-curl.jpg'),
+    },
+    'dumbbell-standing-single-arm-curl': {
+      video: require('../../assets/exercise-media/dark/dumbbell-standing-single-arm-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-standing-single-arm-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-standing-single-arm-curl.jpg'),
+    },
+    'dumbbell-standing-single-arm-hammer-curl': {
+      video: require('../../assets/exercise-media/dark/dumbbell-standing-single-arm-hammer-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-standing-single-arm-hammer-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-standing-single-arm-hammer-curl.jpg'),
+    },
+    'dumbbell-step-up-low': {
+      video: require('../../assets/exercise-media/dark/dumbbell-step-up-low.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-step-up-low.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-step-up-low.jpg'),
+    },
+    'dumbbell-sumo-squat': {
+      video: require('../../assets/exercise-media/dark/dumbbell-sumo-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-sumo-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-sumo-squat.jpg'),
+    },
+    'dumbbell-superman': {
+      video: require('../../assets/exercise-media/dark/dumbbell-superman.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-superman.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-superman.jpg'),
+    },
+    'dumbbell-thruster': {
+      video: require('../../assets/exercise-media/dark/dumbbell-thruster.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-thruster.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-thruster.jpg'),
+    },
+    'dumbbell-tricep-kickback': {
+      video: require('../../assets/exercise-media/dark/dumbbell-tricep-kickback.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-tricep-kickback.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-tricep-kickback.jpg'),
+    },
+    'dumbbell-upright-row': {
+      video: require('../../assets/exercise-media/dark/dumbbell-upright-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-upright-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-upright-row.jpg'),
+    },
+    'dumbbell-wrist-curl': {
+      video: require('../../assets/exercise-media/dark/dumbbell-wrist-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-wrist-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-wrist-curl.jpg'),
+    },
+    'dumbbell-wrist-extension': {
+      video: require('../../assets/exercise-media/dark/dumbbell-wrist-extension.mp4'),
+      poster: require('../../assets/exercise-media/poster/dumbbell-wrist-extension.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/dumbbell-wrist-extension.jpg'),
+    },
+    'elbow-side-plank': {
+      video: require('../../assets/exercise-media/dark/elbow-side-plank.mp4'),
+      poster: require('../../assets/exercise-media/poster/elbow-side-plank.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/elbow-side-plank.jpg'),
+    },
+    'elliptical': {
+      video: require('../../assets/exercise-media/dark/elliptical.mp4'),
+      poster: require('../../assets/exercise-media/poster/elliptical.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/elliptical.jpg'),
+    },
+    'ez-bar-preacher-curl': {
+      video: require('../../assets/exercise-media/dark/ez-bar-preacher-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/ez-bar-preacher-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/ez-bar-preacher-curl.jpg'),
+    },
+    'ez-bar-reverse-preacher-curl': {
+      video: require('../../assets/exercise-media/dark/ez-bar-reverse-preacher-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/ez-bar-reverse-preacher-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/ez-bar-reverse-preacher-curl.jpg'),
+    },
+    'floor-press': {
+      video: require('../../assets/exercise-media/dark/floor-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/floor-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/floor-press.jpg'),
+    },
+    'forward-lunge': {
+      video: require('../../assets/exercise-media/dark/forward-lunge.mp4'),
+      poster: require('../../assets/exercise-media/poster/forward-lunge.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/forward-lunge.jpg'),
+    },
+    'freestyle-swim': {
+      video: require('../../assets/exercise-media/dark/freestyle-swim.mp4'),
+      poster: require('../../assets/exercise-media/poster/freestyle-swim.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/freestyle-swim.jpg'),
+    },
+    'frog-pump': {
+      video: require('../../assets/exercise-media/dark/frog-pump.mp4'),
+      poster: require('../../assets/exercise-media/poster/frog-pump.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/frog-pump.jpg'),
+    },
+    'front-foot-elevated-split-squat': {
+      video: require('../../assets/exercise-media/dark/front-foot-elevated-split-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/front-foot-elevated-split-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/front-foot-elevated-split-squat.jpg'),
+    },
+    'front-plank': {
+      video: require('../../assets/exercise-media/dark/front-plank.mp4'),
+      poster: require('../../assets/exercise-media/poster/front-plank.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/front-plank.jpg'),
+    },
+    'front-squat': {
+      video: require('../../assets/exercise-media/dark/front-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/front-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/front-squat.jpg'),
+    },
+    'glute-bridge': {
+      video: require('../../assets/exercise-media/dark/glute-bridge.mp4'),
+      poster: require('../../assets/exercise-media/poster/glute-bridge.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/glute-bridge.jpg'),
+    },
+    'glute-kickback-machine': {
+      video: require('../../assets/exercise-media/dark/glute-kickback-machine.mp4'),
+      poster: require('../../assets/exercise-media/poster/glute-kickback-machine.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/glute-kickback-machine.jpg'),
+    },
+    'good-mornings': {
+      video: require('../../assets/exercise-media/dark/good-mornings.mp4'),
+      poster: require('../../assets/exercise-media/poster/good-mornings.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/good-mornings.jpg'),
+    },
+    'hammer-strength-high-row': {
+      video: require('../../assets/exercise-media/dark/hammer-strength-high-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/hammer-strength-high-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/hammer-strength-high-row.jpg'),
+    },
+    'hammer-strength-iso-lateral-row': {
+      video: require('../../assets/exercise-media/dark/hammer-strength-iso-lateral-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/hammer-strength-iso-lateral-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/hammer-strength-iso-lateral-row.jpg'),
+    },
+    'hamstring-curl': {
+      video: require('../../assets/exercise-media/dark/hamstring-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/hamstring-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/hamstring-curl.jpg'),
+    },
+    'hand-plank': {
+      video: require('../../assets/exercise-media/dark/hand-plank.mp4'),
+      poster: require('../../assets/exercise-media/poster/hand-plank.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/hand-plank.jpg'),
+    },
+    'hang-clean': {
+      video: require('../../assets/exercise-media/dark/hang-clean.mp4'),
+      poster: require('../../assets/exercise-media/poster/hang-clean.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/hang-clean.jpg'),
+    },
+    'hang-power-clean': {
+      video: require('../../assets/exercise-media/dark/hang-power-clean.mp4'),
+      poster: require('../../assets/exercise-media/poster/hang-power-clean.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/hang-power-clean.jpg'),
+    },
+    'hang-snatch': {
+      video: require('../../assets/exercise-media/dark/hang-snatch.mp4'),
+      poster: require('../../assets/exercise-media/poster/hang-snatch.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/hang-snatch.jpg'),
+    },
+    'hanging-knee-raises': {
+      video: require('../../assets/exercise-media/dark/hanging-knee-raises.mp4'),
+      poster: require('../../assets/exercise-media/poster/hanging-knee-raises.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/hanging-knee-raises.jpg'),
+    },
+    'hiking': {
+      video: require('../../assets/exercise-media/dark/hiking.mp4'),
+      poster: require('../../assets/exercise-media/poster/hiking.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/hiking.jpg'),
+    },
+    'hill-climb-repeats': {
+      video: require('../../assets/exercise-media/dark/hill-climb-repeats.mp4'),
+      poster: require('../../assets/exercise-media/poster/hill-climb-repeats.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/hill-climb-repeats.jpg'),
+    },
+    'hip-hinge-speed-romanian-deadlift': {
+      video: require('../../assets/exercise-media/dark/hip-hinge-speed-romanian-deadlift.mp4'),
+      poster: require('../../assets/exercise-media/poster/hip-hinge-speed-romanian-deadlift.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/hip-hinge-speed-romanian-deadlift.jpg'),
+    },
+    'horizontal-leg-press-calf-press': {
+      video: require('../../assets/exercise-media/dark/horizontal-leg-press-calf-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/horizontal-leg-press-calf-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/horizontal-leg-press-calf-press.jpg'),
+    },
+    'incline-machine-chest-press': {
+      video: require('../../assets/exercise-media/dark/incline-machine-chest-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/incline-machine-chest-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/incline-machine-chest-press.jpg'),
+    },
+    'incline-push-up': {
+      video: require('../../assets/exercise-media/dark/incline-push-up.mp4'),
+      poster: require('../../assets/exercise-media/poster/incline-push-up.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/incline-push-up.jpg'),
+    },
+    'incline-treadmill-walk': {
+      video: require('../../assets/exercise-media/dark/incline-treadmill-walk.mp4'),
+      poster: require('../../assets/exercise-media/poster/incline-treadmill-walk.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/incline-treadmill-walk.jpg'),
+    },
+    'indoor-cycling-spin': {
+      video: require('../../assets/exercise-media/dark/indoor-cycling-spin.mp4'),
+      poster: require('../../assets/exercise-media/poster/indoor-cycling-spin.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/indoor-cycling-spin.jpg'),
+    },
+    'inverted-row': {
+      video: require('../../assets/exercise-media/dark/inverted-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/inverted-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/inverted-row.jpg'),
+    },
+    'jm-press': {
+      video: require('../../assets/exercise-media/dark/jm-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/jm-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/jm-press.jpg'),
+    },
+    'jump-rope': {
+      video: require('../../assets/exercise-media/dark/jump-rope.mp4'),
+      poster: require('../../assets/exercise-media/poster/jump-rope.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/jump-rope.jpg'),
+    },
+    'jump-squats': {
+      video: require('../../assets/exercise-media/dark/jump-squats.mp4'),
+      poster: require('../../assets/exercise-media/poster/jump-squats.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/jump-squats.jpg'),
+    },
+    'jumping-jack': {
+      video: require('../../assets/exercise-media/dark/jumping-jack.mp4'),
+      poster: require('../../assets/exercise-media/poster/jumping-jack.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/jumping-jack.jpg'),
+    },
+    'kettlebell-alternating-curtsy-lunge': {
+      video: require('../../assets/exercise-media/dark/kettlebell-alternating-curtsy-lunge.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-alternating-curtsy-lunge.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-alternating-curtsy-lunge.jpg'),
+    },
+    'kettlebell-assisted-bulgarian-split-squat': {
+      video: require('../../assets/exercise-media/dark/kettlebell-assisted-bulgarian-split-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-assisted-bulgarian-split-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-assisted-bulgarian-split-squat.jpg'),
+    },
+    'kettlebell-bench-press': {
+      video: require('../../assets/exercise-media/dark/kettlebell-bench-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-bench-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-bench-press.jpg'),
+    },
+    'kettlebell-calf-raise': {
+      video: require('../../assets/exercise-media/dark/kettlebell-calf-raise.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-calf-raise.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-calf-raise.jpg'),
+    },
+    'kettlebell-curl': {
+      video: require('../../assets/exercise-media/dark/kettlebell-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-curl.jpg'),
+    },
+    'kettlebell-farmers-carry': {
+      video: require('../../assets/exercise-media/dark/kettlebell-farmers-carry.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-farmers-carry.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-farmers-carry.jpg'),
+    },
+    'kettlebell-front-raise': {
+      video: require('../../assets/exercise-media/dark/kettlebell-front-raise.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-front-raise.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-front-raise.jpg'),
+    },
+    'kettlebell-goblet-curl': {
+      video: require('../../assets/exercise-media/dark/kettlebell-goblet-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-goblet-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-goblet-curl.jpg'),
+    },
+    'kettlebell-goblet-squat': {
+      video: require('../../assets/exercise-media/dark/kettlebell-goblet-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-goblet-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-goblet-squat.jpg'),
+    },
+    'kettlebell-gorilla-row': {
+      video: require('../../assets/exercise-media/dark/kettlebell-gorilla-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-gorilla-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-gorilla-row.jpg'),
+    },
+    'kettlebell-hip-thrust': {
+      video: require('../../assets/exercise-media/dark/kettlebell-hip-thrust.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-hip-thrust.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-hip-thrust.jpg'),
+    },
+    'kettlebell-incline-bench-press': {
+      video: require('../../assets/exercise-media/dark/kettlebell-incline-bench-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-incline-bench-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-incline-bench-press.jpg'),
+    },
+    'kettlebell-push-press': {
+      video: require('../../assets/exercise-media/dark/kettlebell-push-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-push-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-push-press.jpg'),
+    },
+    'kettlebell-romanian-deadlift': {
+      video: require('../../assets/exercise-media/dark/kettlebell-romanian-deadlift.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-romanian-deadlift.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-romanian-deadlift.jpg'),
+    },
+    'kettlebell-row': {
+      video: require('../../assets/exercise-media/dark/kettlebell-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-row.jpg'),
+    },
+    'kettlebell-row-single': {
+      video: require('../../assets/exercise-media/dark/kettlebell-row-single.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-row-single.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-row-single.jpg'),
+    },
+    'kettlebell-seated-overhead-press': {
+      video: require('../../assets/exercise-media/dark/kettlebell-seated-overhead-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-seated-overhead-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-seated-overhead-press.jpg'),
+    },
+    'kettlebell-shrug': {
+      video: require('../../assets/exercise-media/dark/kettlebell-shrug.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-shrug.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-shrug.jpg'),
+    },
+    'kettlebell-single-arm-row': {
+      video: require('../../assets/exercise-media/dark/kettlebell-single-arm-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-single-arm-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-single-arm-row.jpg'),
+    },
+    'kettlebell-spinal-jefferson-curl': {
+      video: require('../../assets/exercise-media/dark/kettlebell-spinal-jefferson-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-spinal-jefferson-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-spinal-jefferson-curl.jpg'),
+    },
+    'kettlebell-sumo-deadlift': {
+      video: require('../../assets/exercise-media/dark/kettlebell-sumo-deadlift.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-sumo-deadlift.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-sumo-deadlift.jpg'),
+    },
+    'kettlebell-swing': {
+      video: require('../../assets/exercise-media/dark/kettlebell-swing.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-swing.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-swing.jpg'),
+    },
+    'kettlebell-thruster': {
+      video: require('../../assets/exercise-media/dark/kettlebell-thruster.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-thruster.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-thruster.jpg'),
+    },
+    'kettlebell-turkish-get-up': {
+      video: require('../../assets/exercise-media/dark/kettlebell-turkish-get-up.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-turkish-get-up.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-turkish-get-up.jpg'),
+    },
+    'kettlebell-windmill': {
+      video: require('../../assets/exercise-media/dark/kettlebell-windmill.mp4'),
+      poster: require('../../assets/exercise-media/poster/kettlebell-windmill.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kettlebell-windmill.jpg'),
+    },
+    'kickstand-dumbbell-romanian-deadlift': {
+      video: require('../../assets/exercise-media/dark/kickstand-dumbbell-romanian-deadlift.mp4'),
+      poster: require('../../assets/exercise-media/poster/kickstand-dumbbell-romanian-deadlift.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kickstand-dumbbell-romanian-deadlift.jpg'),
+    },
+    'kneeling-cable-crunch': {
+      video: require('../../assets/exercise-media/dark/kneeling-cable-crunch.mp4'),
+      poster: require('../../assets/exercise-media/poster/kneeling-cable-crunch.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/kneeling-cable-crunch.jpg'),
+    },
+    'landmine-press': {
+      video: require('../../assets/exercise-media/dark/landmine-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/landmine-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/landmine-press.jpg'),
+    },
+    'landmine-t-bar-rows': {
+      video: require('../../assets/exercise-media/dark/landmine-t-bar-rows.mp4'),
+      poster: require('../../assets/exercise-media/poster/landmine-t-bar-rows.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/landmine-t-bar-rows.jpg'),
+    },
+    'lat-pulldown': {
+      video: require('../../assets/exercise-media/dark/lat-pulldown.mp4'),
+      poster: require('../../assets/exercise-media/poster/lat-pulldown.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/lat-pulldown.jpg'),
+    },
+    'leaning-cable-lateral-raise': {
+      video: require('../../assets/exercise-media/dark/leaning-cable-lateral-raise.mp4'),
+      poster: require('../../assets/exercise-media/poster/leaning-cable-lateral-raise.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/leaning-cable-lateral-raise.jpg'),
+    },
+    'long-run': {
+      video: require('../../assets/exercise-media/dark/long-run.mp4'),
+      poster: require('../../assets/exercise-media/poster/long-run.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/long-run.jpg'),
+    },
+    'lunge-walking': {
+      video: require('../../assets/exercise-media/dark/lunge-walking.mp4'),
+      poster: require('../../assets/exercise-media/poster/lunge-walking.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/lunge-walking.jpg'),
+    },
+    'lying-leg-curl': {
+      video: require('../../assets/exercise-media/dark/lying-leg-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/lying-leg-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/lying-leg-curl.jpg'),
+    },
+    'machine-45-degree-back-extension': {
+      video: require('../../assets/exercise-media/dark/machine-45-degree-back-extension.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-45-degree-back-extension.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-45-degree-back-extension.jpg'),
+    },
+    'machine-assisted-pull-up': {
+      video: require('../../assets/exercise-media/dark/machine-assisted-pull-up.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-assisted-pull-up.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-assisted-pull-up.jpg'),
+    },
+    'machine-cable-v-bar-push-downs': {
+      video: require('../../assets/exercise-media/dark/machine-cable-v-bar-push-downs.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-cable-v-bar-push-downs.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-cable-v-bar-push-downs.jpg'),
+    },
+    'machine-chest-press': {
+      video: require('../../assets/exercise-media/dark/machine-chest-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-chest-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-chest-press.jpg'),
+    },
+    'machine-crunch': {
+      video: require('../../assets/exercise-media/dark/machine-crunch.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-crunch.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-crunch.jpg'),
+    },
+    'machine-dips': {
+      video: require('../../assets/exercise-media/dark/machine-dips.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-dips.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-dips.jpg'),
+    },
+    'machine-face-pulls': {
+      video: require('../../assets/exercise-media/dark/machine-face-pulls.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-face-pulls.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-face-pulls.jpg'),
+    },
+    'machine-front-military-press': {
+      video: require('../../assets/exercise-media/dark/machine-front-military-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-front-military-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-front-military-press.jpg'),
+    },
+    'machine-hack-squat': {
+      video: require('../../assets/exercise-media/dark/machine-hack-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-hack-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-hack-squat.jpg'),
+    },
+    'machine-hip-abduction': {
+      video: require('../../assets/exercise-media/dark/machine-hip-abduction.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-hip-abduction.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-hip-abduction.jpg'),
+    },
+    'machine-hip-adduction': {
+      video: require('../../assets/exercise-media/dark/machine-hip-adduction.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-hip-adduction.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-hip-adduction.jpg'),
+    },
+    'machine-hip-thrust': {
+      video: require('../../assets/exercise-media/dark/machine-hip-thrust.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-hip-thrust.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-hip-thrust.jpg'),
+    },
+    'machine-horizontal-leg-press': {
+      video: require('../../assets/exercise-media/dark/machine-horizontal-leg-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-horizontal-leg-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-horizontal-leg-press.jpg'),
+    },
+    'machine-lat-pullover': {
+      video: require('../../assets/exercise-media/dark/machine-lat-pullover.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-lat-pullover.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-lat-pullover.jpg'),
+    },
+    'machine-lateral-raise': {
+      video: require('../../assets/exercise-media/dark/machine-lateral-raise.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-lateral-raise.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-lateral-raise.jpg'),
+    },
+    'machine-leg-extension': {
+      video: require('../../assets/exercise-media/dark/machine-leg-extension.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-leg-extension.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-leg-extension.jpg'),
+    },
+    'machine-leg-press': {
+      video: require('../../assets/exercise-media/dark/machine-leg-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-leg-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-leg-press.jpg'),
+    },
+    'machine-neutral-row': {
+      video: require('../../assets/exercise-media/dark/machine-neutral-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-neutral-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-neutral-row.jpg'),
+    },
+    'machine-pec-fly': {
+      video: require('../../assets/exercise-media/dark/machine-pec-fly.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-pec-fly.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-pec-fly.jpg'),
+    },
+    'machine-plate-loaded-leg-extension': {
+      video: require('../../assets/exercise-media/dark/machine-plate-loaded-leg-extension.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-plate-loaded-leg-extension.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-plate-loaded-leg-extension.jpg'),
+    },
+    'machine-plate-loaded-t-bar-row': {
+      video: require('../../assets/exercise-media/dark/machine-plate-loaded-t-bar-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-plate-loaded-t-bar-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-plate-loaded-t-bar-row.jpg'),
+    },
+    'machine-preacher-curl': {
+      video: require('../../assets/exercise-media/dark/machine-preacher-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-preacher-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-preacher-curl.jpg'),
+    },
+    'machine-pulldown': {
+      video: require('../../assets/exercise-media/dark/machine-pulldown.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-pulldown.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-pulldown.jpg'),
+    },
+    'machine-seated-cable-row': {
+      video: require('../../assets/exercise-media/dark/machine-seated-cable-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-seated-cable-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-seated-cable-row.jpg'),
+    },
+    'machine-tricep-extension': {
+      video: require('../../assets/exercise-media/dark/machine-tricep-extension.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-tricep-extension.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-tricep-extension.jpg'),
+    },
+    'machine-underhand-row': {
+      video: require('../../assets/exercise-media/dark/machine-underhand-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/machine-underhand-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/machine-underhand-row.jpg'),
+    },
+    'man-maker': {
+      video: require('../../assets/exercise-media/dark/man-maker.mp4'),
+      poster: require('../../assets/exercise-media/poster/man-maker.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/man-maker.jpg'),
+    },
+    'meadows-row': {
+      video: require('../../assets/exercise-media/dark/meadows-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/meadows-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/meadows-row.jpg'),
+    },
+    'mountain-climber': {
+      video: require('../../assets/exercise-media/dark/mountain-climber.mp4'),
+      poster: require('../../assets/exercise-media/poster/mountain-climber.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/mountain-climber.jpg'),
+    },
+    'narrow-pulldown': {
+      video: require('../../assets/exercise-media/dark/narrow-pulldown.mp4'),
+      poster: require('../../assets/exercise-media/poster/narrow-pulldown.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/narrow-pulldown.jpg'),
+    },
+    'neck-curl': {
+      video: require('../../assets/exercise-media/dark/neck-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/neck-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/neck-curl.jpg'),
+    },
+    'neck-extension': {
+      video: require('../../assets/exercise-media/dark/neck-extension.mp4'),
+      poster: require('../../assets/exercise-media/poster/neck-extension.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/neck-extension.jpg'),
+    },
+    'neutral-grip-dumbbell-bench-press': {
+      video: require('../../assets/exercise-media/dark/neutral-grip-dumbbell-bench-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/neutral-grip-dumbbell-bench-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/neutral-grip-dumbbell-bench-press.jpg'),
+    },
+    'neutral-grip-lat-pulldown': {
+      video: require('../../assets/exercise-media/dark/neutral-grip-lat-pulldown.mp4'),
+      poster: require('../../assets/exercise-media/poster/neutral-grip-lat-pulldown.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/neutral-grip-lat-pulldown.jpg'),
+    },
+    'neutral-grip-pull-up': {
+      video: require('../../assets/exercise-media/dark/neutral-grip-pull-up.mp4'),
+      poster: require('../../assets/exercise-media/poster/neutral-grip-pull-up.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/neutral-grip-pull-up.jpg'),
+    },
+    'nordic-hamstring-curl': {
+      video: require('../../assets/exercise-media/dark/nordic-hamstring-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/nordic-hamstring-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/nordic-hamstring-curl.jpg'),
+    },
+    'pallof-press': {
+      video: require('../../assets/exercise-media/dark/pallof-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/pallof-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/pallof-press.jpg'),
+    },
+    'parralel-bar-dips': {
+      video: require('../../assets/exercise-media/dark/parralel-bar-dips.mp4'),
+      poster: require('../../assets/exercise-media/poster/parralel-bar-dips.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/parralel-bar-dips.jpg'),
+    },
+    'pause-squat': {
+      video: require('../../assets/exercise-media/dark/pause-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/pause-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/pause-squat.jpg'),
+    },
+    'pendlay-row': {
+      video: require('../../assets/exercise-media/dark/pendlay-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/pendlay-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/pendlay-row.jpg'),
+    },
+    'pendulum-squat-v-squat': {
+      video: require('../../assets/exercise-media/dark/pendulum-squat-v-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/pendulum-squat-v-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/pendulum-squat-v-squat.jpg'),
+    },
+    'plate-forward-lunge': {
+      video: require('../../assets/exercise-media/dark/plate-forward-lunge.mp4'),
+      poster: require('../../assets/exercise-media/poster/plate-forward-lunge.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/plate-forward-lunge.jpg'),
+    },
+    'plate-front-raise': {
+      video: require('../../assets/exercise-media/dark/plate-front-raise.mp4'),
+      poster: require('../../assets/exercise-media/poster/plate-front-raise.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/plate-front-raise.jpg'),
+    },
+    'plate-pinch': {
+      video: require('../../assets/exercise-media/dark/plate-pinch.mp4'),
+      poster: require('../../assets/exercise-media/poster/plate-pinch.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/plate-pinch.jpg'),
+    },
+    'power-clean': {
+      video: require('../../assets/exercise-media/dark/power-clean.mp4'),
+      poster: require('../../assets/exercise-media/poster/power-clean.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/power-clean.jpg'),
+    },
+    'pull-ups': {
+      video: require('../../assets/exercise-media/dark/pull-ups.mp4'),
+      poster: require('../../assets/exercise-media/poster/pull-ups.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/pull-ups.jpg'),
+    },
+    'push-jerk': {
+      video: require('../../assets/exercise-media/dark/push-jerk.mp4'),
+      poster: require('../../assets/exercise-media/poster/push-jerk.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/push-jerk.jpg'),
+    },
+    'push-up': {
+      video: require('../../assets/exercise-media/dark/push-up.mp4'),
+      poster: require('../../assets/exercise-media/poster/push-up.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/push-up.jpg'),
+    },
+    'reverse-grip-barbell-bench-press': {
+      video: require('../../assets/exercise-media/dark/reverse-grip-barbell-bench-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/reverse-grip-barbell-bench-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/reverse-grip-barbell-bench-press.jpg'),
+    },
+    'reverse-grip-barbell-curl': {
+      video: require('../../assets/exercise-media/dark/reverse-grip-barbell-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/reverse-grip-barbell-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/reverse-grip-barbell-curl.jpg'),
+    },
+    'reverse-grip-tricep-pushdown': {
+      video: require('../../assets/exercise-media/dark/reverse-grip-tricep-pushdown.mp4'),
+      poster: require('../../assets/exercise-media/poster/reverse-grip-tricep-pushdown.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/reverse-grip-tricep-pushdown.jpg'),
+    },
+    'reverse-hack-squat': {
+      video: require('../../assets/exercise-media/dark/reverse-hack-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/reverse-hack-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/reverse-hack-squat.jpg'),
+    },
+    'reverse-hyperextension': {
+      video: require('../../assets/exercise-media/dark/reverse-hyperextension.mp4'),
+      poster: require('../../assets/exercise-media/poster/reverse-hyperextension.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/reverse-hyperextension.jpg'),
+    },
+    'reverse-pec-deck': {
+      video: require('../../assets/exercise-media/dark/reverse-pec-deck.mp4'),
+      poster: require('../../assets/exercise-media/poster/reverse-pec-deck.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/reverse-pec-deck.jpg'),
+    },
+    'romanian-deadlift-hamstring-sweeps': {
+      video: require('../../assets/exercise-media/dark/romanian-deadlift-hamstring-sweeps.mp4'),
+      poster: require('../../assets/exercise-media/poster/romanian-deadlift-hamstring-sweeps.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/romanian-deadlift-hamstring-sweeps.jpg'),
+    },
+    'rowing-intervals': {
+      video: require('../../assets/exercise-media/dark/rowing-intervals.mp4'),
+      poster: require('../../assets/exercise-media/poster/rowing-intervals.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/rowing-intervals.jpg'),
+    },
+    'rowing-machine-steady-state': {
+      video: require('../../assets/exercise-media/dark/rowing-machine-steady-state.mp4'),
+      poster: require('../../assets/exercise-media/poster/rowing-machine-steady-state.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/rowing-machine-steady-state.jpg'),
+    },
+    'rowing-sprint': {
+      video: require('../../assets/exercise-media/dark/rowing-sprint.mp4'),
+      poster: require('../../assets/exercise-media/poster/rowing-sprint.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/rowing-sprint.jpg'),
+    },
+    'running-cooldown': {
+      video: require('../../assets/exercise-media/dark/running-cooldown.mp4'),
+      poster: require('../../assets/exercise-media/poster/running-cooldown.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/running-cooldown.jpg'),
+    },
+    'running-intervals': {
+      video: require('../../assets/exercise-media/dark/running-intervals.mp4'),
+      poster: require('../../assets/exercise-media/poster/running-intervals.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/running-intervals.jpg'),
+    },
+    'seal-row': {
+      video: require('../../assets/exercise-media/dark/seal-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/seal-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/seal-row.jpg'),
+    },
+    'seated-calf-raise': {
+      video: require('../../assets/exercise-media/dark/seated-calf-raise.mp4'),
+      poster: require('../../assets/exercise-media/poster/seated-calf-raise.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/seated-calf-raise.jpg'),
+    },
+    'seated-dumbbell-curl': {
+      video: require('../../assets/exercise-media/dark/seated-dumbbell-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/seated-dumbbell-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/seated-dumbbell-curl.jpg'),
+    },
+    'seated-leg-curl': {
+      video: require('../../assets/exercise-media/dark/seated-leg-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/seated-leg-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/seated-leg-curl.jpg'),
+    },
+    'shadow-boxing': {
+      video: require('../../assets/exercise-media/dark/shadow-boxing.mp4'),
+      poster: require('../../assets/exercise-media/poster/shadow-boxing.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/shadow-boxing.jpg'),
+    },
+    'single-arm-cable-fly': {
+      video: require('../../assets/exercise-media/dark/single-arm-cable-fly.mp4'),
+      poster: require('../../assets/exercise-media/poster/single-arm-cable-fly.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/single-arm-cable-fly.jpg'),
+    },
+    'single-arm-dumbbell-overhead-press': {
+      video: require('../../assets/exercise-media/dark/single-arm-dumbbell-overhead-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/single-arm-dumbbell-overhead-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/single-arm-dumbbell-overhead-press.jpg'),
+    },
+    'single-arm-landmine-press': {
+      video: require('../../assets/exercise-media/dark/single-arm-landmine-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/single-arm-landmine-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/single-arm-landmine-press.jpg'),
+    },
+    'single-arm-lat-pulldown': {
+      video: require('../../assets/exercise-media/dark/single-arm-lat-pulldown.mp4'),
+      poster: require('../../assets/exercise-media/poster/single-arm-lat-pulldown.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/single-arm-lat-pulldown.jpg'),
+    },
+    'single-arm-overhead-cable-extension': {
+      video: require('../../assets/exercise-media/dark/single-arm-overhead-cable-extension.mp4'),
+      poster: require('../../assets/exercise-media/poster/single-arm-overhead-cable-extension.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/single-arm-overhead-cable-extension.jpg'),
+    },
+    'single-arm-tricep-extension': {
+      video: require('../../assets/exercise-media/dark/single-arm-tricep-extension.mp4'),
+      poster: require('../../assets/exercise-media/poster/single-arm-tricep-extension.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/single-arm-tricep-extension.jpg'),
+    },
+    'single-leg-back-extension': {
+      video: require('../../assets/exercise-media/dark/single-leg-back-extension.mp4'),
+      poster: require('../../assets/exercise-media/poster/single-leg-back-extension.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/single-leg-back-extension.jpg'),
+    },
+    'single-leg-dumbbell-romanian-deadlift': {
+      video: require('../../assets/exercise-media/dark/single-leg-dumbbell-romanian-deadlift.mp4'),
+      poster: require('../../assets/exercise-media/poster/single-leg-dumbbell-romanian-deadlift.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/single-leg-dumbbell-romanian-deadlift.jpg'),
+    },
+    'single-leg-glute-bridge': {
+      video: require('../../assets/exercise-media/dark/single-leg-glute-bridge.mp4'),
+      poster: require('../../assets/exercise-media/poster/single-leg-glute-bridge.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/single-leg-glute-bridge.jpg'),
+    },
+    'single-leg-hip-thrust': {
+      video: require('../../assets/exercise-media/dark/single-leg-hip-thrust.mp4'),
+      poster: require('../../assets/exercise-media/poster/single-leg-hip-thrust.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/single-leg-hip-thrust.jpg'),
+    },
+    'single-leg-kettlebell-romanian-deadlift-deficit': {
+      video: require('../../assets/exercise-media/dark/single-leg-kettlebell-romanian-deadlift-deficit.mp4'),
+      poster: require('../../assets/exercise-media/poster/single-leg-kettlebell-romanian-deadlift-deficit.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/single-leg-kettlebell-romanian-deadlift-deficit.jpg'),
+    },
+    'single-leg-press': {
+      video: require('../../assets/exercise-media/dark/single-leg-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/single-leg-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/single-leg-press.jpg'),
+    },
+    'single-leg-standing-calf-raise': {
+      video: require('../../assets/exercise-media/dark/single-leg-standing-calf-raise.mp4'),
+      poster: require('../../assets/exercise-media/poster/single-leg-standing-calf-raise.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/single-leg-standing-calf-raise.jpg'),
+    },
+    'single-leg-step-down': {
+      video: require('../../assets/exercise-media/dark/single-leg-step-down.mp4'),
+      poster: require('../../assets/exercise-media/poster/single-leg-step-down.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/single-leg-step-down.jpg'),
+    },
+    'single-legged-romanian-deadlifts': {
+      video: require('../../assets/exercise-media/dark/single-legged-romanian-deadlifts.mp4'),
+      poster: require('../../assets/exercise-media/poster/single-legged-romanian-deadlifts.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/single-legged-romanian-deadlifts.jpg'),
+    },
+    'sissy-squat': {
+      video: require('../../assets/exercise-media/dark/sissy-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/sissy-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/sissy-squat.jpg'),
+    },
+    'ski-erg': {
+      video: require('../../assets/exercise-media/dark/ski-erg.mp4'),
+      poster: require('../../assets/exercise-media/poster/ski-erg.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/ski-erg.jpg'),
+    },
+    'sled-pull': {
+      video: require('../../assets/exercise-media/dark/sled-pull.mp4'),
+      poster: require('../../assets/exercise-media/poster/sled-pull.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/sled-pull.jpg'),
+    },
+    'sled-push': {
+      video: require('../../assets/exercise-media/dark/sled-push.mp4'),
+      poster: require('../../assets/exercise-media/poster/sled-push.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/sled-push.jpg'),
+    },
+    'smith-machine-bench-press': {
+      video: require('../../assets/exercise-media/dark/smith-machine-bench-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/smith-machine-bench-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/smith-machine-bench-press.jpg'),
+    },
+    'smith-machine-bent-over-row': {
+      video: require('../../assets/exercise-media/dark/smith-machine-bent-over-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/smith-machine-bent-over-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/smith-machine-bent-over-row.jpg'),
+    },
+    'smith-machine-calf-raise': {
+      video: require('../../assets/exercise-media/dark/smith-machine-calf-raise.mp4'),
+      poster: require('../../assets/exercise-media/poster/smith-machine-calf-raise.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/smith-machine-calf-raise.jpg'),
+    },
+    'smith-machine-close-grip-bench-press': {
+      video: require('../../assets/exercise-media/dark/smith-machine-close-grip-bench-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/smith-machine-close-grip-bench-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/smith-machine-close-grip-bench-press.jpg'),
+    },
+    'smith-machine-front-squat': {
+      video: require('../../assets/exercise-media/dark/smith-machine-front-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/smith-machine-front-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/smith-machine-front-squat.jpg'),
+    },
+    'smith-machine-incline-bench-press': {
+      video: require('../../assets/exercise-media/dark/smith-machine-incline-bench-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/smith-machine-incline-bench-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/smith-machine-incline-bench-press.jpg'),
+    },
+    'smith-machine-seated-overhead-press': {
+      video: require('../../assets/exercise-media/dark/smith-machine-seated-overhead-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/smith-machine-seated-overhead-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/smith-machine-seated-overhead-press.jpg'),
+    },
+    'smith-machine-squat': {
+      video: require('../../assets/exercise-media/dark/smith-machine-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/smith-machine-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/smith-machine-squat.jpg'),
+    },
+    'smith-machine-standing-shrugs': {
+      video: require('../../assets/exercise-media/dark/smith-machine-standing-shrugs.mp4'),
+      poster: require('../../assets/exercise-media/poster/smith-machine-standing-shrugs.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/smith-machine-standing-shrugs.jpg'),
+    },
+    'smith-machine-sumo-romanian-deadlift': {
+      video: require('../../assets/exercise-media/dark/smith-machine-sumo-romanian-deadlift.mp4'),
+      poster: require('../../assets/exercise-media/poster/smith-machine-sumo-romanian-deadlift.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/smith-machine-sumo-romanian-deadlift.jpg'),
+    },
+    'snatch-grip-deadlift': {
+      video: require('../../assets/exercise-media/dark/snatch-grip-deadlift.mp4'),
+      poster: require('../../assets/exercise-media/poster/snatch-grip-deadlift.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/snatch-grip-deadlift.jpg'),
+    },
+    'snatch-grip-high-pull': {
+      video: require('../../assets/exercise-media/dark/snatch-grip-high-pull.mp4'),
+      poster: require('../../assets/exercise-media/poster/snatch-grip-high-pull.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/snatch-grip-high-pull.jpg'),
+    },
+    'snatch-pull': {
+      video: require('../../assets/exercise-media/dark/snatch-pull.mp4'),
+      poster: require('../../assets/exercise-media/poster/snatch-pull.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/snatch-pull.jpg'),
+    },
+    'spider-curl': {
+      video: require('../../assets/exercise-media/dark/spider-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/spider-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/spider-curl.jpg'),
+    },
+    'split-jerk': {
+      video: require('../../assets/exercise-media/dark/split-jerk.mp4'),
+      poster: require('../../assets/exercise-media/poster/split-jerk.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/split-jerk.jpg'),
+    },
+    'split-squat-isometric-hold': {
+      video: require('../../assets/exercise-media/dark/split-squat-isometric-hold.mp4'),
+      poster: require('../../assets/exercise-media/poster/split-squat-isometric-hold.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/split-squat-isometric-hold.jpg'),
+    },
+    'stability-ball-leg-curl': {
+      video: require('../../assets/exercise-media/dark/stability-ball-leg-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/stability-ball-leg-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/stability-ball-leg-curl.jpg'),
+    },
+    'stair-climber': {
+      video: require('../../assets/exercise-media/dark/stair-climber.mp4'),
+      poster: require('../../assets/exercise-media/poster/stair-climber.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/stair-climber.jpg'),
+    },
+    'standing-cable-hip-abduction': {
+      video: require('../../assets/exercise-media/dark/standing-cable-hip-abduction.mp4'),
+      poster: require('../../assets/exercise-media/poster/standing-cable-hip-abduction.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/standing-cable-hip-abduction.jpg'),
+    },
+    'standing-calf-raise-machine': {
+      video: require('../../assets/exercise-media/dark/standing-calf-raise-machine.mp4'),
+      poster: require('../../assets/exercise-media/poster/standing-calf-raise-machine.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/standing-calf-raise-machine.jpg'),
+    },
+    'steady-state-ride': {
+      video: require('../../assets/exercise-media/dark/steady-state-ride.mp4'),
+      poster: require('../../assets/exercise-media/poster/steady-state-ride.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/steady-state-ride.jpg'),
+    },
+    'straight-arm-lat-pulldown': {
+      video: require('../../assets/exercise-media/dark/straight-arm-lat-pulldown.mp4'),
+      poster: require('../../assets/exercise-media/poster/straight-arm-lat-pulldown.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/straight-arm-lat-pulldown.jpg'),
+    },
+    'supermans': {
+      video: require('../../assets/exercise-media/dark/supermans.mp4'),
+      poster: require('../../assets/exercise-media/poster/supermans.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/supermans.jpg'),
+    },
+    'swim-kick-drill': {
+      video: require('../../assets/exercise-media/dark/swim-kick-drill.mp4'),
+      poster: require('../../assets/exercise-media/poster/swim-kick-drill.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/swim-kick-drill.jpg'),
+    },
+    'swim-pull-drill': {
+      video: require('../../assets/exercise-media/dark/swim-pull-drill.mp4'),
+      poster: require('../../assets/exercise-media/poster/swim-pull-drill.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/swim-pull-drill.jpg'),
+    },
+    'swim-sprint-intervals': {
+      video: require('../../assets/exercise-media/dark/swim-sprint-intervals.mp4'),
+      poster: require('../../assets/exercise-media/poster/swim-sprint-intervals.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/swim-sprint-intervals.jpg'),
+    },
+    'tate-press': {
+      video: require('../../assets/exercise-media/dark/tate-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/tate-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/tate-press.jpg'),
+    },
+    'tempo-run': {
+      video: require('../../assets/exercise-media/dark/tempo-run.mp4'),
+      poster: require('../../assets/exercise-media/poster/tempo-run.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/tempo-run.jpg'),
+    },
+    'tibialis-raise': {
+      video: require('../../assets/exercise-media/dark/tibialis-raise.mp4'),
+      poster: require('../../assets/exercise-media/poster/tibialis-raise.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/tibialis-raise.jpg'),
+    },
+    'toes-to-bar': {
+      video: require('../../assets/exercise-media/dark/toes-to-bar.mp4'),
+      poster: require('../../assets/exercise-media/poster/toes-to-bar.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/toes-to-bar.jpg'),
+    },
+    'towel-slide-leg-curl': {
+      video: require('../../assets/exercise-media/dark/towel-slide-leg-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/towel-slide-leg-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/towel-slide-leg-curl.jpg'),
+    },
+    'trail-run': {
+      video: require('../../assets/exercise-media/dark/trail-run.mp4'),
+      poster: require('../../assets/exercise-media/poster/trail-run.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/trail-run.jpg'),
+    },
+    'trap-bar-deadlift': {
+      video: require('../../assets/exercise-media/dark/trap-bar-deadlift.mp4'),
+      poster: require('../../assets/exercise-media/poster/trap-bar-deadlift.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/trap-bar-deadlift.jpg'),
+    },
+    'trap-bar-shrug': {
+      video: require('../../assets/exercise-media/dark/trap-bar-shrug.mp4'),
+      poster: require('../../assets/exercise-media/poster/trap-bar-shrug.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/trap-bar-shrug.jpg'),
+    },
+    'treadmill-run': {
+      video: require('../../assets/exercise-media/dark/treadmill-run.mp4'),
+      poster: require('../../assets/exercise-media/poster/treadmill-run.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/treadmill-run.jpg'),
+    },
+    'underhand-barbell-row': {
+      video: require('../../assets/exercise-media/dark/underhand-barbell-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/underhand-barbell-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/underhand-barbell-row.jpg'),
+    },
+    'v-up': {
+      video: require('../../assets/exercise-media/dark/v-up.mp4'),
+      poster: require('../../assets/exercise-media/poster/v-up.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/v-up.jpg'),
+    },
+    'versaclimber': {
+      video: require('../../assets/exercise-media/dark/versaclimber.mp4'),
+      poster: require('../../assets/exercise-media/poster/versaclimber.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/versaclimber.jpg'),
+    },
+    'wall-ball': {
+      video: require('../../assets/exercise-media/dark/wall-ball.mp4'),
+      poster: require('../../assets/exercise-media/poster/wall-ball.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/wall-ball.jpg'),
+    },
+    'wall-sit': {
+      video: require('../../assets/exercise-media/dark/wall-sit.mp4'),
+      poster: require('../../assets/exercise-media/poster/wall-sit.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/wall-sit.jpg'),
+    },
+    'weighted-pull-ups': {
+      video: require('../../assets/exercise-media/dark/weighted-pull-ups.mp4'),
+      poster: require('../../assets/exercise-media/poster/weighted-pull-ups.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/weighted-pull-ups.jpg'),
+    },
+    'wide-grip-barbell-bench-press': {
+      video: require('../../assets/exercise-media/dark/wide-grip-barbell-bench-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/wide-grip-barbell-bench-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/wide-grip-barbell-bench-press.jpg'),
+    },
+    'wide-grip-barbell-curl': {
+      video: require('../../assets/exercise-media/dark/wide-grip-barbell-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/wide-grip-barbell-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/wide-grip-barbell-curl.jpg'),
+    },
+    'wide-grip-lat-pulldown': {
+      video: require('../../assets/exercise-media/dark/wide-grip-lat-pulldown.mp4'),
+      poster: require('../../assets/exercise-media/poster/wide-grip-lat-pulldown.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/wide-grip-lat-pulldown.jpg'),
+    },
+    'wide-grip-pull-up': {
+      video: require('../../assets/exercise-media/dark/wide-grip-pull-up.mp4'),
+      poster: require('../../assets/exercise-media/poster/wide-grip-pull-up.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/wide-grip-pull-up.jpg'),
+    },
+    'wide-grip-seated-cable-row': {
+      video: require('../../assets/exercise-media/dark/wide-grip-seated-cable-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/wide-grip-seated-cable-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/wide-grip-seated-cable-row.jpg'),
+    },
+    'wrist-roller': {
+      video: require('../../assets/exercise-media/dark/wrist-roller.mp4'),
+      poster: require('../../assets/exercise-media/poster/wrist-roller.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/wrist-roller.jpg'),
+    },
+    'yates-row': {
+      video: require('../../assets/exercise-media/dark/yates-row.mp4'),
+      poster: require('../../assets/exercise-media/poster/yates-row.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/yates-row.jpg'),
+    },
+    'z-press': {
+      video: require('../../assets/exercise-media/dark/z-press.mp4'),
+      poster: require('../../assets/exercise-media/poster/z-press.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/z-press.jpg'),
+    },
+    'zercher-squat': {
+      video: require('../../assets/exercise-media/dark/zercher-squat.mp4'),
+      poster: require('../../assets/exercise-media/poster/zercher-squat.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/zercher-squat.jpg'),
+    },
+    'zottman-curl': {
+      video: require('../../assets/exercise-media/dark/zottman-curl.mp4'),
+      poster: require('../../assets/exercise-media/poster/zottman-curl.jpg'),
+      thumb: require('../../assets/exercise-media/thumb/zottman-curl.jpg'),
+    },
+  };
+  return MEDIA;
+}
 
 export function getExerciseMedia(key?: string): ExerciseMedia | undefined {
-  return key ? MEDIA[key] : undefined;
+  return key ? mediaIndex()[key] : undefined;
 }
