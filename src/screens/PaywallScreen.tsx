@@ -73,18 +73,35 @@ export default function PaywallScreen() {
     if (navigation.canGoBack()) navigation.goBack();
   };
 
-  const primary = async () => {
-    if (access === 'subscriber') {
-      const r = await openCustomerCenter();
-      if (r === 'unavailable' || r === 'error') await openSubscriptionManagement();
-      return;
-    }
+  const buy = async () => {
     const r = await (plan === 'annual' && annual ? purchaseAnnual() : purchaseMonthly());
     if (r === 'purchased') {
       haptic.success();
       toast(`Welcome to ${GRUNTZ_PRO_LABEL}`, { icon: 'starFill' });
       dismiss();
     }
+  };
+
+  const primary = async () => {
+    if (access === 'subscriber') {
+      const r = await openCustomerCenter();
+      if (r === 'unavailable' || r === 'error') await openSubscriptionManagement();
+      return;
+    }
+    // Subscribing during the free trial starts billing today and forfeits the rest
+    // of it. That is worth saying out loud rather than discovering on the receipt.
+    if (access === 'trial' && trialLeft > 1) {
+      Alert.alert(
+        `You still have ${trialLeft} free days`,
+        `Subscribing now starts billing today and gives up the remaining ${trialLeft} days. You keep full access either way until then.`,
+        [
+          { text: `Keep my ${trialLeft} days`, style: 'cancel' },
+          { text: 'Subscribe now', onPress: () => void buy() },
+        ],
+      );
+      return;
+    }
+    await buy();
   };
 
   const restore = async () => {

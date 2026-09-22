@@ -4,6 +4,18 @@ import type { Exercise } from '../types';
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
+/** Longest title that still reads as a display treatment rather than a wall of caps. */
+const SHOUT_LIMIT = 20;
+
+/**
+ * Uppercase the short, punchy titles the display type was designed for, and leave
+ * longer ones in their own case — "PROGRESSIVE OVERLOAD FOR INTERMEDIATE LIFTERS"
+ * is three lines of shouting.
+ */
+export function displayTitle(title: string): string {
+  return title.length <= SHOUT_LIMIT ? title.toUpperCase() : title;
+}
+
 /** The first exercise with a clip, as the plan or day's cover art. */
 export function planDayHero(day: PlanDay): Exercise | undefined {
   const slot = day.exercises.find((e) => e.video_key);

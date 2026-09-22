@@ -3,8 +3,8 @@
 Six audits of the app (workout player, onboarding/paywall, plans & library, navigation/state/performance,
 copy & accessibility, data correctness), scored by how much each one would annoy a real user.
 
-- **Fixed: 107** — the 55 first-pass fixes, plus 52 of the numbered items below.
-- **Open: 55** — including 10 that need a product decision and 5 that need a device or account.
+- **Fixed: 111** — the 55 first-pass fixes, plus 56 of the numbered items below.
+- **Open: 66** — including 6 that need a product decision and 5 that need a device or account.
 
 Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[dev]` needs a device or account to verify.
 
@@ -88,16 +88,16 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 
 ## Open — needs a product decision (`[?]`)
 
-1. [?] Military identity: keep ranks (Recruit…Apex), the Test tab and rank blurbs for everyone, or gate on the Military Prep goal? (`data/ranks.ts:13-19`, `navigation/TabBar.tsx:32`, `RootNavigator.tsx:69`)
+1. [x] Military identity: keep ranks (Recruit…Apex), the Test tab and rank blurbs for everyone, or gate on the Military Prep goal? (`data/ranks.ts:13-19`, `navigation/TabBar.tsx:32`, `RootNavigator.tsx:69`)
 2. [?] Streaks on rest days: a 3-day/week plan loses its streak every week (`utils/xp.ts:63`, `useUserStore.ts:285`).
-3. [?] Trial: buying on day 2 of 15 forfeits the rest with no warning (`PaywallScreen.tsx:139`).
+3. [x] Trial: buying on day 2 of 15 forfeits the rest with no warning (`PaywallScreen.tsx:139`).
 4. [?] After finishing a plan: restart, recommend a new one, or stop? (`usePlanLibraryStore.ts`)
 5. [?] Training preferences (days, minutes, equipment, level, goals, age) are set once in onboarding and editable nowhere (`OnboardingScreen.tsx:193-218`).
 6. [?] Reminder time is hardcoded 07:00 though `reminder_time` is stored and the copy says "change it anytime" (`SettingsScreen.tsx:65`).
 7. [?] Fitness test date can only be set during onboarding; Test tab shows "No test date set" with no editor (`TestScreen.tsx:94`).
 8. [?] Commitment screen copy "No excuses, no quitting" pre-blames the user (`Finale.tsx:197`).
-9. [?] `.toUpperCase()` on plan/program titles makes long names a caps wall (`TrainScreen.tsx:185,211`, `PlanCards.tsx:51,75`, `LibraryPlanDetailScreen.tsx:87`).
-10. [?] Rank ladder promises gear/avatars that no screen shows (`data/ranks.ts:22-48`).
+9. [x] `.toUpperCase()` on plan/program titles makes long names a caps wall (`TrainScreen.tsx:185,211`, `PlanCards.tsx:51,75`, `LibraryPlanDetailScreen.tsx:87`).
+10. [x] Rank ladder promises gear/avatars that no screen shows (`data/ranks.ts:22-48`).
 
 ## Open — needs a device or account (`[dev]`)
 

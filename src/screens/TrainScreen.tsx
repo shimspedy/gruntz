@@ -15,7 +15,7 @@ import { getProgramById } from '../data/programs';
 import { getPlanWeek, pickHero } from '../features/plan';
 import { useTabChromeInset } from '../navigation/TabBar';
 import { PLAN_COUNT, type WorkoutPlan } from '../data/workoutPlans';
-import { planDayHero } from '../features/planDisplay';
+import { displayTitle, planDayHero } from '../features/planDisplay';
 import { nextPlanDay, useActivePlan, usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { useProgramStore } from '../store/useProgramStore';
 import { calculateDailyReadiness, getTodaysCheckIn, useReadinessStore } from '../store/useReadinessStore';
@@ -212,7 +212,7 @@ function ActivePlanCard({ plan, onOpen }: { plan: WorkoutPlan; onOpen: (dayId: s
           {plan.days.length > 1 ? `${day.label} of ${plan.days.length}${cycle ? ` · Round ${cycle + 1}` : ''}` : 'Up next'}
         </Text>
         <Text variant="hero" style={{ marginTop: 6 }} numberOfLines={2}>
-          {day.title.toUpperCase()}
+          {displayTitle(day.title)}
         </Text>
         <Text variant="callout" tone="secondary" style={{ marginTop: 6 }} numberOfLines={1}>
           {plan.title} · ~{day.estimated_minutes} min

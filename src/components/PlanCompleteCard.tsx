@@ -3,7 +3,7 @@ import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getWorkoutPlan } from '../data/workoutPlans';
-import { planHero } from '../features/planDisplay';
+import { displayTitle, planHero } from '../features/planDisplay';
 import { recommendPlans } from '../features/planRecommend';
 import { usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { useUserStore } from '../store/useUserStore';
@@ -59,7 +59,7 @@ export function PlanCompleteCard() {
           Plan complete
         </Text>
         <Text variant="hero" style={{ marginTop: 6 }} numberOfLines={2}>
-          {plan.title.toUpperCase()}
+          {displayTitle(plan.title)}
         </Text>
         <Text variant="callout" tone="secondary" style={{ marginTop: 6 }}>
           {days} {days === 1 ? 'workout' : 'workouts'} done{cycle > 1 ? ` · ${cycle} rounds` : ''}. Add a little weight and run it back, or move on to something new.

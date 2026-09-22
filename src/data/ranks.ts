@@ -1,4 +1,4 @@
-import { Rank, AvatarUnlock } from '../types';
+import { Rank } from '../types';
 
 export interface RankInfo {
   rank: Rank;
@@ -19,30 +19,30 @@ export const ranks: RankInfo[] = [
   { rank: 'Apex', minLevel: 50, maxLevel: 999, title: 'Apex', description: 'The pinnacle. Legendary status.', icon: 'rank' },
 ];
 
-export const avatarUnlocks: AvatarUnlock[] = [
-  { id: 'outfit_recruit', name: 'Basic PT Gear', type: 'outfit', required_rank: 'Recruit', required_level: 1, icon: 'outfit', description: 'Standard issue training gear.' },
-  { id: 'outfit_cadet', name: 'Tactical Training Set', type: 'outfit', required_rank: 'Cadet', required_level: 5, icon: 'outfit', description: 'Upgraded tactical training attire.' },
-  { id: 'gear_gloves', name: 'Training Gloves', type: 'gear', required_rank: 'Cadet', required_level: 7, icon: 'gear', description: 'Grip-enhanced training gloves.' },
-  { id: 'outfit_operator', name: 'Operator Combat Suit', type: 'outfit', required_rank: 'Operator', required_level: 10, icon: 'outfit', description: 'Full operator combat training suit.' },
-  { id: 'gear_headband', name: 'Tactical Headband', type: 'gear', required_rank: 'Operator', required_level: 12, icon: 'gear', description: 'Focus-enhancing headband.' },
-  { id: 'badge_first_week', name: 'Week 1 Badge', type: 'badge', required_rank: 'Recruit', required_level: 1, icon: 'badge', description: 'Completed the first week of training.' },
-  { id: 'badge_streak_7', name: '7-Day Streak Badge', type: 'badge', required_rank: 'Recruit', required_level: 1, icon: 'badge', description: 'Maintained a 7-day training streak.' },
-  { id: 'outfit_veteran', name: 'Veteran Warfare Kit', type: 'outfit', required_rank: 'Veteran', required_level: 20, icon: 'outfit', description: 'Battle-worn veteran training kit.' },
-  { id: 'outfit_elite', name: 'Elite Stealth Suit', type: 'outfit', required_rank: 'Elite', required_level: 30, icon: 'outfit', description: 'All-black elite stealth suit.' },
-  { id: 'gear_watch', name: 'Tactical Watch', type: 'gear', required_rank: 'Elite', required_level: 35, icon: 'gear', description: 'Precision tactical chronometer.' },
-  { id: 'outfit_shadow', name: 'Shadow Ops Gear', type: 'outfit', required_rank: 'Shadow', required_level: 40, icon: 'outfit', description: 'Classified shadow operations gear.' },
-  { id: 'outfit_apex', name: 'Apex Legendary Armor', type: 'outfit', required_rank: 'Apex', required_level: 50, icon: 'outfit', description: 'Legendary armor for the apex warrior.' },
-];
+/**
+ * Civilian names for the same ladder. The progression is the app's spine, but its
+ * military framing only belongs to people who chose Military Prep — everyone else
+ * gets the same tiers in plain training language.
+ */
+const CIVILIAN: Record<Rank, { title: string; description: string }> = {
+  Recruit: { title: 'Beginner', description: 'Just getting started. Build the habit.' },
+  Cadet: { title: 'Novice', description: 'You have earned your place. Keep pushing.' },
+  Operator: { title: 'Intermediate', description: 'Training is a routine now. Serious discipline.' },
+  Veteran: { title: 'Advanced', description: 'Proven work behind you. Well earned.' },
+  Elite: { title: 'Elite', description: 'Top tier. Few make it here.' },
+  Shadow: { title: 'Master', description: 'Relentless. Consistent. Hard to match.' },
+  Apex: { title: 'Apex', description: 'The pinnacle. Best in class.' },
+};
 
 export function getRankInfo(rank: Rank): RankInfo | undefined {
   return ranks.find(r => r.rank === rank);
 }
 
-export function getUnlockedAvatarItems(level: number, rank: Rank): AvatarUnlock[] {
-  const rankOrder: Rank[] = ['Recruit', 'Cadet', 'Operator', 'Veteran', 'Elite', 'Shadow', 'Apex'];
-  const rankIndex = rankOrder.indexOf(rank);
-  return avatarUnlocks.filter(u => {
-    const requiredRankIndex = rankOrder.indexOf(u.required_rank);
-    return requiredRankIndex <= rankIndex && u.required_level <= level;
-  });
+/** Display name for a rank, in the language that fits the athlete. */
+export function rankTitle(rank: Rank, military: boolean): string {
+  return military ? rank : CIVILIAN[rank].title;
+}
+
+export function rankDescription(rank: Rank, military: boolean): string {
+  return military ? (getRankInfo(rank)?.description ?? '') : CIVILIAN[rank].description;
 }

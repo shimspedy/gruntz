@@ -147,16 +147,6 @@ export interface AvatarConfig {
   badge_ids: string[];
 }
 
-export interface AvatarUnlock {
-  id: string;
-  name: string;
-  type: 'outfit' | 'gear' | 'badge';
-  required_rank: Rank;
-  required_level: number;
-  icon: string;
-  description: string;
-}
-
 export interface UserProfile {
   id: string;
   display_name: string;

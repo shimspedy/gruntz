@@ -73,7 +73,7 @@ export async function shareStreak(streakDays: number, rank?: string) {
   const headline = streakDays >= 1
     ? `${streakDays}-day streak on Gruntz${rank ? ` · ${rank}` : ''}`
     : 'Training daily on Gruntz';
-  const message = `${headline}\nMission-based military fitness — show up daily.\n${SHARE_DEEPLINK}`;
+  const message = `${headline}\nTraining that shows up every day.\n${SHARE_DEEPLINK}`;
   try {
     await Share.share({ message, url: SHARE_DEEPLINK, title: 'Gruntz' });
     return true;

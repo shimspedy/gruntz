@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated from 'react-native-reanimated';
 import { getWorkoutPlan, type PlanDay } from '../data/workoutPlans';
-import { EQUIPMENT_LABEL, planDayHero, planHero, planMeta, planMinutes } from '../features/planDisplay';
+import { displayTitle, EQUIPMENT_LABEL, planDayHero, planHero, planMeta, planMinutes } from '../features/planDisplay';
 import { nextPlanDay, planProgress, usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import type { RootStackParamList } from '../types/navigation';
 import { Button } from '../ui/Button';
@@ -92,7 +92,7 @@ export default function LibraryPlanDetailScreen() {
                 </Text>
               </View>
             ) : null}
-            <Text variant="display">{plan.title.toUpperCase()}</Text>
+            <Text variant="display">{displayTitle(plan.title)}</Text>
             <Text variant="callout" tone="secondary" style={{ marginTop: 6 }}>
               {planMeta(plan)}
             </Text>

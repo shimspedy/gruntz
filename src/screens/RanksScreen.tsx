@@ -7,7 +7,7 @@ import { MuscleBodyMap } from '../components/MuscleBodyMap';
 import { TabHeader } from '../components/TabHeader';
 import { achievements as allAchievements } from '../data/achievements';
 import { getExerciseById } from '../data/exercises';
-import { getRankInfo, ranks } from '../data/ranks';
+import { getRankInfo, rankDescription, ranks, rankTitle } from '../data/ranks';
 import { useTabChromeInset } from '../navigation/TabBar';
 import { useUserStore } from '../store/useUserStore';
 import { Button } from '../ui/Button';
@@ -46,6 +46,8 @@ export default function RanksScreen() {
   const ref = React.useRef<ScrollView>(null);
   useScrollToTop(ref);
   const progress = useUserStore((s) => s.progress);
+  // Military framing belongs only to athletes who chose Military Prep.
+  const military = useUserStore((s) => !!s.profile?.goals.includes('Military Prep'));
   const unlockedCount = useUserStore((s) => s.achievements.filter((a) => a.unlocked).length);
   const xp = getXPToNextLevel(progress.current_xp);
   const rankIndex = RANK_ORDER.indexOf(progress.current_rank);
@@ -81,7 +83,7 @@ export default function RanksScreen() {
               </Text>
               <Icon name="info" size={16} color={color.textSecondary} />
             </View>
-            <Text style={[styles.rankName, fresh && { color: color.textTertiary }]}>{progress.current_rank}</Text>
+            <Text style={[styles.rankName, fresh && { color: color.textTertiary }]}>{rankTitle(progress.current_rank, military)}</Text>
             <Text variant="callout" tone="secondary" style={{ marginTop: 2 }}>
               {fresh ? 'Complete a mission to start climbing' : `Level ${progress.current_level} · ${RANK_TIERS[progress.current_rank].name} tier`}
             </Text>
@@ -101,7 +103,7 @@ export default function RanksScreen() {
               {xp.current.toLocaleString()} / {xp.required.toLocaleString()} XP
             </Text>
             <Text variant="subhead" tone="secondary">
-              {next ? `${next.rank} at level ${next.minLevel}` : 'Top rank'}
+              {next ? `${rankTitle(next.rank, military)} at level ${next.minLevel}` : 'Top rank'}
             </Text>
           </View>
           <Bar progress={xp.progress} height={6} style={{ marginTop: 8 }} />
@@ -114,7 +116,7 @@ export default function RanksScreen() {
         />
         {info ? (
           <Text variant="footnote" tone="tertiary" align="center" style={{ marginTop: space.sm }}>
-            {info.description}
+            {rankDescription(progress.current_rank, military)}
           </Text>
         ) : null}
       </View>

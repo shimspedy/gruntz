@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { WorkoutPlan } from '../data/workoutPlans';
-import { planHero, planMeta, planMinutes } from '../features/planDisplay';
+import { displayTitle, planHero, planMeta, planMinutes } from '../features/planDisplay';
 import { HeroArt } from '../ui/ExerciseArt';
 import { Icon } from '../ui/Icon';
 import { Tap } from '../ui/Pressable';
@@ -48,7 +48,7 @@ function PlanCardBase({
       ) : null}
       <View style={styles.copy}>
         <Text variant="hero" numberOfLines={2}>
-          {plan.title.toUpperCase()}
+          {displayTitle(plan.title)}
         </Text>
         <Text variant="callout" tone="secondary" style={{ marginTop: 6 }} numberOfLines={1}>
           {planMeta(plan)}

@@ -8,6 +8,7 @@ import { claimedDates } from '../features/plan';
 import { useTabChromeInset } from '../navigation/TabBar';
 import { useProgramStore } from '../store/useProgramStore';
 import { getAccessState, getTrialDaysRemaining, useSubscriptionStore } from '../store/useSubscriptionStore';
+import { rankTitle } from '../data/ranks';
 import { useUserStore } from '../store/useUserStore';
 import { Button } from '../ui/Button';
 import { Icon, type IconName } from '../ui/Icon';
@@ -50,6 +51,7 @@ export default function ProfileScreen() {
   const profile = useUserStore((s) => s.profile);
   const setProfile = useUserStore((s) => s.setProfile);
   const progress = useUserStore((s) => s.progress);
+  const military = useUserStore((s) => !!s.profile?.goals.includes('Military Prep'));
   const program = useProgramStore((s) => s.selectedProgram);
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
   const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
@@ -162,7 +164,7 @@ export default function ProfileScreen() {
         />
         <Row icon="flag" title="Service & test profile" onPress={() => navigation.navigate('ServiceProfile')} />
         <Row icon="people" title="Leader tools" value="Coming soon" onPress={() => navigation.navigate('LeaderTools')} />
-        <Row icon="share" title="Share my streak" onPress={() => void shareStreak(progress.streak_days, progress.current_rank)} />
+        <Row icon="share" title="Share my streak" onPress={() => void shareStreak(progress.streak_days, rankTitle(progress.current_rank, military))} />
       </Group>
 
       <Sheet visible={editing} onClose={() => setEditing(false)} title="Edit profile" avoidKeyboard>
