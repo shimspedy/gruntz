@@ -3,8 +3,8 @@
 Six audits of the app (workout player, onboarding/paywall, plans & library, navigation/state/performance,
 copy & accessibility, data correctness), scored by how much each one would annoy a real user.
 
-- **Fixed: 146** — the 55 first-pass fixes, plus 91 of the numbered items below.
-- **Open: 31** — including 5 that need a device or account.
+- **Fixed: 149** — the 55 first-pass fixes, plus 94 of the numbered items below.
+- **Open: 28** — including 5 that need a device or account.
 
 Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[dev]` needs a device or account to verify.
 
@@ -172,7 +172,7 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 67. [x] `createActions.ts:32` reads the program store with no hydration check — can dump a returning user into ProgramSelect.
 68. [x] Onboarding draft is cleared on user-store hydration, which may precede draft hydration.
 69. [x] No `linking` config or URL scheme: notification taps and deep links can't route.
-70. [ ] No Android `BackHandler` for the session overlay or the + menu.
+70. [x] No Android `BackHandler` for the session overlay or the + menu.
 71. [x] Challenge store cross-writes during hydration; XP/streak can recompute from an empty array.
 72. [x] `ErrorBoundary.reset` remounts the same corrupt state — infinite "Try again" loop.
 73. [x] Toasts render below native modals, so toasts fired from a sheet are invisible.
@@ -186,8 +186,8 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 81. [ ] Tab-bar inset is read once, so the last row hides behind the pill or mini bar.
 82. [ ] Train and Ranks render long content as `ScrollView` + `.map()` rather than a list.
 83. [x] `useMissionStore` duplicates program logic and goes stale past midnight; daily challenge doesn't refresh at midnight either.
-84. [ ] Run tracker copies the whole route array into state on every GPS fix; `stop()` can read stale state.
-85. [ ] `App.tsx` doesn't hold the native splash, so there's an extra black-to-black transition.
+84. [x] Run tracker copies the whole route array into state on every GPS fix; `stop()` can read stale state.
+85. [x] `App.tsx` doesn't hold the native splash, so there's an extra black-to-black transition.
 
 ## Open — copy, empty states, accessibility
 

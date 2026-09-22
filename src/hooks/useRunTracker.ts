@@ -42,6 +42,9 @@ interface TrackerInternals {
 
 const METERS_TO_MILES = 0.000621371;
 const METERS_TO_FEET = 3.28084;
+/** Refresh the on-screen route line every N fixes rather than on every one. */
+const ROUTE_COPY_EVERY = 5;
+
 const MPS_TO_MPH = 2.23694;
 
 /** Haversine distance between two GPS points in meters */
@@ -108,6 +111,9 @@ export function useRunTracker(options: { batterySaver?: boolean } = {}) {
   const distanceRef = useRef(0);
   const elevationRef = useRef(0);
   const routeRef = useRef<RoutePoint[]>([]);
+  /** Mirrors the latest state so `stop()` never reads a stale closure. */
+  const stateRef = useRef(state);
+  stateRef.current = state;
   const stepsRef = useRef(0);
 
   const attachPedometer = useCallback(async () => {
@@ -168,12 +174,17 @@ export function useRunTracker(options: { batterySaver?: boolean } = {}) {
 
           routeRef.current.push(point);
 
+          // Copying the whole route on every fix is O(n) per point and O(n squared)
+          // over a run — thousands of points on a 10 km effort. The line on screen
+          // does not need per-point fidelity, so the copy is batched; `stop()` takes
+          // the exact final route from the ref.
+          const copyRoute = routeRef.current.length % ROUTE_COPY_EVERY === 0;
           setState((prev) => ({
             ...prev,
             distanceMiles: Math.round(distanceRef.current * 100) / 100,
             elevationGainFt: Math.round(elevationRef.current),
             currentSpeedMph: point.speed != null ? Math.round(point.speed * MPS_TO_MPH * 10) / 10 : null,
-            route: [...routeRef.current],
+            route: copyRoute ? [...routeRef.current] : prev.route,
             caloriesEstimate: estimateCalories(distanceRef.current),
           }));
         },
@@ -283,14 +294,20 @@ export function useRunTracker(options: { batterySaver?: boolean } = {}) {
     internals.current.pedometerSub = null;
     internals.current.timerInterval = null;
 
+    // Built from the refs, not the captured `state`: the last fixes may not have
+    // flushed through setState yet, and a saved run was missing its final points.
     const finalState: RunTrackerState = {
-      ...state,
+      ...stateRef.current,
+      distanceMiles: Math.round(distanceRef.current * 100) / 100,
+      elevationGainFt: Math.round(elevationRef.current),
+      route: [...routeRef.current],
+      caloriesEstimate: estimateCalories(distanceRef.current),
       isTracking: false,
       isPaused: false,
     };
     setState(finalState);
     return finalState;
-  }, [state]);
+  }, []);
 
   // Cleanup
   useEffect(() => {

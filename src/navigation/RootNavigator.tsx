@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AppState, StyleSheet, View } from 'react-native';
+import { AppState, BackHandler, Platform, StyleSheet, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DarkTheme, NavigationContainer, type InitialState, type NavigationState } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -45,6 +45,7 @@ import { useSubscriptionStore } from '../store/useSubscriptionStore';
 import { useProgramStore } from '../store/useProgramStore';
 import { useRoutineStore } from '../store/useRoutineStore';
 import { useSessionStore } from '../store/useSessionStore';
+import { useUiStore } from '../store/useUiStore';
 import { useUserStore } from '../store/useUserStore';
 import type { OnboardingStackParamList, RootStackParamList, TabParamList } from '../types/navigation';
 import { LogoMark } from '../ui/Logo';
@@ -190,6 +191,30 @@ function restorable(state: InitialState | undefined): InitialState | undefined {
   return { ...state, routes: kept, index: kept.length - 1 } as InitialState;
 }
 
+/**
+ * Android's hardware back should close whatever is on top. Neither the + menu nor
+ * the full-screen workout overlay is a navigator screen, so back used to fall
+ * through them and leave the app instead.
+ */
+function useAndroidBack() {
+  useEffect(() => {
+    if (Platform.OS !== 'android') return undefined;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (useUiStore.getState().createMenuOpen) {
+        useUiStore.getState().setCreateMenu(false);
+        return true;
+      }
+      const session = useSessionStore.getState();
+      if (session.active && !session.minimized) {
+        session.minimize();
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, []);
+}
+
 /** Subscribes to a persisted store's hydration so the boot gate actually re-renders. */
 function usePersistHydrated(store: { persist: { hasHydrated: () => boolean; onFinishHydration: (fn: () => void) => () => void } }) {
   const [hydrated, setHydrated] = useState(() => store.persist.hasHydrated());
@@ -280,6 +305,7 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   const resetDailyChallenge = useChallengeStore((s) => s.resetDaily);
   const nav = useSavedNavigation(hasHydrated, isOnboarded);
   const programHydrated = useProgramStore((s) => s.hasHydrated);
+  useAndroidBack();
   const sessionHydrated = usePersistHydrated(useSessionStore);
   const routineHydrated = usePersistHydrated(useRoutineStore);
   const remindersOn = useUserStore((s) => s.profile?.settings.notifications_enabled ?? true);

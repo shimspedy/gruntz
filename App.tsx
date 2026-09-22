@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Linking, LogBox, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
@@ -22,6 +23,11 @@ import { color } from './src/ui/tokens';
 // Dev-only: suppress known RevenueCat config warnings while App Store Connect
 // products haven't propagated. In production we WANT these logs surfaced so
 // crash reporting catches actual setup errors.
+// Hold the native splash until fonts are resolved, so the app goes straight from
+// the splash into the first real frame. Without this the splash dropped to the
+// black root view and then to Boot — an extra black-to-black transition.
+void SplashScreen.preventAutoHideAsync().catch(() => undefined);
+
 if (__DEV__) {
   LogBox.ignoreLogs([
     '[RevenueCat]',
@@ -40,6 +46,18 @@ export default function App() {
     DMSans_800ExtraBold,
     DMSans_900Black,
   });
+
+  const fontsReady = fontsLoaded || !!fontError;
+
+  useEffect(() => {
+    // A font that never resolves must not leave the app stuck behind the splash.
+    if (fontsReady) void SplashScreen.hideAsync().catch(() => undefined);
+  }, [fontsReady]);
+
+  useEffect(() => {
+    const t = setTimeout(() => void SplashScreen.hideAsync().catch(() => undefined), 4000);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     // Prepare notification channels silently. Permission is requested in context
@@ -61,7 +79,7 @@ export default function App() {
       <SafeAreaProvider>
         <ErrorBoundary>
           <StatusBar style="light" />
-          <RootNavigator fontsReady={fontsLoaded || !!fontError} />
+          <RootNavigator fontsReady={fontsReady} />
           <ToastHost />
         </ErrorBoundary>
       </SafeAreaProvider>
