@@ -49,6 +49,9 @@ import { color } from '../ui/tokens';
 import { navigationRef } from './ref';
 import { TabBar } from './TabBar';
 
+/** Coalesce navigation-state writes; a tab tap should not cost a disk write. */
+const NAV_SAVE_DEBOUNCE_MS = 600;
+
 /** How long an entitlement check stays fresh before the next foreground re-checks. */
 const ENTITLEMENT_REFRESH_MS = 30 * 60 * 1000;
 
@@ -204,8 +207,40 @@ function useSavedNavigation(hydrated: boolean, onboarded: boolean) {
       cancelled = true;
     };
   }, [hydrated, onboarded, ready]);
+  // onStateChange fires on every navigation, including each tab tap and every step
+  // of a gesture, and each one serialised the whole tree to disk. Coalesced to one
+  // write, and flushed when the app leaves the foreground so nothing in flight is
+  // lost if iOS kills us.
+  const pending = useRef<NavigationState | undefined>(undefined);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => {
+    const flush = () => {
+      clearTimeout(timer.current);
+      timer.current = undefined;
+      const state = pending.current;
+      pending.current = undefined;
+      if (state) void AsyncStorage.setItem(NAV_KEY, JSON.stringify({ savedAt: Date.now(), state })).catch(() => undefined);
+    };
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next !== 'active') flush();
+    });
+    return () => {
+      sub.remove();
+      flush();
+    };
+  }, []);
+
   const save = (state: NavigationState | undefined) => {
-    if (state) void AsyncStorage.setItem(NAV_KEY, JSON.stringify({ savedAt: Date.now(), state })).catch(() => undefined);
+    if (!state) return;
+    pending.current = state;
+    if (timer.current) return;
+    timer.current = setTimeout(() => {
+      clearTimeout(timer.current);
+      timer.current = undefined;
+      const next = pending.current;
+      pending.current = undefined;
+      if (next) void AsyncStorage.setItem(NAV_KEY, JSON.stringify({ savedAt: Date.now(), state: next })).catch(() => undefined);
+    }, NAV_SAVE_DEBOUNCE_MS);
   };
   return { ready, initial, save };
 }

@@ -3,8 +3,8 @@
 Six audits of the app (workout player, onboarding/paywall, plans & library, navigation/state/performance,
 copy & accessibility, data correctness), scored by how much each one would annoy a real user.
 
-- **Fixed: 122** — the 55 first-pass fixes, plus 67 of the numbered items below.
-- **Open: 55** — including 5 that need a device or account.
+- **Fixed: 125** — the 55 first-pass fixes, plus 70 of the numbered items below.
+- **Open: 52** — including 5 that need a device or account.
 
 Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[dev]` needs a device or account to verify.
 
@@ -142,7 +142,7 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 43. [x] Repeated swaps grow the exercise key unboundedly, remounting the page.
 44. [ ] Distance is free text with no validation; mission stores it as a joined string.
 45. [x] "Add exercise" navigates away and returns you to the end of the list, not your set.
-46. [ ] Mini bar shows the viewed index ("0/0" when empty), counts warm-ups, and offers no skip-rest or finish.
+46. [x] Mini bar shows the viewed index ("0/0" when empty), counts warm-ups, and offers no skip-rest or finish.
 47. [x] Warm-up weights round to 5 regardless of unit (metric users get 5 kg steps).
 
 ## Open — plans and library
@@ -167,7 +167,7 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 ## Open — navigation, state, performance
 
 64. [ ] `exerciseMedia.ts` registers ~1,500 assets at module load on the startup path.
-65. [ ] Navigation state is written on every screen change (`RootNavigator.tsx:170`) — debounce.
+65. [x] Navigation state is written on every screen change (`RootNavigator.tsx:170`) — debounce.
 66. [ ] Boot gate waits only on user + subscription stores; program/session/challenge/routine stores can render defaults then jump.
 67. [ ] `createActions.ts:32` reads the program store with no hydration check — can dump a returning user into ProgramSelect.
 68. [ ] Onboarding draft is cleared on user-store hydration, which may precede draft hydration.
@@ -179,7 +179,7 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 74. [x] Toasts have no queue: two events in quick succession show only the last.
 75. [ ] Exercise log, notes, `previous` and `claimed_missions` all grow without bound.
 76. [ ] `useUserStore.partialize` copies progress and converts a Set on every write.
-77. [ ] Mini bar ticks every second inside the tab bar on every screen.
+77. [x] Mini bar ticks every second inside the tab bar on every screen.
 78. [x] `initializeSubscription()` hits RevenueCat on every foreground.
 79. [ ] Restored navigation state doesn't recurse into nested tab state, and 12 h-old date params can show yesterday's workout as today's.
 80. [x] Re-tapping the active tab does nothing (no scroll-to-top).

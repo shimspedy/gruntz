@@ -17,13 +17,16 @@ export function SessionMiniBar() {
   const startedAt = useSessionStore((s) => s.startedAt);
   const expand = useSessionStore((s) => s.expand);
   const restEndsAt = useSessionStore((s) => s.restEndsAt);
+  const endRest = useSessionStore((s) => s.endRest);
   const now = useNow(true);
 
   const current = exercises[index];
   const ex = current ? getExerciseById(current.exerciseId) : undefined;
   const done = exercises.filter(isExerciseDone).length;
-  const setsDone = current ? current.sets.filter((s) => s.done).length : 0;
-  const resting = restEndsAt && restEndsAt > now;
+  // Working sets only, like the rest of the app.
+  const workingSets = current ? current.sets.filter((st) => !st.warmup) : [];
+  const setsDone = workingSets.filter((st) => st.done).length;
+  const resting = !!restEndsAt && restEndsAt > now;
 
   return (
     <Animated.View entering={FadeInDown.duration(260)} exiting={FadeOutDown.duration(160)}>
@@ -44,12 +47,35 @@ export function SessionMiniBar() {
             Training
           </Text>
           <Text variant="caption" tone="tertiary" tabular>
-            Exercise {Math.min(index + 1, exercises.length)}/{exercises.length} | {startedAt ? formatClock(now - startedAt) : '0:00'}
+            {/* Completed, not the page you happen to be looking at — and nothing at
+                all rather than "0/0" when the workout has no exercises left. */}
+            {exercises.length ? `${done}/${exercises.length} done | ` : ''}
+            {startedAt ? formatClock(now - startedAt) : '0:00'}
           </Text>
         </View>
-        <Text variant="bodyMedium" align="center" numberOfLines={1} style={{ marginTop: 2 }}>
-          {resting ? `Resting · ${formatClock(restEndsAt! - now)}` : ex ? `${ex.name} · Set ${Math.min(setsDone + 1, current!.sets.length)} of ${current!.sets.length}` : 'Workout in progress'}
-        </Text>
+        <View style={styles.line}>
+          <Text variant="bodyMedium" align="center" numberOfLines={1} style={{ flex: 1 }}>
+            {resting
+              ? `Resting · ${formatClock(restEndsAt - now)}`
+              : ex
+                ? `${ex.name} · Set ${Math.min(setsDone + 1, workingSets.length)} of ${workingSets.length}`
+                : 'Workout in progress'}
+          </Text>
+          {/* Skipping rest used to mean reopening the whole session first. */}
+          {resting ? (
+            <Tap
+              feedback="opacity"
+              hitSlop={10}
+              onPress={() => {
+                haptic.light();
+                endRest();
+              }}
+              accessibilityLabel="Skip rest"
+            >
+              <Text variant="caption" tone="accent">Skip</Text>
+            </Tap>
+          ) : null}
+        </View>
       </Tap>
     </Animated.View>
   );
@@ -67,4 +93,5 @@ const styles = StyleSheet.create({
   },
   progress: { position: 'absolute', top: 0, left: 0, right: 0 },
   meta: { flexDirection: 'row', justifyContent: 'space-between' },
+  line: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginTop: 2 },
 });
