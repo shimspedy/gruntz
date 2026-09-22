@@ -1,5 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import { getProgramWorkoutForDate, getNextProgramWorkout } from '../data/programWorkouts';
+import { usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { useProgramStore } from '../store/useProgramStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { useRoutineStore } from '../store/useRoutineStore';
@@ -29,9 +30,20 @@ export function useCreateActions(): CreateAction[] {
       useSessionStore.getState().expand();
       return;
     }
-    const program = useProgramStore.getState().selectedProgram;
+    // Reading the program before its store has rehydrated reports "no program" for
+    // someone who has one, and dumps a returning user into program selection.
+    const programState = useProgramStore.getState();
+    if (!programState.hasHydrated) {
+      navigation.navigate('Plan');
+      return;
+    }
+    const program = programState.selectedProgram;
     if (!program) {
-      navigation.navigate('ProgramSelect');
+      // Following a plan from the library is a perfectly good answer to "start a
+      // workout"; only send people to program selection when they have neither.
+      const planId = usePlanLibraryStore.getState().activePlanId;
+      if (planId) navigation.navigate('LibraryPlanDetail', { planId });
+      else navigation.navigate('ProgramSelect');
       return;
     }
     const { currentWeek } = useProgramStore.getState();

@@ -3,8 +3,8 @@
 Six audits of the app (workout player, onboarding/paywall, plans & library, navigation/state/performance,
 copy & accessibility, data correctness), scored by how much each one would annoy a real user.
 
-- **Fixed: 136** — the 55 first-pass fixes, plus 81 of the numbered items below.
-- **Open: 41** — including 5 that need a device or account.
+- **Fixed: 138** — the 55 first-pass fixes, plus 83 of the numbered items below.
+- **Open: 39** — including 5 that need a device or account.
 
 Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[dev]` needs a device or account to verify.
 
@@ -169,7 +169,7 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 64. [ ] `exerciseMedia.ts` registers ~1,500 assets at module load on the startup path.
 65. [x] Navigation state is written on every screen change (`RootNavigator.tsx:170`) — debounce.
 66. [ ] Boot gate waits only on user + subscription stores; program/session/challenge/routine stores can render defaults then jump.
-67. [ ] `createActions.ts:32` reads the program store with no hydration check — can dump a returning user into ProgramSelect.
+67. [x] `createActions.ts:32` reads the program store with no hydration check — can dump a returning user into ProgramSelect.
 68. [ ] Onboarding draft is cleared on user-store hydration, which may precede draft hydration.
 69. [x] No `linking` config or URL scheme: notification taps and deep links can't route.
 70. [ ] No Android `BackHandler` for the session overlay or the + menu.
@@ -197,7 +197,7 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 89. [x] `Linking.openURL` unguarded in the Test screen (`TestScreen.tsx:190`).
 90. [ ] Remaining military wording for general users: Welcome slides, Test tab, "Private" readiness tier, "Alpha Section" placeholder, "Branch" link.
 91. [x] Stats renders six zeros on a fresh install with no empty state; Streak screen has no zero state and pages into empty future months.
-92. [ ] Imperial hardcoded in Stats pack weight, Run tracker elevation and pack input, Test screen units; `units: 'imperial'` is assumed at profile creation.
+92. [x] Imperial hardcoded in Stats pack weight, Run tracker elevation and pack input, Test screen units; `units: 'imperial'` is assumed at profile creation.
 93. [x] `textTertiary` (~4.1:1) and `textQuaternary` (~2.3:1) fail WCAG AA on black, used in 40 files — including inactive tab labels and Settings values.
 94. [ ] Paywall: Restore/Terms/Privacy are bare text under 44 pt; the auto-renew disclosure is 10 pt grey; a stale cached price can render.
 95. [x] `Text` caps Dynamic Type at 1.3×, below iOS accessibility sizes.

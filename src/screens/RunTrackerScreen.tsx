@@ -174,9 +174,17 @@ export default function RunTrackerScreen() {
               <Animated.View entering={FadeInDown.duration(260)} style={styles.ruck}>
                 <View style={styles.packBox}>
                   <Text variant="subhead" tone="secondary">
-                    Pack (lb)
+                    Pack ({metric ? 'kg' : 'lb'})
                   </Text>
-                  <TextInput value={pack} onChangeText={setPack} keyboardType="number-pad" maxLength={3} style={styles.packInput} selectionColor={color.accent} accessibilityLabel="Pack weight in pounds" />
+                  <TextInput
+                    value={pack}
+                    onChangeText={setPack}
+                    keyboardType="number-pad"
+                    maxLength={3}
+                    style={styles.packInput}
+                    selectionColor={color.accent}
+                    accessibilityLabel={metric ? 'Pack weight in kilograms' : 'Pack weight in pounds'}
+                  />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text variant="subhead" tone="secondary" style={{ marginBottom: 8 }}>
@@ -212,13 +220,14 @@ export default function RunTrackerScreen() {
 
         <View style={styles.secondary}>
           <Small label="Steps" value={tracker.steps.toLocaleString()} />
-          <Small label="Elevation" value={`${elev} ft`} />
+          {/* The barometer reports feet; a metric athlete should not have to convert. */}
+          <Small label="Elevation" value={metric ? `${Math.round(elev * 0.3048)} m` : `${elev} ft`} />
           <Small label="Calories" value={String(tracker.caloriesEstimate)} />
         </View>
 
         {baro.isActive && baro.currentAltitudeFt != null ? (
           <Text variant="footnote" tone="tertiary" align="center" style={{ marginTop: space.md }}>
-            Altitude {baro.currentAltitudeFt} ft · {baro.currentPressure} hPa
+            Altitude {metric ? `${Math.round(baro.currentAltitudeFt * 0.3048)} m` : `${baro.currentAltitudeFt} ft`} · {baro.currentPressure} hPa
           </Text>
         ) : null}
 

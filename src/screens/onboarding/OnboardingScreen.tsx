@@ -21,6 +21,7 @@ import { requestNotificationPermission, scheduleDailyReminder, scheduleWeeklyRec
 import { useProgramStore } from '../../store/useProgramStore';
 import { useSubscriptionStore } from '../../store/useSubscriptionStore';
 import { useUserStore } from '../../store/useUserStore';
+import { defaultUnits } from '../../utils/units';
 import type { FitnessTestType, ServiceBranch, ServiceStatus, UserProfile } from '../../types';
 import { Button } from '../../ui/Button';
 import { Icon, type IconName } from '../../ui/Icon';
@@ -217,7 +218,7 @@ function OnboardingFlow() {
       fitness_test_type: !military ? branchDefaultTest.general : branch === 'marines' ? testType : branchDefaultTest[branch ?? 'general'],
       fitness_test_date: testDate,
       occupational_demands: [],
-      settings: { notifications_enabled: remindersOn, reminder_time: '07:00', units: 'imperial' },
+      settings: { notifications_enabled: remindersOn, reminder_time: '07:00', units: defaultUnits() },
     }),
     [name, level, goals, gear, days, age, guardrails, minutes, intensity, branch, status, testType, testDate, remindersOn, military],
   );
