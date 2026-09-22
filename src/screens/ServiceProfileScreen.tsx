@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { branchDefaultTest, getTestsForBranch } from '../data/militaryTests';
 import { useUserStore } from '../store/useUserStore';
+import { toast } from '../ui/Toast';
 import type { FitnessTestType, ServiceBranch, ServiceStatus } from '../types';
 import { Icon } from '../ui/Icon';
 import { NavHeader } from '../ui/Layout';
@@ -33,9 +34,24 @@ export default function ServiceProfileScreen() {
   const selectedTest = tests.some((t) => t.id === profile?.fitness_test_type) ? profile?.fitness_test_type : branchDefaultTest[branch];
 
   const update = (patch: Partial<NonNullable<typeof profile>>) => {
-    if (!profile) return;
+    // Every row was a silent no-op before the profile loaded, which looked like the
+    // screen was broken rather than not ready.
+    if (!profile) {
+      toast('Your profile is still loading', { tone: 'info', icon: 'alert' });
+      return;
+    }
     haptic.selection();
     setProfile({ ...profile, ...patch });
+  };
+
+  /**
+   * Switching branch normally moves you to that branch's default test — but not if
+   * you had deliberately chosen a different one that the new branch also offers.
+   * That choice used to be discarded without a word.
+   */
+  const selectBranch = (next: ServiceBranch) => {
+    const keepsTest = getTestsForBranch(next).some((t) => t.id === profile?.fitness_test_type);
+    update({ service_branch: next, ...(keepsTest ? {} : { fitness_test_type: branchDefaultTest[next] }) });
   };
 
   return (
@@ -48,7 +64,7 @@ export default function ServiceProfileScreen() {
 
         <Choice label="Branch">
           {BRANCHES.map((b) => (
-            <Option key={b} title={BRANCH_LABEL[b]} selected={branch === b} onPress={() => update({ service_branch: b, fitness_test_type: branchDefaultTest[b] })} />
+            <Option key={b} title={BRANCH_LABEL[b]} selected={branch === b} onPress={() => selectBranch(b)} />
           ))}
         </Choice>
 

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useNavigation, useScrollToTop } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
@@ -167,7 +167,24 @@ export default function ProfileScreen() {
         <Row icon="share" title="Share my streak" onPress={() => void shareStreak(progress.streak_days, rankTitle(progress.current_rank, military))} />
       </Group>
 
-      <Sheet visible={editing} onClose={() => setEditing(false)} title="Edit profile" avoidKeyboard>
+      {/* Closing used to discard whatever had been typed without a word. A name that
+          is actually different is confirmed first. */}
+      <Sheet
+        visible={editing}
+        onClose={() => {
+          const typed = name.trim();
+          if (typed && typed !== (profile?.display_name ?? '')) {
+            Alert.alert('Discard changes?', 'Your new name has not been saved.', [
+              { text: 'Keep editing', style: 'cancel' },
+              { text: 'Discard', style: 'destructive', onPress: () => setEditing(false) },
+            ]);
+            return;
+          }
+          setEditing(false);
+        }}
+        title="Edit profile"
+        avoidKeyboard
+      >
         <View style={{ paddingHorizontal: space.gutter, paddingTop: space.md }}>
           <Text variant="subhead" tone="secondary" style={{ marginBottom: 8 }}>
             Name
@@ -175,9 +192,9 @@ export default function ProfileScreen() {
           <TextInput
             value={name}
             onChangeText={setName}
-            placeholder="Recruit"
+            placeholder="Your name"
             placeholderTextColor={color.textTertiary}
-            maxLength={24}
+            maxLength={40}
             autoFocus
             autoCapitalize="words"
             autoCorrect={false}
@@ -189,10 +206,13 @@ export default function ProfileScreen() {
             title="Save"
             style={{ marginTop: space.lg }}
             onPress={() => {
-              if (profile) setProfile({ ...profile, display_name: name.trim() || 'Athlete' });
+              const next = name.trim() || 'Athlete';
+              const changed = next !== (profile?.display_name ?? '');
+              if (profile && changed) setProfile({ ...profile, display_name: next });
               haptic.success();
               setEditing(false);
-              toast('Profile updated');
+              // Saying "updated" when nothing changed teaches people the toast is noise.
+              if (changed) toast('Profile updated');
             }}
           />
         </View>

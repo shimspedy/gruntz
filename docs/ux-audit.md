@@ -3,8 +3,8 @@
 Six audits of the app (workout player, onboarding/paywall, plans & library, navigation/state/performance,
 copy & accessibility, data correctness), scored by how much each one would annoy a real user.
 
-- **Fixed: 165** — the 55 first-pass fixes, plus 110 of the numbered items below.
-- **Open: 12** — including 5 that need a device or account.
+- **Fixed: 168** — the 55 first-pass fixes, plus 113 of the numbered items below.
+- **Open: 9** — including 5 that need a device or account.
 
 Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[dev]` needs a device or account to verify.
 
@@ -157,7 +157,7 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 55. [x] Following a plan only toasts: no scheduling, no jump to day one, no explanation of what changes.
 56. [x] Plan day rows recompute a superset filter per row (O(n²) on 25-exercise days).
 57. [x] "Add to a workout" lists only 5 routines via `Alert` as a picker (`ExerciseDetailScreen.tsx:104-105`).
-58. [ ] Routine editor: delete with no confirm or undo; only "move up"; 40 pt steppers; skeleton rows read as loading; Save disabled with no reason.
+58. [x] Routine editor: delete with no confirm or undo; only "move up"; 40 pt steppers; skeleton rows read as loading; Save disabled with no reason.
 59. [x] Routine detail on Android skips the menu and goes straight to delete confirm.
 60. [x] Deleting a routine is unrecoverable (no soft delete).
 61. [x] `PlanScreen` ignores a followed library plan and shows "0 of 0" with no empty state.
@@ -202,8 +202,8 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 94. [ ] Paywall: Restore/Terms/Privacy are bare text under 44 pt; the auto-renew disclosure is 10 pt grey; a stale cached price can render.
 95. [x] `Text` caps Dynamic Type at 1.3×, below iOS accessibility sizes.
 96. [x] Ranks screen: ALL-CAPS level line, "0/100" on every skill for new users, and a dead info icon.
-97. [ ] Profile: sheet discards typed name on backdrop tap; Save toasts success when the write is a no-op; 24-char names truncate; per-bar chart values not exposed to VoiceOver.
-98. [ ] Service profile: picking a branch silently resets a deliberate test choice; every row is a no-op when the profile is null; no test date editor.
+97. [x] Profile: sheet discards typed name on backdrop tap; Save toasts success when the write is a no-op; 24-char names truncate; per-bar chart values not exposed to VoiceOver.
+98. [x] Service profile: picking a branch silently resets a deliberate test choice; every row is a no-op when the profile is null; no test date editor.
 99. [ ] Onboarding: progress bar shrinks when Military Prep adds steps; no Android hardware back; 3.4 s fake "building your plan" with no skip; weeks-to-test ruler is unusable with VoiceOver; carousel auto-advances mid-sentence with no reduce-motion check; no "Already subscribed? Restore" before 13 questions.
 100. [ ] Inconsistent date formats and terminology (workout/mission/session/routine/plan/program) across screens.
 

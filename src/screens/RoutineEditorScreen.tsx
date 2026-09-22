@@ -80,7 +80,14 @@ export default function RoutineEditorScreen() {
         <Text variant="headline" style={{ fontSize: 19 }}>
           {draft.isNew ? 'New workout' : 'Edit workout'}
         </Text>
-        <Tap feedback="opacity" hitSlop={10} onPress={save} disabled={!draft.items.length} accessibilityLabel="Save">
+        {/* A greyed-out Save with no explanation reads as a broken button. */}
+        <Tap
+          feedback="opacity"
+          hitSlop={10}
+          onPress={() => (draft.items.length ? save() : toast('Add at least one exercise first', { tone: 'info', icon: 'alert' }))}
+          accessibilityLabel="Save"
+          accessibilityState={{ disabled: !draft.items.length }}
+        >
           <Text variant="headline" tone={draft.items.length ? 'accent' : 'tertiary'}>
             Save
           </Text>
@@ -126,16 +133,16 @@ export default function RoutineEditorScreen() {
         {draft.items.length ? (
           draft.items.map((it, i) => <ItemRow key={it.uid} item={it} index={i} last={i === draft.items.length - 1} />)
         ) : (
-          <Animated.View entering={FadeIn.duration(260)} style={{ paddingHorizontal: space.md, gap: 10 }}>
-            {[0, 1, 2].map((i) => (
-              <View key={i} style={[styles.skeleton, { opacity: 1 - i * 0.28 }]}>
-                <View style={styles.skelThumb} />
-                <View style={{ flex: 1, gap: 8 }}>
-                  <View style={[styles.skelLine, { width: '62%' }]} />
-                  <View style={[styles.skelLine, { width: '38%', height: 10 }]} />
-                </View>
-              </View>
-            ))}
+          // Grey placeholder rows read as "still loading" when the list is simply
+          // empty and waiting for the athlete to add something.
+          <Animated.View entering={FadeIn.duration(260)} style={styles.emptyItems}>
+            <Icon name="dumbbell" size={28} color={color.textTertiary} />
+            <Text variant="bodyMedium" tone="secondary" style={{ textAlign: 'center' }}>
+              No exercises yet
+            </Text>
+            <Text variant="subhead" tone="tertiary" style={{ textAlign: 'center' }}>
+              Add movements from the library and set their sets, reps and rest here.
+            </Text>
           </Animated.View>
         )}
       </ScrollView>
@@ -224,14 +231,14 @@ function Stepper({ label, value, min, max, step = 1, suffix = '', onChange }: { 
         {label}
       </Text>
       <View style={styles.stepRow}>
-        <Tap feedback="opacity" hitSlop={6} onPress={() => bump(-1)} style={styles.stepBtn} accessibilityLabel={`Decrease ${label}`}>
+        <Tap feedback="opacity" hitSlop={10} onPress={() => bump(-1)} style={styles.stepBtn} accessibilityLabel={`Decrease ${label}`}>
           <Icon name="minus" size={14} color={color.text} weight="semibold" />
         </Tap>
         <Text variant="headline" tabular style={{ minWidth: 38, textAlign: 'center' }}>
           {value}
           {suffix}
         </Text>
-        <Tap feedback="opacity" hitSlop={6} onPress={() => bump(1)} style={styles.stepBtn} accessibilityLabel={`Increase ${label}`}>
+        <Tap feedback="opacity" hitSlop={10} onPress={() => bump(1)} style={styles.stepBtn} accessibilityLabel={`Increase ${label}`}>
           <Icon name="plus" size={14} color={color.text} weight="semibold" />
         </Tap>
       </View>
@@ -251,13 +258,11 @@ const styles = StyleSheet.create({
   item: { paddingHorizontal: space.gutter, paddingVertical: space.md },
   divider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: color.line },
   itemHead: { flexDirection: 'row', alignItems: 'center' },
-  iconBtn: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
+  iconBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   steppers: { flexDirection: 'row', gap: 10, marginTop: 12 },
+  emptyItems: { alignItems: 'center', gap: space.sm, paddingHorizontal: space.xl, paddingVertical: space.xl },
   stepper: { flex: 1, padding: 10, borderRadius: radius.sm, backgroundColor: color.surface, gap: 4 },
   stepRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  stepBtn: { width: 28, height: 28, borderRadius: 14, backgroundColor: color.surfaceHigh, alignItems: 'center', justifyContent: 'center' },
-  skeleton: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.md, borderRadius: radius.md, backgroundColor: color.surface },
-  skelThumb: { width: 52, height: 52, borderRadius: 26, backgroundColor: color.surfaceHigh },
-  skelLine: { height: 14, borderRadius: 7, backgroundColor: color.surfaceHigh },
+  stepBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: color.surfaceHigh, alignItems: 'center', justifyContent: 'center' },
   footer: { paddingHorizontal: space.md, paddingTop: space.sm, backgroundColor: color.bgRaised },
 });
