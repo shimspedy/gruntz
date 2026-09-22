@@ -92,6 +92,28 @@ export default function ExerciseLibraryScreen() {
     );
   }, [query, group]);
 
+  // 412 names in one unbroken A-Z run gave no sense of place while scrolling.
+  // Letter headers appear only when actually browsing A-Z: a search or a group
+  // filter produces a short list where they would just be noise.
+  const rows = useMemo(() => {
+    if (query || group !== 'all') return items;
+    const out: (LibraryItem | { letter: string })[] = [];
+    let last = '';
+    for (const item of items) {
+      const letter = (item.name[0] ?? '#').toUpperCase();
+      if (letter !== last) {
+        last = letter;
+        out.push({ letter });
+      }
+      out.push(item);
+    }
+    return out;
+  }, [items, query, group]);
+  const stickyIndices = useMemo(
+    () => rows.flatMap((r, i) => ('letter' in r ? [i] : [])),
+    [rows],
+  );
+
   const renderItem = ({ item }: { item: LibraryItem }) => (
     <Tap
       feedback="highlight"
@@ -155,11 +177,21 @@ export default function ExerciseLibraryScreen() {
         </ScrollView>
       </View>
       <FlatList
-        data={items}
-        keyExtractor={(i) => i.key}
-        renderItem={renderItem}
+        data={rows}
+        keyExtractor={(i) => ('letter' in i ? `letter:${i.letter}` : i.key)}
+        renderItem={({ item }) =>
+          'letter' in item ? (
+            <View style={styles.letter}>
+              <Text variant="overline" tone="tertiary">
+                {item.letter}
+              </Text>
+            </View>
+          ) : (
+            renderItem({ item })
+          )
+        }
+        stickyHeaderIndices={stickyIndices.length ? stickyIndices : undefined}
         extraData={picked}
-        getItemLayout={(_, index) => ({ length: ROW, offset: ROW * index, index })}
         initialNumToRender={12}
         windowSize={7}
         keyboardDismissMode="on-drag"
@@ -191,6 +223,7 @@ export default function ExerciseLibraryScreen() {
 }
 
 const styles = StyleSheet.create({
+  letter: { paddingHorizontal: space.gutter, paddingTop: space.md, paddingBottom: 6, backgroundColor: color.bg },
   screen: { flex: 1, backgroundColor: color.bg },
   search: {
     flexDirection: 'row',

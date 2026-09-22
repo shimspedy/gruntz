@@ -3,8 +3,8 @@
 Six audits of the app (workout player, onboarding/paywall, plans & library, navigation/state/performance,
 copy & accessibility, data correctness), scored by how much each one would annoy a real user.
 
-- **Fixed: 157** — the 55 first-pass fixes, plus 102 of the numbered items below.
-- **Open: 20** — including 5 that need a device or account.
+- **Fixed: 161** — the 55 first-pass fixes, plus 106 of the numbered items below.
+- **Open: 16** — including 5 that need a device or account.
 
 Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[dev]` needs a device or account to verify.
 
@@ -140,7 +140,7 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 41. [x] Summary duration freezes while the summary sits open.
 42. [x] Summary "Sets" counts warm-ups while the log excludes them — numbers disagree across screens.
 43. [x] Repeated swaps grow the exercise key unboundedly, remounting the page.
-44. [ ] Distance is free text with no validation; mission stores it as a joined string.
+44. [x] Distance is free text with no validation; mission stores it as a joined string.
 45. [x] "Add exercise" navigates away and returns you to the end of the list, not your set.
 46. [x] Mini bar shows the viewed index ("0/0" when empty), counts warm-ups, and offers no skip-rest or finish.
 47. [x] Warm-up weights round to 5 regardless of unit (metric users get 5 kg steps).
@@ -148,8 +148,8 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 ## Open — plans and library
 
 48. [x] No search in the 412-exercise library beyond name/primary/tags: "abs" misses most core work (`ExerciseLibraryScreen.tsx:59`).
-49. [ ] 412 items in one flat A–Z list with no section index (`ExerciseLibraryScreen.tsx:127`).
-50. [ ] Pick mode: no preview, no running count, selection lost on unmount (`ExerciseLibraryScreen.tsx:47,75`).
+49. [x] 412 items in one flat A–Z list with no section index (`ExerciseLibraryScreen.tsx:127`).
+50. [x] Pick mode: no preview, no running count, selection lost on unmount (`ExerciseLibraryScreen.tsx:47,75`).
 51. [x] Plan detail renders up to 29 days flat; `PlanDay.week` exists but isn't used to group.
 52. [x] Plan detail list re-animates on every back navigation.
 53. [ ] No level / equipment / session-length filters or sort in the plan browser.
@@ -223,7 +223,7 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 112. [x] "Days until test" is off by one in the morning.
 113. [x] Readiness check-ins have no clamps: a missing field renders "NaN%".
 114. [x] Check-ins cap at 60 and tracked sessions at 100, silently dropping the oldest.
-115. [ ] Exercise log writes the whole blob on every set; `bestSet` mixes scales across set kinds; `recordProgression` skips ties and first-ever zero values.
+115. [x] Exercise log writes the whole blob on every set; `bestSet` mixes scales across set kinds; `recordProgression` skips ties and first-ever zero values.
 116. [x] Charts collapse when all points share a timestamp.
 117. [x] Library-derived exercises are fabricated as "3 sets × 10 reps" and shown as if prescribed.
 118. [x] `equipment_access` counts Bench and Stability Ball as no-equipment.

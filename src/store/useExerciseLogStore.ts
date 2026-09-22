@@ -105,7 +105,13 @@ export function summarize(entry: ExerciseLogEntry, unit: 'lb' | 'kg'): SessionSu
     totalSeconds += st.seconds ?? 0;
     const e1 = reps <= 12 ? estimated1RM(w, reps) : 0;
     best1RM = Math.max(best1RM, e1);
-    const score = w > 0 ? e1 || w : reps || st.seconds || 0;
+    // Sets are ranked within their own kind, and kinds are ranked against each
+    // other: loaded work beats bodyweight reps beats a timed hold. Scoring them on
+    // one number meant a 60-second plank outranked a 15-rep set of the same
+    // movement purely because 60 > 15.
+    const tier = w > 0 ? 2 : reps > 0 ? 1 : 0;
+    const within = w > 0 ? e1 || w : reps || st.seconds || 0;
+    const score = tier * 1e6 + within;
     if (score > bestScore) {
       bestScore = score;
       bestSet = st;
@@ -117,7 +123,9 @@ export function summarize(entry: ExerciseLogEntry, unit: 'lb' | 'kg'): SessionSu
 /** Each time a metric beat its previous best, oldest first. */
 export function recordProgression(sessions: SessionSummary[], pick: (s: SessionSummary) => number): { value: number; date: Date }[] {
   const out: { value: number; date: Date }[] = [];
-  let best = 0;
+  // Starting from zero hid the very first session whenever its value was zero, so
+  // a progression chart could open with no baseline to improve on.
+  let best = Number.NEGATIVE_INFINITY;
   for (const s of sessions) {
     const v = pick(s);
     if (v > best) {

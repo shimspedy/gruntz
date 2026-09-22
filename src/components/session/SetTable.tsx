@@ -64,6 +64,30 @@ function workingIndex(exercise: SessionExercise, rowIndex: number) {
  */
 export const SET_INPUT_ACCESSORY = 'gruntz.setInput';
 
+/**
+ * Distance is typed freehand ("1.5 mi", "400m", "2 k"), and whatever came out was
+ * stored verbatim and later joined into one string on the mission record. Keep the
+ * athlete's own wording, but normalise the shape so the same distance does not end
+ * up recorded three different ways.
+ */
+export function normalizeDistance(input: string): string | undefined {
+  const text = input.trim().replace(/\s+/g, ' ');
+  if (!text) return undefined;
+  const match = /^(\d+(?:[.,]\d+)?)\s*([a-z]*)$/i.exec(text);
+  if (!match) return text.slice(0, 24);
+  const value = match[1].replace(',', '.');
+  const raw = match[2].toLowerCase();
+  const unit =
+    raw === '' ? '' :
+    ['m', 'meter', 'meters', 'metre', 'metres'].includes(raw) ? 'm' :
+    ['km', 'k', 'kilometer', 'kilometers', 'kilometre', 'kilometres'].includes(raw) ? 'km' :
+    ['mi', 'mile', 'miles'].includes(raw) ? 'mi' :
+    ['yd', 'yard', 'yards'].includes(raw) ? 'yd' :
+    ['ft', 'foot', 'feet'].includes(raw) ? 'ft' :
+    raw;
+  return unit ? `${value} ${unit}` : value;
+}
+
 export function SetInputAccessory() {
   if (Platform.OS !== 'ios') return null;
   return (
@@ -188,7 +212,7 @@ function SetRow({
   const commitValue = (t: string) => {
     setValueDraft(null);
     if (exercise.kind === 'time') onChange({ seconds: Math.min(parseSeconds(t), MAX_SECONDS) || undefined });
-    else if (exercise.kind === 'distance') onChange({ distance: t.trim() || undefined });
+    else if (exercise.kind === 'distance') onChange({ distance: normalizeDistance(t) });
     else {
       const n = Number(t.replace(/[^0-9]/g, ''));
       onChange({ reps: t.trim() && Number.isFinite(n) && n > 0 ? Math.min(n, MAX_REPS) : undefined });
