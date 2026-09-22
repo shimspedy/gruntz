@@ -4,6 +4,7 @@ import { useNavigation, useScrollToTop } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PlanCard, PlanRow } from '../components/PlanCards';
 import { allPlans, planCategories, PLAN_COUNT, type WorkoutPlan } from '../data/workoutPlans';
+import { EQUIPMENT_LABEL } from '../features/planDisplay';
 import { recommendPlans } from '../features/planRecommend';
 import { usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { useUserStore } from '../store/useUserStore';
@@ -14,6 +15,9 @@ import { Tap } from '../ui/Pressable';
 import { Segmented } from '../ui/Segmented';
 import { Text } from '../ui/Text';
 import { color, radius, space } from '../ui/tokens';
+
+const LEVEL_FILTERS: (string | null)[] = [null, 'beginner', 'intermediate', 'advanced'];
+const GEAR_FILTERS: (WorkoutPlan['match']['equipment_access'] | null)[] = [null, 'none', 'minimal'];
 
 /** Short chip labels for the scraped category names ("Workouts For Men" -> "Men"). */
 const CATEGORY_LABEL: Record<string, string> = {
@@ -51,11 +55,13 @@ export default function PlanBrowseScreen() {
   const [kind, setKind] = useState<Kind>('program');
   const [category, setCategory] = useState<string | null>(null);
   const [days, setDays] = useState<number>(0);
+  const [level, setLevel] = useState<string | null>(null);
+  const [gear, setGear] = useState<WorkoutPlan['match']['equipment_access'] | null>(null);
   const [query, setQuery] = useState('');
   const list = useRef<FlatList<WorkoutPlan>>(null);
   // Re-tapping the Plans tab scrolls back to the top, like every other tab.
   useScrollToTop(list);
-  const filtered = !!category || days > 0 || !!query.trim();
+  const filtered = !!category || days > 0 || !!level || !!gear || !!query.trim();
 
   const matched = useMemo(() => (profile ? recommendPlans(profile, 8) : []), [profile]);
 
@@ -67,15 +73,21 @@ export default function PlanBrowseScreen() {
         p.kind === kind &&
         (!inCategory || inCategory.has(p.id)) &&
         (kind !== 'program' || !days || (days === 6 ? (p.summary.days_per_week ?? 0) >= 6 : p.summary.days_per_week === days)) &&
+        (!level || p.summary.level === level) &&
+        // Equipment is a ceiling, not an exact match: someone with a full gym can
+        // still run a dumbbell-only plan.
+        (!gear || (gear === 'gym' ? true : gear === 'minimal' ? p.match.equipment_access !== 'gym' : p.match.equipment_access === 'none')) &&
         (!q || p.title.toLowerCase().includes(q) || (p.summary.main_goal ?? '').toLowerCase().includes(q) || p.match.goals.some((g) => g.toLowerCase().includes(q))),
     );
-  }, [kind, category, days, query]);
+  }, [kind, category, days, level, gear, query]);
 
   // Filtering while scrolled deep into another list otherwise leaves you mid-nowhere.
   const resetTop = () => list.current?.scrollToOffset({ offset: 0, animated: false });
   const clearFilters = () => {
     setCategory(null);
     setDays(0);
+    setLevel(null);
+    setGear(null);
     setQuery('');
     resetTop();
   };
@@ -164,6 +176,25 @@ export default function PlanBrowseScreen() {
           ))}
         </ScrollView>
       ) : null}
+      {/* Level and equipment: the two things that actually rule a plan in or out. */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+        {LEVEL_FILTERS.map((l) => (
+          <Chip
+            key={l ?? 'any'}
+            label={l ? l[0].toUpperCase() + l.slice(1) : 'Any level'}
+            active={level === l}
+            onPress={() => { setLevel(l); resetTop(); }}
+          />
+        ))}
+        {GEAR_FILTERS.map((g) => (
+          <Chip
+            key={g ?? 'anygear'}
+            label={g ? EQUIPMENT_LABEL[g] : 'Any equipment'}
+            active={gear === g}
+            onPress={() => { setGear(g); resetTop(); }}
+          />
+        ))}
+      </ScrollView>
       <Text variant="footnote" tone="tertiary" style={{ paddingHorizontal: space.gutter, marginBottom: space.xs }}>
         {plans.length} {plans.length === 1 ? 'plan' : 'plans'}
       </Text>

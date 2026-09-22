@@ -3,8 +3,8 @@
 Six audits of the app (workout player, onboarding/paywall, plans & library, navigation/state/performance,
 copy & accessibility, data correctness), scored by how much each one would annoy a real user.
 
-- **Fixed: 161** — the 55 first-pass fixes, plus 106 of the numbered items below.
-- **Open: 16** — including 5 that need a device or account.
+- **Fixed: 163** — the 55 first-pass fixes, plus 108 of the numbered items below.
+- **Open: 14** — including 5 that need a device or account.
 
 Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[dev]` needs a device or account to verify.
 
@@ -152,11 +152,11 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 50. [x] Pick mode: no preview, no running count, selection lost on unmount (`ExerciseLibraryScreen.tsx:47,75`).
 51. [x] Plan detail renders up to 29 days flat; `PlanDay.week` exists but isn't used to group.
 52. [x] Plan detail list re-animates on every back navigation.
-53. [ ] No level / equipment / session-length filters or sort in the plan browser.
+53. [x] No level / equipment / session-length filters or sort in the plan browser.
 54. [x] `FlatList` has no `getItemLayout` despite fixed-height rows; `PlanRow`/`PlanCard` aren't memoised; `planHero` walks every day on each render.
 55. [ ] Following a plan only toasts: no scheduling, no jump to day one, no explanation of what changes.
 56. [x] Plan day rows recompute a superset filter per row (O(n²) on 25-exercise days).
-57. [ ] "Add to a workout" lists only 5 routines via `Alert` as a picker (`ExerciseDetailScreen.tsx:104-105`).
+57. [x] "Add to a workout" lists only 5 routines via `Alert` as a picker (`ExerciseDetailScreen.tsx:104-105`).
 58. [ ] Routine editor: delete with no confirm or undo; only "move up"; 40 pt steppers; skeleton rows read as loading; Save disabled with no reason.
 59. [x] Routine detail on Android skips the menu and goes straight to delete confirm.
 60. [x] Deleting a routine is unrecoverable (no soft delete).

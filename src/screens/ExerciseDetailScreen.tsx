@@ -15,6 +15,8 @@ import { useUserStore } from '../store/useUserStore';
 import type { RootStackParamList } from '../types/navigation';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
+import { Tap } from '../ui/Pressable';
+import { Sheet } from '../ui/Sheet';
 import { EmptyState, Hairline, NavHeader, Stat } from '../ui/Layout';
 import { Segmented } from '../ui/Segmented';
 import { Text } from '../ui/Text';
@@ -92,27 +94,21 @@ export default function ExerciseDetailScreen() {
 
   const steps = ex.steps?.length ? ex.steps : lib?.instructions ?? [];
   const mistakes = lib?.mistakes ?? [];
+  const [picker, setPicker] = useState(false);
+  const routines = useRoutineStore((st) => st.routines);
 
+  const newWorkoutWith = () => {
+    if (!lib) return;
+    useRoutineStore.getState().newDraft([lib.key]);
+    navigation.navigate('RoutineEditor');
+  };
+
+  // An Alert can only show a handful of buttons, so this used to offer the first
+  // five workouts and silently hide the rest. A sheet scrolls.
   const addToWorkout = () => {
     if (!lib) return;
-    const { routines } = useRoutineStore.getState();
-    const toNew = () => {
-      useRoutineStore.getState().newDraft([lib.key]);
-      navigation.navigate('RoutineEditor');
-    };
-    if (!routines.length) return toNew();
-    Alert.alert('Add to workout', lib.name, [
-      ...routines.slice(0, 5).map((r) => ({
-        text: r.name,
-        onPress: () => {
-          useRoutineStore.getState().addToRoutine(r.id, lib.key);
-          haptic.success();
-          toast(`Added to ${r.name}`, { icon: 'check' });
-        },
-      })),
-      { text: 'New workout', onPress: toNew },
-      { text: 'Cancel', style: 'cancel' as const },
-    ]);
+    if (!useRoutineStore.getState().routines.length) return newWorkoutWith();
+    setPicker(true);
   };
 
   return (
@@ -299,12 +295,58 @@ export default function ExerciseDetailScreen() {
           <Button title="Add to a workout" icon="plus" onPress={addToWorkout} />
         </View>
       ) : null}
+
+      <Sheet visible={picker} onClose={() => setPicker(false)} title="Add to a workout">
+        <ScrollView style={{ maxHeight: 360 }} showsVerticalScrollIndicator={false}>
+          {routines.map((r) => (
+            <Tap
+              key={r.id}
+              feedback="highlight"
+              baseColor={color.bgRaised}
+              pressedColor={color.surface}
+              style={styles.pickRow}
+              accessibilityLabel={r.name}
+              onPress={() => {
+                if (!lib) return;
+                useRoutineStore.getState().addToRoutine(r.id, lib.key);
+                haptic.success();
+                setPicker(false);
+                toast(`Added to ${r.name}`, { icon: 'check' });
+              }}
+            >
+              <Text variant="bodyMedium" style={{ flex: 1 }} numberOfLines={1}>
+                {r.name}
+              </Text>
+              <Text variant="footnote" tone="tertiary">
+                {r.items.length} {r.items.length === 1 ? 'exercise' : 'exercises'}
+              </Text>
+            </Tap>
+          ))}
+          <Tap
+            feedback="highlight"
+            baseColor={color.bgRaised}
+            pressedColor={color.surface}
+            style={styles.pickRow}
+            accessibilityLabel="New workout"
+            onPress={() => {
+              setPicker(false);
+              newWorkoutWith();
+            }}
+          >
+            <Icon name="plus" size={18} color={color.accent} />
+            <Text variant="bodyMedium" tone="accent" style={{ flex: 1, marginLeft: 10 }}>
+              New workout
+            </Text>
+          </Tap>
+        </ScrollView>
+      </Sheet>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: color.bg },
+  pickRow: { height: 54, flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.gutter },
   body: { paddingHorizontal: space.gutter + 4, paddingTop: space.lg },
   stats: { flexDirection: 'row', gap: space.md, paddingVertical: space.lg, marginTop: space.sm },
   h: { marginTop: space.xl, marginBottom: space.md },
