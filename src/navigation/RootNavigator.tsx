@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DarkTheme, NavigationContainer, type InitialState, type NavigationState } from '@react-navigation/native';
@@ -48,6 +48,39 @@ import { LogoMark } from '../ui/Logo';
 import { color } from '../ui/tokens';
 import { navigationRef } from './ref';
 import { TabBar } from './TabBar';
+
+/** How long an entitlement check stays fresh before the next foreground re-checks. */
+const ENTITLEMENT_REFRESH_MS = 30 * 60 * 1000;
+
+/**
+ * Deep links. Without a scheme and this config a notification tap could not route
+ * anywhere — the app opened on whatever screen it was last on. Paths are kept flat
+ * and stable so a link in a push payload survives navigator changes.
+ */
+const linking = {
+  prefixes: ['gruntz://', 'https://gruntz.app'],
+  config: {
+    screens: {
+      Tabs: {
+        screens: {
+          Train: 'train',
+          Ranks: 'ranks',
+          Test: 'test',
+          Plans: 'my-plans',
+          Profile: 'profile',
+        },
+      },
+      PlanBrowse: 'plans',
+      LibraryPlanDetail: 'plans/:planId',
+      LibraryPlanDay: 'plans/:planId/:dayId',
+      ExerciseDetail: 'exercise/:mediaKey',
+      Achievements: 'achievements',
+      Streak: 'streak',
+      Stats: 'stats',
+      Settings: 'settings',
+    },
+  },
+};
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const OnboardingStack = createNativeStackNavigator<OnboardingStackParamList>();
@@ -212,12 +245,20 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
     return () => clearTimeout(t);
   }, [subscriptionHydrated]);
 
+  // Entitlements barely change, and re-checking them on every single foreground
+  // meant a RevenueCat round trip each time the user glanced at another app.
+  // Streak and daily-challenge rollover are local and still run every time.
+  const lastEntitlementCheck = useRef(0);
   useEffect(() => {
     if (!hasHydrated || !subscriptionHydrated) return;
     const refresh = () => {
       updateStreak();
       resetDailyChallenge();
+      if (Date.now() - lastEntitlementCheck.current < ENTITLEMENT_REFRESH_MS) return;
+      lastEntitlementCheck.current = Date.now();
       void initializeSubscription().catch((err) => {
+        // A failed check must not count as done, or a recovered network is ignored.
+        lastEntitlementCheck.current = 0;
         if (__DEV__) console.warn('[RootNavigator] initializeSubscription failed', err);
       });
     };
@@ -235,6 +276,7 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
       <NavigationContainer
         ref={navigationRef}
         theme={theme}
+        linking={linking}
         initialState={isOnboarded ? nav.initial : undefined}
         onStateChange={isOnboarded ? nav.save : undefined}
       >

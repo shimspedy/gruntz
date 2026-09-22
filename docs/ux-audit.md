@@ -3,8 +3,8 @@
 Six audits of the app (workout player, onboarding/paywall, plans & library, navigation/state/performance,
 copy & accessibility, data correctness), scored by how much each one would annoy a real user.
 
-- **Fixed: 104** — the 55 first-pass fixes, plus 49 of the numbered items below.
-- **Open: 58** — including 10 that need a product decision and 5 that need a device or account.
+- **Fixed: 107** — the 55 first-pass fixes, plus 52 of the numbered items below.
+- **Open: 55** — including 10 that need a product decision and 5 that need a device or account.
 
 Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[dev]` needs a device or account to verify.
 
@@ -171,7 +171,7 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 66. [ ] Boot gate waits only on user + subscription stores; program/session/challenge/routine stores can render defaults then jump.
 67. [ ] `createActions.ts:32` reads the program store with no hydration check — can dump a returning user into ProgramSelect.
 68. [ ] Onboarding draft is cleared on user-store hydration, which may precede draft hydration.
-69. [ ] No `linking` config or URL scheme: notification taps and deep links can't route.
+69. [x] No `linking` config or URL scheme: notification taps and deep links can't route.
 70. [ ] No Android `BackHandler` for the session overlay or the + menu.
 71. [ ] Challenge store cross-writes during hydration; XP/streak can recompute from an empty array.
 72. [x] `ErrorBoundary.reset` remounts the same corrupt state — infinite "Try again" loop.
@@ -180,9 +180,9 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 75. [ ] Exercise log, notes, `previous` and `claimed_missions` all grow without bound.
 76. [ ] `useUserStore.partialize` copies progress and converts a Set on every write.
 77. [ ] Mini bar ticks every second inside the tab bar on every screen.
-78. [ ] `initializeSubscription()` hits RevenueCat on every foreground.
+78. [x] `initializeSubscription()` hits RevenueCat on every foreground.
 79. [ ] Restored navigation state doesn't recurse into nested tab state, and 12 h-old date params can show yesterday's workout as today's.
-80. [ ] Re-tapping the active tab does nothing (no scroll-to-top).
+80. [x] Re-tapping the active tab does nothing (no scroll-to-top).
 81. [ ] Tab-bar inset is read once, so the last row hides behind the pill or mini bar.
 82. [ ] Train and Ranks render long content as `ScrollView` + `.map()` rather than a list.
 83. [ ] `useMissionStore` duplicates program logic and goes stale past midnight; daily challenge doesn't refresh at midnight either.

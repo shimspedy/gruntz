@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useScrollToTop } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PlanCard, PlanRow } from '../components/PlanCards';
 import { allPlans, planCategories, PLAN_COUNT, type WorkoutPlan } from '../data/workoutPlans';
@@ -53,6 +53,8 @@ export default function PlanBrowseScreen() {
   const [days, setDays] = useState<number>(0);
   const [query, setQuery] = useState('');
   const list = useRef<FlatList<WorkoutPlan>>(null);
+  // Re-tapping the Plans tab scrolls back to the top, like every other tab.
+  useScrollToTop(list);
   const filtered = !!category || days > 0 || !!query.trim();
 
   const matched = useMemo(() => (profile ? recommendPlans(profile, 8) : []), [profile]);

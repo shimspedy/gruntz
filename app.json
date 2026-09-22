@@ -2,6 +2,7 @@
   "expo": {
     "name": "Gruntz",
     "slug": "gruntz",
+    "scheme": "gruntz",
     "owner": "blaqdu",
     "version": "1.7",
     "orientation": "portrait",
