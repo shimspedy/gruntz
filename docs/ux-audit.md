@@ -3,8 +3,8 @@
 Six audits of the app (workout player, onboarding/paywall, plans & library, navigation/state/performance,
 copy & accessibility, data correctness), scored by how much each one would annoy a real user.
 
-- **Fixed: 102** — the 55 first-pass fixes, plus 47 of the numbered items below.
-- **Open: 60** — including 10 that need a product decision and 5 that need a device or account.
+- **Fixed: 104** — the 55 first-pass fixes, plus 49 of the numbered items below.
+- **Open: 58** — including 10 that need a product decision and 5 that need a device or account.
 
 Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[dev]` needs a device or account to verify.
 
@@ -213,11 +213,11 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 102. [x] Daily challenge day-index drifts across DST, repeating or skipping a day.
 103. [ ] Past challenge XP is recomputed from the current list, so history changes when a challenge is added.
 104. [x] `calculateMissionXP` (perfect-workout multiplier, PR bonus) is never called; `is_perfect`/`pr_bonus` are hardcoded.
-105. [ ] Personal records never fire in the mission flow (`is_personal_record` always false).
+105. [x] Personal records never fire in the mission flow (`is_personal_record` always false).
 106. [x] Streak milestone bonuses require exact equality, so a skipped number forfeits them forever.
 107. [x] Plank seconds and ruck miles are added into the same counter as reps, inflating rep achievements.
 108. [x] `EXERCISE_TOTAL_ALIASES` misses `hand_release_pushups`, so those reps never count.
-109. [ ] "Finish all missions in Week 1" unlocks on a single workout.
+109. [x] "Finish all missions in Week 1" unlocks on a single workout.
 110. [x] Test readiness averages un-entered events as 0, so one maxed event shows 33%.
 111. [ ] Military test baselines are pounds-only with no metric conversion.
 112. [x] "Days until test" is off by one in the morning.

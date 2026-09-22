@@ -132,21 +132,31 @@ function getClaimedWorkoutIds(claimedMissions: Set<string>) {
   );
 }
 
-function hasCompletedProgramWeek(claimedWorkoutIds: Set<string>, week: number) {
-  // "Week complete" = at least one workout claimed from any program's matching week.
-  // This is equipment/profile-agnostic so 3-day Base Camp users can unlock the same tier.
-  const weekSuffixes = [`_w${week}d`, `d_w${week}d`];
-  const raiderWeekIds = new Set(getWorkoutDaysForWeek(week).map((day) => day.id));
-  const reconWeekIds = new Set(getReconWeek(week).map((day) => day.id));
-  const baseCampPrefix = `basecamp_w${week}d`;
+/**
+ * Has the athlete finished EVERY workout in a program week?
+ *
+ * This used to return true on the first claimed workout from that week, so
+ * "Finish all missions in Week 1" unlocked after a single session. It now needs
+ * the whole week, and stays program-agnostic: any one program's week counts, so a
+ * 3-day Base Camp athlete can unlock the same tier as a Raider one.
+ */
+function hasCompletedProgramWeek(claimedWorkoutIds: Set<string>, week: number, daysPerWeek?: number | null) {
+  const complete = (ids: string[]) => ids.length > 0 && ids.every((id) => claimedWorkoutIds.has(id));
 
-  for (const id of claimedWorkoutIds) {
-    if (id.startsWith(baseCampPrefix)) return true;
-    if (raiderWeekIds.has(id)) return true;
-    if (reconWeekIds.has(id)) return true;
-    if (weekSuffixes.some((suffix) => id.includes(suffix))) return true;
-  }
-  return false;
+  if (complete(getWorkoutDaysForWeek(week).map((day) => day.id))) return true;
+  if (complete(getReconWeek(week).map((day) => day.id))) return true;
+
+  // Base Camp days are generated per schedule, so its week is however many days the
+  // athlete signed up for.
+  const baseCampDays = Math.max(1, Math.min(7, daysPerWeek ?? 3));
+  const baseCampPrefix = `basecamp_w${week}d`;
+  const claimedBaseCamp = new Set(Array.from(claimedWorkoutIds).filter((id) => id.startsWith(baseCampPrefix)));
+  if (claimedBaseCamp.size >= baseCampDays) return true;
+
+  // Library plans and anything else that tags its ids with the week.
+  const suffixes = [`_w${week}d`, `d_w${week}d`];
+  const claimedTagged = Array.from(claimedWorkoutIds).filter((id) => suffixes.some((suffix) => id.includes(suffix)));
+  return claimedTagged.length >= baseCampDays;
 }
 
 function roundMetric(value: number) {
@@ -384,7 +394,7 @@ export const useUserStore = create<UserState>()(
               unlocked = state.progress.current_level >= achievement.condition_value;
               break;
             case 'week_completed':
-              unlocked = hasCompletedProgramWeek(claimedWorkoutIds, achievement.condition_value);
+              unlocked = hasCompletedProgramWeek(claimedWorkoutIds, achievement.condition_value, state.profile?.workout_days_per_week);
               break;
             default:
               if (achievement.condition_type.startsWith('exercise_total_')) {

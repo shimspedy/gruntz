@@ -5,7 +5,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { getExerciseById, libraryExerciseId } from '../data/exercises';
 import { routineMinutes, type Routine } from './useRoutineStore';
 import { parsePlanSessionId, planSessionId, usePlanLibraryStore } from './usePlanLibraryStore';
-import { useExerciseLogStore } from './useExerciseLogStore';
+import { estimated1RM, useExerciseLogStore } from './useExerciseLogStore';
 import { useUserStore } from './useUserStore';
 import { cancelRestDone } from '../services/notifications';
 import type { PlanDay, WorkoutPlan } from '../data/workoutPlans';
@@ -196,6 +196,23 @@ export function convertSessionWeights(to: 'lb' | 'kg') {
       sets: e.sets.map((st) => (st.weight ? { ...st, weight: round(to === 'kg' ? st.weight * KG_PER_LB : st.weight / KG_PER_LB) } : st)),
     })),
   }));
+}
+
+/**
+ * Best single effort in a set list, on one comparable scale per kind:
+ * an Epley 1RM estimate for weighted reps, plain reps for bodyweight, seconds for
+ * holds. Returns null when there is nothing measurable to compare.
+ */
+function bestEffort(kind: SetKind, sets: { reps?: number; weight?: number; seconds?: number }[]): number | null {
+  let best: number | null = null;
+  for (const st of sets) {
+    let value: number | null = null;
+    if (kind === 'time') value = st.seconds ?? null;
+    else if (st.weight && st.reps) value = estimated1RM(st.weight, st.reps);
+    else if (st.reps) value = st.reps;
+    if (value != null && (best == null || value > best)) best = value;
+  }
+  return best;
 }
 
 export const isExerciseDone = (e: SessionExercise) => e.sets.filter((s) => s.done && !s.warmup).length >= e.requiredSets;
@@ -483,6 +500,18 @@ export const useSessionStore = create<SessionState>()(
           const reps = done.reduce((sum, st) => sum + (st.reps ?? 0), 0);
           const secs = done.reduce((sum, st) => sum + (st.seconds ?? 0), 0);
           const distances = done.map((st) => st.distance?.trim()).filter((d): d is string => !!d);
+          // A personal record: today's best effort on this movement beats every
+          // previous session's. The log has not been written yet at this point, so
+          // the history compared against genuinely excludes today.
+          const today = bestEffort(e.kind, done);
+          const key = ex?.media_key ?? e.exerciseId;
+          const history = useExerciseLogStore.getState().logs[key] ?? [];
+          const previousBest = history.reduce<number | null>((best, entry) => {
+            const value = bestEffort(e.kind, entry.sets);
+            return value != null && (best == null || value > best) ? value : best;
+          }, null);
+          // Needs a prior session to beat — the first time you do a movement is not a PR.
+          const isPr = today != null && previousBest != null && today > previousBest;
           return {
             exercise_id: e.exerciseId,
             // Only rep work reports reps. A plank or a ruck used to fall back to the
@@ -493,10 +522,11 @@ export const useSessionStore = create<SessionState>()(
             completed_duration_seconds: e.kind === 'time' ? secs : ex?.duration_seconds,
             completed_distance: distances.length ? (distances.length === 1 ? distances[0] : distances.join(', ')) : ex?.distance,
             xp_earned: ex?.xp_value || 0,
-            is_personal_record: false,
+            is_personal_record: isPr,
           };
         });
         const isPerfect = completed.length === s.exercises.length && s.exercises.length > 0;
+        const prCount = exercises.filter((e) => e.is_personal_record).length;
         const totalXp = exercises.reduce((sum, e) => sum + e.xp_earned, 0);
         // A session left open overnight would otherwise log hundreds of minutes of
         // "training". Past the stale cutoff the clock is meaningless, so fall back to
@@ -512,8 +542,8 @@ export const useSessionStore = create<SessionState>()(
           total_xp: totalXp,
           completion_bonus: isPerfect ? s.rewardXp : Math.floor(s.rewardXp * 0.5),
           is_perfect: isPerfect,
-          has_personal_record: false,
-          pr_bonus: 0,
+          has_personal_record: prCount > 0,
+          pr_bonus: prCount * 25,
           duration_minutes: minutes,
           completed_at: new Date().toISOString(),
         };
