@@ -41,23 +41,29 @@ export function getRank(level: number): Rank {
   return 'Recruit';
 }
 
-export function calculateMissionXP(mission: CompletedMission): number {
-  let xp = mission.exercises.reduce((sum, ex) => sum + ex.xp_earned, 0);
-  xp += mission.completion_bonus;
-  if (mission.is_perfect) {
-    xp = Math.floor(xp * 1.5);
-  }
-  if (mission.has_personal_record) {
-    xp += mission.pr_bonus;
-  }
-  return xp;
+/**
+ * The XP a finished workout is worth. One implementation: the summary screen and the
+ * award path each had their own, and they disagreed — the summary left out the PR
+ * bonus the award included, so the number you were shown was not the number you got.
+ *
+ * A perfect mission is already paid through the larger `completion_bonus`, so there is
+ * no extra multiplier here.
+ */
+export function calculateMissionXP(mission: CompletedMission, streakBonus = 0): number {
+  const pr = mission.has_personal_record ? mission.pr_bonus : 0;
+  return mission.total_xp + mission.completion_bonus + pr + streakBonus;
 }
 
-export function calculateStreakBonus(streakDays: number): number {
-  if (STREAK_MILESTONES.includes(streakDays)) {
-    return 10 * streakDays;
-  }
-  return 0;
+/**
+ * Milestone bonus for reaching `streakDays`, given what the streak was before.
+ *
+ * Milestones used to need exact equality, so a streak that jumped 6 → 8 (which the
+ * grace-day rule makes routine) skipped the 7-day bonus and could never earn it again.
+ * Every milestone crossed since the last workout pays out.
+ */
+export function calculateStreakBonus(streakDays: number, previousStreakDays = streakDays - 1): number {
+  const from = Math.max(0, previousStreakDays);
+  return STREAK_MILESTONES.filter((m) => m > from && m <= streakDays).reduce((sum, m) => sum + 10 * m, 0);
 }
 
 /**

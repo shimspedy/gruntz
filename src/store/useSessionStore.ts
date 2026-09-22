@@ -483,7 +483,10 @@ export const useSessionStore = create<SessionState>()(
           const distances = done.map((st) => st.distance?.trim()).filter((d): d is string => !!d);
           return {
             exercise_id: e.exerciseId,
-            completed_reps: e.kind === 'reps' ? reps : ex?.reps,
+            // Only rep work reports reps. A plank or a ruck used to fall back to the
+            // exercise's nominal rep count, inflating total_reps and the rep badges
+            // with reps nobody performed.
+            completed_reps: e.kind === 'reps' ? reps : undefined,
             completed_sets: done.length,
             completed_duration_seconds: e.kind === 'time' ? secs : ex?.duration_seconds,
             completed_distance: distances.length ? (distances.length === 1 ? distances[0] : distances.join(', ')) : ex?.distance,

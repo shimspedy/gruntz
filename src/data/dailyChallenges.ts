@@ -1,5 +1,5 @@
 /**
- * Daily Challenge system with 30+ rotating challenges
+ * Daily Challenge system: 25 challenges rotating by day of year.
  * Challenges rotate based on the day of the year
  */
 
@@ -339,14 +339,16 @@ export function getTodaysChallenge(): DailyChallenge {
  * Uses day-of-year modulo to rotate through challenges
  */
 export function getChallengeForDate(date: Date): DailyChallenge {
-  // Calculate day of year (0-365)
-  const start = new Date(date.getFullYear(), 0, 0);
-  const diff = date.getTime() - start.getTime();
+  // Day of year from calendar fields in UTC. Measuring elapsed milliseconds from
+  // local midnight on Jan 0 drifts by an hour across a DST boundary, which was
+  // enough for Math.floor to land on the previous day — repeating one challenge
+  // and skipping the next.
   const oneDay = 1000 * 60 * 60 * 24;
-  const dayOfYear = Math.floor(diff / oneDay);
+  const start = Date.UTC(date.getFullYear(), 0, 0);
+  const today = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  const dayOfYear = Math.round((today - start) / oneDay);
 
-  // Get challenge index from day of year
-  const index = dayOfYear % challenges.length;
+  const index = ((dayOfYear % challenges.length) + challenges.length) % challenges.length;
   return challenges[index];
 }
 

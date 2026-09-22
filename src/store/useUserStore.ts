@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { DailyChallenge } from '../data/dailyChallenges';
 import { UserProgress, UserProfile, Rank, CompletedMission, UserAchievement, UserSettings } from '../types';
-import { getLevelForXP, getRank, getXPToNextLevel, calculateStreakBonus, isStreakAlive, getDefaultProgress } from '../utils/xp';
+import { getLevelForXP, getRank, getXPToNextLevel, calculateMissionXP, calculateStreakBonus, isStreakAlive, getDefaultProgress } from '../utils/xp';
 import { achievements } from '../data/achievements';
 import { getReconWeek } from '../data/reconWorkouts';
 import { getWorkoutDaysForWeek } from '../data/workouts';
@@ -43,8 +43,37 @@ interface UserState {
 
 const initialProgress = getDefaultProgress('local');
 const STORAGE_KEY = '@gruntz_user';
+/**
+ * Every id that counts toward an "exercise total" achievement.
+ *
+ * Two gaps this closes: `hand_release_pushups` was missing outright, and none of the
+ * `lib:` ids were here at all — so a push-up done in any of the 528 library plans
+ * (where it is logged as `lib:push-up`) never counted toward the push-up badges.
+ * Pike and handstand push-ups are vertical pressing and deliberately excluded, as
+ * are tricep pushdowns, which only share the word.
+ */
+const PUSHUP_LIBRARY_KEYS = [
+  'push-up', 'pushup', 'knee-push-up', 'incline-push-up', 'decline-push-up', 'close-grip-push-up',
+  'diamond-push-up', 'feet-elevated-push-up', 'feet-elevated-diamond-push-up', 'wide-push-up',
+  'hands-release-push-up', 'clapping-push-up', 'weighted-push-up', 'dumbbell-push-up',
+  'deficit-push-up-on-dumbbells', 'deep-push-up', 'push-up-on-risers', 'ring-push-up',
+  'suspension-trainer-push-up', 'medicine-ball-push-up', 'bosu-ball-power-push-up',
+  'band-resisted-push-up', 'band-resisted-feet-elevated-push-up', 'chinese-push-up',
+  'single-leg-push-up', 'spiderman-push-up', 'three-way-push-up',
+];
+
 const EXERCISE_TOTAL_ALIASES: Record<string, string[]> = {
-  pushups: ['pushups', 'strict_pushups', 'close_grip_pushups'],
+  pushups: [
+    'pushups',
+    'strict_pushups',
+    'close_grip_pushups',
+    'hand_release_pushups',
+    'modified_pushups',
+    'base_wall_pushups',
+    'base_incline_pushups',
+    'elbow_pushups',
+    ...PUSHUP_LIBRARY_KEYS.map((key) => `lib:${key}`),
+  ],
 };
 
 type PersistedUserState = {
@@ -285,9 +314,9 @@ export const useUserStore = create<UserState>()(
             : wasStreakAlive
               ? state.progress.streak_days + 1
               : 1;
-          const streakBonus = calculateStreakBonus(newStreak);
+          const streakBonus = calculateStreakBonus(newStreak, state.progress.streak_days);
 
-          const totalXP = mission.total_xp + mission.completion_bonus + mission.pr_bonus + streakBonus;
+          const totalXP = calculateMissionXP(mission, streakBonus);
 
           const newExercisesCompleted = { ...state.progress.exercises_completed };
           let totalNewReps = 0;

@@ -12,7 +12,7 @@ import { Tap } from '../../ui/Pressable';
 import { Text } from '../../ui/Text';
 import { haptic } from '../../ui/haptics';
 import { color, space } from '../../ui/tokens';
-import { calculateStreakBonus, isStreakAlive } from '../../utils/xp';
+import { calculateMissionXP, calculateStreakBonus, isStreakAlive } from '../../utils/xp';
 import { maybeRequestReview } from '../../utils/socialActions';
 
 /** "Workout completed!" — review, then commit the mission or discard it. */
@@ -27,8 +27,8 @@ export function SessionSummary({ onBack, onDone }: { onBack: () => void; onDone:
   const minutes = s.startedAt ? Math.max(1, Math.round((Date.now() - s.startedAt) / 60000)) : 0;
   const daysPerWeek = useUserStore((u) => u.profile?.workout_days_per_week);
   const streakNext = progress.last_workout_date && isStreakAlive(progress.last_workout_date, daysPerWeek) ? progress.streak_days + 1 : 1;
-  const streakBonus = calculateStreakBonus(streakNext);
-  const xp = mission ? mission.total_xp + mission.completion_bonus + streakBonus : 0;
+  const streakBonus = calculateStreakBonus(streakNext, progress.streak_days);
+  const xp = mission ? calculateMissionXP(mission, streakBonus) : 0;
   const canSave = setsDone > 0;
   const date = new Date();
 

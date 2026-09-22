@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { DailyChallenge } from '../data/dailyChallenges';
+import { summarizeChallengeHistory } from '../utils/challengeStats';
 import { getLocalDateKey, parseLocalDateKey } from '../utils/dateKey';
 import { useUserStore } from './useUserStore';
 
@@ -196,40 +197,9 @@ export const useChallengeStore = create<ChallengeState>()(
         });
       },
 
-      getStreak: () => {
-        const state = get();
-        const dates = Array.from(new Set(state.completedDates)).sort((a, b) => b.localeCompare(a));
-
-        if (dates.length === 0) {
-          return 0;
-        }
-
-        let streak = 1;
-        const today = getLocalDateKey();
-
-        // If today is not in completedDates, streak breaks unless yesterday was
-        if (!dates.includes(today)) {
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          const yesterdayKey = getLocalDateKey(yesterday);
-          if (!dates.includes(yesterdayKey)) {
-            return 0;
-          }
-          // Streak continues from yesterday
-          streak = 1;
-        }
-
-        // Count consecutive days from most recent completion
-        for (let i = 1; i < dates.length; i++) {
-          if (areConsecutiveDates(dates[i], dates[i - 1])) {
-            streak++;
-          } else {
-            break;
-          }
-        }
-
-        return streak;
-      },
+      // One streak algorithm, shared with the profile summary: two implementations
+      // over the same dates drifted apart and could disagree between screens.
+      getStreak: () => summarizeChallengeHistory(get().completedDates).challengeStreakDays,
     }),
     {
       name: STORAGE_KEY,
