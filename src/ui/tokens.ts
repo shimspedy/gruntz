@@ -16,9 +16,14 @@ export const color = {
   lineStrong: '#3A3A3C',
 
   text: '#FFFFFF',
-  textSecondary: '#A1A1A6',
-  textTertiary: '#8A8A8F',
-  textQuaternary: '#6E6E73',
+  // The muted tiers are used on raised surfaces as well as on black, so they are set
+  // to clear WCAG AA (4.5:1) against the lightest one (surfaceHigh), not just the
+  // background. The old tertiary/quaternary failed there — quaternary failed even the
+  // 3:1 large-text floor — and they are what inactive tab labels and Settings values
+  // are drawn in.
+  textSecondary: '#A1A1A6', // 5.87:1 on surfaceHigh
+  textTertiary: '#96969B', // 5.13:1 on surfaceHigh (was #8A8A8F, 4.40:1 — failed AA)
+  textQuaternary: '#8E8E93', // 4.63:1 on surfaceHigh (was #6E6E73, 2.98:1 — failed AA and AA-large)
 
   accent: '#2D8CFF',
   accentPressed: '#1F7AEB',
