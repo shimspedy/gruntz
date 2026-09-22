@@ -3,8 +3,8 @@
 Six audits of the app (workout player, onboarding/paywall, plans & library, navigation/state/performance,
 copy & accessibility, data correctness), scored by how much each one would annoy a real user.
 
-- **Fixed: 117** — the 55 first-pass fixes, plus 62 of the numbered items below.
-- **Open: 60** — including 0 that need a product decision and 5 that need a device or account.
+- **Fixed: 122** — the 55 first-pass fixes, plus 67 of the numbered items below.
+- **Open: 55** — including 5 that need a device or account.
 
 Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[dev]` needs a device or account to verify.
 
@@ -121,19 +121,19 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 
 23. [x] `SessionBody` subscribes to the whole store: every keystroke re-renders the pager, carousel and clock (`WorkoutSession.tsx:113`).
 24. [ ] Session persists the full exercise array on every keystroke (`useSessionStore.ts:449`) — debounce.
-25. [ ] Number pads have no Done accessory; the keyboard covers the ✓ column (`SetTable.tsx`).
+25. [x] Number pads have no Done accessory; the keyboard covers the ✓ column (`SetTable.tsx`).
 26. [x] Rest banner is not keyboard-aware: Skip/−15/+15 sit under the keyboard (`WorkoutSession.tsx:341`).
 27. [x] Removing every exercise leaves a blank screen with no empty state (`WorkoutSession.tsx:123`).
 28. [x] Rest ends invisibly at 0 with no "rest over" state or sound (`RestBanner.tsx:35`).
 29. [x] No manual "start rest" / restart after skipping (`WorkoutSession.tsx:237`).
 30. [x] `startRoutine`/`startPlanDay` overwrite persisted `restOverrides`; a rest set once persists globally forever.
-31. [ ] Note is saved only on blur; minimising or swiping loses typed text (`ExerciseInsights.tsx:72`).
+31. [x] Note is saved only on blur; minimising or swiping loses typed text (`ExerciseInsights.tsx:72`).
 32. [ ] `windowSize={3}` unmounts pages, resetting scroll position, insight tab and unsaved note.
 33. [x] `onViewable` haptics fire for programmatic index changes (double buzz).
 34. [x] Stale session keeps counting overnight; `duration_minutes` logs hundreds of minutes.
-35. [ ] Workout-progress notification re-posts on every backgrounding.
+35. [x] Workout-progress notification re-posts on every backgrounding.
 36. [x] ✓ accepts a set with blank reps and weight, logging an empty row.
-37. [ ] Reps accept unbounded digits and overflow the row (partly clamped; column still unbounded).
+37. [x] Reps accept unbounded digits and overflow the row (partly clamped; column still unbounded).
 38. [x] Exercise bubbles carry no `accessibilityState.selected`.
 39. [x] Rest button reads "Rest 0 seconds" while showing "Off".
 40. [ ] Alternatives carousel is a horizontal scroll inside the horizontal pager; swipes fight.
@@ -143,7 +143,7 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 44. [ ] Distance is free text with no validation; mission stores it as a joined string.
 45. [x] "Add exercise" navigates away and returns you to the end of the list, not your set.
 46. [ ] Mini bar shows the viewed index ("0/0" when empty), counts warm-ups, and offers no skip-rest or finish.
-47. [ ] Warm-up weights round to 5 regardless of unit (metric users get 5 kg steps).
+47. [x] Warm-up weights round to 5 regardless of unit (metric users get 5 kg steps).
 
 ## Open — plans and library
 

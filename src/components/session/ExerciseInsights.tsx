@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { ExerciseCharts, ExerciseHistory, ExerciseRecords, useExerciseSessions } from '../ExerciseProgress';
 import { MuscleBodyMap } from '../MuscleBodyMap';
@@ -70,6 +70,15 @@ export function ExerciseInsights({
   const [tab, setTab] = useState<Tab>('about');
   const savedNote = useExerciseNotesStore((n) => (logKey ? n.notes[logKey] : undefined)) ?? '';
   const [note, setNote] = useState(savedNote);
+  // Saving only on blur lost whatever was typed when the pager unmounted the page,
+  // the app was minimised, or the sheet was swiped away. The store is the draft.
+  const saveNote = useCallback(
+    (next: string) => {
+      setNote(next);
+      if (logKey) useExerciseNotesStore.getState().setNote(logKey, next);
+    },
+    [logKey],
+  );
 
   return (
     <View style={styles.wrap}>
@@ -80,8 +89,7 @@ export function ExerciseInsights({
           <Section title="Your notes">
             <TextInput
               value={note}
-              onChangeText={setNote}
-              onBlur={() => logKey && useExerciseNotesStore.getState().setNote(logKey, note)}
+              onChangeText={saveNote}
               placeholder="Setup, cues, machine settings — kept for next time"
               placeholderTextColor={color.textTertiary}
               multiline

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { InputAccessoryView, Keyboard, Platform, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { FadeInDown, interpolateColor, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import type { PreviousSet, SessionExercise, SessionSet } from '../../store/useSessionStore';
 import { Icon } from '../../ui/Icon';
@@ -57,6 +57,28 @@ function workingIndex(exercise: SessionExercise, rowIndex: number) {
 }
 
 /** SET · PREVIOUS · [LB] · REPS|TIME|DIST · ✓ — completed rows flood navy. */
+/**
+ * Number pads have no return key, so with the keyboard up there was no way to
+ * dismiss it — and it covered the ✓ column, which is the whole point of the row.
+ * iOS gets a Done bar above the pad; Android's back gesture already closes it.
+ */
+export const SET_INPUT_ACCESSORY = 'gruntz.setInput';
+
+export function SetInputAccessory() {
+  if (Platform.OS !== 'ios') return null;
+  return (
+    <InputAccessoryView nativeID={SET_INPUT_ACCESSORY}>
+      <View style={styles.accessory}>
+        <Tap feedback="opacity" hitSlop={10} onPress={() => Keyboard.dismiss()} accessibilityLabel="Done editing">
+          <Text variant="cta" tone="accent" style={{ fontSize: 17 }}>
+            Done
+          </Text>
+        </Tap>
+      </View>
+    </InputAccessoryView>
+  );
+}
+
 export function SetTable({ exercise, previous, units, onChange, onToggle, onAdd }: Props) {
   const unit = units === 'metric' ? 'kg' : 'lb';
   const valueHeader = exercise.kind === 'time' ? 'TIME' : exercise.kind === 'distance' ? 'DIST' : 'REPS';
@@ -194,6 +216,7 @@ function SetRow({
             placeholder="0"
             placeholderTextColor={color.textTertiary}
             keyboardType="decimal-pad"
+            inputAccessoryViewID={SET_INPUT_ACCESSORY}
             selectTextOnFocus
             style={styles.input}
             selectionColor={color.accent}
@@ -207,8 +230,9 @@ function SetRow({
           onChangeText={setValueDraft}
           onBlur={() => commitValue(value)}
           onSubmitEditing={() => commitValue(value)}
-          maxLength={exercise.kind === 'distance' ? 24 : 7}
+          maxLength={exercise.kind === 'distance' ? 24 : exercise.kind === 'reps' ? 4 : 7}
           keyboardType={exercise.kind === 'distance' ? 'default' : exercise.kind === 'time' ? 'numbers-and-punctuation' : 'number-pad'}
+          inputAccessoryViewID={exercise.kind === 'distance' ? undefined : SET_INPUT_ACCESSORY}
           selectTextOnFocus
           style={styles.input}
           selectionColor={color.accent}
@@ -237,6 +261,7 @@ function SetRow({
 }
 
 const styles = StyleSheet.create({
+  accessory: { alignItems: 'flex-end', paddingHorizontal: space.gutter, paddingVertical: 10, backgroundColor: color.surface, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color.line },
   headRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.gutter, height: 32 },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.gutter, height: 52 },
   colSet: { width: 40, marginRight: 8 },

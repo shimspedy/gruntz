@@ -124,6 +124,7 @@ export async function cancelDailyReminder() {
 
 // ─── Workout Progress (Android 16 Progress-Centric) ─────────────
 
+let lastProgressSignature: string | null = null;
 let activeProgressId: string | null = null;
 
 export async function showWorkoutProgress(
@@ -131,6 +132,12 @@ export async function showWorkoutProgress(
   exercisesTotal: number,
   missionTitle: string,
 ) {
+  // Backgrounding the app with nothing logged since last time used to tear down and
+  // re-post the same notification, which reads as a fresh alert each time.
+  const signature = `${missionTitle}|${exercisesDone}|${exercisesTotal}`;
+  if (activeProgressId && signature === lastProgressSignature) return;
+  lastProgressSignature = signature;
+
   const progress = exercisesTotal > 0 ? exercisesDone / exercisesTotal : 0;
   const pct = Math.round(progress * 100);
 
@@ -156,6 +163,7 @@ export async function showWorkoutProgress(
 }
 
 export async function clearWorkoutProgress() {
+  lastProgressSignature = null;
   await withNotificationGuard(async () => {
     if (activeProgressId) {
       await Notifications.dismissNotificationAsync(activeProgressId);

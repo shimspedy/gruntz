@@ -33,7 +33,7 @@ import { RestBanner } from './RestBanner';
 import { RestSheet } from './RestSheet';
 import { SessionSummary } from './SessionSummary';
 import { ExerciseInsights } from './ExerciseInsights';
-import { SetTable } from './SetTable';
+import { SetInputAccessory, SetTable } from './SetTable';
 
 const BUBBLE = 68;
 const BUBBLE_STEP = BUBBLE + 14;
@@ -394,6 +394,7 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
       </Animated.View>
 
       <RestSheet exerciseId={restFor} onClose={() => setRestFor(null)} />
+      <SetInputAccessory />
     </View>
   );
 }

@@ -396,6 +396,12 @@ export const useSessionStore = create<SessionState>()(
       addWarmupSets: (exKey, count = 3) => {
         const fractions = [0.5, 0.7, 0.85].slice(-count);
         const reps = [8, 5, 3].slice(-count);
+        // Plates come in different sizes per unit: 5 lb steps are right on an
+        // imperial bar, but a metric lifter loads 2.5 kg. Rounding everyone to 5
+        // handed kg users warm-ups they could not actually load.
+        const metric = useUserStore.getState().profile?.settings.units === 'metric';
+        const step = metric ? 2.5 : 5;
+        const roundToStep = (w: number) => Math.max(step, Math.round(w / step) * step);
         set((s) => ({
           exercises: s.exercises.map((e) => {
             if (e.key !== exKey || e.sets.some((st) => st.warmup)) return e;
@@ -404,7 +410,7 @@ export const useSessionStore = create<SessionState>()(
               id: newSetId(),
               warmup: true,
               reps: reps[i],
-              weight: work?.weight ? Math.max(5, Math.round((work.weight * f) / 5) * 5) : undefined,
+              weight: work?.weight ? roundToStep(work.weight * f) : undefined,
               seconds: work?.seconds,
               done: false,
             }));
