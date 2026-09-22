@@ -3,8 +3,8 @@
 Six audits of the app (workout player, onboarding/paywall, plans & library, navigation/state/performance,
 copy & accessibility, data correctness), scored by how much each one would annoy a real user.
 
-- **Fixed: 154** — the 55 first-pass fixes, plus 99 of the numbered items below.
-- **Open: 23** — including 5 that need a device or account.
+- **Fixed: 157** — the 55 first-pass fixes, plus 102 of the numbered items below.
+- **Open: 20** — including 5 that need a device or account.
 
 Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[dev]` needs a device or account to verify.
 
@@ -112,9 +112,9 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 16. [x] 20 slots have `measure:'distance'` with no distance → "3 ×  m" (`features/planDisplay.ts:52`).
 17. [x] 21 `rep_scheme`s disagree with their `sets` count; the prescription shown is wrong.
 18. [x] 18 timed slots round 150 s to "3 min" instead of 2:30 (`planDisplay.ts:49`).
-19. [ ] 5 plans have more warm-up sets than working sets.
+19. [x] 5 plans have more warm-up sets than working sets.
 20. [x] Absurd parsed values: one day estimated 335 min; `3 × 100` crunches; 20 sets of burpees.
-21. [ ] 6 programs have `duration_weeks: null`, so `planMeta` prints no length; 495 have fewer days than weeks × days/week.
+21. [x] 6 programs have `duration_weeks: null`, so `planMeta` prints no length; 495 have fewer days than weeks × days/week.
 22. [x] 10 plans have `session_minutes: null` and fall back to day 1's estimate (`planDisplay.ts:33`).
 
 ## Open — workout player
@@ -228,7 +228,7 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 117. [x] Library-derived exercises are fabricated as "3 sets × 10 reps" and shown as if prescribed.
 118. [x] `equipment_access` counts Bench and Stability Ball as no-equipment.
 119. [x] Muscle distribution percentages rarely sum to 100.
-120. [ ] Movement cards: `total_rounds` disagrees with the sum of sections on 7 of 12; Card 7 is unreachable; weeks silently substitute Card 1/2.
+120. [x] Movement cards: `total_rounds` disagrees with the sum of sections on 7 of 12; Card 7 is unreachable; weeks silently substitute Card 1/2.
 121. [x] Base Camp day keys re-resolve to different content when days/week changes, rewriting history.
 122. [x] Daily challenges: 25 items described as "30+", rotation repeats every 25 days and jumps at year end.
 

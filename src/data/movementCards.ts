@@ -20,7 +20,6 @@ export const movementCards: MovementCard[] = [
     estimated_duration: 35,
     target_muscle_groups: ['core', 'shoulders', 'back', 'hip flexors'],
     icon: 'core',
-    total_rounds: 10,
     sections: [
       {
         id: 'card1_raider_prep',
@@ -74,7 +73,6 @@ export const movementCards: MovementCard[] = [
     estimated_duration: 45,
     target_muscle_groups: ['legs', 'back', 'core', 'shoulders', 'grip'],
     icon: 'ruck',
-    total_rounds: 16,
     sections: [
       {
         id: 'card2_dynamic',
@@ -144,7 +142,6 @@ export const movementCards: MovementCard[] = [
     estimated_duration: 30,
     target_muscle_groups: ['chest', 'back', 'core', 'shoulders'],
     icon: 'test',
-    total_rounds: 7,
     sections: [
       {
         id: 'card3_planks',
@@ -197,7 +194,6 @@ export const movementCards: MovementCard[] = [
     estimated_duration: 40,
     target_muscle_groups: ['legs', 'glutes', 'shoulders', 'core', 'back'],
     icon: 'strength',
-    total_rounds: 7,
     sections: [
       {
         id: 'card4_raider_prep',
@@ -240,7 +236,6 @@ export const movementCards: MovementCard[] = [
     estimated_duration: 50,
     target_muscle_groups: ['chest', 'back', 'legs', 'core', 'shoulders', 'grip'],
     icon: 'strength',
-    total_rounds: 20,
     sections: [
       {
         id: 'card5_planks',
@@ -304,7 +299,6 @@ export const movementCards: MovementCard[] = [
     estimated_duration: 40,
     target_muscle_groups: ['core', 'legs', 'back', 'shoulders'],
     icon: 'target',
-    total_rounds: 11,
     sections: [
       {
         id: 'card6_main',
@@ -356,7 +350,6 @@ export const movementCards: MovementCard[] = [
     estimated_duration: 25,
     target_muscle_groups: ['chest', 'back', 'legs', 'core', 'shoulders'],
     icon: 'basecamp',
-    total_rounds: 7,
     sections: [
       {
         id: 'card7_prep',
@@ -419,7 +412,6 @@ export const movementCards: MovementCard[] = [
     estimated_duration: 60,
     target_muscle_groups: ['shoulders', 'back', 'core', 'legs'],
     icon: 'swim',
-    total_rounds: 8,
     sections: [
       {
         id: 'sc1_warmup',
@@ -490,7 +482,6 @@ export const movementCards: MovementCard[] = [
     estimated_duration: 70,
     target_muscle_groups: ['shoulders', 'back', 'core', 'legs', 'cardiovascular'],
     icon: 'swim',
-    total_rounds: 7,
     sections: [
       {
         id: 'sc2_warmup',
@@ -569,7 +560,6 @@ export const movementCards: MovementCard[] = [
     estimated_duration: 75,
     target_muscle_groups: ['shoulders', 'back', 'core', 'legs', 'chest'],
     icon: 'swim',
-    total_rounds: 8,
     sections: [
       {
         id: 'sc3_pt_circuit',
@@ -639,7 +629,6 @@ export const movementCards: MovementCard[] = [
     estimated_duration: 80,
     target_muscle_groups: ['shoulders', 'back', 'core', 'legs', 'cardiovascular'],
     icon: 'swim',
-    total_rounds: 9,
     sections: [
       {
         id: 'sc4_warmup',
@@ -718,7 +707,6 @@ export const movementCards: MovementCard[] = [
     estimated_duration: 85,
     target_muscle_groups: ['full body', 'cardiovascular', 'mental toughness'],
     icon: 'swim',
-    total_rounds: 7,
     sections: [
       {
         id: 'sc5_warmup',
@@ -781,6 +769,17 @@ export const movementCards: MovementCard[] = [
     ],
   },
 ];
+
+/**
+ * Rounds in a card, summed from its sections.
+ *
+ * This used to be a stored `total_rounds` field that nothing read and that had
+ * drifted out of agreement with the sections on 8 of the 12 cards. Derived, it
+ * cannot disagree.
+ */
+export function getCardRounds(card: MovementCard): number {
+  return card.sections.reduce((sum, section) => sum + (section.rounds ?? 0), 0);
+}
 
 export function getMovementCard(id: string): MovementCard | undefined {
   return movementCards.find(c => c.id === id);

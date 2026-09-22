@@ -227,7 +227,6 @@ export interface MovementCard {
   estimated_duration: number;
   target_muscle_groups: string[];
   sections: CardSection[];
-  total_rounds: number;
   icon: string;
 }
 
