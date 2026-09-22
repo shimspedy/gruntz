@@ -73,9 +73,11 @@ export default function TrainScreen() {
     >
       <TabHeader />
 
+      {/* One label for one action: "See plan", "See More" and "Browse" all opened
+          the same kind of thing and read as three different features. */}
       <SectionTitle
         title="Your Plan"
-        action={activePlan ? 'See plan' : program ? 'See More' : 'Browse'}
+        action="See all"
         onAction={() =>
           activePlan
             ? navigation.navigate('LibraryPlanDetail', { planId: activePlan.id })
@@ -88,7 +90,11 @@ export default function TrainScreen() {
       {justCompleted ? (
         <PlanCompleteCard />
       ) : activePlan ? (
-        <ActivePlanCard plan={activePlan} onOpen={(dayId) => navigation.navigate('LibraryPlanDay', { planId: activePlan.id, dayId })} />
+        <ActivePlanCard
+          plan={activePlan}
+          onOpen={(dayId) => navigation.navigate('LibraryPlanDay', { planId: activePlan.id, dayId })}
+          onOpenPlan={() => navigation.navigate('LibraryPlanDetail', { planId: activePlan.id })}
+        />
       ) : program ? (
         days.some((d) => d.workout) ? (
           <PlanCarousel days={days} onOpen={(d) => navigation.navigate('WorkoutDetail', { workoutId: d.workout!.id, dateKey: d.dateKey })} />
@@ -197,19 +203,24 @@ function ChooseProgram({ onPress }: { onPress: () => void }) {
 }
 
 /** The followed library plan: its next day as a hero card. */
-function ActivePlanCard({ plan, onOpen }: { plan: WorkoutPlan; onOpen: (dayId: string) => void }) {
+function ActivePlanCard({ plan, onOpen, onOpenPlan }: { plan: WorkoutPlan; onOpen: (dayId: string) => void; onOpenPlan: () => void }) {
   const { width } = useWindowDimensions();
   const completed = usePlanLibraryStore((s) => s.completedDayIds);
   const cycle = usePlanLibraryStore((s) => s.cycle);
   const day = nextPlanDay(plan, completed);
+  const doneCount = plan.days.filter((d) => completed.includes(d.id)).length;
   const w = Math.round(width * 0.8);
   return (
-    <Tap onPress={() => onOpen(day.id)} scaleTo={0.98} style={[styles.emptyCard, { width: w, height: Math.round(w * 1.1) }]} accessibilityLabel={`Next workout, ${day.title}`}>
+    // The card and the Start button did the same thing and were announced as two
+    // separate controls. The card stays tappable; only the button is announced.
+    <Tap onPress={() => onOpen(day.id)} scaleTo={0.98} style={[styles.emptyCard, { width: w, height: Math.round(w * 1.1) }]} accessible={false}>
       <HeroArt exercise={planDayHero(day)} style={StyleSheet.absoluteFill} />
       <LinearGradient colors={['rgba(0,0,0,0.1)', 'rgba(8,9,11,0.97)']} locations={[0.3, 0.85]} style={StyleSheet.absoluteFill} />
       <View style={styles.emptyBottom}>
         <Text variant="overline" tone="accent">
-          {plan.days.length > 1 ? `${day.label} of ${plan.days.length}${cycle ? ` · Round ${cycle + 1}` : ''}` : 'Up next'}
+          {plan.days.length > 1
+            ? `${doneCount} of ${plan.days.length} done${cycle ? ` · Round ${cycle + 1}` : ''}`
+            : 'Up next'}
         </Text>
         <Text variant="hero" style={{ marginTop: 6 }} numberOfLines={2}>
           {displayTitle(day.title)}
@@ -217,7 +228,17 @@ function ActivePlanCard({ plan, onOpen }: { plan: WorkoutPlan; onOpen: (dayId: s
         <Text variant="callout" tone="secondary" style={{ marginTop: 6 }} numberOfLines={1}>
           {plan.title} · ~{day.estimated_minutes} min
         </Text>
-        <Button title="Start workout" icon="play" onPress={() => onOpen(day.id)} size="md" style={{ marginTop: space.lg }} />
+        <Button
+          title={`Start ${day.label}`}
+          icon="play"
+          onPress={() => onOpen(day.id)}
+          size="md"
+          style={{ marginTop: space.lg }}
+        />
+        {/* Tapping the card only ever opened the next day; this is the way to any other. */}
+        <Tap feedback="opacity" hitSlop={8} onPress={onOpenPlan} style={{ marginTop: space.sm, alignSelf: 'center' }} accessibilityLabel="Pick another day">
+          <Text variant="subhead" tone="secondary">Pick another day</Text>
+        </Tap>
       </View>
     </Tap>
   );

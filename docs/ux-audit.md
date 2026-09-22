@@ -3,8 +3,8 @@
 Six audits of the app (workout player, onboarding/paywall, plans & library, navigation/state/performance,
 copy & accessibility, data correctness), scored by how much each one would annoy a real user.
 
-- **Fixed: 163** — the 55 first-pass fixes, plus 108 of the numbered items below.
-- **Open: 14** — including 5 that need a device or account.
+- **Fixed: 165** — the 55 first-pass fixes, plus 110 of the numbered items below.
+- **Open: 12** — including 5 that need a device or account.
 
 Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[dev]` needs a device or account to verify.
 
@@ -154,14 +154,14 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 52. [x] Plan detail list re-animates on every back navigation.
 53. [x] No level / equipment / session-length filters or sort in the plan browser.
 54. [x] `FlatList` has no `getItemLayout` despite fixed-height rows; `PlanRow`/`PlanCard` aren't memoised; `planHero` walks every day on each render.
-55. [ ] Following a plan only toasts: no scheduling, no jump to day one, no explanation of what changes.
+55. [x] Following a plan only toasts: no scheduling, no jump to day one, no explanation of what changes.
 56. [x] Plan day rows recompute a superset filter per row (O(n²) on 25-exercise days).
 57. [x] "Add to a workout" lists only 5 routines via `Alert` as a picker (`ExerciseDetailScreen.tsx:104-105`).
 58. [ ] Routine editor: delete with no confirm or undo; only "move up"; 40 pt steppers; skeleton rows read as loading; Save disabled with no reason.
 59. [x] Routine detail on Android skips the menu and goes straight to delete confirm.
 60. [x] Deleting a routine is unrecoverable (no soft delete).
 61. [x] `PlanScreen` ignores a followed library plan and shows "0 of 0" with no empty state.
-62. [ ] Train's plan card: duplicate a11y targets, no "X of Y days", no way to pick another day, mixed "See plan"/"See More"/"Browse" labels.
+62. [x] Train's plan card: duplicate a11y targets, no "X of Y days", no way to pick another day, mixed "See plan"/"See More"/"Browse" labels.
 63. [x] `routineMinutes` clamps to a 5-minute floor, so any small routine claims "5 min".
 
 ## Open — navigation, state, performance

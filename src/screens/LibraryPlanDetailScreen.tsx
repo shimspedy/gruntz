@@ -49,7 +49,14 @@ export default function LibraryPlanDetailScreen() {
     const doFollow = () => {
       haptic.success();
       usePlanLibraryStore.getState().follow(plan.id);
-      toast(`Following ${plan.title}`, { tone: 'success', icon: 'check' });
+      // Following used to be a bare toast with nothing to do next. Say what it
+      // changed and offer the obvious next step.
+      const day = nextPlanDay(plan, usePlanLibraryStore.getState().completedDayIds);
+      toast(`Following ${plan.title} · shows on Train`, {
+        tone: 'success',
+        icon: 'check',
+        action: { label: 'Start', onPress: () => navigation.navigate('LibraryPlanDay', { planId: plan.id, dayId: day.id }) },
+      });
     };
     if (activeId && activeId !== plan.id) {
       const current = getWorkoutPlan(activeId);
