@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation, useScrollToTop } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, LinearTransition, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -81,7 +81,20 @@ export default function RanksScreen() {
               <Text variant="overline" tone="secondary">
                 Current rank
               </Text>
-              <Icon name="info" size={16} color={color.textSecondary} />
+              {/* The icon looked tappable and did nothing. */}
+              <Tap
+                feedback="opacity"
+                hitSlop={12}
+                accessibilityLabel="How ranks work"
+                onPress={() =>
+                  Alert.alert(
+                    'How ranks work',
+                    'Every workout, challenge and streak milestone earns XP. XP raises your level, and levels move you up the ladder. Nothing expires — you only ever climb.',
+                  )
+                }
+              >
+                <Icon name="info" size={16} color={color.textSecondary} />
+              </Tap>
             </View>
             <Text style={[styles.rankName, fresh && { color: color.textTertiary }]}>{rankTitle(progress.current_rank, military)}</Text>
             <Text variant="callout" tone="secondary" style={{ marginTop: 2 }}>
@@ -167,7 +180,9 @@ function SkillRow({ name, blurb, icon, score }: { name: string; blurb: string; i
             {name}
           </Text>
           <Text variant="subhead" tone="secondary" style={{ marginTop: 3, letterSpacing: 0.6 }}>
-            {level.toUpperCase()} · {score}/100
+            {/* A brand-new athlete saw "UNTRAINED · 0/100" six times over, which reads
+                as a scorecard of failures rather than a blank slate. */}
+            {score > 0 ? `${level} · ${score}/100` : 'Not measured yet'}
           </Text>
         </View>
         <Animated.View style={chevron}>

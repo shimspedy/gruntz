@@ -60,7 +60,14 @@ export default function StreakScreen() {
   }, [month]);
 
   const cell = Math.floor((width - space.md * 2 - space.lg * 2) / 7);
+  // There is nothing to see past this month, so the calendar stops at it rather
+  // than letting you page forever into empty grids.
+  const atCurrentMonth = (() => {
+    const now = new Date();
+    return month.getFullYear() === now.getFullYear() && month.getMonth() === now.getMonth();
+  })();
   const shiftMonth = (n: number) => {
+    if (n > 0 && atCurrentMonth) return;
     haptic.selection();
     setMonth(new Date(month.getFullYear(), month.getMonth() + n, 1));
   };
@@ -121,8 +128,15 @@ export default function StreakScreen() {
               <Tap feedback="opacity" hitSlop={10} onPress={() => shiftMonth(-1)} accessibilityLabel="Previous month">
                 <Icon name="chevronLeft" size={20} weight="semibold" />
               </Tap>
-              <Tap feedback="opacity" hitSlop={10} onPress={() => shiftMonth(1)} accessibilityLabel="Next month">
-                <Icon name="chevronRight" size={20} weight="semibold" />
+              <Tap
+                feedback="opacity"
+                hitSlop={10}
+                onPress={() => shiftMonth(1)}
+                disabled={atCurrentMonth}
+                accessibilityLabel="Next month"
+                accessibilityState={{ disabled: atCurrentMonth }}
+              >
+                <Icon name="chevronRight" size={20} weight="semibold" color={atCurrentMonth ? color.textQuaternary : undefined} />
               </Tap>
             </View>
           </View>

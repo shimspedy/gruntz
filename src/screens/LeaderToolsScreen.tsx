@@ -38,6 +38,16 @@ export default function LeaderToolsScreen() {
           </View>
         </View>
 
+        {/* The screen took a team name and an invite code and saved them to this
+            phone, with nothing on the other end — it read as "your team can see
+            this" when no team could see anything. */}
+        <View style={styles.notice}>
+          <Icon name="info" size={18} color={color.textSecondary} />
+          <Text variant="subhead" tone="secondary" style={{ flex: 1 }}>
+            Sharing with a team is not live yet. What you enter here is saved on this phone so it is ready when it is.
+          </Text>
+        </View>
+
         <Text variant="overline" tone="secondary" style={styles.label}>
           Team
         </Text>
@@ -45,7 +55,7 @@ export default function LeaderToolsScreen() {
           <Text variant="subhead" tone="secondary">
             Team or section name
           </Text>
-          <TextInput value={name} onChangeText={setName} placeholder="Alpha Section" placeholderTextColor={color.textTertiary} style={styles.input} selectionColor={color.accent} />
+          <TextInput value={name} onChangeText={setName} placeholder="Your team name" placeholderTextColor={color.textTertiary} style={styles.input} selectionColor={color.accent} />
           <Text variant="subhead" tone="secondary" style={{ marginTop: space.md }}>
             Invite code
           </Text>
@@ -58,13 +68,13 @@ export default function LeaderToolsScreen() {
             onPress={() => {
               setTeam(name.trim(), code.trim().toUpperCase());
               haptic.success();
-              toast('Team saved');
+              toast('Saved on this phone');
             }}
           />
         </View>
 
         <Text variant="overline" tone="secondary" style={styles.label}>
-          What your team would see
+          What a team would see
         </Text>
         <View style={styles.preview}>
           <Metric label="Sessions" value={String(progress.workouts_completed)} />
@@ -95,6 +105,7 @@ function Metric({ label, value, tint = color.text }: { label: string; value: str
 }
 
 const styles = StyleSheet.create({
+  notice: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm, marginTop: space.lg, paddingHorizontal: space.xs },
   screen: { flex: 1, backgroundColor: color.bg },
   privacy: { flexDirection: 'row', gap: 14, padding: space.md, marginTop: space.sm, borderRadius: radius.lg, backgroundColor: color.accentSoft },
   label: { marginTop: space.xl, marginBottom: 10, marginLeft: 6 },
