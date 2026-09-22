@@ -72,18 +72,32 @@ export function getBaseCampWeek(week: number, profile?: UserProfile | null): Wor
   );
 }
 
+/**
+ * Resolve an explicit day id — a logged workout, a deep link, a history row.
+ *
+ * This must NOT clamp to the athlete's current schedule. It used to, so dropping
+ * from 5 days a week to 3 made a completed `basecamp_w1d5` resolve to day 3:
+ * the same id, different workout, and a history that quietly rewrote itself.
+ */
 export function getBaseCampWorkoutDay(id: string, profile?: UserProfile | null): WorkoutDay | undefined {
   const match = id.match(/^basecamp_w(\d+)d(\d+)$/);
   if (!match) {
     return undefined;
   }
 
-  return buildBaseCampWorkoutDay(Number(match[1]), Number(match[2]), profile);
+  return buildBaseCampWorkoutDay(Number(match[1]), Number(match[2]), profile, { literalDay: true });
 }
 
-function buildBaseCampWorkoutDay(weekInput: number, dayInput: number, profile?: UserProfile | null): WorkoutDay {
+function buildBaseCampWorkoutDay(
+  weekInput: number,
+  dayInput: number,
+  profile?: UserProfile | null,
+  options: { literalDay?: boolean } = {},
+): WorkoutDay {
   const week = clamp(Number.isFinite(weekInput) ? Math.trunc(weekInput) : 1, 1, BASE_CAMP_TOTAL_WEEKS);
-  const maxDays = getBaseCampTrainingDays(profile);
+  // Generating this week's list respects the schedule; resolving a saved id keeps
+  // the day it actually was, bounded only by the days in a week.
+  const maxDays = options.literalDay ? 7 : getBaseCampTrainingDays(profile);
   const day = clamp(Number.isFinite(dayInput) ? Math.trunc(dayInput) : 1, 1, maxDays);
   const readiness = getBaseCampReadiness(profile);
   const sessionMinutes = profile?.preferred_session_minutes

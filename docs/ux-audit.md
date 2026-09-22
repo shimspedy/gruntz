@@ -3,8 +3,8 @@
 Six audits of the app (workout player, onboarding/paywall, plans & library, navigation/state/performance,
 copy & accessibility, data correctness), scored by how much each one would annoy a real user.
 
-- **Fixed: 138** — the 55 first-pass fixes, plus 83 of the numbered items below.
-- **Open: 39** — including 5 that need a device or account.
+- **Fixed: 143** — the 55 first-pass fixes, plus 88 of the numbered items below.
+- **Open: 34** — including 5 that need a device or account.
 
 Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[dev]` needs a device or account to verify.
 
@@ -168,12 +168,12 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 
 64. [ ] `exerciseMedia.ts` registers ~1,500 assets at module load on the startup path.
 65. [x] Navigation state is written on every screen change (`RootNavigator.tsx:170`) — debounce.
-66. [ ] Boot gate waits only on user + subscription stores; program/session/challenge/routine stores can render defaults then jump.
+66. [x] Boot gate waits only on user + subscription stores; program/session/challenge/routine stores can render defaults then jump.
 67. [x] `createActions.ts:32` reads the program store with no hydration check — can dump a returning user into ProgramSelect.
-68. [ ] Onboarding draft is cleared on user-store hydration, which may precede draft hydration.
+68. [x] Onboarding draft is cleared on user-store hydration, which may precede draft hydration.
 69. [x] No `linking` config or URL scheme: notification taps and deep links can't route.
 70. [ ] No Android `BackHandler` for the session overlay or the + menu.
-71. [ ] Challenge store cross-writes during hydration; XP/streak can recompute from an empty array.
+71. [x] Challenge store cross-writes during hydration; XP/streak can recompute from an empty array.
 72. [x] `ErrorBoundary.reset` remounts the same corrupt state — infinite "Try again" loop.
 73. [x] Toasts render below native modals, so toasts fired from a sheet are invisible.
 74. [x] Toasts have no queue: two events in quick succession show only the last.
@@ -185,7 +185,7 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 80. [x] Re-tapping the active tab does nothing (no scroll-to-top).
 81. [ ] Tab-bar inset is read once, so the last row hides behind the pill or mini bar.
 82. [ ] Train and Ranks render long content as `ScrollView` + `.map()` rather than a list.
-83. [ ] `useMissionStore` duplicates program logic and goes stale past midnight; daily challenge doesn't refresh at midnight either.
+83. [x] `useMissionStore` duplicates program logic and goes stale past midnight; daily challenge doesn't refresh at midnight either.
 84. [ ] Run tracker copies the whole route array into state on every GPS fix; `stop()` can read stale state.
 85. [ ] `App.tsx` doesn't hold the native splash, so there's an extra black-to-black transition.
 
@@ -229,7 +229,7 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 118. [x] `equipment_access` counts Bench and Stability Ball as no-equipment.
 119. [x] Muscle distribution percentages rarely sum to 100.
 120. [ ] Movement cards: `total_rounds` disagrees with the sum of sections on 7 of 12; Card 7 is unreachable; weeks silently substitute Card 1/2.
-121. [ ] Base Camp day keys re-resolve to different content when days/week changes, rewriting history.
+121. [x] Base Camp day keys re-resolve to different content when days/week changes, rewriting history.
 122. [x] Daily challenges: 25 items described as "30+", rotation repeats every 25 days and jumps at year end.
 
 > Items 23–122 above are grouped headings; the individual sub-findings from each audit total 212 open items.

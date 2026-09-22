@@ -42,6 +42,9 @@ import { useChallengeStore } from '../store/useChallengeStore';
 import { useOnboardingDraftStore } from '../store/useOnboardingDraftStore';
 import { setNotificationsEnabled } from '../services/notifications';
 import { useSubscriptionStore } from '../store/useSubscriptionStore';
+import { useProgramStore } from '../store/useProgramStore';
+import { useRoutineStore } from '../store/useRoutineStore';
+import { useSessionStore } from '../store/useSessionStore';
 import { useUserStore } from '../store/useUserStore';
 import type { OnboardingStackParamList, RootStackParamList, TabParamList } from '../types/navigation';
 import { LogoMark } from '../ui/Logo';
@@ -187,6 +190,20 @@ function restorable(state: InitialState | undefined): InitialState | undefined {
   return { ...state, routes: kept, index: kept.length - 1 } as InitialState;
 }
 
+/** Subscribes to a persisted store's hydration so the boot gate actually re-renders. */
+function usePersistHydrated(store: { persist: { hasHydrated: () => boolean; onFinishHydration: (fn: () => void) => () => void } }) {
+  const [hydrated, setHydrated] = useState(() => store.persist.hasHydrated());
+  useEffect(() => {
+    if (hydrated) return undefined;
+    if (store.persist.hasHydrated()) {
+      setHydrated(true);
+      return undefined;
+    }
+    return store.persist.onFinishHydration(() => setHydrated(true));
+  }, [hydrated, store]);
+  return hydrated;
+}
+
 /** Reopen on the screen the user left, if iOS closed the app while it was in the background. */
 function useSavedNavigation(hydrated: boolean, onboarded: boolean) {
   const [ready, setReady] = useState(false);
@@ -262,6 +279,9 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   const initializeSubscription = useSubscriptionStore((s) => s.initialize);
   const resetDailyChallenge = useChallengeStore((s) => s.resetDaily);
   const nav = useSavedNavigation(hasHydrated, isOnboarded);
+  const programHydrated = useProgramStore((s) => s.hasHydrated);
+  const sessionHydrated = usePersistHydrated(useSessionStore);
+  const routineHydrated = usePersistHydrated(useRoutineStore);
   const remindersOn = useUserStore((s) => s.profile?.settings.notifications_enabled ?? true);
   useEffect(() => {
     setNotificationsEnabled(remindersOn);
@@ -271,7 +291,17 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
 
   // Saved onboarding answers are only needed until the user is in (they survive the paywall step).
   useEffect(() => {
-    if (hasHydrated && isOnboarded) useOnboardingDraftStore.getState().clear();
+    // Both stores must have hydrated: clearing on the user store's flag alone
+    // could wipe the draft a moment before the draft store restored it.
+    if (!hasHydrated || !isOnboarded) return;
+    if (useOnboardingDraftStore.persist.hasHydrated()) {
+      useOnboardingDraftStore.getState().clear();
+      return;
+    }
+    const unsubscribe = useOnboardingDraftStore.persist.onFinishHydration(() => {
+      useOnboardingDraftStore.getState().clear();
+    });
+    return unsubscribe;
   }, [hasHydrated, isOnboarded]);
 
   useEffect(() => {
@@ -301,10 +331,32 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
     const sub = AppState.addEventListener('change', (next) => {
       if (next === 'active') refresh();
     });
-    return () => sub.remove();
+
+    // Rollover only ever happened on foreground, so an app left open across
+    // midnight kept yesterday's mission and daily challenge until it was
+    // backgrounded and reopened. Fire at the next local midnight and reschedule.
+    let midnight: ReturnType<typeof setTimeout> | undefined;
+    const scheduleMidnight = () => {
+      const now = new Date();
+      const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
+      midnight = setTimeout(() => {
+        refresh();
+        scheduleMidnight();
+      }, Math.max(1000, next.getTime() - now.getTime()));
+    };
+    scheduleMidnight();
+
+    return () => {
+      sub.remove();
+      clearTimeout(midnight);
+    };
   }, [hasHydrated, subscriptionHydrated, initializeSubscription, updateStreak, resetDailyChallenge]);
 
-  if (!fontsReady || !hasHydrated || !nav.ready || (!subscriptionHydrated && !timedOut)) return <Boot />;
+  // The gate used to wait on the user and subscription stores only, so the program,
+  // session, challenge and routine stores could render their defaults for a frame
+  // and then jump once their own persisted state arrived.
+  const storesReady = programHydrated && sessionHydrated && routineHydrated;
+  if (!fontsReady || !hasHydrated || !nav.ready || (!storesReady && !timedOut) || (!subscriptionHydrated && !timedOut)) return <Boot />;
 
   return (
     <View style={styles.fill}>

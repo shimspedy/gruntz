@@ -217,7 +217,19 @@ export const useChallengeStore = create<ChallengeState>()(
           return;
         }
 
-        useUserStore.getState().syncChallengeStats(state.completedDates);
+        // Writing into the user store before IT has hydrated applies challenge
+        // stats to the default progress, which the user store then overwrites (or
+        // merges over) — XP and streak could be recomputed from an empty array.
+        const dates = state.completedDates;
+        if (useUserStore.getState().hasHydrated) {
+          useUserStore.getState().syncChallengeStats(dates);
+          return;
+        }
+        const unsubscribe = useUserStore.subscribe((user) => {
+          if (!user.hasHydrated) return;
+          unsubscribe();
+          useUserStore.getState().syncChallengeStats(dates);
+        });
       },
     }
   )
