@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Linking, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useNavigation, useScrollToTop } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -19,7 +19,14 @@ import { Sheet } from '../ui/Sheet';
 import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
 import { toast } from '../ui/Toast';
+import { openExternalUrl } from '../utils/externalLinks';
 import { color, font, motion, radius, space } from '../ui/tokens';
+
+/** Opening a URL can fail (no browser, malformed link); say so instead of doing nothing. */
+async function openSource(url: string) {
+  const opened = await openExternalUrl(url);
+  if (!opened) toast('Could not open that link', { tone: 'error', icon: 'alert' });
+}
 
 export const BRANCH_LABEL: Record<ServiceBranch, string> = {
   army: 'U.S. Army',
@@ -41,10 +48,19 @@ export function formatEventValue(value: number, unit: string) {
 
 const unitLabel = (u: TestEventDefinition['unit']) => (u === 'seconds' ? 'min:sec' : u === 'pounds' ? 'lb' : u);
 
+/**
+ * Whole calendar days until the test. Measuring elapsed milliseconds against noon
+ * on the day read "1 day to go" all morning of the test itself, then flipped to 0
+ * after midday — so counting days, not hours.
+ */
 function daysUntil(date?: string | null) {
   if (!date) return null;
-  const diff = new Date(`${date}T12:00:00`).getTime() - Date.now();
-  return Math.max(0, Math.ceil(diff / 86400000));
+  const [y, m, d] = date.split('-').map(Number);
+  if (!y || !m || !d) return null;
+  const now = new Date();
+  const target = Date.UTC(y, m - 1, d);
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.max(0, Math.round((target - today) / 86400000));
 }
 
 function parseValue(text: string, unit: string) {
@@ -74,7 +90,7 @@ export default function TestScreen() {
   const scoped = Object.fromEntries(test.events.map((e) => [e.id, testScores[key(e.id)] ?? 0]));
   const readiness = getTestReadiness(test, scoped);
   const countdown = daysUntil(profile?.fitness_test_date);
-  const ranked = test.events.map((e) => ({ e, score: getTestReadiness({ ...test, events: [e] }, scoped) })).sort((a, b) => a.score - b.score);
+  const ranked = test.events.map((e) => ({ e, score: getTestReadiness({ ...test, events: [e] }, scoped).score })).sort((a, b) => a.score - b.score);
   const anyLogged = Object.values(scoped).some((v) => v > 0);
 
   return (
@@ -94,13 +110,18 @@ export default function TestScreen() {
               {countdown == null ? 'No test date set' : countdown === 0 ? 'Test day' : `${countdown} days to test`}
             </Text>
           </View>
-          <Ring progress={readiness / 100} size={104} stroke={8} trackColor={color.surfaceHigh}>
+          <Ring progress={readiness.score / 100} size={104} stroke={8} trackColor={color.surfaceHigh}>
             <Text style={styles.pct} tabular>
-              {readiness}
+              {readiness.score}
               <Text style={styles.pctSign}>%</Text>
             </Text>
           </Ring>
         </View>
+        {readiness.entered > 0 && readiness.entered < readiness.total ? (
+          <Text variant="footnote" tone="tertiary" style={{ marginTop: space.xs }}>
+            Based on {readiness.entered} of {readiness.total} events. Log the rest for a full picture.
+          </Text>
+        ) : null}
 
         {tests.length > 1 ? (
           <Segmented
@@ -141,7 +162,7 @@ export default function TestScreen() {
         {test.events.map((e, i) => {
           const current = testScores[key(e.id)] ?? 0;
           const target = targetScores[key(e.id)] ?? e.target;
-          const pct = getTestReadiness({ ...test, events: [e] }, { [e.id]: current });
+          const pct = getTestReadiness({ ...test, events: [e] }, { [e.id]: current }).score;
           return (
             <Animated.View key={e.id} entering={FadeInDown.delay(i * motion.stagger).duration(320)} style={styles.event}>
               <View style={styles.eventHead}>
@@ -187,7 +208,7 @@ export default function TestScreen() {
         })}
       </View>
 
-      <Tap feedback="highlight" baseColor={color.bg} pressedColor={color.bgRaised} style={styles.source} onPress={() => void Linking.openURL(test.sourceUrl)} accessibilityRole="link">
+      <Tap feedback="highlight" baseColor={color.bg} pressedColor={color.bgRaised} style={styles.source} onPress={() => void openSource(test.sourceUrl)} accessibilityRole="link">
         <Icon name="info" size={20} color={color.textSecondary} />
         <View style={{ flex: 1 }}>
           <Text variant="subhead">{test.sourceLabel}</Text>

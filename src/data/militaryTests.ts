@@ -108,15 +108,26 @@ export function getTestsForBranch(branch: ServiceBranch) {
   return Object.values(militaryTests).filter((test) => test.branch === branch);
 }
 
+/**
+ * Readiness across the events the athlete has actually entered a score for.
+ *
+ * Un-entered events used to count as zero, so maxing one event of three read 33%
+ * — indistinguishable from being genuinely unready. `entered` lets the screen say
+ * what the number is based on instead of implying it covers the whole test.
+ */
 export function getTestReadiness(test: MilitaryTestDefinition, scores: Record<string, number>) {
-  const eventScores = test.events.map((event) => {
+  const eventScores = test.events.flatMap((event) => {
     const value = scores[event.id];
-    if (!Number.isFinite(value) || value <= 0) return 0;
+    if (!Number.isFinite(value) || value <= 0) return [];
     const range = Math.max(Math.abs(event.target - event.baseline), 1);
     const raw = event.direction === 'higher'
       ? (value - event.baseline) / range
       : (event.baseline - value) / range;
-    return Math.round(Math.max(0, Math.min(1, raw)) * 100);
+    return [Math.round(Math.max(0, Math.min(1, raw)) * 100)];
   });
-  return Math.round(eventScores.reduce((sum, score) => sum + score, 0) / eventScores.length);
+  return {
+    score: eventScores.length ? Math.round(eventScores.reduce((sum, s) => sum + s, 0) / eventScores.length) : 0,
+    entered: eventScores.length,
+    total: test.events.length,
+  };
 }
