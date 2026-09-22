@@ -40,6 +40,8 @@ export interface PlanExerciseSlot {
   /** Per-set reps for pyramids, e.g. [12, 10, 8]. */
   rep_scheme?: number[];
   per_side?: boolean;
+  /** `reps` is the whole prescription spread over `sets`, not reps per set. */
+  total_reps?: boolean;
   duration_seconds?: number;
   distance_meters?: number;
   rest_seconds: number;

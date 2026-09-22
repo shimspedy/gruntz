@@ -110,7 +110,16 @@ export function WorkoutSessionHost() {
 function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Gesture.Pan>; visible: boolean }) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const s = useSessionStore();
+  // Granular selectors, not the whole store: `restEndsAt` ticks every second and
+  // `previous`/`restOverrides` change on every swap, and subscribing to all of it
+  // re-rendered the pager, carousel and clock on each one.
+  const exercises = useSessionStore((st) => st.exercises);
+  const index = useSessionStore((st) => st.index);
+  const title = useSessionStore((st) => st.title);
+  const active = useSessionStore((st) => st.active);
+  const startedAt = useSessionStore((st) => st.startedAt);
+  const minimize = useSessionStore((st) => st.minimize);
+  const setIndex = useSessionStore((st) => st.setIndex);
   const units = useUserStore((u) => u.profile?.settings.units ?? 'imperial');
   const now = useNow(visible);
   const [phase, setPhase] = useState<'log' | 'summary'>('log');
@@ -121,13 +130,13 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
   const carousel = useRef<ScrollView>(null);
   const summaryX = useSharedValue(0);
 
-  const completed = s.exercises.filter(isExerciseDone).length;
-  const allDone = s.exercises.length > 0 && completed === s.exercises.length;
+  const completed = exercises.filter(isExerciseDone).length;
+  const allDone = exercises.length > 0 && completed === exercises.length;
 
   // The progress notification is for when the user leaves the app mid-workout; in the foreground
   // the session UI already shows it, so a banner would only interrupt.
-  const latest = useRef({ completed, total: s.exercises.length, title: s.title, active: s.active });
-  latest.current = { completed, total: s.exercises.length, title: s.title, active: s.active };
+  const latest = useRef({ completed, total: exercises.length, title, active });
+  latest.current = { completed, total: exercises.length, title, active };
   useEffect(() => {
     const sub = AppState.addEventListener('change', (next) => {
       const l = latest.current;
@@ -149,12 +158,16 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
     };
   }, []);
 
-  // Keep pager + carousel in sync with the store index.
+  // Keep pager + carousel in sync with the store index. The scroll this triggers makes
+  // the pager report a new viewable item, so mark it as ours: otherwise `onViewable`
+  // treats a tap on a bubble as a swipe and fires a second haptic on top of its own.
+  const programmaticScroll = useRef(false);
   useEffect(() => {
-    if (!s.exercises.length) return;
-    pager.current?.scrollToIndex({ index: s.index, animated: true });
-    carousel.current?.scrollTo({ x: Math.max(0, s.index * BUBBLE_STEP - width / 2 + BUBBLE / 2 + space.gutter), animated: true });
-  }, [s.index, s.exercises.length, width]);
+    if (!exercises.length) return;
+    programmaticScroll.current = true;
+    pager.current?.scrollToIndex({ index, animated: true });
+    carousel.current?.scrollTo({ x: Math.max(0, index * BUBBLE_STEP - width / 2 + BUBBLE / 2 + space.gutter), animated: true });
+  }, [index, exercises.length, width]);
 
   useEffect(() => {
     summaryX.set(withSpring(phase === 'summary' ? 1 : 0, motion.settle));
@@ -162,10 +175,13 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
 
   const onViewable = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     const first = viewableItems.find((v) => v.isViewable);
-    if (first?.index != null && first.index !== useSessionStore.getState().index) {
-      haptic.selection();
-      useSessionStore.getState().setIndex(first.index);
+    if (first?.index == null || first.index === useSessionStore.getState().index) return;
+    if (programmaticScroll.current) {
+      programmaticScroll.current = false;
+      return;
     }
+    haptic.selection();
+    useSessionStore.getState().setIndex(first.index);
   }).current;
 
   const handleToggle = useCallback(
@@ -193,7 +209,7 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
   const summaryStyle = useAnimatedStyle(() => ({ transform: [{ translateX: (1 - summaryX.get()) * width }] }));
   const logStyle = useAnimatedStyle(() => ({ transform: [{ translateX: -summaryX.get() * width * 0.3 }], opacity: 1 - summaryX.get() * 0.4 }));
 
-  const current = s.exercises[s.index];
+  const current = exercises[index];
 
   // Until every set is logged the corner stays quiet: ending early is a deliberate, menu-level choice.
   const sessionMenu = () => {
@@ -211,10 +227,10 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
           },
         },
       ]);
-    const message = `${completed} of ${s.exercises.length} exercises logged.`;
+    const message = `${completed} of ${exercises.length} exercises logged.`;
     if (process.env.EXPO_OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
-        { title: s.title, message, options: ['Finish early', 'Discard workout', 'Cancel'], destructiveButtonIndex: 1, cancelButtonIndex: 2, userInterfaceStyle: 'dark' },
+        { title, message, options: ['Finish early', 'Discard workout', 'Cancel'], destructiveButtonIndex: 1, cancelButtonIndex: 2, userInterfaceStyle: 'dark' },
         (i) => {
           if (i === 0) finishEarly();
           if (i === 1) discard();
@@ -222,7 +238,7 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
       );
       return;
     }
-    Alert.alert(s.title, message, [
+    Alert.alert(title, message, [
       { text: 'Finish early', onPress: finishEarly },
       { text: 'Discard workout', style: 'destructive', onPress: discard },
       { text: 'Cancel', style: 'cancel' },
@@ -235,7 +251,7 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
         <GestureDetector gesture={panGesture}>
           <View style={{ paddingTop: insets.top, backgroundColor: color.bg }}>
             <View style={styles.topBar}>
-              <Tap feedback="opacity" hitSlop={10} onPress={() => { haptic.light(); s.minimize(); }} style={styles.topIcon} accessibilityLabel="Minimize workout">
+              <Tap feedback="opacity" hitSlop={10} onPress={() => { haptic.light(); minimize(); }} style={styles.topIcon} accessibilityLabel="Minimize workout">
                 <Icon name="chevronDown" size={24} color={color.textSecondary} weight="medium" />
               </Tap>
               <Tap
@@ -247,8 +263,8 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
               >
                 <Icon name="stopwatch" size={24} color={color.textSecondary} />
               </Tap>
-              <Text variant="headline" tabular style={styles.clock} accessibilityLabel={`Elapsed time ${s.startedAt ? formatClock(now - s.startedAt) : '0:00'}`}>
-                {s.startedAt ? formatClock(now - s.startedAt) : '0:00'}
+              <Text variant="headline" tabular style={styles.clock} accessibilityLabel={`Elapsed time ${startedAt ? formatClock(now - startedAt) : '0:00'}`}>
+                {startedAt ? formatClock(now - startedAt) : '0:00'}
               </Text>
               {allDone ? (
                 <Animated.View key="finish" entering={FadeIn.duration(240)} exiting={FadeOut.duration(120)}>
@@ -279,19 +295,20 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.carousel}
             >
-              {s.exercises.map((e, i) => {
+              {exercises.map((e, i) => {
                 const ex = getExerciseById(e.exerciseId);
                 const doneEx = isExerciseDone(e);
-                const activeEx = i === s.index;
+                const activeEx = i === index;
                 return (
                   <Tap
                     key={e.key}
                     scaleTo={0.94}
                     onPress={() => {
                       haptic.selection();
-                      s.setIndex(i);
+                      setIndex(i);
                     }}
                     accessibilityLabel={`${ex?.name ?? 'Exercise'}${doneEx ? ', done' : ''}`}
+                    accessibilityState={{ selected: activeEx }}
                     style={[styles.bubble, activeEx && styles.bubbleActive]}
                   >
                     <ExerciseThumb exercise={ex} size={activeEx ? 62 : 64} tone="dark" />
@@ -307,7 +324,7 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
                 scaleTo={0.94}
                 onPress={() => {
                   haptic.light();
-                  s.minimize();
+                  minimize();
                   navigationRef.navigate('ExerciseLibrary', { pick: true, target: 'session' });
                 }}
                 accessibilityLabel="Add exercise"
@@ -319,23 +336,47 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
           </View>
         </GestureDetector>
 
+        {exercises.length === 0 ? (
+          // Removing the last exercise used to leave a black screen with no way out.
+          <View style={styles.empty}>
+            <Icon name="dumbbell" size={40} color={color.textTertiary} />
+            <Text variant="title" style={{ textAlign: 'center' }}>Nothing left to log</Text>
+            <Text variant="body" tone="secondary" style={{ textAlign: 'center' }}>
+              You removed every exercise from this workout. Add one back, or discard the session.
+            </Text>
+            <Tap
+              onPress={() => {
+                haptic.light();
+                minimize();
+                navigationRef.navigate('ExerciseLibrary', { pick: true, target: 'session' });
+              }}
+              style={styles.emptyAction}
+              accessibilityLabel="Add an exercise"
+            >
+              <Text variant="headline" tone="inverse">Add an exercise</Text>
+            </Tap>
+            <Tap feedback="opacity" onPress={sessionMenu} accessibilityLabel="Workout options">
+              <Text variant="body" tone="secondary">Workout options</Text>
+            </Tap>
+          </View>
+        ) : (
         <FlatList
           ref={pager}
           style={{ flex: 1 }}
-          data={s.exercises}
+          data={exercises}
           keyExtractor={(e) => e.key}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
-          initialScrollIndex={s.index}
+          initialScrollIndex={index}
           getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
           onViewableItemsChanged={onViewable}
           viewabilityConfig={{ itemVisiblePercentThreshold: 60 }}
           windowSize={3}
-          renderItem={({ item, index }) => (
+          renderItem={({ item, index: page }) => (
             <ExercisePage
               exercise={item}
-              active={visible && index === s.index}
+              active={visible && page === index}
               width={width}
               units={units}
               bottomPad={insets.bottom + 120}
@@ -344,6 +385,7 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
             />
           )}
         />
+        )}
         <RestBanner bottom={insets.bottom + space.md} />
       </Animated.View>
 
@@ -375,7 +417,7 @@ function ExercisePage({
 }) {
   const ex = getExerciseById(exercise.exerciseId);
   const previous = useSessionStore((st) => st.previous[exercise.exerciseId]);
-  const rest = useSessionStore((st) => st.restOverrides[exercise.exerciseId]) ?? ex?.rest_seconds ?? 0;
+  const rest = useSessionStore((st) => st.restOverrides[exercise.exerciseId] ?? st.restPrescribed[exercise.exerciseId] ?? ex?.rest_seconds ?? 0);
   const updateSet = useSessionStore((st) => st.updateSet);
   const addSet = useSessionStore((st) => st.addSet);
   const removeExercise = useSessionStore((st) => st.removeExercise);
@@ -447,7 +489,13 @@ function ExercisePage({
         <Text variant="title" style={styles.name} numberOfLines={2}>
           {ex?.name ?? 'Exercise'}
         </Text>
-        <Tap feedback="opacity" hitSlop={8} onPress={onRest} style={styles.restIcon} accessibilityLabel={`Rest ${rest} seconds`}>
+        <Tap
+          feedback="opacity"
+          hitSlop={8}
+          onPress={onRest}
+          style={styles.restIcon}
+          accessibilityLabel={rest > 0 ? `Rest timer, ${rest} seconds` : 'Rest timer, off'}
+        >
           <Icon name="timer" size={24} color={color.accent} />
           <Text variant="caption" tone="accent" tabular style={{ fontFamily: font.semibold, marginTop: 1 }}>
             {rest > 0 ? `${rest}s` : 'Off'}
@@ -522,6 +570,16 @@ const styles = StyleSheet.create({
   name: { flex: 1, fontSize: 25, lineHeight: 30 },
   restIcon: { alignItems: 'center', marginLeft: space.md },
   moreIcon: { width: 36, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: space.xs },
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.md, paddingHorizontal: space.xl },
+  emptyAction: {
+    height: 48,
+    paddingHorizontal: 24,
+    borderRadius: radius.pill,
+    backgroundColor: '#F5F5F7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: space.sm,
+  },
   desc: { paddingHorizontal: space.gutter, marginTop: space.sm },
   sectionTag: { paddingHorizontal: space.gutter, marginTop: space.md, marginBottom: space.sm },
   summary: { backgroundColor: color.bg },

@@ -63,7 +63,10 @@ interface SessionState {
   restTotal: number;
   /** The set whose completion started the current rest. */
   restSetId: string | null;
+  /** Rest the athlete chose for an exercise. Persists across workouts and always wins. */
   restOverrides: Record<string, number>;
+  /** Rest this plan/routine prescribes. Session-scoped, so it never edits a saved preference. */
+  restPrescribed: Record<string, number>;
   previous: Record<string, PreviousSet[]>;
 
   start: (day: WorkoutDay, missionDate: string) => void;
@@ -82,6 +85,8 @@ interface SessionState {
   /** Appends library clips to the running workout and jumps to the first one added. */
   addExercises: (keys: string[]) => void;
   setRestFor: (exerciseId: string, seconds: number) => void;
+  /** Rest for an exercise: the athlete's choice, else what this workout prescribes, else the clip's. */
+  restFor: (exerciseId: string) => number;
   startRest: (seconds: number) => void;
   adjustRest: (delta: number) => void;
   endRest: () => void;
@@ -209,6 +214,7 @@ const initial = {
   restEndsAt: null,
   restTotal: 0,
   restSetId: null as string | null,
+  restPrescribed: {} as Record<string, number>,
 };
 
 export const useSessionStore = create<SessionState>()(
@@ -247,8 +253,8 @@ export const useSessionStore = create<SessionState>()(
           });
           return [{ key: `${routine.id}:${i}:${it.key}`, exerciseId: id, section: routine.name, kind: kindFor(ex), weighted: isWeighted(ex), requiredSets: sets.length, sets }];
         });
-        const overrides = { ...get().restOverrides };
-        routine.items.forEach((it) => (overrides[libraryExerciseId(it.key)] = it.rest));
+        const prescribed: Record<string, number> = {};
+        routine.items.forEach((it) => (prescribed[libraryExerciseId(it.key)] = it.rest));
         set({
           active: true,
           minimized: false,
@@ -262,13 +268,13 @@ export const useSessionStore = create<SessionState>()(
           startedAt: Date.now(),
           restEndsAt: null,
           restTotal: 0,
-          restOverrides: overrides,
+          restPrescribed: prescribed,
         });
       },
 
       startPlanDay: (plan, day, missionDate) => {
         const previous = get().previous;
-        const overrides = { ...get().restOverrides };
+        const prescribed: Record<string, number> = {};
         const exercisesList: SessionExercise[] = day.exercises.flatMap((slot, i) => {
           if (!slot.video_key) return [];
           const id = libraryExerciseId(slot.video_key);
@@ -286,7 +292,7 @@ export const useSessionStore = create<SessionState>()(
               done: false,
             };
           });
-          overrides[id] = slot.rest_seconds;
+          prescribed[id] = slot.rest_seconds;
           if (slot.warmup_sets) {
             const w = Math.min(3, slot.warmup_sets);
             const fr = [0.5, 0.7, 0.85].slice(-w);
@@ -308,7 +314,7 @@ export const useSessionStore = create<SessionState>()(
           startedAt: Date.now(),
           restEndsAt: null,
           restTotal: 0,
-          restOverrides: overrides,
+          restPrescribed: prescribed,
         });
       },
 
@@ -326,8 +332,22 @@ export const useSessionStore = create<SessionState>()(
         if (!before) return { completedExercise: false, startedRest: false };
         const target = before.sets.find((st) => st.id === setId);
         const nowDone = !target?.done;
+        // Ticking a set whose value was cleared used to log an empty row. Fall back to
+        // what this exercise prescribes (or the last time you did it) so a logged set
+        // always says how much work it was.
+        const filled = (st: SessionSet) => {
+          if (!nowDone) return st;
+          const ex = getExerciseById(before.exerciseId);
+          const prev = get().previous[before.exerciseId];
+          const at = before.sets.findIndex((x) => x.id === setId);
+          const last = prev?.[at] ?? prev?.[prev.length - 1];
+          if (before.kind === 'reps' && st.reps == null) return { ...st, reps: last?.reps ?? ex?.reps ?? undefined };
+          if (before.kind === 'time' && st.seconds == null) return { ...st, seconds: ex?.duration_seconds ?? undefined };
+          if (before.kind === 'distance' && !st.distance?.trim()) return { ...st, distance: ex?.distance ?? undefined };
+          return st;
+        };
         const exercises = get().exercises.map((e) =>
-          e.key !== exKey ? e : { ...e, sets: e.sets.map((st) => (st.id === setId ? { ...st, done: nowDone } : st)) },
+          e.key !== exKey ? e : { ...e, sets: e.sets.map((st) => (st.id === setId ? { ...filled(st), done: nowDone } : st)) },
         );
         set({ exercises });
         const after = exercises.find((e) => e.key === exKey)!;
@@ -338,7 +358,7 @@ export const useSessionStore = create<SessionState>()(
         // Resting after the last set matters too (circuits, supersets, next exercise).
         if (nowDone) {
           const ex = getExerciseById(after.exerciseId);
-          const rest = get().restOverrides[after.exerciseId] ?? ex?.rest_seconds ?? 0;
+          const rest = get().restFor(after.exerciseId);
           if (rest > 0) {
             get().startRest(rest);
             set({ restSetId: setId });
@@ -424,10 +444,17 @@ export const useSessionStore = create<SessionState>()(
             return [{ key: `added:${Date.now().toString(36)}:${i}:${k}`, exerciseId: id, section: 'Added', kind: kindFor(ex), weighted: isWeighted(ex), requiredSets: count, sets: buildSets(ex, count, s.previous[id]) }];
           });
           if (!added.length) return s;
-          return { exercises: [...s.exercises, ...added], index: s.exercises.length };
+          // Stay on the set you were logging; the toast offers the jump instead of
+          // yanking you to the end of the list mid-exercise.
+          return { exercises: [...s.exercises, ...added] };
         }),
 
       setRestFor: (exerciseId, seconds) => set((s) => ({ restOverrides: { ...s.restOverrides, [exerciseId]: seconds } })),
+
+      restFor: (exerciseId) => {
+        const s = get();
+        return s.restOverrides[exerciseId] ?? s.restPrescribed[exerciseId] ?? getExerciseById(exerciseId)?.rest_seconds ?? 0;
+      },
       startRest: (seconds) => set({ restEndsAt: Date.now() + seconds * 1000, restTotal: seconds }),
       adjustRest: (delta) =>
         set((s) => {
@@ -466,7 +493,13 @@ export const useSessionStore = create<SessionState>()(
         });
         const isPerfect = completed.length === s.exercises.length && s.exercises.length > 0;
         const totalXp = exercises.reduce((sum, e) => sum + e.xp_earned, 0);
-        const minutes = s.startedAt ? Math.max(1, Math.round((Date.now() - s.startedAt) / 60000)) : s.estimatedMinutes;
+        // A session left open overnight would otherwise log hundreds of minutes of
+        // "training". Past the stale cutoff the clock is meaningless, so fall back to
+        // what the workout was estimated to take.
+        const elapsed = s.startedAt ? Date.now() - s.startedAt : null;
+        const minutes = elapsed !== null && elapsed <= STALE_SESSION_MS
+          ? Math.max(1, Math.round(elapsed / 60000))
+          : s.estimatedMinutes;
         return {
           mission_date: s.missionDate,
           workout_day_id: s.workoutDayId,
@@ -533,6 +566,7 @@ export const useSessionStore = create<SessionState>()(
         index: s.index,
         startedAt: s.startedAt,
         restOverrides: s.restOverrides,
+        restPrescribed: s.restPrescribed,
         previous: s.previous,
         // Rest is a wall-clock deadline, so it keeps counting down while the phone is locked.
         restEndsAt: s.restEndsAt,

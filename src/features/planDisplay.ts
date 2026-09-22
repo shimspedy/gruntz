@@ -30,7 +30,11 @@ export function planMeta(plan: WorkoutPlan): string {
 }
 
 export function planMinutes(plan: WorkoutPlan): number | null {
-  return plan.summary.session_minutes ?? (plan.days[0]?.estimated_minutes || null);
+  if (plan.summary.session_minutes) return plan.summary.session_minutes;
+  // No stated length: the median day, not day one — a plan that opens with a short
+  // day would otherwise advertise a session length none of its other days match.
+  const days = plan.days.map((d) => d.estimated_minutes).filter((m): m is number => !!m).sort((a, b) => a - b);
+  return days.length ? days[Math.floor(days.length / 2)] : null;
 }
 
 export const EQUIPMENT_LABEL: Record<WorkoutPlan['match']['equipment_access'], string> = {
@@ -39,22 +43,32 @@ export const EQUIPMENT_LABEL: Record<WorkoutPlan['match']['equipment_access'], s
   gym: 'Full gym',
 };
 
-/** "4 × 10", "3 × 10–12 each", "3 × 30s", "3 × AMRAP", "1 × 400 m" */
+/** "12:30" for 750 s, "3 min" for 180 s, "45s" under a minute. */
+function duration(sec: number): string {
+  if (sec < 60) return `${sec}s`;
+  const min = Math.floor(sec / 60);
+  const rest = sec % 60;
+  return rest ? `${min}:${String(rest).padStart(2, '0')}` : `${min} min`;
+}
+
+/** "4 × 10", "3 × 10–12 each", "3 × 30s", "3 × AMRAP", "1 × 400 m", "100 total reps" */
 export function slotPrescription(slot: PlanExerciseSlot): string {
   const sets = `${slot.sets} ×`;
   const each = slot.per_side ? ' each' : '';
   switch (slot.measure) {
-    case 'time': {
-      const sec = slot.duration_seconds ?? 0;
-      return `${sets} ${sec >= 120 ? `${Math.round(sec / 60)} min` : `${sec}s`}${each}`;
-    }
+    case 'time':
+      return `${sets} ${duration(slot.duration_seconds ?? 0)}${each}`;
     case 'distance':
-      return `${sets} ${slot.distance_meters ?? ''} m`;
+      // A handful of source rows give a distance exercise with no distance. Print the
+      // set count rather than a dangling "3 ×  m".
+      return slot.distance_meters ? `${sets} ${slot.distance_meters} m` : `${slot.sets} ${slot.sets === 1 ? 'set' : 'sets'}`;
     case 'amrap':
       return `${sets} AMRAP`;
     case 'failure':
       return `${sets} to failure`;
     default:
+      // "100 total reps in as few sets as possible" — the count is the whole job.
+      if (slot.total_reps && slot.reps) return `${slot.reps} total${each}`;
       if (slot.rep_scheme?.length) return `${slot.rep_scheme.join(', ')}${each}`;
       return `${sets} ${slot.reps ?? ''}${each}`;
   }

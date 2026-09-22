@@ -16,12 +16,35 @@ const label = (s: number) => (s === 0 ? 'Off' : s < 60 ? `${s} sec` : s % 60 ===
 /** Rest between sets for one movement. */
 export function RestSheet({ exerciseId, onClose }: { exerciseId: string | null; onClose: () => void }) {
   const ex = exerciseId ? getExerciseById(exerciseId) : undefined;
-  const override = useSessionStore((s) => (exerciseId ? s.restOverrides[exerciseId] : undefined));
+  const override = useSessionStore((s) => (exerciseId ? s.restOverrides[exerciseId] ?? s.restPrescribed[exerciseId] : undefined));
   const setRestFor = useSessionStore((s) => s.setRestFor);
+  const startRest = useSessionStore((s) => s.startRest);
+  const resting = useSessionStore((s) => !!s.restEndsAt);
   const current = override ?? ex?.rest_seconds ?? 0;
 
   return (
     <Sheet visible={!!ex} onClose={onClose} title="Rest timer">
+      {/* Rest normally starts itself when a set is logged. This is the way back if
+          you skipped it, or want to rest without logging anything. */}
+      {current > 0 ? (
+        <Tap
+          feedback="highlight"
+          baseColor={color.bgRaised}
+          pressedColor={color.surface}
+          style={[styles.row, styles.start]}
+          onPress={() => {
+            haptic.light();
+            startRest(current);
+            onClose();
+          }}
+          accessibilityLabel={resting ? `Restart ${label(current)} rest` : `Start ${label(current)} rest`}
+        >
+          <Icon name="timer" size={20} color={color.accent} />
+          <Text variant="bodyMedium" tone="accent" style={{ flex: 1, marginLeft: 10 }}>
+            {resting ? `Restart ${label(current)} rest` : `Start ${label(current)} rest now`}
+          </Text>
+        </Tap>
+      ) : null}
       <View style={styles.list}>
         {OPTIONS.map((o) => {
           const active = o === current;
@@ -60,4 +83,5 @@ export function RestSheet({ exerciseId, onClose }: { exerciseId: string | null; 
 const styles = StyleSheet.create({
   list: { paddingBottom: space.sm },
   row: { height: 54, flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.gutter },
+  start: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: color.line },
 });

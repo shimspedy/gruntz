@@ -174,8 +174,12 @@ export default function ExerciseLibraryScreen() {
             disabled={!picked.length}
             onPress={() => {
               if (toSession) {
+                const at = useSessionStore.getState().exercises.length;
                 useSessionStore.getState().addExercises(picked);
-                toast(`Added ${picked.length} to your workout`, { icon: 'check' });
+                toast(`Added ${picked.length} to the end of your workout`, {
+                  icon: 'check',
+                  action: { label: 'Go to it', onPress: () => useSessionStore.getState().setIndex(at) },
+                });
               } else useRoutineStore.getState().addToDraft(picked);
               navigation.goBack();
             }}
