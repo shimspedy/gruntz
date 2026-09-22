@@ -3,8 +3,8 @@
 Six audits of the app (workout player, onboarding/paywall, plans & library, navigation/state/performance,
 copy & accessibility, data correctness), scored by how much each one would annoy a real user.
 
-- **Fixed: 149** — the 55 first-pass fixes, plus 94 of the numbered items below.
-- **Open: 28** — including 5 that need a device or account.
+- **Fixed: 154** — the 55 first-pass fixes, plus 99 of the numbered items below.
+- **Open: 23** — including 5 that need a device or account.
 
 Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[dev]` needs a device or account to verify.
 
@@ -128,7 +128,7 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 29. [x] No manual "start rest" / restart after skipping (`WorkoutSession.tsx:237`).
 30. [x] `startRoutine`/`startPlanDay` overwrite persisted `restOverrides`; a rest set once persists globally forever.
 31. [x] Note is saved only on blur; minimising or swiping loses typed text (`ExerciseInsights.tsx:72`).
-32. [ ] `windowSize={3}` unmounts pages, resetting scroll position, insight tab and unsaved note.
+32. [x] `windowSize={3}` unmounts pages, resetting scroll position, insight tab and unsaved note.
 33. [x] `onViewable` haptics fire for programmatic index changes (double buzz).
 34. [x] Stale session keeps counting overnight; `duration_minutes` logs hundreds of minutes.
 35. [x] Workout-progress notification re-posts on every backgrounding.
@@ -136,7 +136,7 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 37. [x] Reps accept unbounded digits and overflow the row (partly clamped; column still unbounded).
 38. [x] Exercise bubbles carry no `accessibilityState.selected`.
 39. [x] Rest button reads "Rest 0 seconds" while showing "Off".
-40. [ ] Alternatives carousel is a horizontal scroll inside the horizontal pager; swipes fight.
+40. [x] Alternatives carousel is a horizontal scroll inside the horizontal pager; swipes fight.
 41. [x] Summary duration freezes while the summary sits open.
 42. [x] Summary "Sets" counts warm-ups while the log excludes them — numbers disagree across screens.
 43. [x] Repeated swaps grow the exercise key unboundedly, remounting the page.
@@ -181,10 +181,10 @@ Status legend: `[x]` fixed · `[ ]` open · `[?]` needs a product decision · `[
 76. [x] `useUserStore.partialize` copies progress and converts a Set on every write.
 77. [x] Mini bar ticks every second inside the tab bar on every screen.
 78. [x] `initializeSubscription()` hits RevenueCat on every foreground.
-79. [ ] Restored navigation state doesn't recurse into nested tab state, and 12 h-old date params can show yesterday's workout as today's.
+79. [x] Restored navigation state doesn't recurse into nested tab state, and 12 h-old date params can show yesterday's workout as today's.
 80. [x] Re-tapping the active tab does nothing (no scroll-to-top).
-81. [ ] Tab-bar inset is read once, so the last row hides behind the pill or mini bar.
-82. [ ] Train and Ranks render long content as `ScrollView` + `.map()` rather than a list.
+81. [x] Tab-bar inset is read once, so the last row hides behind the pill or mini bar.
+82. [x] Train and Ranks render long content as `ScrollView` + `.map()` rather than a list.
 83. [x] `useMissionStore` duplicates program logic and goes stale past midnight; daily challenge doesn't refresh at midnight either.
 84. [x] Run tracker copies the whole route array into state on every GPS fix; `stop()` can read stale state.
 85. [x] `App.tsx` doesn't hold the native splash, so there's an extra black-to-black transition.

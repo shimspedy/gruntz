@@ -175,7 +175,16 @@ export function ExerciseInsights({
               <Text variant="callout" tone="tertiary" style={{ marginBottom: space.sm }}>
                 Same muscles, same pattern. Tap to swap it into today’s workout.
               </Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.alts}>
+              {/* Nested inside the exercise pager, which also swipes horizontally.
+                  Claiming the gesture on touch stops the two fighting: a swipe that
+                  starts on this strip scrolls it, not the pager. */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                directionalLockEnabled
+                onTouchStart={(e) => e.stopPropagation()}
+                contentContainerStyle={styles.alts}
+              >
                 {alternatives.map((alt) => (
                   <Tap key={alt.key} onPress={() => swap(alt.key, alt.name)} scaleTo={0.96} style={styles.alt} accessibilityLabel={`Swap to ${alt.name}`}>
                     <ExerciseThumb mediaKey={alt.key} size={72} />

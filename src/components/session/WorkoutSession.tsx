@@ -372,7 +372,10 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
           getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
           onViewableItemsChanged={onViewable}
           viewabilityConfig={{ itemVisiblePercentThreshold: 60 }}
-          windowSize={3}
+          // windowSize 3 unmounted a page as soon as you swiped two away, losing its
+          // scroll position and which insight tab was open. 5 keeps the neighbours.
+          windowSize={5}
+          removeClippedSubviews={false}
           renderItem={({ item, index: page }) => (
             <ExercisePage
               exercise={item}

@@ -45,6 +45,7 @@ import { useSubscriptionStore } from '../store/useSubscriptionStore';
 import { useProgramStore } from '../store/useProgramStore';
 import { useRoutineStore } from '../store/useRoutineStore';
 import { useSessionStore } from '../store/useSessionStore';
+import { getLocalDateKey } from '../utils/dateKey';
 import { useUiStore } from '../store/useUiStore';
 import { useUserStore } from '../store/useUserStore';
 import type { OnboardingStackParamList, RootStackParamList, TabParamList } from '../types/navigation';
@@ -178,15 +179,27 @@ const NAV_KEY = '@gruntz_nav_state';
 const NAV_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 /** Screens that only make sense in the moment they were opened; never restored after a relaunch. */
 const TRANSIENT = new Set(['Celebration', 'Paywall', 'RunTracker', 'RoutineEditor']);
-const isTransient = (r: { name: string; params?: object }) =>
-  TRANSIENT.has(r.name) || (r.name === 'ExerciseLibrary' && !!(r.params as { pick?: boolean } | undefined)?.pick);
+const isTransient = (r: { name: string; params?: object }) => {
+  if (TRANSIENT.has(r.name)) return true;
+  if (r.name === 'ExerciseLibrary' && !!(r.params as { pick?: boolean } | undefined)?.pick) return true;
+  // A screen pinned to a date is only valid on that date. Restoring one saved up to
+  // twelve hours ago could present yesterday's workout as today's.
+  const dateKey = (r.params as { dateKey?: string } | undefined)?.dateKey;
+  return !!dateKey && dateKey !== getLocalDateKey();
+};
 
-/** Drop transient screens (and anything stacked above them) from a saved navigation state. */
+/**
+ * Drop transient screens (and anything stacked above them) from a saved navigation
+ * state, at every level. Filtering only the top-level routes left a transient screen
+ * nested inside a tab's own stack to be restored anyway.
+ */
 function restorable(state: InitialState | undefined): InitialState | undefined {
   const routes = state?.routes;
   if (!routes?.length) return undefined;
   const cut = routes.findIndex(isTransient);
-  const kept = cut === -1 ? routes : routes.slice(0, cut);
+  const kept = (cut === -1 ? routes : routes.slice(0, cut)).map((route) =>
+    route.state ? { ...route, state: restorable(route.state as InitialState) } : route,
+  );
   if (!kept.length) return undefined;
   return { ...state, routes: kept, index: kept.length - 1 } as InitialState;
 }
