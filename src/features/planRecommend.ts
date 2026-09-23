@@ -25,6 +25,45 @@ function userEquipment(profile: UserProfile): PlanEquipmentAccess {
   return profile.available_equipment.includes('home') ? 'minimal' : 'none';
 }
 
+/** Equipment the plan's own metadata says it needs, or null when it says nothing. */
+const NO_GEAR = new Set(['bodyweight', 'none', '']);
+const LIGHT_GEAR = new Set([
+  ...NO_GEAR,
+  'dumbbells', 'kettle bells', 'bands', 'resistance bands', 'exercise ball',
+  'medicine ball', 'stability ball', 'jump rope', 'ez bar', 'other',
+]);
+const ACCESS_RANK: Record<string, number> = { none: 0, minimal: 1, gym: 2 };
+
+function declaredEquipmentAccess(plan: WorkoutPlan): WorkoutPlan['match']['equipment_access'] | null {
+  const equipment = (plan.summary.equipment ?? []).map((item) => item.trim().toLowerCase());
+  if (!equipment.length) return null;
+  if (equipment.every((item) => NO_GEAR.has(item))) return 'none';
+  if (equipment.every((item) => LIGHT_GEAR.has(item))) return 'minimal';
+  return 'gym';
+}
+
+/**
+ * What a plan actually demands, rather than the worst clip matched to it.
+ *
+ * `match.equipment_access` is a strict maximum over the exercise clips the plan was
+ * matched against, so one gym-equipment substitute tagged the whole plan `gym` —
+ * "Full-Body Bodyweight Workout" among them, whose own `summary.equipment` reads
+ * Bodyweight. That tag is a hard filter in both recommendation passes and a ceiling
+ * in the browse gear chip, so the plans a no-gym athlete most needs were the ones
+ * being hidden from them, and the detail screen printed "Full gym" directly above
+ * its own "Bodyweight" line.
+ *
+ * The plan's authored equipment list wins when it is more permissive: it is the
+ * plan's own statement of what it needs, and it is what the detail screen shows.
+ * 22 of 424 programs reclassify, all in that direction.
+ */
+export function effectiveEquipmentAccess(plan: WorkoutPlan): WorkoutPlan['match']['equipment_access'] {
+  const derived = plan.match.equipment_access;
+  const declared = declaredEquipmentAccess(plan);
+  if (!declared) return derived;
+  return ACCESS_RANK[declared] < ACCESS_RANK[derived] ? declared : derived;
+}
+
 function scorePlan(plan: WorkoutPlan, profile: UserProfile, relaxed = false): PlanRecommendation | null {
   const m = plan.match;
   const reasons: string[] = [];
@@ -32,8 +71,9 @@ function scorePlan(plan: WorkoutPlan, profile: UserProfile, relaxed = false): Pl
 
   // Hard filters: equipment the user can't access, or a level jump of two steps.
   const access = userEquipment(profile);
-  if (access === 'none' && m.equipment_access !== 'none') return null;
-  if (access === 'minimal' && m.equipment_access === 'gym') return null;
+  const planAccess = effectiveEquipmentAccess(plan);
+  if (access === 'none' && planAccess !== 'none') return null;
+  if (access === 'minimal' && planAccess === 'gym') return null;
   const levelGap = LEVEL_RANK[m.fitness_level] - LEVEL_RANK[profile.fitness_level];
   const cautious = (profile.movement_limitations ?? []).length > 0;
   if (!relaxed && levelGap >= 2) return null;

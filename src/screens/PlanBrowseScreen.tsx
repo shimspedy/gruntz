@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PlanCard, PlanRow } from '../components/PlanCards';
 import { allPlans, planCategories, PLAN_COUNT, type WorkoutPlan } from '../data/workoutPlans';
 import { EQUIPMENT_LABEL } from '../features/planDisplay';
-import { recommendPlans } from '../features/planRecommend';
+import { effectiveEquipmentAccess, recommendPlans } from '../features/planRecommend';
 import { usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { useUserStore } from '../store/useUserStore';
 import { Icon } from '../ui/Icon';
@@ -76,7 +76,7 @@ export default function PlanBrowseScreen() {
         (!level || p.summary.level === level) &&
         // Equipment is a ceiling, not an exact match: someone with a full gym can
         // still run a dumbbell-only plan.
-        (!gear || (gear === 'gym' ? true : gear === 'minimal' ? p.match.equipment_access !== 'gym' : p.match.equipment_access === 'none')) &&
+        (!gear || (gear === 'gym' ? true : gear === 'minimal' ? effectiveEquipmentAccess(p) !== 'gym' : effectiveEquipmentAccess(p) === 'none')) &&
         (!q || p.title.toLowerCase().includes(q) || (p.summary.main_goal ?? '').toLowerCase().includes(q) || p.match.goals.some((g) => g.toLowerCase().includes(q))),
     );
   }, [kind, category, days, level, gear, query]);

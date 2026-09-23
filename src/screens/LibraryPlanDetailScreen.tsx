@@ -8,6 +8,7 @@ import { getWorkoutPlan, type PlanDay } from '../data/workoutPlans';
 import { displayTitle, EQUIPMENT_LABEL, planDayHero, planHero, planMeta, planMinutes } from '../features/planDisplay';
 import { nextPlanDay, planProgress, usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { useProgramStore } from '../store/useProgramStore';
+import { effectiveEquipmentAccess } from '../features/planRecommend';
 import type { RootStackParamList } from '../types/navigation';
 import { Button } from '../ui/Button';
 import { ExerciseThumb, HeroArt } from '../ui/ExerciseArt';
@@ -145,7 +146,7 @@ export default function LibraryPlanDetailScreen() {
         ) : null}
 
         <View style={styles.facts}>
-          <Fact icon="dumbbell" text={EQUIPMENT_LABEL[plan.match.equipment_access]} />
+          <Fact icon="dumbbell" text={EQUIPMENT_LABEL[effectiveEquipmentAccess(plan)]} />
           {plan.match.goals.length ? <Fact icon="flag" text={plan.match.goals.join(' · ')} /> : null}
           {s.target_gender && s.target_gender !== 'Male & Female' ? <Fact icon="person" text={`Written for ${s.target_gender.toLowerCase()} lifters`} /> : null}
         </View>

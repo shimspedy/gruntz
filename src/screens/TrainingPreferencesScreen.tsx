@@ -22,6 +22,16 @@ const GEAR: { id: string; label: string }[] = [
   { id: 'ruck', label: 'Ruck' },
 ];
 const INTENSITY: UserProfile['preferred_intensity'][] = ['low', 'moderate', 'high'];
+// Age drives real programming — adaptiveCoach and baseCampWorkouts soften volume and
+// progression for 45-59 and 60+. It was asked once in onboarding, was skippable with
+// "Prefer not to say" (silently defaulting to 30-44), and could never be changed
+// afterwards, so a 65-year-old who declined got standard adult progression forever.
+const AGES: { id: NonNullable<UserProfile['age_range']>; label: string }[] = [
+  { id: 'under_30', label: 'Under 30' },
+  { id: '30_44', label: '30 – 44' },
+  { id: '45_59', label: '45 – 59' },
+  { id: '60_plus', label: '60 or older' },
+];
 const LIMITS: { id: string; label: string }[] = [
   { id: 'low_impact', label: 'Low impact' },
   { id: 'joint_concerns', label: 'Joint concerns' },
@@ -44,6 +54,7 @@ export default function TrainingPreferencesScreen() {
   const [gear, setGear] = useState<string[]>(profile?.available_equipment ?? []);
   const [intensity, setIntensity] = useState(profile?.preferred_intensity ?? 'moderate');
   const [limits, setLimits] = useState<string[]>(profile?.movement_limitations ?? []);
+  const [age, setAge] = useState<NonNullable<UserProfile['age_range']> | undefined>(profile?.age_range);
 
   if (!profile) {
     return (
@@ -61,7 +72,7 @@ export default function TrainingPreferencesScreen() {
     haptic.success();
     setProfile({
       ...profile,
-      goals: goals.length ? goals : profile.goals,
+      goals,
       fitness_level: level,
       workout_days_per_week: days,
       preferred_session_minutes: minutes,
@@ -71,6 +82,7 @@ export default function TrainingPreferencesScreen() {
       has_ruck_access: gear.includes('ruck'),
       preferred_intensity: intensity,
       movement_limitations: limits,
+      age_range: age,
     });
     // Deliberately doesn't switch the plan you're following — it only changes what's suggested.
     toast('Preferences saved', {
@@ -121,6 +133,12 @@ export default function TrainingPreferencesScreen() {
         <Section title="Intensity">
           {INTENSITY.map((i) => (
             <Chip key={i} label={cap(i)} active={intensity === i} onPress={() => setIntensity(i)} />
+          ))}
+        </Section>
+
+        <Section title="Age">
+          {AGES.map((a) => (
+            <Chip key={a.id} label={a.label} active={age === a.id} onPress={() => setAge(a.id)} />
           ))}
         </Section>
 
