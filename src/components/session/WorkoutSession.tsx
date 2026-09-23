@@ -175,7 +175,16 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
 
   const onViewable = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     const first = viewableItems.find((v) => v.isViewable);
-    if (first?.index == null || first.index === useSessionStore.getState().index) return;
+    if (first?.index == null) return;
+    if (first.index === useSessionStore.getState().index) {
+      // The programmatic scroll has arrived where it was going. The guard has to be
+      // consumed HERE — this is the branch a bubble tap or the auto-advance actually
+      // takes. Returning before clearing it left it set, so the next genuine swipe
+      // was swallowed instead: the pager showed exercise N+1 while the store still
+      // said N, highlighting the wrong bubble and playing the wrong page's video.
+      programmaticScroll.current = false;
+      return;
+    }
     if (programmaticScroll.current) {
       programmaticScroll.current = false;
       return;

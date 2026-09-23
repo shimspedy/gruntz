@@ -12,6 +12,12 @@ export const REVENUECAT_OFFERING_ID =
 export const REVENUECAT_IOS_API_KEY =
   process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY?.trim() || '';
 
+/**
+ * Android is not a shipping platform for Gruntz today, so this is intentionally
+ * unset and `isRevenueCatAvailable()` returns false there — the paywall shows its
+ * "purchases unavailable" state rather than a dead Continue button. If Android
+ * ever ships, this key MUST be set in `.env` or nobody on Android can subscribe.
+ */
 export const REVENUECAT_ANDROID_API_KEY =
   process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY?.trim() || '';
 

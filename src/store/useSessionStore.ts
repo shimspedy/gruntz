@@ -451,7 +451,16 @@ export const useSessionStore = create<SessionState>()(
             if (!ex) return e;
             // Keep the sets already logged: swapping used to wipe them with no undo.
             const logged = e.sets.filter((st) => st.done);
-            const keep = logged.length ? logged : e.sets;
+            // ...and keep the rows still owed. Dropping them left the exercise with
+            // fewer rows than `requiredSets`, so it could never be marked done: swap
+            // after 1 of 4 sets and the table showed one row under a "4 sets to
+            // complete" label, with no way forward but tapping Add set three times.
+            // The prescription (reps/time/distance) still applies to the slot, but the
+            // weight was carried from the movement being swapped OUT, so it is cleared.
+            const remaining = e.sets
+              .filter((st) => !st.done)
+              .map((st) => ({ ...st, weight: undefined }));
+            const keep = logged.length ? [...logged, ...remaining] : e.sets;
             return {
               ...e,
               exerciseId: nextId,

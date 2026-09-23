@@ -267,6 +267,12 @@ function SetRow({
         <Tap
           scaleTo={0.88}
           onPress={() => {
+            // Flush whatever is still in the inputs first. The page ScrollView uses
+            // keyboardShouldPersistTaps="handled", so tapping this tick does NOT blur
+            // the field and the draft never reached the store — `toggleSet` then fell
+            // back to the prescribed number, logging 10 while the cell still read 12.
+            if (weightDraft !== null) commitWeight(weightDraft);
+            if (valueDraft !== null) commitValue(valueDraft);
             if (set.done) haptic.light();
             else haptic.success();
             onToggle();

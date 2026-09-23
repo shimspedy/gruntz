@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNow } from '../../hooks/useNow';
+import { getLocalDateKey } from '../../utils/dateKey';
 import { navigationRef } from '../../navigation/ref';
 import { clearWorkoutProgress } from '../../services/notifications';
 import { useMissionStore } from '../../store/useMissionStore';
@@ -12,6 +13,7 @@ import { Button } from '../../ui/Button';
 import { Hairline, NavHeader, Stat } from '../../ui/Layout';
 import { Tap } from '../../ui/Pressable';
 import { Text } from '../../ui/Text';
+import { toast } from '../../ui/Toast';
 import { haptic } from '../../ui/haptics';
 import { color, space } from '../../ui/tokens';
 import { calculateMissionXP, calculateStreakBonus, isStreakAlive } from '../../utils/xp';
@@ -22,15 +24,28 @@ export function SessionSummary({ onBack, onDone }: { onBack: () => void; onDone:
   const insets = useSafeAreaInsets();
   const s = useSessionStore();
   const progress = useUserStore((u) => u.progress);
+  // Rebuilt at save time rather than reused: this memo only re-runs when the store
+  // object changes, so `duration_minutes` froze at whatever Date.now() was when it
+  // last ran. Sitting on the completion screen for ten minutes showed "35 min" and
+  // logged 25 — and which you got depended on an unrelated store write.
   const mission = useMemo(() => s.buildMission(), [s]);
   const doneExercises = s.exercises.filter(isExerciseDone);
   const setsDone = s.exercises.reduce((sum, e) => sum + e.sets.filter((st) => st.done && !st.warmup).length, 0);
-  const reps = s.exercises.reduce((sum, e) => sum + (e.kind === 'reps' ? e.sets.filter((st) => st.done).reduce((a, st) => a + (st.reps ?? 0), 0) : 0), 0);
+  const reps = s.exercises.reduce((sum, e) => sum + (e.kind === 'reps' ? e.sets.filter((st) => st.done && !st.warmup).reduce((a, st) => a + (st.reps ?? 0), 0) : 0), 0);
   // Ticks while the summary is open; it used to freeze at whatever it read on mount.
   const now = useNow(true, 1000);
   const minutes = s.startedAt ? Math.max(1, Math.round((now - s.startedAt) / 60000)) : 0;
   const daysPerWeek = useUserStore((u) => u.profile?.workout_days_per_week);
-  const streakNext = progress.last_workout_date && isStreakAlive(progress.last_workout_date, daysPerWeek) ? progress.streak_days + 1 : 1;
+  // Mirrors completeMission's own rule. Assuming +1 whenever the streak was alive
+  // meant a second workout on the same day rendered a "7-day streak milestone +70"
+  // row and a Total the award path never paid — the Celebration screen one tap later
+  // then showed the smaller, real number.
+  const alreadyTrainedToday = progress.last_workout_date === getLocalDateKey();
+  const streakNext = alreadyTrainedToday
+    ? Math.max(1, progress.streak_days)
+    : progress.last_workout_date && isStreakAlive(progress.last_workout_date, daysPerWeek)
+      ? progress.streak_days + 1
+      : 1;
   const streakBonus = calculateStreakBonus(streakNext, progress.streak_days);
   const xp = mission ? calculateMissionXP(mission, streakBonus) : 0;
   const canSave = setsDone > 0;
@@ -38,11 +53,17 @@ export function SessionSummary({ onBack, onDone }: { onBack: () => void; onDone:
 
   const save = () => {
     if (!mission || !canSave) return;
+    const fresh = useSessionStore.getState().buildMission() ?? mission;
     const before = useUserStore.getState().progress;
+    // completeMission dedupes on mission_date + workout_day_id and returns state
+    // unchanged, but save() used to carry on regardless: it wiped the session and
+    // pushed a celebration reading "+0 XP" with no explanation. The sets still reach
+    // the exercise log either way, so say that plainly instead of celebrating nothing.
+    const repeatOfToday = before.claimed_missions?.has(`${fresh.mission_date}:${fresh.workout_day_id}`) ?? false;
     const levelBefore = before.current_level;
     const rankBefore = before.current_rank;
     const xpBefore = before.current_xp;
-    useUserStore.getState().completeMission(mission);
+    useUserStore.getState().completeMission(fresh);
     useMissionStore.getState().finishMission();
     void clearWorkoutProgress();
     // If that was the last workout of the program week, move to the next one.
@@ -58,6 +79,10 @@ export function SessionSummary({ onBack, onDone }: { onBack: () => void; onDone:
     const title = s.title;
     useSessionStore.getState().finish();
     onDone();
+    if (repeatOfToday) {
+      toast('Saved to your history · already counted today', { tone: 'info', icon: 'check' });
+      return;
+    }
     if (navigationRef.isReady()) {
       navigationRef.navigate('Celebration', {
         xpEarned: after.current_xp - xpBefore,
