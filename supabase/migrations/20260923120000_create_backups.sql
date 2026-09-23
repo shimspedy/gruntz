@@ -25,6 +25,12 @@ create table if not exists public.backups (
   app_version text,
   device_label text,
   workout_count integer not null default 0,
+  -- When the free trial began. Deliberately its own column rather than part of the
+  -- snapshot payload, because the payload excludes all subscription state on
+  -- purpose: entitlement must never be restorable from something the client writes.
+  -- A trial START is different — adopting the earliest known value can only ever
+  -- shorten the remaining trial, never extend it.
+  trial_started_at timestamptz,
   updated_at timestamptz not null default now(),
   constraint backups_schema_version_positive check (schema_version > 0),
   constraint backups_workout_count_positive check (workout_count >= 0)
@@ -38,6 +44,16 @@ alter table public.backups enable row level security;
 -- default. Note `anon` gets nothing at all: a backup is only ever readable or
 -- writable by the signed-in athlete it belongs to, and RLS below narrows these
 -- grants to that athlete's own row.
+-- Reset first. Supabase's "Automatically expose new tables" grants TRUNCATE,
+-- REFERENCES and TRIGGER to anon and authenticated on every new table, and
+-- TRUNCATE is *not* subject to row-level security — RLS protects rows, truncate
+-- empties the table. Without this revoke, any signed-in athlete held a privilege
+-- that would wipe every other athlete's backup, and anon held it without signing
+-- in at all. Verified against the live project: anon now has no grants whatsoever.
+revoke all on table public.backups from anon;
+revoke all on table public.backups from authenticated;
+revoke all on table public.backups from public;
+
 grant select, insert, update, delete on table public.backups to authenticated;
 
 -- An athlete can only ever see and write their own backup. There is no shared or
@@ -73,7 +89,7 @@ using ((select auth.uid()) = user_id);
 create or replace function public.touch_backups_updated_at()
 returns trigger
 language plpgsql
-security definer
+security invoker
 set search_path = ''
 as $$
 begin
@@ -84,6 +100,9 @@ begin
   return new;
 end;
 $$;
+
+-- Nothing should be able to call a trigger function over REST.
+revoke all on function public.touch_backups_updated_at() from anon, authenticated, public;
 
 drop trigger if exists backups_touch_updated_at on public.backups;
 create trigger backups_touch_updated_at

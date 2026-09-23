@@ -8,6 +8,7 @@ import {
   getSignedInEmail,
   pushBackup,
   requestSignInCode,
+  reconcileTrialStart,
   restoreBackup,
   signOut,
   type BackupMeta,
@@ -102,6 +103,9 @@ export default function BackupScreen() {
       haptic.success();
       setCode('');
       setStage('email');
+      // Before the first push, so a reinstall resumes the real trial instead of
+      // overwriting the server's earlier start with this device's fresh one.
+      await reconcileTrialStart();
       await refresh();
       // First sign-in on a device that has been training: get it safe immediately,
       // rather than waiting for the next debounced push.

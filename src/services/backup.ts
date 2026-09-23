@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState, Platform } from 'react-native';
 import { BACKUP_DEBOUNCE_MS, BACKUP_SCHEMA_VERSION, isBackupAvailable } from '../config/backup';
 import { applySnapshot, captureSnapshot, snapshotWorkoutCount, type BackupSnapshot } from './backupSnapshot';
@@ -8,6 +9,7 @@ export type BackupMeta = {
   workoutCount: number;
   deviceLabel: string | null;
   appVersion: string | null;
+  trialStartedAt: string | null;
 };
 
 export type AuthResult = 'sent' | 'unavailable' | 'error';
@@ -23,6 +25,59 @@ export type VerifyResult = 'signed-in' | 'invalid-code' | 'unavailable' | 'error
 
 function deviceLabel(): string {
   return Platform.OS === 'ios' ? 'iPhone' : Platform.OS === 'android' ? 'Android' : 'device';
+}
+
+const SUBSCRIPTION_KEY = '@gruntz_subscription';
+
+/** The trial start on this device, read straight from the persisted store. */
+async function readLocalTrialStart(): Promise<string | null> {
+  try {
+    const raw = await AsyncStorage.getItem(SUBSCRIPTION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { state?: { trialStartedAt?: string | null } };
+    return parsed.state?.trialStartedAt ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Adopt the server's trial start when it is earlier than this device's.
+ *
+ * Only ever moves the start date *backwards*, which can only shorten the remaining
+ * trial. That asymmetry is the whole safety argument: a tampered or stale value
+ * cannot buy anyone extra free days, so this is safe to apply without the server
+ * being the authority on entitlement — which RevenueCat remains.
+ *
+ * Called after sign-in. Reinstalling and signing back in therefore resumes the real
+ * trial rather than starting a fresh fifteen days.
+ */
+export async function reconcileTrialStart(): Promise<'adopted' | 'kept-local' | 'nothing' | 'error'> {
+  try {
+    const meta = await fetchBackupMeta();
+    const remote = meta?.trialStartedAt ?? null;
+    if (!remote) return 'nothing';
+
+    const local = await readLocalTrialStart();
+    const remoteMs = Date.parse(remote);
+    if (!Number.isFinite(remoteMs)) return 'nothing';
+    if (local) {
+      const localMs = Date.parse(local);
+      if (Number.isFinite(localMs) && localMs <= remoteMs) return 'kept-local';
+    }
+
+    const raw = await AsyncStorage.getItem(SUBSCRIPTION_KEY);
+    const parsed = raw ? JSON.parse(raw) as { state?: Record<string, unknown>; version?: number } : { state: {} };
+    const next = {
+      ...parsed,
+      state: { ...(parsed.state ?? {}), trialStartedAt: new Date(remoteMs).toISOString() },
+    };
+    await AsyncStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(next));
+    return 'adopted';
+  } catch (error) {
+    if (__DEV__) console.warn('[backup] reconcileTrialStart failed', error);
+    return 'error';
+  }
 }
 
 /** Email a six-digit sign-in code. Creates the account if there is not one. */
@@ -113,6 +168,9 @@ export async function pushBackup(appVersion?: string): Promise<'ok' | 'signed-ou
       app_version: appVersion ?? null,
       device_label: deviceLabel(),
       workout_count: snapshotWorkoutCount(snapshot),
+      // Sent outside the payload on purpose — see the migration. Entitlement is
+      // never backed up; only when the trial began.
+      trial_started_at: await readLocalTrialStart(),
     }, { onConflict: 'user_id' });
 
     if (error) {
@@ -133,7 +191,7 @@ export async function fetchBackupMeta(): Promise<BackupMeta | null> {
   try {
     const { data, error } = await supabase
       .from('backups')
-      .select('updated_at, workout_count, device_label, app_version')
+      .select('updated_at, workout_count, device_label, app_version, trial_started_at')
       .maybeSingle();
     if (error || !data) return null;
     return {
@@ -141,6 +199,7 @@ export async function fetchBackupMeta(): Promise<BackupMeta | null> {
       workoutCount: (data.workout_count as number) ?? 0,
       deviceLabel: (data.device_label as string | null) ?? null,
       appVersion: (data.app_version as string | null) ?? null,
+      trialStartedAt: (data.trial_started_at as string | null) ?? null,
     };
   } catch {
     return null;

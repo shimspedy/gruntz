@@ -17,8 +17,21 @@ during onboarding. Someone can train for a year without an account.
    ```
    Never the `service_role` key — it bypasses row-level security.
 3. Apply `supabase/migrations/20260923120000_create_backups.sql`.
-4. In Supabase → Authentication → Providers, enable **Email** with OTP. No redirect
-   URL is needed: sign-in is a six-digit code typed into the app, not a magic link.
+4. **The one step that must be done by hand.** Supabase's default email template
+   sends a magic *link*; this app asks for a *code*. In
+   **Authentication → Email Templates → Magic Link**, replace the body with one that
+   includes the token, e.g.:
+
+   ```html
+   <h2>Your Gruntz sign-in code</h2>
+   <p>Enter this code in the app:</p>
+   <p style="font-size:28px;letter-spacing:6px;"><strong>{{ .Token }}</strong></p>
+   <p>It expires in an hour. If you didn't ask for it, ignore this email.</p>
+   ```
+
+   Without `{{ .Token }}` the email contains only a link and there is nothing to
+   type, so sign-in cannot complete. Email auth itself is on by default; no redirect
+   URL is needed, because there is no link to follow.
 
 ### Project settings
 
@@ -54,13 +67,27 @@ hidden, and the Supabase SDK is never even loaded.
   travel, and it is re-derivable from onboarding.
 - **UI state.** Worthless to restore.
 
-## What this does not fix
+## The trial, and what still cannot be fixed here
 
-The **15-day trial is still device-local** (`trialStartedAt` in AsyncStorage), so an
-uninstall and reinstall still grants a fresh trial to anyone who has not signed up.
-Backup means a signed-up athlete keeps their correct remaining trial; it does not
-close the leak. Closing it properly needs the trial start to be server-authoritative
-— a small follow-up, and worth doing before any launch push.
+`trial_started_at` is stored as its own column — **not** inside the snapshot payload,
+because the payload excludes all subscription state on purpose. Entitlement must
+never be restorable from something the client writes; RevenueCat stays the authority
+on who has paid.
+
+A trial *start* is different. `reconcileTrialStart()` runs after sign-in and adopts
+the server's date only when it is **earlier** than this device's. That asymmetry is
+the entire safety argument: the value can only ever shorten the remaining trial,
+never extend it, so a stale or tampered one buys nobody free days. Reinstalling and
+signing back in resumes the real trial instead of starting a fresh fifteen days.
+
+**This does not fully close the leak, and no amount of code here will.** Someone who
+never signs up has no identity to tie a trial to — that is the direct cost of not
+having an account wall, and it is a cost worth paying. The complete fix is to make
+the free period an **App Store introductory offer** instead of an app-side counter:
+Apple enforces one per Apple ID, across reinstalls, whether or not anyone signs up.
+That is a store configuration change plus the disclosure the paywall already knows
+how to render (`introPriceString`, wired in audit item #28). Worth doing before any
+real launch push.
 
 ## If the snapshot shape changes
 
