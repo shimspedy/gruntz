@@ -26,10 +26,18 @@ Set up and verified on 2026-09-23:
 - **Schema applied**, RLS on, four policies, `anon` holding no grants at all.
 - **Magic link / OTP template** rebranded: subject "Your Gruntz sign-in code", dark
   card, the app icon from `https://gruntzfit.com/brand/gruntz-icon.png`, and the code
-  rendered from `{{ .Token }}`. The `img` carries its own `color`/`font-size`/
-  `font-weight`, so when an email client blocks remote images — most do by default —
-  the alt text still reads as a white "Gruntz" wordmark rather than invisible
-  default-coloured text.
+  rendered from `{{ .Token }}`.
+
+  The logo sits **above a real text wordmark**, and the image carries `alt=""`. Most
+  email clients block remote images by default, and a blocked image with alt text
+  produces a broken-image icon — so the brand is carried by type that always renders,
+  and the image is decoration on top of it. Images on: icon + wordmark. Images off:
+  wordmark alone, no broken icon, nothing missing.
+
+  **The dashboard preview is not the email.** It does not substitute template
+  variables, so it shows a literal `{{ .Token }}`, and its iframe sandbox blocks the
+  external image. Both are artifacts of the preview; a real send substitutes the code
+  and loads the image. Confirm with an actual sign-in, not the preview.
 - **Email provider** enabled, new signups allowed, confirm-email on.
 - **OTP: 3600 s expiry, 6 digits** — which is what the email copy claims and what the
   app's input expects. Change one and change the others.
