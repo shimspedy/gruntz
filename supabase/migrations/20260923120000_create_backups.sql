@@ -32,6 +32,14 @@ create table if not exists public.backups (
 
 alter table public.backups enable row level security;
 
+-- Granted explicitly, so this project can keep "Automatically expose new tables"
+-- turned OFF. With that setting on, every future table reaches the Data API the
+-- moment it exists, and a table nobody remembered to lock down is exposed by
+-- default. Note `anon` gets nothing at all: a backup is only ever readable or
+-- writable by the signed-in athlete it belongs to, and RLS below narrows these
+-- grants to that athlete's own row.
+grant select, insert, update, delete on table public.backups to authenticated;
+
 -- An athlete can only ever see and write their own backup. There is no shared or
 -- aggregate read path here by design: this table holds training history, which is
 -- health-adjacent, and nothing in the app needs to read across athletes.

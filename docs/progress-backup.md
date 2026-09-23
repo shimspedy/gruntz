@@ -20,6 +20,16 @@ during onboarding. Someone can train for a year without an account.
 4. In Supabase → Authentication → Providers, enable **Email** with OTP. No redirect
    URL is needed: sign-in is a six-digit code typed into the app, not a magic link.
 
+### Project settings
+
+- **Enable Data API** — on. `supabase-js` needs it.
+- **Automatically expose new tables** — **off**. The migration grants `authenticated`
+  access to `backups` explicitly, so it works without this, and any future table
+  stays unreachable until you deliberately grant it. `anon` is granted nothing.
+- **Enable automatic RLS** — on. The migration also enables RLS on its own table, so
+  this is belt and braces rather than the only thing standing between athletes.
+- **Region** — closest to your users; it cannot be changed after creation.
+
 Leave the env vars empty and `isBackupAvailable()` returns false, the Profile row is
 hidden, and the Supabase SDK is never even loaded.
 
