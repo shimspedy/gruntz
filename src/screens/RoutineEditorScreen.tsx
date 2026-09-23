@@ -231,14 +231,14 @@ function Stepper({ label, value, min, max, step = 1, suffix = '', onChange }: { 
         {label}
       </Text>
       <View style={styles.stepRow}>
-        <Tap feedback="opacity" hitSlop={10} onPress={() => bump(-1)} style={styles.stepBtn} accessibilityLabel={`Decrease ${label}`}>
+        <Tap repeatable feedback="opacity" hitSlop={10} onPress={() => bump(-1)} style={styles.stepBtn} accessibilityLabel={`Decrease ${label}`}>
           <Icon name="minus" size={14} color={color.text} weight="semibold" />
         </Tap>
         <Text variant="headline" tabular style={{ minWidth: 38, textAlign: 'center' }}>
           {value}
           {suffix}
         </Text>
-        <Tap feedback="opacity" hitSlop={10} onPress={() => bump(1)} style={styles.stepBtn} accessibilityLabel={`Increase ${label}`}>
+        <Tap repeatable feedback="opacity" hitSlop={10} onPress={() => bump(1)} style={styles.stepBtn} accessibilityLabel={`Increase ${label}`}>
           <Icon name="plus" size={14} color={color.text} weight="semibold" />
         </Tap>
       </View>

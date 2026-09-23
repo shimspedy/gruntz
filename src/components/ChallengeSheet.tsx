@@ -167,7 +167,7 @@ export function ChallengeSheet() {
             </Text>
             <View style={styles.quickRow}>
               {quick.map((q) => (
-                <Tap key={q} onPress={() => add(q)} style={styles.quick} accessibilityLabel={`Add ${formatAmount(q, challenge)}`}>
+                <Tap key={q} repeatable onPress={() => add(q)} style={styles.quick} accessibilityLabel={`Add ${formatAmount(q, challenge)}`}>
                   <Text variant="headline" tabular>
                     {formatQuick(q, challenge)}
                   </Text>

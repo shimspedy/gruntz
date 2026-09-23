@@ -22,6 +22,15 @@ export interface TapProps extends Omit<PressableProps, 'style'> {
   baseColor?: string;
   pressedColor?: string;
   hapticOnPress?: 'selection' | 'light' | 'medium' | false;
+  /**
+   * Allow rapid repeat presses.
+   *
+   * The 450 ms lock below exists to stop a double tap pushing two copies of a
+   * screen. On a control designed to be tapped repeatedly — a +1 quick-add, a
+   * stepper — it instead drops roughly every other tap with no feedback, so the
+   * button reads as broken. Set this on counters, never on navigation or submit.
+   */
+  repeatable?: boolean;
 }
 
 /**
@@ -33,6 +42,7 @@ export function Tap({
   baseColor = color.surface,
   pressedColor = color.surfacePressed,
   hapticOnPress = false,
+  repeatable = false,
   style,
   onPressIn,
   onPressOut,
@@ -74,8 +84,10 @@ export function Tap({
       onPress={(e) => {
         // Swallow the second of a double tap: it used to push two copies of the same screen.
         const now = Date.now();
-        if (now - lastPress.current < 450) return;
-        lastPress.current = now;
+        if (!repeatable) {
+          if (now - lastPress.current < 450) return;
+          lastPress.current = now;
+        }
         if (hapticOnPress) haptic[hapticOnPress]();
         onPress?.(e);
       }}

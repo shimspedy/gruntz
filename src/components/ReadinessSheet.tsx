@@ -48,7 +48,7 @@ export function ReadinessSheet() {
   const status = readinessStatus(score);
 
   return (
-    <Sheet visible={visible} onClose={() => setOpen(false)} plainHeader>
+    <Sheet visible={visible} onClose={() => setOpen(false)} plainHeader scrollable>
       <View style={styles.header}>
         <Ring progress={score / 100} size={64} stroke={5} trackColor="#2B3038">
           <Text variant="headline" tabular>

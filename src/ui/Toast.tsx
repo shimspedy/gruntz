@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Modal, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Modal, Platform, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -42,7 +42,18 @@ export const useToast = create<ToastState>((set) => ({
 
 export const toast = (message: string, opts?: ToastOpts) => useToast.getState().show(message, opts);
 
-const tones: Record<Tone, string> = { success: '#1FA84F', info: color.accent, error: color.danger };
+/**
+ * Toast fills, darkened from the app tokens so the white label clears WCAG AA.
+ *
+ * The toast is the app's only confirmation channel and it auto-dismisses in 2.6 s,
+ * so there is no second chance to read it. At the token values the 17 px semibold
+ * label measured 3.10:1 (success), 3.33:1 (info) and 3.41:1 (error) — all under
+ * the 4.5:1 body-text floor, and 17 px semibold is not WCAG "large text". These
+ * are the same hues darkened to 4.53 / 4.51 / 4.51:1. Kept local rather than
+ * changing `color.accent`/`color.danger`, which are used app-wide on dark
+ * surfaces where they already pass.
+ */
+const tones: Record<Tone, string> = { success: '#198840', info: '#2676D7', error: '#DA3B32' };
 
 /** Full-width banner that drops from under the status bar, then retreats. */
 export function ToastHost() {
@@ -54,6 +65,11 @@ export function ToastHost() {
 
   useEffect(() => {
     if (!message) return;
+    // `accessibilityLiveRegion` is Android-only, so on iOS a VoiceOver user got no
+    // confirmation at all — for saving a team, a readiness check-in, adding
+    // exercises, or any error. The banner is also pointerEvents="none" without an
+    // action and gone in 2.6 s, so there was nothing to navigate to either.
+    if (Platform.OS === 'ios') AccessibilityInfo.announceForAccessibility(message);
     y.set(-160);
     y.set(withSpring(0, motion.sheet));
     y.set(

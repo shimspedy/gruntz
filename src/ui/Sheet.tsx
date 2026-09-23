@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Modal, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
+import { Modal, ScrollView, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
   Extrapolation,
@@ -26,13 +26,24 @@ export interface SheetProps {
   /** Fired after the exit animation finishes. */
   onDismissed?: () => void;
   avoidKeyboard?: boolean;
+  /**
+   * Let the body scroll when it is taller than the sheet's cap.
+   *
+   * The sheet caps at `screenH - insets.top - 24`, but its children neither scroll
+   * nor shrink, so a tall body simply lays out past the bottom of the screen. The
+   * readiness check-in measured ~722 pt against 623 available on a 667 pt phone —
+   * the overflow was exactly the Save button plus the disclaimer, so the check-in
+   * could not be saved at all. Opt-in rather than automatic: some sheets hold their
+   * own scrollables or gesture handlers that must not be nested.
+   */
+  scrollable?: boolean;
 }
 
 /**
  * Bottom sheet: dimmed backdrop, drag handle, springs in, follows the finger, flicks closed.
  * Short interruptions only — anything with steps is a modal route instead.
  */
-export function Sheet({ visible, onClose, title, children, plainHeader, onDismissed, avoidKeyboard }: SheetProps) {
+export function Sheet({ visible, onClose, title, children, plainHeader, onDismissed, avoidKeyboard, scrollable }: SheetProps) {
   const [mounted, setMounted] = useState(visible);
   const { height: screenH } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -118,7 +129,20 @@ export function Sheet({ visible, onClose, title, children, plainHeader, onDismis
                 </Text>
               </View>
             ) : null}
-            {avoidKeyboard ? <KeyboardAwareSheetBody>{children}</KeyboardAwareSheetBody> : children}
+            {(() => {
+              const body = avoidKeyboard ? <KeyboardAwareSheetBody>{children}</KeyboardAwareSheetBody> : children;
+              if (!scrollable) return body;
+              return (
+                <ScrollView
+                  style={styles.scrollBody}
+                  contentContainerStyle={styles.scrollContent}
+                  showsVerticalScrollIndicator={false}
+                  bounces={false}
+                >
+                  {body}
+                </ScrollView>
+              );
+            })()}
           </Animated.View>
         </GestureDetector>
       </GestureHandlerRootView>
@@ -127,6 +151,10 @@ export function Sheet({ visible, onClose, title, children, plainHeader, onDismis
 }
 
 const styles = StyleSheet.create({
+  // flexShrink lets the body give way to the sheet's maxHeight instead of laying
+  // out past the bottom of the screen; the ScrollView then reaches the overflow.
+  scrollBody: { flexShrink: 1 },
+  scrollContent: { flexGrow: 1 },
   backdrop: { backgroundColor: color.scrim },
   sheet: {
     position: 'absolute',
