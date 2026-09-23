@@ -56,6 +56,8 @@ export default function ExerciseDetailScreen() {
   // Same key the workout log uses: the clip, so an app exercise and its library clip share history.
   const sessions = useExerciseSessions(ex ? (ex.media_key ?? ex.id) : undefined, unit);
   const note = useExerciseNotesStore((n) => (ex ? n.notes[ex.media_key ?? ex.id] : undefined));
+  const [picker, setPicker] = useState(false);
+  const routines = useRoutineStore((st) => st.routines);
 
   if (!ex) {
     return (
@@ -94,9 +96,6 @@ export default function ExerciseDetailScreen() {
 
   const steps = ex.steps?.length ? ex.steps : lib?.instructions ?? [];
   const mistakes = lib?.mistakes ?? [];
-  const [picker, setPicker] = useState(false);
-  const routines = useRoutineStore((st) => st.routines);
-
   const newWorkoutWith = () => {
     if (!lib) return;
     useRoutineStore.getState().newDraft([lib.key]);

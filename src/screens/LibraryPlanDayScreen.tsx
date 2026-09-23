@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { getPlanExercise, getSlotLibraryItem, getWorkoutPlan } from '../data/workoutPlans';
-import { restLabel, slotPrescription } from '../features/planDisplay';
+import { dayMinutesLabel, restLabel, slotPrescription } from '../features/planDisplay';
 import { planSessionId, usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { useSessionStore } from '../store/useSessionStore';
 import type { RootStackParamList } from '../types/navigation';
@@ -75,7 +75,7 @@ export default function LibraryPlanDayScreen() {
             {day.title}
           </Text>
           <Text variant="body" tone="secondary" style={{ marginTop: 6, fontSize: 17 }}>
-            {day.exercises.length} {day.exercises.length === 1 ? 'exercise' : 'exercises'}, ~{day.estimated_minutes} min · Day {day.index} of {plan.days.length}
+            {day.exercises.length} {day.exercises.length === 1 ? 'exercise' : 'exercises'}, {dayMinutesLabel(day.estimated_minutes)} · Day {day.index} of {plan.days.length}
           </Text>
           {following && done ? (
             <View style={styles.done}>

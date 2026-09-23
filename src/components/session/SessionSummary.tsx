@@ -153,7 +153,7 @@ export function SessionSummary({ onBack, onDone }: { onBack: () => void; onDone:
         </View>
         {!canSave ? (
           <Text variant="footnote" tone="tertiary" style={{ marginTop: space.md }}>
-            Complete every set of at least one exercise to save this mission.
+            Log at least one set to save this mission.
           </Text>
         ) : null}
       </ScrollView>

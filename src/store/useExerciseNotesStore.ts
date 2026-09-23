@@ -19,8 +19,11 @@ export const useExerciseNotesStore = create<ExerciseNotesState>()(
           const trimmed = note.trim().slice(0, 500);
           if (trimmed) next[key] = trimmed;
           else delete next[key];
-          const keys = Object.keys(next);
-          if (keys.length > 400) delete next[keys[0]];
+          // Evict the oldest note that is NOT the one being written. Updating an
+          // existing key does not move it in insertion order, so a user with >400
+          // notes editing their oldest one deleted it on every keystroke.
+          const keys = Object.keys(next).filter((k) => k !== key);
+          if (Object.keys(next).length > 400 && keys.length) delete next[keys[0]];
           return { notes: next };
         }),
     }),

@@ -165,7 +165,7 @@ export default function PlanBrowseScreen() {
       />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
         <Chip label="All" active={!category} onPress={() => setCategory(null)} />
-        {planCategories().map((c) => (
+        {planCategories(kind).map((c) => (
           <Chip key={c.id} label={CATEGORY_LABEL[c.id] ?? c.name} active={category === c.id} onPress={() => { setCategory(category === c.id ? null : c.id); resetTop(); }} />
         ))}
       </ScrollView>

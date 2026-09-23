@@ -62,7 +62,7 @@ function daysUntil(date?: string | null) {
   const now = new Date();
   const target = Date.UTC(y, m - 1, d);
   const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
-  return Math.max(0, Math.round((target - today) / 86400000));
+  return Math.round((target - today) / 86400000);
 }
 
 /** How far out people actually schedule a test, plus a way to clear it. */
@@ -125,7 +125,7 @@ export default function TestScreen() {
                 reading "No test date set" with nothing to tap. */}
             <Tap feedback="opacity" hitSlop={8} onPress={() => setDateSheet(true)} accessibilityLabel="Set test date">
               <Text variant="callout" tone={countdown == null ? 'accent' : 'secondary'} style={{ marginTop: 4 }}>
-                {countdown == null ? 'Set a test date' : countdown === 0 ? 'Test day' : `${countdown} days to test`}
+                {countdown == null ? 'Set a test date' : countdown === 0 ? 'Test day' : countdown < 0 ? 'Set your next test date' : `${countdown} days to test`}
               </Text>
             </Tap>
           </View>

@@ -17,10 +17,18 @@ export const color = {
 
   text: '#FFFFFF',
   // The muted tiers are used on raised surfaces as well as on black, so they are set
-  // to clear WCAG AA (4.5:1) against the lightest one (surfaceHigh), not just the
-  // background. The old tertiary/quaternary failed there — quaternary failed even the
-  // 3:1 large-text floor — and they are what inactive tab labels and Settings values
-  // are drawn in.
+  // to clear WCAG AA (4.5:1) against `surfaceHigh` rather than just the background.
+  // The old tertiary/quaternary failed even there — quaternary failed the 3:1
+  // large-text floor — and they are what inactive tab labels and Settings values are
+  // drawn in.
+  //
+  // `surfaceHigh` is NOT the lightest surface in this palette, despite what this
+  // comment used to claim: `surfacePressed` (#2C2C2E) and `lineStrong` (#3A3A3C)
+  // are both lighter, and against those the muted tiers do not all clear AA —
+  // measured, textQuaternary is 4.27:1 on surfacePressed and 3.48:1 on lineStrong,
+  // textTertiary 3.85:1 on lineStrong. `Layout.Row` already draws tertiary text over
+  // surfacePressed while held. Before using a muted tier on anything lighter than
+  // surfaceHigh, measure it rather than trusting these numbers.
   textSecondary: '#A1A1A6', // 5.87:1 on surfaceHigh
   textTertiary: '#96969B', // 5.13:1 on surfaceHigh (was #8A8A8F, 4.40:1 — failed AA)
   textQuaternary: '#8E8E93', // 4.63:1 on surfaceHigh (was #6E6E73, 2.98:1 — failed AA and AA-large)

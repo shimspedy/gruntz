@@ -86,6 +86,22 @@ export function slotPrescription(slot: PlanExerciseSlot): string {
   }
 }
 
+/**
+ * A day's estimated length, capped at something a human would actually train.
+ *
+ * The catalog carries a handful of implausible values — Arnold's volume routine
+ * has days at 335 and 285 minutes against a plan-level session_minutes of 70 shown
+ * on the same screen. Printing them raw made the screen contradict itself, so the
+ * cap says "at least this long" rather than quoting a number nobody believes.
+ * 15 days in the catalog exceed 120 minutes, 47 exceed 90.
+ */
+const MAX_BELIEVABLE_DAY_MINUTES = 120;
+
+export function dayMinutesLabel(minutes?: number | null): string | null {
+  if (!minutes || minutes <= 0) return null;
+  return minutes > MAX_BELIEVABLE_DAY_MINUTES ? `~${MAX_BELIEVABLE_DAY_MINUTES}+ min` : `~${minutes} min`;
+}
+
 export function restLabel(seconds: number): string {
   if (seconds <= 0) return 'No rest';
   if (seconds < 120) return `${seconds}s rest`;

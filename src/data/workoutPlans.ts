@@ -142,8 +142,14 @@ export function allPlans(): WorkoutPlan[] {
   return file().plans;
 }
 
-export function planCategories(): PlanCategory[] {
-  return file().categories.filter((c) => c.plan_ids.length > 0);
+export function planCategories(kind?: WorkoutPlan['kind']): PlanCategory[] {
+  const categories = file().categories.filter((c) => c.plan_ids.length > 0);
+  if (!kind) return categories;
+  // Only offer a category that has something in the mode being browsed: three of
+  // the twenty hold no single workouts at all, so their chips could only ever land
+  // on the "No plans match" empty state.
+  const inKind = new Set(file().plans.filter((p) => p.kind === kind).map((p) => p.id));
+  return categories.filter((c) => c.plan_ids.some((id) => inKind.has(id)));
 }
 
 export function planExercises(): Record<string, PlanExerciseInfo> {

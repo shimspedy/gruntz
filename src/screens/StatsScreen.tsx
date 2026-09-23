@@ -96,7 +96,7 @@ export default function StatsScreen() {
             ))}
           </View>
         ) : (
-          <EmptyState icon="run" title="No runs or rucks yet" body="Track one from the + menu and it lands here with pace and elevation." />
+          <EmptyState icon="run" title="No runs or rucks yet" body="Track one from the + menu and it lands here with your distance and time." />
         )}
 
         <Text variant="section" style={styles.h}>

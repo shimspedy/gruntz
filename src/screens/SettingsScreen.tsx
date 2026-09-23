@@ -51,6 +51,7 @@ function formatTime(value: string) {
 
 export default function SettingsScreen() {
   const [timeSheet, setTimeSheet] = React.useState(false);
+  const [restoring, setRestoring] = React.useState(false);
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const profile = useUserStore((s) => s.profile);
@@ -216,11 +217,14 @@ export default function SettingsScreen() {
           <Row
             icon="restart"
             title="Restore purchases"
+            value={restoring ? 'Checking…' : undefined}
             onPress={() => {
+              if (restoring) return;
+              setRestoring(true);
               // Named per platform: this said "App Store"/"Apple ID" on Android too.
               const store = Platform.OS === 'ios' ? 'App Store' : 'Google Play';
               const account = Platform.OS === 'ios' ? 'Apple ID' : 'Google account';
-              void restore().then((r) => {
+              void restore().finally(() => setRestoring(false)).then((r) => {
                 if (r === 'restored') toast('Purchases restored');
                 else if (r === 'none') Alert.alert('Nothing to restore', `No active Gruntz Pro subscription was found for this ${account}.`);
                 // "unavailable" is not a connectivity problem, and saying so sent

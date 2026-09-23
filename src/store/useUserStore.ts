@@ -22,6 +22,8 @@ interface UserState {
   isLoading: boolean;
   isOnboarded: boolean;
   hasHydrated: boolean;
+  /** True when the persisted blob could not be read — distinct from "no data yet". */
+  hydrationFailed?: boolean;
 
   setProfile: (profile: UserProfile) => void;
   updateSettings: (settings: Partial<UserSettings>) => void;
@@ -536,7 +538,12 @@ export const useUserStore = create<UserState>()(
             : currentState.progress,
         };
       },
-      onRehydrateStorage: () => () => {
+      onRehydrateStorage: () => (_state, error) => {
+        if (error) {
+          console.warn('[useUserStore] rehydrate failed; keeping defaults without overwriting storage', error);
+          useUserStore.setState({ hasHydrated: true, hydrationFailed: true });
+          return;
+        }
         useUserStore.setState({ hasHydrated: true });
       },
     }

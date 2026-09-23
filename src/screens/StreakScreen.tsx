@@ -33,6 +33,7 @@ export default function StreakScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const progress = useUserStore((s) => s.progress);
+  const profile = useUserStore((s) => s.profile);
   const dates = useMemo(() => claimedDates(progress.claimed_missions), [progress.claimed_missions]);
   const best = Math.max(longestStreak(dates), progress.streak_days);
   const today = getLocalDateKey();
@@ -50,7 +51,10 @@ export default function StreakScreen() {
     const key = getLocalDateKey(d);
     return { key, trained: dates.has(key), past: key <= today };
   });
-  const rested = week.filter((d) => d.past && !d.trained && d.key !== today).length;
+  // Days before the profile existed are not rest days — installing on a Sunday and
+  // training that day used to read "6 Days rested" on day one.
+  const joined = profile?.created_at ? getLocalDateKey(new Date(profile.created_at)) : null;
+  const rested = week.filter((d) => d.past && !d.trained && d.key !== today && (!joined || d.key >= joined)).length;
 
   const cells = useMemo(() => {
     const first = new Date(month);

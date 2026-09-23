@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated from 'react-native-reanimated';
 import { getWorkoutPlan, type PlanDay } from '../data/workoutPlans';
-import { displayTitle, EQUIPMENT_LABEL, planDayHero, planHero, planMeta, planMinutes } from '../features/planDisplay';
+import { dayMinutesLabel, displayTitle, EQUIPMENT_LABEL, planDayHero, planHero, planMeta, planMinutes } from '../features/planDisplay';
 import { nextPlanDay, planProgress, usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { useProgramStore } from '../store/useProgramStore';
 import { effectiveEquipmentAccess } from '../features/planRecommend';
@@ -190,7 +190,7 @@ export default function LibraryPlanDetailScreen() {
                       {day.title}
                     </Text>
                     <Text variant="callout" tone="secondary" style={{ marginTop: 2 }}>
-                      {plural(day.exercises.length, 'exercise')} · ~{day.estimated_minutes} min
+                      {plural(day.exercises.length, 'exercise')} · {dayMinutesLabel(day.estimated_minutes)}
                     </Text>
                   </View>
                   {done ? <Icon name="check" size={18} color={color.success} weight="bold" /> : <Icon name="arrowRight" size={18} color={color.textSecondary} />}
