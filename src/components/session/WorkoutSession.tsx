@@ -498,9 +498,14 @@ function ExercisePage({
     >
       <ExerciseVideo exercise={ex} active={active} style={{ width, height: videoH }} />
 
+      {exercise.supersetGroup ? (
+        <Text variant="caption" tone="accent" style={styles.supersetTag}>
+          {`SUPERSET ${exercise.supersetGroup}`}
+        </Text>
+      ) : null}
       <View style={styles.nameRow}>
         <Text variant="title" style={styles.name} numberOfLines={2}>
-          {ex?.name ?? 'Exercise'}
+          {exercise.prescribedName ?? ex?.name ?? 'Exercise'}
         </Text>
         <Tap
           feedback="opacity"
@@ -518,6 +523,11 @@ function ExercisePage({
           <Icon name="more" size={22} color={color.textSecondary} weight="semibold" />
         </Tap>
       </View>
+      {exercise.prescribedName && ex?.name ? (
+        <Text variant="subhead" tone="tertiary" style={styles.desc}>
+          {`Demonstrated with ${ex.name}`}
+        </Text>
+      ) : null}
       {ex?.description ? (
         <Text variant="body" tone="secondary" style={styles.desc}>
           {ex.description}
@@ -579,6 +589,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  supersetTag: { paddingHorizontal: space.gutter, letterSpacing: 0.8, marginBottom: 2 },
   nameRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.gutter, marginTop: space.md },
   name: { flex: 1, fontSize: 25, lineHeight: 30 },
   restIcon: { alignItems: 'center', marginLeft: space.md },

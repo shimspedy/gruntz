@@ -32,6 +32,27 @@ export interface SessionSet {
 export interface SessionExercise {
   key: string;
   exerciseId: string;
+  /**
+   * The movement the plan actually prescribed, when the library clip matched to it
+   * is a different exercise.
+   *
+   * 2,685 of 13,002 plan slots are substitutions, and the player titled the page
+   * from the LIBRARY exercise — so a day prescribing "Standing Dumbbell Shoulder
+   * Press" opened as "Single-Arm Dumbbell Overhead Press". The preview said one
+   * thing and the session said another.
+   */
+  prescribedName?: string;
+  /**
+   * The superset/circuit letter this slot belongs to, when the plan pairs it.
+   *
+   * 3,265 of 13,002 slots across 221 plans are grouped, and the plan-day preview
+   * shows "SUPERSET A" — but the session dropped the field entirely, so the athlete
+   * previewed "A1 and A2 back to back" and got two ordinary exercises. Carrying it
+   * through at least keeps the player honest about what was prescribed.
+   * NOTE: the player still runs grouped exercises sequentially. True circuit
+   * rotation is a product decision, not a bug fix — see the audit's decisions list.
+   */
+  supersetGroup?: string;
   section: string;
   kind: SetKind;
   weighted: boolean;
@@ -335,7 +356,9 @@ export const useSessionStore = create<SessionState>()(
             const rp = [8, 5, 3].slice(-w);
             sets.unshift(...fr.map((_, n) => ({ id: newSetId(), warmup: true, reps: rp[n], seconds: undefined, distance: undefined, weight: undefined, done: false })));
           }
-          return [{ key: `${day.id}:${i}:${slot.video_key}`, exerciseId: id, section: day.title, kind, weighted: isWeighted(ex), requiredSets: workingSets, sets }];
+          const prescribedName = slot.name && slot.name !== ex.name ? slot.name : undefined;
+          const supersetGroup = typeof slot.superset_group === 'string' ? slot.superset_group : undefined;
+          return [{ key: `${day.id}:${i}:${slot.video_key}`, exerciseId: id, prescribedName, supersetGroup, section: day.title, kind, weighted: isWeighted(ex), requiredSets: workingSets, sets }];
         });
         set({
           active: true,
@@ -477,6 +500,7 @@ export const useSessionStore = create<SessionState>()(
             return {
               ...e,
               exerciseId: nextId,
+              prescribedName: undefined,
               kind: kindFor(ex),
               weighted: isWeighted(ex),
               requiredSets: Math.max(logged.length, e.requiredSets),
