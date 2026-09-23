@@ -7,6 +7,23 @@ one job: **so that losing a phone does not lose a training history.**
 Signing up is optional, lives in Profile → *Back up progress*, and is never asked for
 during onboarding. Someone can train for a year without an account.
 
+## Build configuration
+
+`.env` is gitignored and **EAS does not read it**, so local builds and cloud builds get
+their config from different places. Release builds read the EAS environment, where both
+values are now set for `production`, `preview` and `development`:
+
+```
+EXPO_PUBLIC_SUPABASE_URL=https://khskhjplkresilgrozhg.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_…
+```
+
+This is the failure mode worth understanding: with them missing, nothing errors.
+`isBackupAvailable()` simply returns false, the Profile row hides itself, and the feature
+is silently absent from the shipped app — the same graceful degradation that makes the
+build safe is what would hide the mistake. **If you ever move projects or rotate the key,
+change it in both places**, and check with `eas env:list --environment production`.
+
 ## Setting it up
 
 1. Create a Supabase project (separate from Bootz — different app, different users).
