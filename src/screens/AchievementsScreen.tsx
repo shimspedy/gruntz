@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { SectionList, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { achievements } from '../data/achievements';
-import { useUserStore } from '../store/useUserStore';
+import { EXERCISE_TOTAL_ALIASES, useUserStore } from '../store/useUserStore';
 import type { Achievement, UserProgress } from '../types';
 import { Icon, type IconName } from '../ui/Icon';
 import { NavHeader } from '../ui/Layout';
@@ -32,7 +32,7 @@ function currentValue(a: Achievement, p: UserProgress): number | null {
     default:
       if (a.condition_type.startsWith('exercise_total_')) {
         const id = a.condition_type.replace('exercise_total_', '');
-        const ids = id === 'pushups' ? ['pushups', 'strict_pushups', 'close_grip_pushups'] : [id];
+        const ids = EXERCISE_TOTAL_ALIASES[id] ?? [id];
         return ids.reduce((s, x) => s + (p.exercises_completed[x] || 0), 0);
       }
       return null;

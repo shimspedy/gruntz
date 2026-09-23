@@ -27,14 +27,20 @@ type RevenueCatPriceCandidate = {
 };
 
 /**
- * Returns the live price from RevenueCat when available, falling back to
- * the hardcoded default. Accepts any valid price string — never blocks
- * purchases because the live price differs from the fallback.
+ * The live price from RevenueCat, or `null` when none has loaded.
+ *
+ * It used to fall back to a hardcoded "$4.99/month", which is wrong in every
+ * non-US storefront and goes stale the moment the price changes in App Store
+ * Connect — and it was rendered in the plan card as though it were real, while
+ * the legal block on the same screen correctly refused to quote it. Nobody was
+ * ever charged it (the CTA is disabled until an offering loads), so the honest
+ * thing is to show no number rather than a wrong one. Callers render a loading
+ * state for `null`.
  */
-export function getDisplayedMonthlyPrice(offering?: RevenueCatPriceCandidate | null) {
+export function getDisplayedMonthlyPrice(offering?: RevenueCatPriceCandidate | null): string | null {
   const livePrice = offering?.priceString?.trim();
   if (!livePrice) {
-    return GRUNTZ_MONTHLY_PRICE_FALLBACK;
+    return null;
   }
 
   // Use the live price from RevenueCat, appending "/month" when not present

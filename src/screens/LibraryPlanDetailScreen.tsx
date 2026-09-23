@@ -7,6 +7,7 @@ import Animated from 'react-native-reanimated';
 import { getWorkoutPlan, type PlanDay } from '../data/workoutPlans';
 import { displayTitle, EQUIPMENT_LABEL, planDayHero, planHero, planMeta, planMinutes } from '../features/planDisplay';
 import { nextPlanDay, planProgress, usePlanLibraryStore } from '../store/usePlanLibraryStore';
+import { useProgramStore } from '../store/useProgramStore';
 import type { RootStackParamList } from '../types/navigation';
 import { Button } from '../ui/Button';
 import { ExerciseThumb, HeroArt } from '../ui/ExerciseArt';
@@ -54,6 +55,11 @@ export default function LibraryPlanDetailScreen() {
   const follow = () => {
     const doFollow = () => {
       haptic.success();
+      // Following a library plan replaces a selected built-in program, mirroring
+      // what ProgramDetailScreen.start already does in the other direction. Without
+      // this, "Today's mission" in the + menu and "Your Plan" on Train disagreed
+      // about what today's workout actually is.
+      useProgramStore.getState().clearProgram();
       usePlanLibraryStore.getState().follow(plan.id);
       // Following used to be a bare toast with nothing to do next. Say what it
       // changed and offer the obvious next step.

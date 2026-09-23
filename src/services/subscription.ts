@@ -60,15 +60,27 @@ function getRevenueCatApiKey() {
   return '';
 }
 
+/**
+ * The monthly package, and only the monthly package.
+ *
+ * This used to fall back to `availablePackages[0]`, which on an offering with no
+ * monthly product was the ANNUAL one — and everything downstream then treated it
+ * as monthly: the card showed the yearly price with "/month" appended, the binding
+ * disclosure read "auto-renewing monthly subscription at $39.99", and
+ * `buildAnnualSnapshot` compared the annual price against itself and rendered
+ * "Save 92%". Someone tapping Monthly would have been charged a year up front at a
+ * price labelled per-month. Returning null instead means the monthly card simply
+ * does not offer a price, which is the truthful outcome.
+ */
 function choosePackage(offering: PurchasesOffering | null): PurchasesPackage | null {
   if (!offering) {
     return null;
   }
-  return (
-    offering.monthly ??
-    offering.availablePackages[0] ??
-    null
-  );
+  const monthly = offering.monthly ?? null;
+  if (!monthly && __DEV__) {
+    console.warn('[subscription] offering has no monthly package; the monthly card will show no price');
+  }
+  return monthly;
 }
 
 function chooseAnnualPackage(offering: PurchasesOffering | null): PurchasesPackage | null {

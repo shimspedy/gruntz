@@ -46,6 +46,8 @@ interface ProgramState {
   hasHydrated: boolean;
 
   selectProgram: (id: ProgramId) => void;
+  /** Stop following a built-in program — used when a library plan takes over. */
+  clearProgram: () => void;
   /** Move to the next week once every workout in the current one is done. */
   advanceWeekIfComplete: () => void;
   setAssessment: (assessment: Partial<UserAssessment>) => void;
@@ -88,6 +90,8 @@ export const useProgramStore = create<ProgramState>()(
       selectProgram: (id) => {
         set({ selectedProgram: id, currentWeek: 1 });
       },
+
+      clearProgram: () => set({ selectedProgram: null, currentWeek: 1 }),
 
       /**
        * Advance the program a week once every workout in the current one is claimed.

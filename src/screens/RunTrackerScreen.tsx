@@ -8,6 +8,7 @@ import * as Speech from 'expo-speech';
 import { useBarometerAltitude } from '../hooks/useBarometerAltitude';
 import { useRunTracker } from '../hooks/useRunTracker';
 import { useReadinessStore } from '../store/useReadinessStore';
+import { KG_PER_LB } from '../store/useExerciseLogStore';
 import { useUserStore } from '../store/useUserStore';
 import type { RootStackParamList } from '../types/navigation';
 import { Button } from '../ui/Button';
@@ -51,7 +52,9 @@ export default function RunTrackerScreen() {
   const recordTrackedSession = useUserStore((s) => s.recordTrackedSession);
   const metric = useUserStore((s) => s.profile?.settings.units === 'metric');
   const [type, setType] = useState<'run' | 'ruck'>(params?.type ?? 'run');
-  const [pack, setPack] = useState('35');
+  // The field is labelled in the athlete's own unit, so its default must be too:
+  // a metric rucker was being offered a 35 "kg" pack (77 lb).
+  const [pack, setPack] = useState(() => (useUserStore.getState().profile?.settings.units === 'metric' ? '16' : '35'));
   const [terrain, setTerrain] = useState('Mixed');
   const tracker = useRunTracker({ batterySaver });
   const baro = useBarometerAltitude();
@@ -99,6 +102,13 @@ export default function RunTrackerScreen() {
   }, [tracker.isTracking, tracker.isPaused, pulse]);
   const dotStyle = useAnimatedStyle(() => ({ opacity: pulse.get() }));
 
+  /** `packWeightPounds` is stored in pounds whatever unit the athlete typed in. */
+  const packToPounds = (raw: string, isMetric: boolean) => {
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n <= 0) return undefined;
+    return Math.round(isMetric ? n / KG_PER_LB : n);
+  };
+
   const start = useCallback(async () => {
     haptic.medium();
     const ok = await tracker.start();
@@ -126,12 +136,12 @@ export default function RunTrackerScreen() {
       distanceMiles: final.distanceMiles,
       durationSeconds: Math.round(final.durationMs / 1000),
       elevationFeet: baro.elevationGainFt || final.elevationGainFt,
-      packWeightPounds: type === 'ruck' ? Number(pack) || undefined : undefined,
+      packWeightPounds: type === 'ruck' ? packToPounds(pack, metric) : undefined,
       terrain: type === 'ruck' ? terrain : undefined,
     });
     recordTrackedSession({ type, miles: final.distanceMiles, seconds: Math.round(final.durationMs / 1000) });
     haptic.success();
-  }, [tracker, baro, addSession, recordTrackedSession, type, pack, terrain]);
+  }, [tracker, baro, addSession, recordTrackedSession, type, pack, terrain, metric]);
 
   const end = () => {
     const label = type === 'ruck' ? 'ruck' : 'run';

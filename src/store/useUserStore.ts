@@ -66,7 +66,8 @@ const PUSHUP_LIBRARY_KEYS = [
   'single-leg-push-up', 'spiderman-push-up', 'three-way-push-up',
 ];
 
-const EXERCISE_TOTAL_ALIASES: Record<string, string[]> = {
+/** Shared with the Achievements screen so its progress bar and the unlock check agree. */
+export const EXERCISE_TOTAL_ALIASES: Record<string, string[]> = {
   pushups: [
     'pushups',
     'strict_pushups',

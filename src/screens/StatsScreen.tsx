@@ -85,7 +85,7 @@ export default function StatsScreen() {
                   </Text>
                   <Text variant="subhead" tone="tertiary" style={{ marginTop: 2 }}>
                     {new Date(s.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                    {s.packWeightPounds ? ` · ${s.packWeightPounds} lb` : ''}
+                    {s.packWeightPounds ? ` · ${km ? `${Math.round(s.packWeightPounds * 0.45359237)} kg` : `${s.packWeightPounds} lb`}` : ''}
                     {s.terrain ? ` · ${s.terrain}` : ''}
                   </Text>
                 </View>

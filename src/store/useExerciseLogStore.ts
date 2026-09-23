@@ -59,7 +59,7 @@ export const useExerciseLogStore = create<ExerciseLogState>()(
 
 // ─── Derived numbers (all computed from the log, never stored) ─────────────
 
-const KG_PER_LB = 0.45359237;
+export const KG_PER_LB = 0.45359237;
 
 export function toUnit(weight: number, from: 'lb' | 'kg', to: 'lb' | 'kg'): number {
   if (from === to) return weight;

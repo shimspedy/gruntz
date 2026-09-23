@@ -218,7 +218,7 @@ export default function PaywallScreen() {
                 right={annual.pricePerMonthString ? perMonth(annual.pricePerMonthString) : ''}
               />
             ) : null}
-            <PlanCard selected={plan === 'monthly' || !annual} onPress={() => setPlan('monthly')} title="Monthly" right={perMonth(monthly)} />
+            <PlanCard selected={plan === 'monthly' || !annual} onPress={() => setPlan('monthly')} title="Monthly" right={monthly ? perMonth(monthly) : 'Loading…'} />
           </Animated.View>
         ) : null}
 

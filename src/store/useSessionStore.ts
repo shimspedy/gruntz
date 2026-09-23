@@ -298,11 +298,24 @@ export const useSessionStore = create<SessionState>()(
           const ex = getExerciseById(id);
           if (!ex) return [];
           const kind: SetKind = slot.measure === 'time' ? 'time' : slot.measure === 'distance' ? 'distance' : 'reps';
-          const sets = Array.from({ length: Math.max(1, slot.sets) }, (_, n) => {
+          const setCount = Math.max(1, slot.sets);
+          // `total_reps` means the number is the WHOLE job across the sets, which is
+          // how the preview reads it ("40 total"). Prefilling every set with it turned
+          // a 40-rep prescription into 2 x 40 = 80 — and a 100-rep one into 300.
+          // Split evenly, remainder on the earlier sets, so the total is what was asked.
+          const totalRepsPerSet = (n: number) => {
+            const total = slot.reps ?? 0;
+            if (!total) return undefined;
+            const base = Math.floor(total / setCount);
+            return base + (n < total % setCount ? 1 : 0);
+          };
+          const sets = Array.from({ length: setCount }, (_, n) => {
             const prev = previous[id]?.[n] ?? previous[id]?.[previous[id].length - 1];
             return {
               id: newSetId(),
-              reps: kind === 'reps' ? (slot.rep_scheme?.[n] ?? slot.reps) : undefined,
+              reps: kind === 'reps'
+                ? (slot.total_reps ? totalRepsPerSet(n) : (slot.rep_scheme?.[n] ?? slot.reps))
+                : undefined,
               seconds: kind === 'time' ? slot.duration_seconds : undefined,
               distance: kind === 'distance' && slot.distance_meters ? `${slot.distance_meters} m` : undefined,
               weight: prev?.weight,
