@@ -42,9 +42,16 @@ export function LogoMark({ size = 40, style }: { size?: number; style?: StylePro
 export function Wordmark({ height = 34, style }: { height?: number; style?: StyleProp<ViewStyle> }) {
   const fontSize = height * 1.02;
   return (
-    <View style={[styles.row, style]} accessibilityRole="header" accessibilityLabel="Gruntz">
+    <View
+      style={[styles.row, style]}
+      accessible
+      accessibilityRole="header"
+      accessibilityLabel="Gruntz"
+    >
       <LogoMark size={height} />
       <Text
+        importantForAccessibility="no"
+        accessibilityElementsHidden
         style={{
           fontFamily: font.bold,
           fontSize,

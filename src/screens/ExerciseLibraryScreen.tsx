@@ -8,6 +8,7 @@ import { Icon } from '../ui/Icon';
 import { Chip, EmptyState, NavHeader } from '../ui/Layout';
 import { Tap } from '../ui/Pressable';
 import { Text } from '../ui/Text';
+import { plural } from '../features/plan';
 import { color, font, radius, space } from '../ui/tokens';
 import type { RootStackParamList } from '../types/navigation';
 import { useRoutineStore } from '../store/useRoutineStore';
@@ -157,6 +158,7 @@ export default function ExerciseLibraryScreen() {
       <View style={styles.search}>
         <Icon name="scope" size={18} color={color.textTertiary} />
         <TextInput
+          maxFontSizeMultiplier={1.8}
           value={query}
           onChangeText={setQuery}
           placeholder={`Search ${EXERCISE_LIBRARY.length} exercises or muscles`}
@@ -197,7 +199,7 @@ export default function ExerciseLibraryScreen() {
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingBottom: insets.bottom + (picking ? 110 : space.xl) }}
-        ListEmptyComponent={<EmptyState icon="scope" title="No matches" body="Try a different name or clear the equipment filter." />}
+        ListEmptyComponent={<EmptyState icon="scope" title="No matches" body="Try a different name, or tap All to clear the filter." />}
       />
       {picking ? (
         <View style={[styles.footer, { paddingBottom: insets.bottom + space.xs }]}>
@@ -208,7 +210,7 @@ export default function ExerciseLibraryScreen() {
               if (toSession) {
                 const at = useSessionStore.getState().exercises.length;
                 useSessionStore.getState().addExercises(picked);
-                toast(`Added ${picked.length} to the end of your workout`, {
+                toast(`Added ${plural(picked.length, 'exercise')} to the end of your workout`, {
                   icon: 'check',
                   action: { label: 'Go to it', onPress: () => useSessionStore.getState().setIndex(at) },
                 });

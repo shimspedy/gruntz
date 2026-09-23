@@ -7,7 +7,7 @@ import { getWorkoutPlan } from '../data/workoutPlans';
 import { Button } from '../ui/Button';
 import { getProgramById } from '../data/programs';
 import { usePlanLibraryStore } from '../store/usePlanLibraryStore';
-import { formatMinutes, getPlanWeek, heroExercise, workoutExercises } from '../features/plan';
+import { formatMinutes, getPlanWeek, heroExercise, plural, workoutExercises } from '../features/plan';
 import { useProgramStore } from '../store/useProgramStore';
 import { calculateDailyReadiness, getTodaysCheckIn, useReadinessStore } from '../store/useReadinessStore';
 import { useUserStore } from '../store/useUserStore';
@@ -110,7 +110,7 @@ export default function PlanScreen() {
                           {w.title}
                         </Text>
                         <Text variant="subhead" tone="secondary" style={{ marginTop: 2 }}>
-                          {formatMinutes(w.estimated_duration)} · {count} exercises
+                          {formatMinutes(w.estimated_duration)} · {plural(count, 'exercise')}
                         </Text>
                       </View>
                       {d.completed ? (

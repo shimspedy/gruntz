@@ -176,6 +176,7 @@ export function ChallengeSheet() {
             </View>
             <View style={styles.customRow}>
               <TextInput
+                maxFontSizeMultiplier={1.8}
                 value={custom}
                 onChangeText={setCustom}
                 placeholder={mode === 'distance' ? 'Distance' : mode === 'time' ? 'Seconds' : 'Reps'}

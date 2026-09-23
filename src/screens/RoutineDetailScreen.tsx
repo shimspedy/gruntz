@@ -181,7 +181,7 @@ export default function RoutineDetailScreen() {
         ) : null}
 
         <Text variant="section" style={styles.section}>
-          {routine.items.length} exercises
+          {plural(routine.items.length, 'exercise')}
         </Text>
         {routine.items.map((it, i) => {
           const lib = getLibraryItem(it.key);

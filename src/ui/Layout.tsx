@@ -197,6 +197,7 @@ export function Chip({ label, active, onPress }: { label: string; active?: boole
       }}
       accessibilityRole="tab"
       accessibilityState={{ selected: !!active }}
+      hitSlop={{ top: 4, bottom: 4 }}
       style={[styles.chip, active ? styles.chipActive : null]}
     >
       <Text variant="subhead" style={{ fontSize: 15, color: active ? color.onCta : color.text }}>

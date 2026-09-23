@@ -40,6 +40,7 @@ export function TabHeader() {
             navigation.navigate('Paywall');
           }}
           accessibilityLabel={isPro ? 'Gruntz Pro membership' : 'Upgrade to Gruntz Pro'}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
           style={styles.proWrap}
         >
           {isPro ? (
@@ -54,7 +55,7 @@ export function TabHeader() {
         </Tap>
         <Tap
           feedback="opacity"
-          hitSlop={8}
+          hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
           onPress={() => {
             haptic.light();
             navigation.navigate('Streak');

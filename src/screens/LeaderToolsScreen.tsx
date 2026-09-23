@@ -56,11 +56,11 @@ export default function LeaderToolsScreen() {
           <Text variant="subhead" tone="secondary">
             Team or section name
           </Text>
-          <TextInput value={name} onChangeText={setName} placeholder="Your team name" placeholderTextColor={color.textTertiary} style={styles.input} selectionColor={color.accent} />
+          <TextInput maxFontSizeMultiplier={1.8} value={name} onChangeText={setName} placeholder="Your team name" placeholderTextColor={color.textTertiary} style={styles.input} selectionColor={color.accent} />
           <Text variant="subhead" tone="secondary" style={{ marginTop: space.md }}>
             Invite code
           </Text>
-          <TextInput value={code} onChangeText={setCode} autoCapitalize="characters" maxLength={12} placeholder="GRUNTZ-01" placeholderTextColor={color.textTertiary} style={styles.input} selectionColor={color.accent} />
+          <TextInput maxFontSizeMultiplier={1.8} value={code} onChangeText={setCode} autoCapitalize="characters" maxLength={12} placeholder="GRUNTZ-01" placeholderTextColor={color.textTertiary} style={styles.input} selectionColor={color.accent} />
           <Button
             title="Save team"
             size="md"

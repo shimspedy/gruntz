@@ -9,7 +9,7 @@ import Animated, {
   useSharedValue,
   type SharedValue,
 } from 'react-native-reanimated';
-import { cardTitle, formatMinutes, heroExercise, workoutExercises, type PlanDay } from '../features/plan';
+import { cardTitle, formatMinutes, heroExercise, plural, workoutExercises, type PlanDay } from '../features/plan';
 import { HeroArt } from '../ui/ExerciseArt';
 import { HexIcon } from '../ui/HexIcon';
 import { Icon } from '../ui/Icon';
@@ -125,7 +125,7 @@ function PlanCard({
             {cardTitle(workout)}
           </Text>
           <Text variant="callout" tone="secondary" style={{ marginTop: 6, fontSize: 16 }}>
-            {formatMinutes(workout.estimated_duration)} · {count} exercises
+            {formatMinutes(workout.estimated_duration)} · {plural(count, 'exercise')}
           </Text>
           <View style={styles.meta}>
             {day.completed ? (
