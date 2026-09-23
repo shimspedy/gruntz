@@ -92,7 +92,7 @@ export async function scheduleDailyReminder(hour: number, minute: number, weekda
     const content: Notifications.NotificationContentInput = {
       title: 'Time to train',
       body: 'Your next workout is ready when you are.',
-      data: { type: 'daily-reminder' },
+      data: { type: 'daily-reminder', url: 'gruntz://train' },
       ...(Platform.OS === 'android' && { channelId: 'daily-reminder' }),
     };
     if (!weekdays.length) {
@@ -144,7 +144,7 @@ export async function showWorkoutProgress(
   const content: Notifications.NotificationContentInput = {
     title: missionTitle,
     body: `${exercisesDone}/${exercisesTotal} exercises complete (${pct}%)`,
-    data: { type: 'workout-progress', exercisesDone, exercisesTotal },
+    data: { type: 'workout-progress', exercisesDone, exercisesTotal, url: 'gruntz://train' },
     sticky: true,
     ...(Platform.OS === 'android' && { channelId: 'workout-progress' }),
   };
@@ -185,7 +185,7 @@ export async function scheduleRestDone(endsAt: number, nextLabel?: string) {
       content: {
         title: 'Rest’s up',
         body: nextLabel ? `Time for your next set: ${nextLabel}` : 'Time for your next set.',
-        data: { type: 'rest-done' },
+        data: { type: 'rest-done', url: 'gruntz://train' },
         sound: true,
         ...(Platform.OS === 'android' && { channelId: 'workout-progress' }),
       },
@@ -209,7 +209,7 @@ export async function showWorkoutComplete(xpEarned: number, streakDays: number) 
       content: {
         title: 'Mission Complete',
         body: `+${xpEarned} XP earned${streakDays > 1 ? ` • ${streakDays}-day streak` : ''}`,
-        data: { type: 'workout-complete' },
+        data: { type: 'workout-complete', url: 'gruntz://train' },
         ...(Platform.OS === 'android' && { channelId: 'workout-progress' }),
       },
       trigger: null,
@@ -225,7 +225,7 @@ export async function showAchievementUnlocked(achievementName: string, _icon: st
       content: {
         title: 'Achievement Unlocked',
         body: achievementName,
-        data: { type: 'achievement' },
+        data: { type: 'achievement', url: 'gruntz://achievements' },
         ...(Platform.OS === 'android' && { channelId: 'achievements' }),
       },
       trigger: null,
@@ -241,7 +241,7 @@ export async function showStreakWarning(streakDays: number) {
       content: {
         title: 'Streak At Risk',
         body: `Your ${streakDays}-day streak expires at midnight. Get a mission in!`,
-        data: { type: 'streak-warning' },
+        data: { type: 'streak-warning', url: 'gruntz://streak' },
         ...(Platform.OS === 'android' && { channelId: 'daily-reminder' }),
       },
       trigger: null,
@@ -256,6 +256,10 @@ export async function showStreakWarning(streakDays: number) {
 
 export async function scheduleTrialEndingReminder(trialEndsAt: string) {
   await cancelTrialEndingReminder();
+  // Same guard the daily reminder has. Without it, someone who declined the reminder
+  // step in onboarding still got a trial sales push scheduled on first launch — and
+  // would only ever silence it by toggling a setting they never turned on.
+  if (!remindersEnabled) return;
 
   const endTime = new Date(trialEndsAt).getTime();
   if (!Number.isFinite(endTime)) return;
@@ -272,7 +276,7 @@ export async function scheduleTrialEndingReminder(trialEndsAt: string) {
       content: {
         title: 'Your access ends soon',
         body: 'Your Gruntz trial wraps up in less than 2 days. Subscribe to keep your streak.',
-        data: { type: 'trial-ending' },
+        data: { type: 'trial-ending', url: 'gruntz://paywall' },
         ...(Platform.OS === 'android' && { channelId: 'daily-reminder' }),
       },
       trigger: {
@@ -300,13 +304,14 @@ export async function cancelTrialEndingReminder() {
 
 export async function scheduleWeeklyRecap(hour = 19, minute = 0) {
   await cancelWeeklyRecap();
+  if (!remindersEnabled) return;
 
   await withNotificationGuard(async () => {
     await Notifications.scheduleNotificationAsync({
       content: {
         title: 'Week In Review',
         body: 'See your missions, streak, and challenge XP for the week.',
-        data: { type: 'weekly-recap' },
+        data: { type: 'weekly-recap', url: 'gruntz://stats' },
         ...(Platform.OS === 'android' && { channelId: 'daily-reminder' }),
       },
       trigger: {

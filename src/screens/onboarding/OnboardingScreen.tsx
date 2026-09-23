@@ -18,6 +18,7 @@ import { recommendPlans } from '../../features/planRecommend';
 import { usePlanLibraryStore } from '../../store/usePlanLibraryStore';
 import { useOnboardingDraftStore, useOnboardingDraftHydrated } from '../../store/useOnboardingDraftStore';
 import { requestNotificationPermission, scheduleDailyReminder, scheduleWeeklyRecap, setupNotificationChannels } from '../../services/notifications';
+import { notificationWeekdays } from '../../utils/trainingDays';
 import { useProgramStore } from '../../store/useProgramStore';
 import { useSubscriptionStore } from '../../store/useSubscriptionStore';
 import { useUserStore } from '../../store/useUserStore';
@@ -257,7 +258,9 @@ function OnboardingFlow() {
       const granted = await requestNotificationPermission();
       if (granted) {
         await setupNotificationChannels();
-        await scheduleDailyReminder(7, 0);
+        // Their answer on the schedule step decides which days get a reminder —
+        // reminding a 3-day athlete every day is how notifications get turned off.
+        await scheduleDailyReminder(7, 0, notificationWeekdays(days ?? 4));
         await scheduleWeeklyRecap();
       }
       setRemindersOn(granted);

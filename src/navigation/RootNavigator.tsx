@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AppState, BackHandler, Linking, Platform, StyleSheet, View } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DarkTheme, NavigationContainer, type InitialState, type NavigationState } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -61,12 +62,40 @@ const NAV_SAVE_DEBOUNCE_MS = 600;
 const ENTITLEMENT_REFRESH_MS = 30 * 60 * 1000;
 
 /**
- * Deep links. Without a scheme and this config a notification tap could not route
- * anywhere — the app opened on whatever screen it was last on. Paths are kept flat
- * and stable so a link in a push payload survives navigator changes.
+ * Deep links. Paths are kept flat and stable so a link in a push payload survives
+ * navigator changes.
+ *
+ * `getInitialURL`/`subscribe` are overridden because React Navigation only listens
+ * to `Linking` URL events, and a notification tap never produces one — so every
+ * reminder ("Time to train", "Rest's up", "Week In Review", "Your access ends
+ * soon") simply resumed whatever screen the app was last on. Each payload now
+ * carries the `url` it is about, and these two bridges feed it in: `getInitialURL`
+ * for a tap that cold-starts the app, `subscribe` for one that arrives while it is
+ * running or backgrounded.
  */
+function notificationUrl(response: Notifications.NotificationResponse | null | undefined) {
+  const url = response?.notification.request.content.data?.url;
+  return typeof url === 'string' ? url : null;
+}
+
 const linking = {
   prefixes: ['gruntz://', 'https://gruntz.app'],
+  async getInitialURL() {
+    const fromLink = await Linking.getInitialURL();
+    if (fromLink) return fromLink;
+    return notificationUrl(await Notifications.getLastNotificationResponseAsync());
+  },
+  subscribe(listener: (url: string) => void) {
+    const linkSub = Linking.addEventListener('url', ({ url }) => listener(url));
+    const responseSub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const url = notificationUrl(response);
+      if (url) listener(url);
+    });
+    return () => {
+      linkSub.remove();
+      responseSub.remove();
+    };
+  },
   config: {
     screens: {
       Tabs: {
@@ -86,6 +115,7 @@ const linking = {
       Streak: 'streak',
       Stats: 'stats',
       Settings: 'settings',
+      Paywall: 'paywall',
     },
   },
 };

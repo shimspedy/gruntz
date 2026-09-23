@@ -25,6 +25,7 @@ import { usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { convertSessionWeights, useSessionStore } from '../store/useSessionStore';
 import { getAccessState, useSubscriptionStore } from '../store/useSubscriptionStore';
 import { useUserStore } from '../store/useUserStore';
+import { notificationWeekdays, trainingWeekdays } from '../utils/trainingDays';
 import { Group, NavHeader, Row } from '../ui/Layout';
 import { Sheet } from '../ui/Sheet';
 import { Tap } from '../ui/Pressable';
@@ -87,11 +88,15 @@ export default function SettingsScreen() {
           return;
         }
         await setupNotificationChannels();
-        await scheduleDailyReminder(7, 0);
+        // Turning reminders back on used to hardcode 07:00 and overwrite reminder_time,
+        // silently discarding a time the athlete had chosen in the picker below.
+        const savedTime = profile?.settings.reminder_time || '07:00';
+        const [savedHour, savedMinute] = savedTime.split(':').map(Number);
+        await scheduleDailyReminder(savedHour, savedMinute, notificationWeekdays(profile?.workout_days_per_week));
         await scheduleWeeklyRecap();
-        updateSettings({ notifications_enabled: true, reminder_time: '07:00' });
+        updateSettings({ notifications_enabled: true, reminder_time: savedTime });
         setNotificationsEnabled(true);
-        toast('Reminders on · 7:00 AM daily', { icon: 'bell' });
+        toast(`Reminders on · ${formatTime(savedTime)}`, { icon: 'bell' });
         return;
       }
       // Turning reminders off must silence everything, including the trial nudge and rest alert.
@@ -155,7 +160,9 @@ export default function SettingsScreen() {
           <Row
             icon="bell"
             title="Workout reminders"
-            subtitle={notifications ? `Daily at ${formatTime(profile?.settings.reminder_time ?? '07:00')}, weekly recap` : 'Off'}
+            subtitle={notifications
+              ? `${trainingWeekdays(profile?.workout_days_per_week).length}× a week at ${formatTime(profile?.settings.reminder_time ?? '07:00')}, weekly recap`
+              : 'Off'}
             toggle={notifications}
             onToggle={(v) => void toggleNotifications(v)}
           />
@@ -264,7 +271,7 @@ export default function SettingsScreen() {
                   haptic.selection();
                   const [h, m] = t.split(':').map(Number);
                   void cancelDailyReminder()
-                    .then(() => scheduleDailyReminder(h, m))
+                    .then(() => scheduleDailyReminder(h, m, notificationWeekdays(profile?.workout_days_per_week)))
                     .catch(() => undefined);
                   updateSettings({ reminder_time: t });
                   setTimeSheet(false);
