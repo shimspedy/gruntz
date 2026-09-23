@@ -17,21 +17,40 @@ during onboarding. Someone can train for a year without an account.
    ```
    Never the `service_role` key — it bypasses row-level security.
 3. Apply `supabase/migrations/20260923120000_create_backups.sql`.
-4. **The one step that must be done by hand.** Supabase's default email template
-   sends a magic *link*; this app asks for a *code*. In
-   **Authentication → Email Templates → Magic Link**, replace the body with one that
-   includes the token, e.g.:
+4. ~~Configure the email template.~~ **Done** — see below.
 
-   ```html
-   <h2>Your Gruntz sign-in code</h2>
-   <p>Enter this code in the app:</p>
-   <p style="font-size:28px;letter-spacing:6px;"><strong>{{ .Token }}</strong></p>
-   <p>It expires in an hour. If you didn't ask for it, ignore this email.</p>
-   ```
+### Already configured on `khskhjplkresilgrozhg`
 
-   Without `{{ .Token }}` the email contains only a link and there is nothing to
-   type, so sign-in cannot complete. Email auth itself is on by default; no redirect
-   URL is needed, because there is no link to follow.
+Set up and verified on 2026-09-23:
+
+- **Schema applied**, RLS on, four policies, `anon` holding no grants at all.
+- **Magic link / OTP template** rebranded: subject "Your Gruntz sign-in code", dark
+  card, the app icon from `https://gruntzfit.com/brand/gruntz-icon.png`, and the code
+  rendered from `{{ .Token }}`. The `img` carries its own `color`/`font-size`/
+  `font-weight`, so when an email client blocks remote images — most do by default —
+  the alt text still reads as a white "Gruntz" wordmark rather than invisible
+  default-coloured text.
+- **Email provider** enabled, new signups allowed, confirm-email on.
+- **OTP: 3600 s expiry, 6 digits** — which is what the email copy claims and what the
+  app's input expects. Change one and change the others.
+- **"Automatically expose new tables"** is off.
+
+Verified the Data API actually serves the table: an anonymous `GET /rest/v1/backups`
+returns `42501 permission denied`, **not** `PGRST205 table not found`. That distinction
+matters — it proves PostgREST can see the table and is refusing the caller, rather than
+the table being invisible to the API. The dashboard's "0 of 1 tables exposed" counts
+`anon` exposure, which is zero on purpose.
+
+### Before you ship: email sending is capped at 2/hour
+
+The project uses Supabase's built-in email service, whose **rate limit is 2 emails per
+hour for the whole project** (Authentication → Rate Limits). That is fine for testing
+and useless in production: the third person to request a sign-in code that hour gets
+nothing, and there is no way for the app to tell them why.
+
+Shipping means adding **custom SMTP** (Resend, Postmark, SendGrid, SES) under
+Authentication → Emails → SMTP Settings, then raising that limit. I have deliberately
+not done this: it needs provider credentials, and credentials are yours to enter.
 
 ### Project settings
 
