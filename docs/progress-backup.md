@@ -57,6 +57,22 @@ matters — it proves PostgREST can see the table and is refusing the caller, ra
 the table being invisible to the API. The dashboard's "0 of 1 tables exposed" counts
 `anon` exposure, which is zero on purpose.
 
+### SMTP
+
+Custom SMTP through **Resend** (the same provider Bootz already uses —
+`smtp.resend.com`, port 465, username `resend`). Everything is configured except the
+API key, which has to be pasted by hand: a secret does not belong in a transcript.
+
+**The sender is `onboarding@resend.dev`, which is a testing address.** Resend only
+delivers mail from it to the account owner, so it is perfect for verifying the flow
+and useless for real users. Shipping needs a verified sending domain —
+`auth.gruntzfit.com` would match the convention already used for the other projects.
+
+That is blocked on Resend's plan: all 10 free domain slots are in use
+(`mail.bootz.app`, `auth.fitvete.com`, `stackzai.com`, …). Either free a slot by
+removing a dead project's domain, or upgrade. Once a domain is verified, change the
+sender address here and nothing else.
+
 ### Before you ship: email sending is capped at 2/hour
 
 The project uses Supabase's built-in email service, whose **rate limit is 2 emails per
@@ -64,9 +80,9 @@ hour for the whole project** (Authentication → Rate Limits). That is fine for 
 and useless in production: the third person to request a sign-in code that hour gets
 nothing, and there is no way for the app to tell them why.
 
-Shipping means adding **custom SMTP** (Resend, Postmark, SendGrid, SES) under
-Authentication → Emails → SMTP Settings, then raising that limit. I have deliberately
-not done this: it needs provider credentials, and credentials are yours to enter.
+Enabling custom SMTP raises that to **30/hour** automatically, and it can be raised
+further under Authentication → Rate Limits. See the SMTP section above for what is
+configured and what is still needed.
 
 ### Project settings
 
