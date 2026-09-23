@@ -80,7 +80,7 @@ export async function reconcileTrialStart(): Promise<'adopted' | 'kept-local' | 
   }
 }
 
-/** Email a six-digit sign-in code. Creates the account if there is not one. */
+/** Email a sign-in code. Creates the account if there is not one. */
 export async function requestSignInCode(email: string): Promise<AuthResult> {
   const supabase = getSupabase();
   if (!supabase) return 'unavailable';
@@ -101,7 +101,7 @@ export async function requestSignInCode(email: string): Promise<AuthResult> {
 }
 
 /**
- * The same six digits verify under different types depending on who you are.
+ * The same code verifies under different types depending on who you are.
  *
  * An athlete signing up for the first time is sent a *signup confirmation* token
  * (Supabase's "Confirm sign up" email); one who already has an account is sent a

@@ -21,6 +21,16 @@ export function isBackupAvailable(): boolean {
 }
 
 /**
+ * How many digits the sign-in code has.
+ *
+ * Set by **Supabase → Authentication → Providers → Email → Email OTP length**, and the
+ * two must agree: the input was hardcoded to 6 while the project issues 8, so the
+ * code physically could not be typed in full and every sign-in failed on a correct
+ * code. Read the dashboard before changing this, not the default.
+ */
+export const OTP_CODE_LENGTH = 8;
+
+/**
  * Bumped when the snapshot shape changes in a way an older build would misread.
  *
  * A device refuses a payload from a *newer* schema rather than restoring a shape it

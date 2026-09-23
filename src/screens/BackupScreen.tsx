@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { isBackupAvailable } from '../config/backup';
+import { isBackupAvailable, OTP_CODE_LENGTH } from '../config/backup';
 import {
   deleteBackup,
   fetchBackupMeta,
@@ -84,7 +84,7 @@ export default function BackupScreen() {
     if (result === 'sent') {
       haptic.success();
       setStage('code');
-      toast('Check your email for a 6-digit code', { icon: 'check' });
+      toast(`Check your email for a ${OTP_CODE_LENGTH}-digit code`, { icon: 'check' });
       return;
     }
     Alert.alert(
@@ -261,20 +261,20 @@ export default function BackupScreen() {
             ) : (
               <>
                 <Text variant="callout" tone="secondary" style={styles.note}>
-                  {`We sent a 6-digit code to ${email.trim()}.`}
+                  {`We sent a ${OTP_CODE_LENGTH}-digit code to ${email.trim()}.`}
                 </Text>
                 <TextInput
                   value={code}
                   onChangeText={setCode}
-                  placeholder="123456"
+                  placeholder={'0'.repeat(OTP_CODE_LENGTH)}
                   placeholderTextColor={color.textTertiary}
                   keyboardType="number-pad"
                   textContentType="oneTimeCode"
-                  maxLength={6}
+                  maxLength={OTP_CODE_LENGTH}
                   maxFontSizeMultiplier={1.8}
                   style={[styles.input, styles.codeInput]}
                   selectionColor={color.accent}
-                  accessibilityLabel="Six digit code"
+                  accessibilityLabel={`${OTP_CODE_LENGTH} digit code`}
                 />
                 <Button title="Sign in" onPress={() => void verify()} loading={busy} />
                 <View style={styles.spacer} />

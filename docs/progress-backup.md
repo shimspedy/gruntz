@@ -64,8 +64,12 @@ Set up and verified on 2026-09-23:
 - The app verifies the code as `email` **and then** `signup`, because those two
   emails carry different token types. Trying one alone made the first sign-in on any
   account fail with "that code didn't work" when the code was fine.
-- **OTP: 3600 s expiry, 6 digits** — which is what the email copy claims and what the
-  app's input expects. Change one and change the others.
+- **OTP: 3600 s expiry, 8 digits.** The expiry is what the email copy claims. The length
+  is mirrored by `OTP_CODE_LENGTH` in `src/config/backup.ts`, which drives the input's
+  `maxLength`, its placeholder and the on-screen copy — **these must agree with the
+  dashboard.** They did not at first: the input was capped at 6 while the project issues
+  8, so a correct code could not be typed in full and every sign-in failed. Nothing
+  reports that mismatch; it just looks like the code is wrong.
 - **"Automatically expose new tables"** is off.
 
 Verified the Data API actually serves the table: an anonymous `GET /rest/v1/backups`
