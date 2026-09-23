@@ -29,8 +29,8 @@ interface UserState {
   setHydrated: (hydrated: boolean) => void;
   addXP: (amount: number) => void;
   recordChallengeActivity: (challenge: Pick<DailyChallenge, 'id' | 'type' | 'unit'>, amount: number) => void;
-  /** Credit a run/ruck tracked in the app toward lifetime distance. */
-  recordTrackedDistance: (miles: number) => void;
+  /** Credit a run/ruck tracked in the app toward lifetime distance and personal bests. */
+  recordTrackedSession: (input: { type: 'run' | 'ruck'; miles: number; seconds: number }) => void;
   recordChallengeCompletion: (params: {
     challengeDate: string;
     xpAmount: number;
@@ -128,7 +128,8 @@ function migratePersistedUserState(persistedState: unknown): PersistedUserState 
   };
 }
 
-function getClaimedWorkoutIds(claimedMissions: Set<string>) {
+/** Workout ids out of `<dateKey>:<workoutId>` claim keys. */
+export function getClaimedWorkoutIds(claimedMissions: Set<string>) {
   return new Set(
     Array.from(claimedMissions)
       .map((claimKey) => claimKey.split(':').slice(1).join(':'))
@@ -162,6 +163,20 @@ function hasCompletedProgramWeek(claimedWorkoutIds: Set<string>, week: number, d
   const claimedTagged = Array.from(claimedWorkoutIds).filter((id) => suffixes.some((suffix) => id.includes(suffix)));
   return claimedTagged.length >= baseCampDays;
 }
+
+/**
+ * Benchmark distances, in miles, that a tracked session can set a record over.
+ * Ordered shortest first; the labels are what the Stats Records rows show.
+ */
+const BENCHMARK_DISTANCES: [string, number][] = [
+  ['1 mi', 1],
+  ['5K', 3.107],
+  ['10K', 6.214],
+  ['Half marathon', 13.109],
+  ['Marathon', 26.219],
+];
+/** A session counts for a benchmark only up to 5% past it. See recordTrackedSession. */
+const BENCHMARK_TOLERANCE = 1.05;
 
 function roundMetric(value: number) {
   return Math.round(value * 100) / 100;
@@ -216,18 +231,38 @@ export const useUserStore = create<UserState>()(
         set((state) => ({ progress: { ...state.progress, ...applyXP(state.progress, safe) } }));
       },
 
-      // Distance covered on a tracked run or ruck. Without this the only writer of
-      // total_distance_miles was recordChallengeActivity, so the Stats Distance tile
-      // read 0.0 mi no matter how many runs the athlete tracked in the app.
-      recordTrackedDistance: (miles) => {
+      // A tracked run or ruck. Without this the only writer of total_distance_miles
+      // was recordChallengeActivity, so the Stats Distance tile read 0.0 mi no matter
+      // how many runs the athlete tracked — and nothing anywhere wrote the best_*_times
+      // maps, so the Records section could never populate despite its empty state
+      // promising "tracked sessions set your personal bests".
+      recordTrackedSession: ({ type, miles, seconds }) => {
         const safeMiles = roundMetric(Math.max(0, miles));
+        const safeSeconds = Math.round(Math.max(0, seconds));
         if (!safeMiles) return;
-        set((state) => ({
-          progress: {
-            ...state.progress,
-            total_distance_miles: roundMetric(state.progress.total_distance_miles + safeMiles),
-          },
-        }));
+        set((state) => {
+          const key = type === 'ruck' ? 'best_ruck_times' : 'best_run_times';
+          const bests = { ...state.progress[key] };
+          if (safeSeconds > 0) {
+            for (const [label, distance] of BENCHMARK_DISTANCES) {
+              // Only a session that WAS essentially this distance sets the record.
+              // Deriving a 5K split from the average pace of a ten-miler would be
+              // inventing a number the athlete never ran, so the window is tight.
+              // Within it the total elapsed time is used, which can only ever be
+              // slower than the true split — a record here is never flattering.
+              if (safeMiles < distance || safeMiles > distance * BENCHMARK_TOLERANCE) continue;
+              const previous = bests[label];
+              if (previous == null || safeSeconds < previous) bests[label] = safeSeconds;
+            }
+          }
+          return {
+            progress: {
+              ...state.progress,
+              total_distance_miles: roundMetric(state.progress.total_distance_miles + safeMiles),
+              [key]: bests,
+            },
+          };
+        });
       },
 
       recordChallengeActivity: (challenge, amount) => {

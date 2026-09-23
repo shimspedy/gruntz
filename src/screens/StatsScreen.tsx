@@ -116,7 +116,7 @@ export default function StatsScreen() {
             ))}
           </View>
         ) : (
-          <EmptyState icon="trophy" title="No records logged" body="Timed missions and tracked sessions set your personal bests." />
+          <EmptyState icon="trophy" title="No records logged" body="Track a run or ruck at a benchmark distance — a mile, 5K, 10K — and your best time lands here." />
         )}
 
         <Text variant="section" style={styles.h}>

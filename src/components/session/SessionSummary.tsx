@@ -7,6 +7,7 @@ import { clearWorkoutProgress } from '../../services/notifications';
 import { useMissionStore } from '../../store/useMissionStore';
 import { isExerciseDone, useSessionStore } from '../../store/useSessionStore';
 import { useUserStore } from '../../store/useUserStore';
+import { useProgramStore } from '../../store/useProgramStore';
 import { Button } from '../../ui/Button';
 import { Hairline, NavHeader, Stat } from '../../ui/Layout';
 import { Tap } from '../../ui/Pressable';
@@ -44,9 +45,15 @@ export function SessionSummary({ onBack, onDone }: { onBack: () => void; onDone:
     useUserStore.getState().completeMission(mission);
     useMissionStore.getState().finishMission();
     void clearWorkoutProgress();
-    const after = useUserStore.getState().progress;
+    // If that was the last workout of the program week, move to the next one.
+    useProgramStore.getState().advanceWeekIfComplete();
     // The celebration screen presents XP and unlocks; no system banners while the app is open.
     const ids = useUserStore.getState().checkAchievements();
+    // Snapshotted AFTER checkAchievements, because achievement rewards are XP this
+    // workout earned. Reading it first meant the celebration showed "+150 XP · Level 5"
+    // over an XP bar already displaying level 6's numbers, and a level-up caused by an
+    // achievement got no celebration at all.
+    const after = useUserStore.getState().progress;
     haptic.success();
     const title = s.title;
     useSessionStore.getState().finish();

@@ -3,7 +3,8 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import type { ProgramId, UserAssessment } from '../types';
-import { getProgramMaxWeek } from '../data/programWorkouts';
+import { getProgramMaxWeek, getProgramWeek } from '../data/programWorkouts';
+import { getClaimedWorkoutIds, useUserStore } from './useUserStore';
 
 const VALID_PROGRAMS: ProgramId[] = ['basecamp', 'raider', 'recon'];
 
@@ -45,6 +46,8 @@ interface ProgramState {
   hasHydrated: boolean;
 
   selectProgram: (id: ProgramId) => void;
+  /** Move to the next week once every workout in the current one is done. */
+  advanceWeekIfComplete: () => void;
   setAssessment: (assessment: Partial<UserAssessment>) => void;
   setHasSeenProgramSelect: (seen: boolean) => void;
   loadPersistedState: () => Promise<void>;
@@ -84,6 +87,36 @@ export const useProgramStore = create<ProgramState>()(
 
       selectProgram: (id) => {
         set({ selectedProgram: id, currentWeek: 1 });
+      },
+
+      /**
+       * Advance the program a week once every workout in the current one is claimed.
+       *
+       * Nothing wrote `currentWeek` at all — `selectProgram` set it to 1 and that was
+       * the only assignment in the codebase — so every program repeated week 1
+       * forever. 66 of Recon's 72 authored days were unreachable, Base Camp's
+       * week-scaled walk length and reward XP never fired, Raider's weeks 2-10 never
+       * loaded, and the UI read "Week 1 of 12" throughout. The store already shipped
+       * `isValidWeek` and `getProgramMaxWeek` to validate a value that could never
+       * change, which is what marks this as a missing writer rather than a decision.
+       *
+       * Completion is by workout id, not by date, so catching up on a missed day
+       * still advances, and finishing days out of order is fine. Advancing cannot
+       * cascade: the next week's days are unclaimed by definition. The final week is
+       * held rather than run off the end of the program.
+       */
+      advanceWeekIfComplete: () => {
+        const { selectedProgram, currentWeek } = get();
+        if (!selectedProgram || currentWeek >= getProgramMaxWeek(selectedProgram)) return;
+
+        const userState = useUserStore.getState();
+        const days = getProgramWeek(selectedProgram, currentWeek, userState.profile);
+        if (!days.length) return;
+
+        const claimed = getClaimedWorkoutIds(userState.progress.claimed_missions);
+        if (!days.every((day) => claimed.has(day.id))) return;
+
+        set({ currentWeek: currentWeek + 1 });
       },
 
       setAssessment: (partial) => {

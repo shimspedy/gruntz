@@ -48,7 +48,7 @@ export default function RunTrackerScreen() {
   const keepAwake = useReadinessStore((s) => s.keepScreenAwake);
   const audioCues = useReadinessStore((s) => s.audioCues);
   const addSession = useReadinessStore((s) => s.addTrackedSession);
-  const recordTrackedDistance = useUserStore((s) => s.recordTrackedDistance);
+  const recordTrackedSession = useUserStore((s) => s.recordTrackedSession);
   const metric = useUserStore((s) => s.profile?.settings.units === 'metric');
   const [type, setType] = useState<'run' | 'ruck'>(params?.type ?? 'run');
   const [pack, setPack] = useState('35');
@@ -129,9 +129,9 @@ export default function RunTrackerScreen() {
       packWeightPounds: type === 'ruck' ? Number(pack) || undefined : undefined,
       terrain: type === 'ruck' ? terrain : undefined,
     });
-    recordTrackedDistance(final.distanceMiles);
+    recordTrackedSession({ type, miles: final.distanceMiles, seconds: Math.round(final.durationMs / 1000) });
     haptic.success();
-  }, [tracker, baro, addSession, recordTrackedDistance, type, pack, terrain]);
+  }, [tracker, baro, addSession, recordTrackedSession, type, pack, terrain]);
 
   const end = () => {
     const label = type === 'ruck' ? 'ruck' : 'run';
