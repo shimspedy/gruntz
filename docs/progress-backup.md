@@ -93,3 +93,24 @@ real launch push.
 
 Bump `BACKUP_SCHEMA_VERSION` in `src/config/backup.ts`. A device refuses a payload
 from a *newer* schema rather than half-restoring a shape it does not understand.
+
+## Verified against the live database
+
+Not assumed — run as the `authenticated` role with a real JWT claim, on
+`khskhjplkresilgrozhg`, with the fixtures removed afterwards:
+
+| Check | Result |
+|---|---|
+| An athlete sees only their own row | 1 row, their own |
+| Athlete A deleting B's backup | blocked, B's row survived |
+| Athlete A updating B's backup | blocked, B's count unchanged |
+| Deleting the account | backup cascades away |
+| `anon` grants on `backups` | none at all |
+| `authenticated` grants | exactly SELECT, INSERT, UPDATE, DELETE |
+| Supabase security advisors | zero |
+
+The grant check is the one that mattered: Supabase's automatic table exposure had
+handed `TRUNCATE` to both `anon` and `authenticated`, and **`TRUNCATE` is not subject
+to row-level security** — RLS protects rows, truncate empties the table. One signed-in
+athlete could have wiped every backup. The migration now revokes everything before
+granting back the four verbs the app actually issues.
