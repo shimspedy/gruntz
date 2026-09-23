@@ -100,25 +100,47 @@ export async function requestSignInCode(email: string): Promise<AuthResult> {
   }
 }
 
+/**
+ * The same six digits verify under different types depending on who you are.
+ *
+ * An athlete signing up for the first time is sent a *signup confirmation* token
+ * (Supabase's "Confirm sign up" email); one who already has an account is sent a
+ * magic-link/OTP token ("Magic link or OTP"). Verifying a signup token as `email`
+ * is rejected, so trying only one type meant the very first sign-in on an account
+ * could never succeed — the code looked wrong when it was not.
+ *
+ * Ordered `email` first because after the first sign-in that is every subsequent
+ * one, and a wrong guess costs only a rejected attempt, not a consumed code.
+ */
+const OTP_TYPES = ['email', 'signup'] as const;
+
+function isBadCodeError(message: string): boolean {
+  const text = message.toLowerCase();
+  return text.includes('invalid') || text.includes('expired') || text.includes('token');
+}
+
 export async function verifySignInCode(email: string, code: string): Promise<VerifyResult> {
   const supabase = getSupabase();
   if (!supabase) return 'unavailable';
+  const normalizedEmail = email.trim().toLowerCase();
+  const token = code.trim();
+
   try {
-    const { error } = await supabase.auth.verifyOtp({
-      email: email.trim().toLowerCase(),
-      token: code.trim(),
-      type: 'email',
-    });
-    if (error) {
-      // A wrong or expired code is the common case and is not worth an error tone.
-      const message = error.message.toLowerCase();
-      if (message.includes('invalid') || message.includes('expired') || message.includes('token')) {
-        return 'invalid-code';
+    let lastBadCode = false;
+    for (const type of OTP_TYPES) {
+      const { error } = await supabase.auth.verifyOtp({ email: normalizedEmail, token, type });
+      if (!error) return 'signed-in';
+
+      if (isBadCodeError(error.message)) {
+        // Might just be the wrong type for this athlete — try the next one before
+        // telling them their code is bad.
+        lastBadCode = true;
+        continue;
       }
       if (__DEV__) console.warn('[backup] verifySignInCode failed', error);
       return 'error';
     }
-    return 'signed-in';
+    return lastBadCode ? 'invalid-code' : 'error';
   } catch (error) {
     if (__DEV__) console.warn('[backup] verifySignInCode threw', error);
     return 'error';

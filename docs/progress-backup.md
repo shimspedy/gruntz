@@ -39,6 +39,14 @@ Set up and verified on 2026-09-23:
   external image. Both are artifacts of the preview; a real send substitutes the code
   and loads the image. Confirm with an actual sign-in, not the preview.
 - **Email provider** enabled, new signups allowed, confirm-email on.
+- **Both** templates that this flow can trigger are branded, which matters more than
+  it looks: a first-time athlete is sent **"Confirm sign up"**, not "Magic link or
+  OTP". Only branding the latter left real users receiving Supabase's stock
+  "Confirm your email address" email — a bare link, no code, no branding. If you
+  ever add another auth path, brand its template before shipping it.
+- The app verifies the code as `email` **and then** `signup`, because those two
+  emails carry different token types. Trying one alone made the first sign-in on any
+  account fail with "that code didn't work" when the code was fine.
 - **OTP: 3600 s expiry, 6 digits** — which is what the email copy claims and what the
   app's input expects. Change one and change the others.
 - **"Automatically expose new tables"** is off.
