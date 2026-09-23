@@ -4,7 +4,7 @@
     "slug": "gruntz",
     "scheme": "gruntz",
     "owner": "blaqdu",
-    "version": "1.7",
+    "version": "1.8",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -67,7 +67,8 @@
             "targetSdkVersion": 36
           }
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "extra": {
       "eas": {

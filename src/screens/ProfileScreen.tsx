@@ -172,6 +172,9 @@ export default function ProfileScreen() {
         {isBackupAvailable() ? (
           <Row icon="restart" title="Back up progress" onPress={() => navigation.navigate('Backup')} />
         ) : null}
+        {/* Separate from backup on purpose: backup is Gruntz keeping a copy for you,
+            this is your history leaving or arriving in a format other apps read. */}
+        <Row icon="swap" title="Import & export" onPress={() => navigation.navigate('DataTransfer')} />
       </Group>
 
       {/* Closing used to discard whatever had been typed without a word. A name that

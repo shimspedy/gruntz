@@ -44,6 +44,7 @@ export type RootStackParamList = {
   Settings: undefined;
   ServiceProfile: undefined;
   Backup: undefined;
+  DataTransfer: undefined;
   TrainingPreferences: undefined;
   LeaderTools: undefined;
   Paywall: undefined;

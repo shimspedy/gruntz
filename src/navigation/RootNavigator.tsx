@@ -34,6 +34,7 @@ import RanksScreen from '../screens/RanksScreen';
 import RunTrackerScreen from '../screens/RunTrackerScreen';
 import ServiceProfileScreen from '../screens/ServiceProfileScreen';
 import BackupScreen from '../screens/BackupScreen';
+import DataTransferScreen from '../screens/DataTransferScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import StatsScreen from '../screens/StatsScreen';
 import StreakScreen from '../screens/StreakScreen';
@@ -187,6 +188,7 @@ function AppStack() {
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="ServiceProfile" component={ServiceProfileScreen} />
       <Stack.Screen name="Backup" component={BackupScreen} />
+      <Stack.Screen name="DataTransfer" component={DataTransferScreen} />
       <Stack.Screen name="TrainingPreferences" component={TrainingPreferencesScreen} />
       <Stack.Screen name="LeaderTools" component={LeaderToolsScreen} />
       <Stack.Group screenOptions={{ presentation: 'fullScreenModal', gestureEnabled: false }}>

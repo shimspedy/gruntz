@@ -8,5 +8,8 @@
   // website/astro.config.mjs, could not resolve `astro/config`, and exited 2 — so
   // `npm run typecheck` was permanently red and `npm run check` never reached the site
   // build. With no test suite and no linter here, typecheck is the whole safety net.
-  "exclude": ["node_modules", "website", "ai-proxy", "dist", "android", "ios"]
+  // `supabase/functions` is Deno, not React Native: it imports from `jsr:` and uses
+  // the `Deno` global, neither of which resolves against this project's types. It is
+  // typechecked by the Supabase CLI on deploy, not here.
+  "exclude": ["node_modules", "website", "ai-proxy", "dist", "android", "ios", "supabase/functions"]
 }
