@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AppState, BackHandler, Linking, Platform, StyleSheet, View } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import { startBackupLifecycle } from '../services/backup';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DarkTheme, NavigationContainer, type InitialState, type NavigationState } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -32,6 +33,7 @@ import ProgramSelectScreen from '../screens/ProgramSelectScreen';
 import RanksScreen from '../screens/RanksScreen';
 import RunTrackerScreen from '../screens/RunTrackerScreen';
 import ServiceProfileScreen from '../screens/ServiceProfileScreen';
+import BackupScreen from '../screens/BackupScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import StatsScreen from '../screens/StatsScreen';
 import StreakScreen from '../screens/StreakScreen';
@@ -184,6 +186,7 @@ function AppStack() {
       <Stack.Screen name="Stats" component={StatsScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="ServiceProfile" component={ServiceProfileScreen} />
+      <Stack.Screen name="Backup" component={BackupScreen} />
       <Stack.Screen name="TrainingPreferences" component={TrainingPreferencesScreen} />
       <Stack.Screen name="LeaderTools" component={LeaderToolsScreen} />
       <Stack.Group screenOptions={{ presentation: 'fullScreenModal', gestureEnabled: false }}>
@@ -364,6 +367,10 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   useEffect(() => {
     setNotificationsEnabled(remindersOn);
   }, [remindersOn]);
+  // Flushes a pending backup when the app is backgrounded, so finishing a workout
+  // and immediately closing does not leave that session unbacked. No-ops entirely
+  // when the build has no backup keys.
+  useEffect(() => startBackupLifecycle(), []);
   /**
    * Whether this launch came from a deep link.
    *

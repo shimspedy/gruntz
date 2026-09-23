@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNow } from '../../hooks/useNow';
 import { getLocalDateKey } from '../../utils/dateKey';
 import { navigationRef } from '../../navigation/ref';
+import { scheduleBackup } from '../../services/backup';
 import { clearWorkoutProgress } from '../../services/notifications';
 import { isExerciseDone, useSessionStore } from '../../store/useSessionStore';
 import { useUserStore } from '../../store/useUserStore';
@@ -64,6 +65,8 @@ export function SessionSummary({ onBack, onDone }: { onBack: () => void; onDone:
     const xpBefore = before.current_xp;
     useUserStore.getState().completeMission(fresh);
     void clearWorkoutProgress();
+    // Worth keeping: queue a backup for anyone who has opted into one.
+    scheduleBackup();
     // If that was the last workout of the program week, move to the next one.
     useProgramStore.getState().advanceWeekIfComplete();
     // The celebration screen presents XP and unlocks; no system banners while the app is open.

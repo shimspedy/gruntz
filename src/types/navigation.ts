@@ -43,6 +43,7 @@ export type RootStackParamList = {
   Stats: undefined;
   Settings: undefined;
   ServiceProfile: undefined;
+  Backup: undefined;
   TrainingPreferences: undefined;
   LeaderTools: undefined;
   Paywall: undefined;

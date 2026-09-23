@@ -20,6 +20,7 @@ import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
 import { toast } from '../ui/Toast';
 import { color, font, motion, radius, space } from '../ui/tokens';
+import { isBackupAvailable } from '../config/backup';
 import { getLocalDateKey } from '../utils/dateKey';
 import { shareStreak } from '../utils/socialActions';
 
@@ -165,6 +166,12 @@ export default function ProfileScreen() {
         <Row icon="flag" title="Service & test profile" onPress={() => navigation.navigate('ServiceProfile')} />
         <Row icon="people" title="Leader tools" value="Coming soon" onPress={() => navigation.navigate('LeaderTools')} />
         <Row icon="share" title="Share my streak" onPress={() => void shareStreak(progress.streak_days, rankTitle(progress.current_rank, military))} />
+        {/* Optional, and deliberately here rather than in onboarding: nobody is asked
+            to make an account before they have something worth keeping. Hidden
+            entirely when the build has no backup keys. */}
+        {isBackupAvailable() ? (
+          <Row icon="restart" title="Back up progress" onPress={() => navigation.navigate('Backup')} />
+        ) : null}
       </Group>
 
       {/* Closing used to discard whatever had been typed without a word. A name that

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { scheduleBackup } from '../services/backup';
 import { calculateDailyReadiness, getTodaysCheckIn, useReadinessStore } from '../store/useReadinessStore';
 import { useUiStore } from '../store/useUiStore';
 import { Button } from '../ui/Button';
@@ -76,6 +77,7 @@ export function ReadinessSheet() {
           style={{ marginTop: space.lg }}
           onPress={() => {
             save(draft);
+            scheduleBackup();
             haptic.success();
             setOpen(false);
             toast(`Readiness ${score} · ${status.action}`, { icon: 'pulse' });
