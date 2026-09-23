@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -210,10 +210,16 @@ export default function SettingsScreen() {
             icon="restart"
             title="Restore purchases"
             onPress={() => {
+              // Named per platform: this said "App Store"/"Apple ID" on Android too.
+              const store = Platform.OS === 'ios' ? 'App Store' : 'Google Play';
+              const account = Platform.OS === 'ios' ? 'Apple ID' : 'Google account';
               void restore().then((r) => {
                 if (r === 'restored') toast('Purchases restored');
-                else if (r === 'none') Alert.alert('Nothing to restore', 'No active Gruntz Pro subscription was found for this Apple ID.');
-                else Alert.alert('Restore didn’t finish', 'We couldn’t reach the App Store. Check your connection and try again.');
+                else if (r === 'none') Alert.alert('Nothing to restore', `No active Gruntz Pro subscription was found for this ${account}.`);
+                // "unavailable" is not a connectivity problem, and saying so sent
+                // users to check a connection that was never the issue.
+                else if (r === 'unavailable') Alert.alert('Purchases unavailable', `In-app purchases aren't available on this device right now, so there's nothing to restore.`);
+                else Alert.alert('Restore didn’t finish', `We couldn’t reach the ${store}. Check your connection and try again.`);
               });
             }}
           />

@@ -79,7 +79,31 @@ export default function PaywallScreen() {
       haptic.success();
       toast(`Welcome to ${GRUNTZ_PRO_LABEL}`, { icon: 'starFill' });
       dismiss();
+      return;
     }
+    // A cancel is the user's own decision and needs no explanation. Everything else
+    // used to be silent: the only signal was a banner further down the ScrollView,
+    // below the benefits box and both plan cards, while the CTA sits in a fixed
+    // footer — so on a phone the spinner just stopped and nothing visibly happened,
+    // and a recoverable payment problem read as a broken app.
+    if (r === 'cancelled') return;
+    haptic.error();
+    if (r === 'unavailable') {
+      Alert.alert(
+        'Subscriptions unavailable',
+        `Purchases aren't available on this device right now. If you've already subscribed, use Restore purchases — you won't be charged twice.`,
+      );
+      return;
+    }
+    Alert.alert(
+      "Purchase didn't finish",
+      // Read fresh: the render-time `lastError` predates this purchase attempt.
+      `${useSubscriptionStore.getState().lastError ?? `We couldn't complete the purchase with the ${store}.`} You haven't been charged.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Try again', onPress: () => void buy() },
+      ],
+    );
   };
 
   const primary = async () => {
@@ -111,8 +135,15 @@ export default function PaywallScreen() {
       dismiss();
     } else if (r === 'none') {
       Alert.alert('Nothing to restore', 'No active subscription was found for this account. If you subscribed with a different Apple ID, sign in with that one and try again.');
+    } else if (r === 'unavailable') {
+      // Not a network problem, and retrying cannot help — offering "Try again" here
+      // invited an infinite loop against a guaranteed failure.
+      Alert.alert(
+        'Purchases unavailable',
+        `In-app purchases aren't available on this device right now, so there's nothing to restore. Try again after updating the app.`,
+      );
     } else {
-      Alert.alert('Restore didn’t finish', 'We couldn’t reach the App Store. Check your connection and try again — you won’t be charged twice.', [
+      Alert.alert('Restore didn’t finish', `We couldn’t reach the ${store}. Check your connection and try again — you won’t be charged twice.`, [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Try again', onPress: () => void restore() },
       ]);
