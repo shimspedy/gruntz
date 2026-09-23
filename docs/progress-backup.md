@@ -63,15 +63,29 @@ Custom SMTP through **Resend** (the same provider Bootz already uses —
 `smtp.resend.com`, port 465, username `resend`). Everything is configured except the
 API key, which has to be pasted by hand: a secret does not belong in a transcript.
 
-**The sender is `onboarding@resend.dev`, which is a testing address.** Resend only
-delivers mail from it to the account owner, so it is perfect for verifying the flow
-and useless for real users. Shipping needs a verified sending domain —
-`auth.gruntzfit.com` would match the convention already used for the other projects.
+**The sender is currently `onboarding@resend.dev`, a testing address.** Resend only
+delivers mail from it to the account owner — right for verifying the flow, useless
+for real users.
 
-That is blocked on Resend's plan: all 10 free domain slots are in use
-(`mail.bootz.app`, `auth.fitvete.com`, `stackzai.com`, …). Either free a slot by
-removing a dead project's domain, or upgrade. Once a domain is verified, change the
-sender address here and nothing else.
+`auth.gruntzfit.com` has been added to Resend (region us-east-1) and its DNS records
+are live in the Netlify zone for `gruntzfit.com`:
+
+| Type | Name | Value |
+|---|---|---|
+| TXT | `resend._domainkey.auth` | `p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC7t1+Q…` |
+| CNAME | `rsend.auth` | `rsend.forge.rmta.net` |
+| CNAME | `send.auth` | `send.forge.rmta.net` |
+
+All three were confirmed resolving from the authoritative nameserver
+(`dns1.p03.nsone.net`) before Resend was asked to verify. The optional root `_dmarc`
+record was **not** added: it would apply to all mail from `gruntzfit.com`, not just
+this subdomain, so it is a decision for whoever owns the domain's mail policy.
+
+**Do not switch the Supabase sender until Resend shows the domain Verified.** Sending
+from an unverified domain is rejected outright, so changing it early breaks email
+that currently works. Once it verifies, the only change is the sender address in
+Authentication → Emails → SMTP Settings:
+`noreply@auth.gruntzfit.com`.
 
 ### Before you ship: email sending is capped at 2/hour
 
