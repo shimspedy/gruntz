@@ -279,6 +279,42 @@ export async function deleteBackup(): Promise<'deleted' | 'signed-out' | 'unavai
   }
 }
 
+/**
+ * Delete the account itself, not just its backup.
+ *
+ * Required by Apple guideline 5.1.1(v): an app that can create an account has to be
+ * able to delete one from inside the app. Deleting the backup row is *not* this —
+ * that leaves the identity and the email address in place.
+ *
+ * The work happens in the `delete-account` Edge Function, because removing an auth
+ * user needs the service role key and that key must never ship in a client. The
+ * function takes the athlete's id from their verified token, so this call carries no
+ * body: there is nothing here that could name somebody else's account.
+ *
+ * The local signOut runs even when the server call failed, so a half-deleted state
+ * never leaves someone looking signed in to an account that is gone.
+ */
+export async function deleteAccount(): Promise<'deleted' | 'signed-out' | 'unavailable' | 'error'> {
+  const supabase = getSupabase();
+  if (!supabase) return 'unavailable';
+  try {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session?.user.id) return 'signed-out';
+
+    const { error } = await supabase.functions.invoke('delete-account', { method: 'POST' });
+    if (error) {
+      if (__DEV__) console.warn('[backup] deleteAccount failed', error);
+      return 'error';
+    }
+
+    await supabase.auth.signOut();
+    return 'deleted';
+  } catch (error) {
+    if (__DEV__) console.warn('[backup] deleteAccount threw', error);
+    return 'error';
+  }
+}
+
 let pendingPush: ReturnType<typeof setTimeout> | null = null;
 let backgroundListenerAttached = false;
 

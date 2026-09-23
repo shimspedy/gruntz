@@ -21,9 +21,9 @@ import { site } from '../data/site';
 
   <h2>1. Information We Collect</h2>
   <p>
-    The current Gruntz experience is primarily local-first. Most user progress and app settings are
-    stored on the device rather than requiring a mandatory online account for the core training
-    loop.
+    Gruntz is local-first. Your progress and settings are stored on the device, and no account is
+    required to train. The one exception is progress backup, which you can turn on yourself and is
+    described below; when it is off, nothing you log leaves your phone.
   </p>
 
   <h3>Information stored on the device</h3>
@@ -45,6 +45,36 @@ import { site } from '../data/site';
     <li>Notification permission may be requested for daily reminders and mission-status alerts.</li>
   </ul>
 
+  <h3>Optional account and progress backup</h3>
+  <p>
+    Gruntz does not require an account. Training works fully offline and always will. If you
+    choose to turn on progress backup from the Profile tab, the following applies:
+  </p>
+  <ul>
+    <li>
+      We collect your <strong>email address</strong>, and use it only to send you a one-time
+      sign-in code and to identify your backup. There is no password, and we do not send
+      marketing email.
+    </li>
+    <li>
+      A copy of your <strong>training history and app progress</strong> — logged workouts,
+      streaks, achievements, plan state, check-ins and settings — is uploaded so it can be
+      restored if you lose, break or replace your phone.
+    </li>
+    <li>
+      Backups are stored with Supabase, our database provider, and protected by row-level
+      security so that a backup is readable and writable only by the account that created it.
+    </li>
+    <li>
+      Your subscription and entitlement status is <strong>not</strong> included in the backup.
+    </li>
+  </ul>
+  <p>
+    You can delete your backup, or delete your entire account, at any time from inside the app
+    (Profile → Back up progress). Deleting your account permanently removes your email address
+    and your stored backup from our servers. See <a href="#retention">Data Retention</a>.
+  </p>
+
   <h3>Purchase and subscription data</h3>
   <ul>
     <li>
@@ -64,6 +94,8 @@ import { site } from '../data/site';
     <li>Enable run-tracking or motion-driven workout features when you choose to use them.</li>
     <li>Send reminders or mission alerts when notifications are enabled.</li>
     <li>Determine premium access status and restore purchases.</li>
+    <li>Send a one-time sign-in code to your email address, if you enable progress backup.</li>
+    <li>Store and restore your backed-up training history, if you enable progress backup.</li>
     <li>Respond to support requests you send to us.</li>
   </ul>
 
@@ -75,6 +107,10 @@ import { site } from '../data/site';
   <p>We may rely on the following categories of third parties to operate the app:</p>
   <ul>
     <li>RevenueCat for subscription and entitlement management.</li>
+    <li>
+      Supabase for optional account sign-in and progress backup storage, and Resend for delivering
+      sign-in code emails — both only if you enable progress backup.
+    </li>
     <li>Apple App Store or Google Play for payment processing and store-managed subscriptions.</li>
     <li>
       Platform-level services used by the operating system to deliver notifications and fitness
@@ -82,11 +118,18 @@ import { site } from '../data/site';
     </li>
   </ul>
 
-  <h2>4. Data Retention</h2>
+  <h2 id="retention">4. Data Retention</h2>
   <p>
     Local app data remains on your device until you delete it, remove the app, or clear device
     storage. Subscription and purchase records handled by RevenueCat, Apple, or Google may be
     retained according to those providers’ legal and operational requirements.
+  </p>
+  <p>
+    If you enable progress backup, your email address and your most recent backup are retained
+    until you delete them. You can delete your backup, or delete your account entirely, from
+    Profile → Back up progress inside the app. Deleting your account removes your email address
+    and your backup from our servers permanently and cannot be undone; the copy of your training
+    on your own phone is left untouched.
   </p>
 
   <h2>5. Security</h2>
@@ -108,13 +151,17 @@ import { site } from '../data/site';
     <li>You can decline optional permissions such as notifications or location access.</li>
     <li>You can cancel subscriptions through Apple App Store or Google Play account settings.</li>
     <li>You can remove locally stored app data by deleting the app or clearing device data.</li>
+    <li>
+      You can leave progress backup turned off entirely, or turn it on and later delete your
+      backup or your whole account from inside the app.
+    </li>
   </ul>
 
   <h2>8. Future Updates</h2>
   <p>
-    If Gruntz adds new integrations, cloud features, account systems, analytics tooling, or health
-    platform sync in a future release, this policy may change to reflect those features. The latest
-    version of the policy will always be posted on this page with an updated effective date.
+    If Gruntz adds new integrations, analytics tooling, or health platform sync in a future
+    release, this policy may change to reflect those features. The latest version of the policy
+    will always be posted on this page with an updated effective date.
   </p>
 
   <h2>9. Contact</h2>

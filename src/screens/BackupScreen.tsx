@@ -3,6 +3,7 @@ import { Alert, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { isBackupAvailable, OTP_CODE_LENGTH } from '../config/backup';
 import {
+  deleteAccount,
   deleteBackup,
   fetchBackupMeta,
   getSignedInEmail,
@@ -195,6 +196,60 @@ export default function BackupScreen() {
     );
   };
 
+  /**
+   * Deleting the account, which is not the same as deleting the backup.
+   *
+   * Required to exist by Apple guideline 5.1.1(v), but the reason to make it plain
+   * rather than merely present is that "Delete my backup" leaves the email address
+   * on the server forever, and most people would reasonably assume it did not.
+   *
+   * Two taps, because it cannot be undone and it sits next to an action whose name
+   * is one word different.
+   */
+  const confirmDeleteAccount = () => {
+    Alert.alert(
+      'Delete my account?',
+      'This permanently deletes your Gruntz account, your email address and your backup from the server. It cannot be undone.\n\nYour training stays on this phone — but there will be nothing to restore if you lose it.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete account',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert('Permanently delete?', 'Last check — this cannot be undone.', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Delete forever', style: 'destructive', onPress: () => void doDeleteAccount() },
+            ]);
+          },
+        },
+      ],
+    );
+  };
+
+  const doDeleteAccount = async () => {
+    setBusy(true);
+    const result = await deleteAccount();
+    setBusy(false);
+    // `deleteAccount` signs out locally whatever happened, so refresh either way:
+    // the screen must never keep showing an account that is gone.
+    await refresh();
+    if (result === 'deleted') {
+      haptic.success();
+      setEmail('');
+      setCode('');
+      setStage('email');
+      toast('Account deleted', { icon: 'check' });
+      return;
+    }
+    haptic.error();
+    Alert.alert(
+      'Couldn’t delete your account',
+      result === 'signed-out'
+        ? 'You’re already signed out.'
+        : 'We couldn’t reach the server, so nothing was deleted. Check your connection and try again.',
+    );
+  };
+
   return (
     <View style={styles.screen}>
       <NavHeader title="Back up progress" />
@@ -227,6 +282,9 @@ export default function BackupScreen() {
             <Group style={styles.group}>
               <Row icon="back" title="Sign out" onPress={() => void signOut().then(refresh)} />
               <Row icon="alert" title="Delete my backup" onPress={confirmDelete} />
+              {/* Required by Apple 5.1.1(v), and materially different from the row
+                  above: this removes the identity and the email, not just the copy. */}
+              <Row icon="trash" tone="danger" title="Delete my account" onPress={confirmDeleteAccount} />
             </Group>
           </>
         ) : (
