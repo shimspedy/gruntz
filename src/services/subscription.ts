@@ -76,7 +76,15 @@ function choosePackage(offering: PurchasesOffering | null): PurchasesPackage | n
   if (!offering) {
     return null;
   }
-  const monthly = offering.monthly ?? null;
+  // `offering.monthly` is only populated for the predefined `$rc_monthly`
+  // identifier, so an offering that uses a custom identifier for its monthly
+  // product leaves it null while the package sits in `availablePackages` with
+  // `packageType: MONTHLY`. Falling back on the type covers that, and still refuses
+  // to hand back the annual package — which is what `availablePackages[0]` used to
+  // do, charging a year up front under a "/month" label at "Save 92%".
+  const monthly = offering.monthly
+    ?? offering.availablePackages.find((pkg) => pkg.packageType === 'MONTHLY')
+    ?? null;
   if (!monthly && __DEV__) {
     console.warn('[subscription] offering has no monthly package; the monthly card will show no price');
   }
