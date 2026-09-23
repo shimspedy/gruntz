@@ -2,5 +2,11 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true
-  }
+  },
+  // `website/` is a separate package with its own package.json and tsconfig, and its
+  // dependencies live in website/node_modules. Without this the root tsc walked into
+  // website/astro.config.mjs, could not resolve `astro/config`, and exited 2 — so
+  // `npm run typecheck` was permanently red and `npm run check` never reached the site
+  // build. With no test suite and no linter here, typecheck is the whole safety net.
+  "exclude": ["node_modules", "website", "ai-proxy", "dist", "android", "ios"]
 }

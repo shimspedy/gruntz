@@ -146,7 +146,7 @@ async function runPurchase(
     const result = await runner();
 
     if (result.customerInfo) {
-      syncEntitlementState(set, result.customerInfo);
+      syncEntitlementState(set, result.customerInfo, true);
     }
 
     const configured = isRevenueCatAvailable();
@@ -186,7 +186,21 @@ async function runPurchase(
   }
 }
 
-function syncEntitlementState(set: (partial: Partial<SubscriptionState>) => void, customerInfo: Awaited<ReturnType<typeof loadRevenueCatState>>['customerInfo']) {
+/**
+ * Write the entitlement we just learned about.
+ *
+ * `known` must be false when the fetch failed. Treating "could not ask" as
+ * "no subscription" downgraded paying users on any network hiccup — and because
+ * the flag is persisted, it stuck across restarts until a later successful fetch.
+ * The worst case was a refresh moments after a successful purchase clearing the
+ * entitlement the user had just bought.
+ */
+function syncEntitlementState(
+  set: (partial: Partial<SubscriptionState>) => void,
+  customerInfo: Awaited<ReturnType<typeof loadRevenueCatState>>['customerInfo'],
+  known: boolean,
+) {
+  if (!known) return;
   const entitlement = getEntitlementAccess(customerInfo);
   const active = entitlement?.isActive === true;
   set({
@@ -236,7 +250,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         try {
           // Always attach the listener so mid-trial subscriptions are detected
           await addRevenueCatCustomerInfoListener((customerInfo) => {
-            syncEntitlementState(set, customerInfo);
+            syncEntitlementState(set, customerInfo, true);
           });
 
           // During an active trial (and not already a subscriber), defer the
@@ -250,7 +264,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           }
 
           const state = await loadRevenueCatState({ includeOfferings: false });
-          syncEntitlementState(set, state.customerInfo);
+          syncEntitlementState(set, state.customerInfo, state.customerInfoKnown);
           set({
             isConfigured: state.configured,
           });
@@ -276,7 +290,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
         try {
           const state = await loadRevenueCatState({ includeOfferings: true });
-          syncEntitlementState(set, state.customerInfo);
+          syncEntitlementState(set, state.customerInfo, state.customerInfoKnown);
           set({
             currentOffering: state.currentOffering,
             isConfigured: state.configured,
@@ -304,7 +318,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           const result = await restoreRevenueCatPurchases();
 
           if (result.customerInfo) {
-            syncEntitlementState(set, result.customerInfo);
+            syncEntitlementState(set, result.customerInfo, true);
           }
 
           const configured = isRevenueCatAvailable();
@@ -344,7 +358,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         const result = await presentRevenueCatCustomerCenter();
 
         if (result.customerInfo) {
-          syncEntitlementState(set, result.customerInfo);
+          syncEntitlementState(set, result.customerInfo, true);
         }
 
         if (result.status !== 'presented') {

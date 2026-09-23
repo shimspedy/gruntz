@@ -108,6 +108,29 @@ export default function RunTrackerScreen() {
     await baro.start();
   }, [tracker, baro, type]);
 
+  /**
+   * Stop tracking and write the session to Stats.
+   *
+   * Both ways out of this screen end up here. The X used to call `tracker.stop()` and
+   * navigate away without ever calling `addSession`, under an alert that promised
+   * "End and save this session" — so a finished run was discarded with no warning.
+   */
+  const stopAndSave = useCallback(() => {
+    const final = tracker.stop();
+    baro.stop();
+    addSession({
+      id: `${Date.now()}-${type}`,
+      type,
+      date: new Date().toISOString(),
+      distanceMiles: final.distanceMiles,
+      durationSeconds: Math.round(final.durationMs / 1000),
+      elevationFeet: baro.elevationGainFt || final.elevationGainFt,
+      packWeightPounds: type === 'ruck' ? Number(pack) || undefined : undefined,
+      terrain: type === 'ruck' ? terrain : undefined,
+    });
+    haptic.success();
+  }, [tracker, baro, addSession, type, pack, terrain]);
+
   const end = () => {
     const label = type === 'ruck' ? 'ruck' : 'run';
     Alert.alert(`End ${label}?`, 'Your session will be saved to Stats.', [
@@ -116,19 +139,7 @@ export default function RunTrackerScreen() {
         text: `End ${label}`,
         style: 'destructive',
         onPress: () => {
-          const final = tracker.stop();
-          baro.stop();
-          addSession({
-            id: `${Date.now()}-${type}`,
-            type,
-            date: new Date().toISOString(),
-            distanceMiles: final.distanceMiles,
-            durationSeconds: Math.round(final.durationMs / 1000),
-            elevationFeet: baro.elevationGainFt || final.elevationGainFt,
-            packWeightPounds: type === 'ruck' ? Number(pack) || undefined : undefined,
-            terrain: type === 'ruck' ? terrain : undefined,
-          });
-          haptic.success();
+          stopAndSave();
           setFinished(true);
         },
       },
@@ -143,7 +154,7 @@ export default function RunTrackerScreen() {
           text: 'End session',
           style: 'destructive',
           onPress: () => {
-            tracker.stop();
+            stopAndSave();
             navigation.goBack();
           },
         },

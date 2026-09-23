@@ -230,6 +230,14 @@ export async function loadRevenueCatState(options?: {
 }): Promise<{
   currentOffering: OfferingSnapshot | null;
   customerInfo: CustomerInfo | null;
+  /**
+   * Whether the entitlement state is actually KNOWN — i.e. `getCustomerInfo`
+   * returned. A null `customerInfo` with this false means "we could not ask", not
+   * "no subscription", and callers must not downgrade the user on it. Previously
+   * one failed `getOfferings` nulled the customer info too and silently locked a
+   * paying subscriber out until a later successful fetch, persisted across restarts.
+   */
+  customerInfoKnown: boolean;
   configured: boolean;
 }> {
   const includeOfferings = options?.includeOfferings ?? true;
@@ -240,7 +248,7 @@ export async function loadRevenueCatState(options?: {
       cachedAnnualPackage = null;
       cachedOffering = null;
     }
-    return { currentOffering: null, customerInfo: null, configured: false };
+    return { currentOffering: null, customerInfo: null, customerInfoKnown: false, configured: false };
   }
 
   const purchasesModule = await getPurchasesModule();
@@ -250,7 +258,7 @@ export async function loadRevenueCatState(options?: {
       cachedAnnualPackage = null;
       cachedOffering = null;
     }
-    return { currentOffering: null, customerInfo: null, configured: false };
+    return { currentOffering: null, customerInfo: null, customerInfoKnown: false, configured: false };
   }
 
   const customerInfoPromise = purchasesModule.default.getCustomerInfo();
@@ -260,34 +268,44 @@ export async function loadRevenueCatState(options?: {
       return {
         currentOffering: snapshotFromOffering(cachedOffering, cachedPackage, cachedAnnualPackage),
         customerInfo: await customerInfoPromise,
+        customerInfoKnown: true,
         configured: true,
       };
     } catch (err) {
       if (__DEV__) console.warn('[subscription] getCustomerInfo failed', err);
-      return { currentOffering: snapshotFromOffering(cachedOffering, cachedPackage, cachedAnnualPackage), customerInfo: null, configured: true };
+      return { currentOffering: snapshotFromOffering(cachedOffering, cachedPackage, cachedAnnualPackage), customerInfo: null, customerInfoKnown: false, configured: true };
     }
   }
 
-  try {
-    const [offerings, customerInfo] = await Promise.all([
-      purchasesModule.default.getOfferings(),
-      customerInfoPromise,
-    ]);
+  // Settled independently: the offerings and the customer info are separate calls,
+  // and one failing says nothing about the other. Awaiting them with Promise.all
+  // meant a flaky `getOfferings` discarded a perfectly good entitlement.
+  const [offeringsResult, customerInfoResult] = await Promise.allSettled([
+    purchasesModule.default.getOfferings(),
+    customerInfoPromise,
+  ]);
 
-    const currentOffering = chooseOffering(offerings);
+  if (offeringsResult.status === 'fulfilled') {
+    const currentOffering = chooseOffering(offeringsResult.value);
     cachedOffering = currentOffering;
     cachedPackage = choosePackage(currentOffering);
     cachedAnnualPackage = chooseAnnualPackage(currentOffering);
-
-    return {
-      currentOffering: snapshotFromOffering(currentOffering, cachedPackage, cachedAnnualPackage),
-      customerInfo,
-      configured: true,
-    };
-  } catch (err) {
-    if (__DEV__) console.warn('[subscription] loadRevenueCatState failed', err);
-    return { currentOffering: null, customerInfo: null, configured: true };
+  } else if (__DEV__) {
+    console.warn('[subscription] getOfferings failed', offeringsResult.reason);
   }
+
+  if (customerInfoResult.status === 'rejected' && __DEV__) {
+    console.warn('[subscription] getCustomerInfo failed', customerInfoResult.reason);
+  }
+
+  return {
+    currentOffering: offeringsResult.status === 'fulfilled'
+      ? snapshotFromOffering(cachedOffering, cachedPackage, cachedAnnualPackage)
+      : null,
+    customerInfo: customerInfoResult.status === 'fulfilled' ? customerInfoResult.value : null,
+    customerInfoKnown: customerInfoResult.status === 'fulfilled',
+    configured: true,
+  };
 }
 
 export async function purchaseCurrentRevenueCatPackage(): Promise<{

@@ -5,7 +5,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { getExerciseById, libraryExerciseId } from '../data/exercises';
 import { routineMinutes, type Routine } from './useRoutineStore';
 import { parsePlanSessionId, planSessionId, usePlanLibraryStore } from './usePlanLibraryStore';
-import { estimated1RM, useExerciseLogStore } from './useExerciseLogStore';
+import { estimated1RM, toUnit, useExerciseLogStore } from './useExerciseLogStore';
 import { useUserStore } from './useUserStore';
 import { cancelRestDone } from '../services/notifications';
 import type { PlanDay, WorkoutPlan } from '../data/workoutPlans';
@@ -310,13 +310,19 @@ export const useSessionStore = create<SessionState>()(
             };
           });
           prescribed[id] = slot.rest_seconds;
+          // Counted before the warm-ups go in. `isExerciseDone` only counts working
+          // sets, so folding warm-ups into requiredSets made the target unreachable:
+          // the exercise never ticked, Finish never appeared, and because buildMission
+          // filters on isExerciseDone the whole exercise was dropped from the saved
+          // workout — no XP, no PR check, absent from history.
+          const workingSets = sets.length;
           if (slot.warmup_sets) {
             const w = Math.min(3, slot.warmup_sets);
             const fr = [0.5, 0.7, 0.85].slice(-w);
             const rp = [8, 5, 3].slice(-w);
             sets.unshift(...fr.map((_, n) => ({ id: newSetId(), warmup: true, reps: rp[n], seconds: undefined, distance: undefined, weight: undefined, done: false })));
           }
-          return [{ key: `${day.id}:${i}:${slot.video_key}`, exerciseId: id, section: day.title, kind, weighted: isWeighted(ex), requiredSets: sets.length, sets }];
+          return [{ key: `${day.id}:${i}:${slot.video_key}`, exerciseId: id, section: day.title, kind, weighted: isWeighted(ex), requiredSets: workingSets, sets }];
         });
         set({
           active: true,
@@ -497,6 +503,8 @@ export const useSessionStore = create<SessionState>()(
       buildMission: () => {
         const s = get();
         if (!s.workoutDayId || !s.missionDate) return null;
+        // Today's sets are in the unit set right now; history carries its own.
+        const unit: 'lb' | 'kg' = useUserStore.getState().profile?.settings.units === 'metric' ? 'kg' : 'lb';
         const completed = s.exercises.filter(isExerciseDone);
         const exercises: CompletedExercise[] = completed.map((e) => {
           const ex = getExerciseById(e.exerciseId);
@@ -512,8 +520,17 @@ export const useSessionStore = create<SessionState>()(
           const today = bestEffort(e.kind, done);
           const key = ex?.media_key ?? e.exerciseId;
           const history = useExerciseLogStore.getState().logs[key] ?? [];
+          // History is stored in whatever unit was set when it was lifted, and today's
+          // sets are in the current one. Comparing the raw numbers meant switching
+          // lb -> kg ended PRs forever (45 kg never beats a 100 lb history) and kg -> lb
+          // awarded a false PR on every weighted lift, plus 25 XP each. The Records tab
+          // already converts, so the PR badge and the Records tab disagreed about the
+          // same lift.
           const previousBest = history.reduce<number | null>((best, entry) => {
-            const value = bestEffort(e.kind, entry.sets);
+            const sets = entry.unit === unit
+              ? entry.sets
+              : entry.sets.map((st) => (st.weight ? { ...st, weight: toUnit(st.weight, entry.unit, unit) } : st));
+            const value = bestEffort(e.kind, sets);
             return value != null && (best == null || value > best) ? value : best;
           }, null);
           // Needs a prior session to beat — the first time you do a movement is not a PR.
