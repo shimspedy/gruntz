@@ -143,7 +143,7 @@ export function SessionSummary({ onBack, onDone }: { onBack: () => void; onDone:
               value={mission.pr_bonus}
             />
           ) : null}
-          {streakBonus > 0 ? <XpRow label={`${streakNext}-day streak milestone`} value={streakBonus} /> : null}
+          {streakBonus > 0 ? <XpRow label={`${streakNext}-workout streak milestone`} value={streakBonus} /> : null}
           <View style={styles.total}>
             <Text variant="headline">Total</Text>
             <Text variant="headline" tone="accent" tabular>

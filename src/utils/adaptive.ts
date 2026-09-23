@@ -27,9 +27,9 @@ export function generateCoachMessage(progress: UserProgress): string {
   const messages: string[] = [];
 
   if (progress.streak_days >= 7) {
-    messages.push(`You're on a ${progress.streak_days}-day streak! Unstoppable.`);
+    messages.push(`You're on a ${progress.streak_days}-workout streak! Unstoppable.`);
   } else if (progress.streak_days >= 3) {
-    messages.push(`${progress.streak_days}-day streak and growing. Keep showing up.`);
+    messages.push(`${progress.streak_days}-workout streak and growing. Keep showing up.`);
   }
 
   if (progress.workouts_completed === 0) {

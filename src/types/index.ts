@@ -91,6 +91,17 @@ export interface UserProgress {
   best_run_times: Record<string, number>;
   best_ruck_times: Record<string, number>;
   best_swim_times: Record<string, number>;
+  /**
+   * @deprecated Never written by anything, and never will be.
+   *
+   * These six backed a "Skill Rankings" board that showed every athlete six bars at
+   * zero forever. Four of them — strength, endurance, stamina, mobility — were
+   * removed rather than filled in: a 0-100 score under those names reads as a
+   * measurement of capability, and nothing in Gruntz measures that. Consistency and
+   * recovery moved to `features/skills.ts`, computed live from logged sessions and
+   * the athlete's own readiness check-ins. The fields stay only so existing
+   * persisted blobs keep their shape; do not read them.
+   */
   strength_score: number;
   endurance_score: number;
   stamina_score: number;

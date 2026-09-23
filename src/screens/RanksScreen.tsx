@@ -20,16 +20,10 @@ import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
 import { color, font, motion, radius, space } from '../ui/tokens';
 import { getXPToNextLevel } from '../utils/xp';
+import { buildSkillMeasures, workoutDatesFromClaims } from '../features/skills';
+import { useReadinessStore } from '../store/useReadinessStore';
 
-type SkillKey = 'strength_score' | 'endurance_score' | 'stamina_score' | 'mobility_score' | 'consistency_score' | 'recovery_score';
-const SKILLS: { key: SkillKey; name: string; blurb: string; icon: 'strength' | 'run' | 'bolt' | 'mobility' | 'calendar' | 'moon' }[] = [
-  { key: 'strength_score', name: 'Strength', blurb: 'Loaded lifts, push-ups, pull-ups and carries.', icon: 'strength' },
-  { key: 'endurance_score', name: 'Endurance', blurb: 'Runs, rucks and long aerobic work.', icon: 'run' },
-  { key: 'stamina_score', name: 'Stamina', blurb: 'Intervals, sprints and work capacity.', icon: 'bolt' },
-  { key: 'mobility_score', name: 'Mobility', blurb: 'Range, control and movement quality.', icon: 'mobility' },
-  { key: 'consistency_score', name: 'Consistency', blurb: 'Showing up on schedule, week after week.', icon: 'calendar' },
-  { key: 'recovery_score', name: 'Recovery', blurb: 'Sleep, readiness and smart rest days.', icon: 'moon' },
-];
+
 
 function scoreLevel(score: number) {
   if (score >= 80) return 'Elite';
@@ -54,6 +48,18 @@ export default function RanksScreen() {
   const info = getRankInfo(progress.current_rank);
   const next = ranks[rankIndex + 1];
   const fresh = progress.current_xp === 0;
+
+  const profile = useUserStore((st) => st.profile);
+  const checkIns = useReadinessStore((st) => st.checkIns);
+  const skills = useMemo(
+    () => buildSkillMeasures({
+      workoutDates: workoutDatesFromClaims(progress.claimed_missions),
+      daysPerWeek: profile?.workout_days_per_week,
+      joinedAt: profile?.created_at,
+      checkIns,
+    }),
+    [progress.claimed_missions, profile?.workout_days_per_week, profile?.created_at, checkIns],
+  );
 
   // Muscle intensity from lifetime reps per exercise.
   const muscles = useMemo(() => {
@@ -144,21 +150,23 @@ export default function RanksScreen() {
         </Text>
       ) : null}
 
-      <SectionTitle title="Skill Rankings" action="Stats" onAction={() => navigation.navigate('Stats')} style={styles.section} />
+      <SectionTitle title="Training Measures" action="Stats" onAction={() => navigation.navigate('Stats')} style={styles.section} />
       <View style={{ gap: space.sm, paddingHorizontal: space.md }}>
-        {SKILLS.map((sk) => (
-          <SkillRow key={sk.key} name={sk.name} blurb={sk.blurb} icon={sk.icon} score={progress[sk.key]} />
+        {skills.map((sk) => (
+          <SkillRow key={sk.key} name={sk.name} blurb={sk.blurb} icon={sk.icon} score={sk.score} basis={sk.basis} />
         ))}
       </View>
     </ScrollView>
   );
 }
 
-function SkillRow({ name, blurb, icon, score }: { name: string; blurb: string; icon: 'strength' | 'run' | 'bolt' | 'mobility' | 'calendar' | 'moon'; score: number }) {
+function SkillRow({ name, blurb, icon, score, basis }: { name: string; blurb: string; icon: 'calendar' | 'moon'; score: number | null; basis: string }) {
   const [open, setOpen] = useState(false);
   const rot = useSharedValue(0);
   const chevron = useAnimatedStyle(() => ({ transform: [{ rotate: `${rot.get() * 180}deg` }] }));
-  const level = scoreLevel(score);
+  // null means "no data yet", which is different from a measured zero — the row
+  // says so rather than implying the athlete scored nothing.
+  const level = score == null ? 'Not measured yet' : scoreLevel(score);
   return (
     <Animated.View layout={LinearTransition.duration(260).easing(motion.easeOut)} style={styles.skill}>
       <Tap
@@ -173,16 +181,14 @@ function SkillRow({ name, blurb, icon, score }: { name: string; blurb: string; i
         accessibilityLabel={`${name}, ${level}`}
       >
         <View style={styles.skillIcon}>
-          <Icon name={icon} size={26} color={score > 0 ? color.text : color.textSecondary} weight="light" />
+          <Icon name={icon} size={26} color={score != null ? color.text : color.textSecondary} weight="light" />
         </View>
         <View style={{ flex: 1 }}>
           <Text variant="headline" style={{ fontSize: 19 }}>
             {name}
           </Text>
           <Text variant="subhead" tone="secondary" style={{ marginTop: 3, letterSpacing: 0.6 }}>
-            {/* A brand-new athlete saw "UNTRAINED · 0/100" six times over, which reads
-                as a scorecard of failures rather than a blank slate. */}
-            {score > 0 ? `${level} · ${score}/100` : 'Not measured yet'}
+            {score != null ? `${level} · ${score}/100` : 'Not measured yet'}
           </Text>
         </View>
         <Animated.View style={chevron}>
@@ -191,9 +197,14 @@ function SkillRow({ name, blurb, icon, score }: { name: string; blurb: string; i
       </Tap>
       {open ? (
         <Animated.View entering={FadeIn.duration(220)} style={styles.skillBody}>
-          <Bar progress={score / 100} height={6} />
+          {score != null ? <Bar progress={score / 100} height={6} /> : null}
           <Text variant="callout" tone="secondary" style={{ marginTop: space.sm }}>
             {blurb}
+          </Text>
+          {/* Say where the number comes from, so it reads as a measurement of
+              something real rather than an opaque grade. */}
+          <Text variant="caption" tone="tertiary" style={{ marginTop: 4 }}>
+            {basis}
           </Text>
         </Animated.View>
       ) : null}

@@ -71,7 +71,7 @@ export async function maybeRequestReview(reason: string) {
 
 export async function shareStreak(streakDays: number, rank?: string) {
   const headline = streakDays >= 1
-    ? `${streakDays}-day streak on Gruntz${rank ? ` · ${rank}` : ''}`
+    ? `${streakDays}-workout streak on Gruntz${rank ? ` · ${rank}` : ''}`
     : 'Training daily on Gruntz';
   const message = `${headline}\nTraining that shows up every day.\n${SHARE_DEEPLINK}`;
   try {

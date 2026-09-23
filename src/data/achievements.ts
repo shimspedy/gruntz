@@ -13,8 +13,8 @@ export const achievements: Achievement[] = [
   },
   {
     id: 'streak_3',
-    name: '3-Day Streak',
-    description: 'Complete missions 3 days in a row.',
+    name: '3-Workout Streak',
+    description: 'Complete 3 missions in a row without breaking your streak.',
     icon: 'streak',
     category: 'streak',
     xp_reward: 30,
@@ -23,8 +23,8 @@ export const achievements: Achievement[] = [
   },
   {
     id: 'streak_7',
-    name: '7-Day Streak',
-    description: 'Complete missions 7 days in a row.',
+    name: '7-Workout Streak',
+    description: 'Complete 7 missions in a row without breaking your streak.',
     icon: 'streak',
     category: 'streak',
     xp_reward: 70,
@@ -33,8 +33,8 @@ export const achievements: Achievement[] = [
   },
   {
     id: 'streak_14',
-    name: '14-Day Streak',
-    description: '14 consecutive days of training. Discipline.',
+    name: '14-Workout Streak',
+    description: 'Complete 14 missions in a row without breaking your streak. Discipline.',
     icon: 'streak',
     category: 'streak',
     xp_reward: 140,
@@ -43,8 +43,8 @@ export const achievements: Achievement[] = [
   },
   {
     id: 'streak_30',
-    name: '30-Day Streak',
-    description: 'One full month of daily missions. Legendary.',
+    name: '30-Workout Streak',
+    description: 'Complete 30 missions in a row without breaking your streak. Legendary.',
     icon: 'streak',
     category: 'streak',
     xp_reward: 300,

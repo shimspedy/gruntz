@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActionSheetIOS, Alert, AppState, FlatList, ScrollView, StyleSheet, View, useWindowDimensions, type ViewToken } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -429,6 +429,17 @@ function ExercisePage({
   onToggle: (setId: string) => void;
 }) {
   const ex = getExerciseById(exercise.exerciseId);
+  const allExercises = useSessionStore((st) => st.exercises);
+  // The other exercises in this superset, named so the pairing can be followed.
+  const supersetPartners = useMemo(
+    () => (exercise.supersetGroup
+      ? allExercises
+        .filter((e) => e.key !== exercise.key && e.supersetGroup === exercise.supersetGroup)
+        .map((e) => e.prescribedName ?? getExerciseById(e.exerciseId)?.name)
+        .filter((name): name is string => !!name)
+      : []),
+    [allExercises, exercise.key, exercise.supersetGroup],
+  );
   const previous = useSessionStore((st) => st.previous[exercise.exerciseId]);
   const rest = useSessionStore((st) => st.restOverrides[exercise.exerciseId] ?? st.restPrescribed[exercise.exerciseId] ?? ex?.rest_seconds ?? 0);
   const updateSet = useSessionStore((st) => st.updateSet);
@@ -499,9 +510,16 @@ function ExercisePage({
       <ExerciseVideo exercise={ex} active={active} style={{ width, height: videoH }} />
 
       {exercise.supersetGroup ? (
-        <Text variant="caption" tone="accent" style={styles.supersetTag}>
-          {`SUPERSET ${exercise.supersetGroup}`}
-        </Text>
+        <View style={styles.supersetBlock}>
+          <Text variant="caption" tone="accent" style={styles.supersetTag}>
+            {`SUPERSET ${exercise.supersetGroup}`}
+          </Text>
+          {supersetPartners.length ? (
+            <Text variant="subhead" tone="secondary" style={styles.supersetHint}>
+              {`Alternate sets with ${supersetPartners.join(' and ')}, then rest.`}
+            </Text>
+          ) : null}
+        </View>
       ) : null}
       <View style={styles.nameRow}>
         <Text variant="title" style={styles.name} numberOfLines={2}>
@@ -589,7 +607,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  supersetTag: { paddingHorizontal: space.gutter, letterSpacing: 0.8, marginBottom: 2 },
+  supersetBlock: { paddingHorizontal: space.gutter, marginBottom: 4 },
+  supersetTag: { letterSpacing: 0.8 },
+  supersetHint: { marginTop: 2 },
   nameRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.gutter, marginTop: space.md },
   name: { flex: 1, fontSize: 25, lineHeight: 30 },
   restIcon: { alignItems: 'center', marginLeft: space.md },

@@ -61,7 +61,7 @@ export function TabHeader() {
             navigation.navigate('Streak');
           }}
           style={styles.streak}
-          accessibilityLabel={`${streak} day streak`}
+          accessibilityLabel={`${streak} workout streak`}
         >
           <Animated.View style={flameStyle}>
             <Icon name="flame" size={24} color={streak > 0 ? color.flame : color.textTertiary} />

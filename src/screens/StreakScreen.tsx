@@ -5,6 +5,7 @@ import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withRepeat, withSeq
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 import { claimedDates } from '../features/plan';
 import { useUserStore } from '../store/useUserStore';
+import { streakGraceDays } from '../utils/xp';
 import { Icon } from '../ui/Icon';
 import { NavHeader } from '../ui/Layout';
 import { Tap } from '../ui/Pressable';
@@ -15,14 +16,15 @@ import { getLocalDateKey } from '../utils/dateKey';
 
 const DOW = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-function longestStreak(dates: Set<string>) {
+function longestStreak(dates: Set<string>, graceDays: number) {
   const sorted = Array.from(dates).sort();
   let best = 0;
   let run = 0;
   let prev: Date | null = null;
   sorted.forEach((k) => {
     const d = new Date(`${k}T12:00:00`);
-    run = prev && Math.round((d.getTime() - prev.getTime()) / 86400000) === 1 ? run + 1 : 1;
+    const gap = prev ? Math.round((d.getTime() - prev.getTime()) / 86400000) : null;
+    run = gap !== null && gap <= graceDays ? run + 1 : 1;
     best = Math.max(best, run);
     prev = d;
   });
@@ -35,7 +37,7 @@ export default function StreakScreen() {
   const progress = useUserStore((s) => s.progress);
   const profile = useUserStore((s) => s.profile);
   const dates = useMemo(() => claimedDates(progress.claimed_missions), [progress.claimed_missions]);
-  const best = Math.max(longestStreak(dates), progress.streak_days);
+  const best = Math.max(longestStreak(dates, streakGraceDays(profile?.workout_days_per_week)), progress.streak_days);
   const today = getLocalDateKey();
   const [month, setMonth] = useState(() => {
     const d = new Date();
@@ -86,7 +88,7 @@ export default function StreakScreen() {
               <Text style={styles.big} tabular>
                 {progress.streak_days}
               </Text>
-              <Text style={styles.bigLabel}>day streak</Text>
+              <Text style={styles.bigLabel}>workout streak</Text>
             </View>
             <Flame lit={progress.streak_days > 0} />
           </View>

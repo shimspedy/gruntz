@@ -22,7 +22,7 @@ import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
 import { color, font, motion, radius, space } from '../ui/tokens';
 import { useUserStore } from '../store/useUserStore';
-import { getXPToNextLevel } from '../utils/xp';
+import { getXPToNextLevel, streakGraceDays } from '../utils/xp';
 
 /** After a mission: what moved. Rank-ups get the big moment; everything else stays calm. */
 export default function CelebrationScreen() {
@@ -30,6 +30,7 @@ export default function CelebrationScreen() {
   const insets = useSafeAreaInsets();
   const { params } = useRoute<RouteProp<RootStackParamList, 'Celebration'>>();
   const xpNow = useUserStore((s) => s.progress.current_xp);
+  const grace = streakGraceDays(useUserStore((s) => s.profile?.workout_days_per_week));
   const rankUp = params.rankAfter !== params.rankBefore;
   const levelUp = params.levelAfter > params.levelBefore;
   const unlocked = params.achievementIds.map((id) => achievements.find((a) => a.id === id)).filter(Boolean);
@@ -103,9 +104,9 @@ export default function CelebrationScreen() {
               <Icon name="flame" size={22} color={color.flame} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text variant="headline">{params.streak > 1 ? `${params.streak}-day streak` : 'Streak started'}</Text>
+              <Text variant="headline">{params.streak > 1 ? `${params.streak}-workout streak` : 'Streak started'}</Text>
               <Text variant="subhead" tone="secondary" style={{ marginTop: 2 }}>
-                Train tomorrow to keep it alive
+                {grace === 1 ? 'Train tomorrow to keep it alive' : `Train within ${grace} days to keep it alive`}
               </Text>
             </View>
           </Animated.View>
