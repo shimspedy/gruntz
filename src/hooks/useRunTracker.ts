@@ -74,14 +74,28 @@ function haversineMeters(
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-/** Estimate calories from distance + weight (running) */
-function estimateCalories(distanceMiles: number, weightLbs: number = 160): number {
-  // Rough: ~100 cal/mile for 160lb person
-  return Math.round(distanceMiles * (weightLbs / 1.6));
+/**
+ * Estimate calories from distance and the load being carried.
+ *
+ * Always called with one argument before, so every athlete got the 160 lb default
+ * and the pack was ignored entirely — a 220 lb rucker carrying 45 lb was shown a
+ * number 40% under this formula's own answer, presented as if it were theirs.
+ * Body weight is optional on the profile, so the default still applies when it is
+ * unset; the tile says "est." either way.
+ */
+export const DEFAULT_BODY_WEIGHT_LBS = 160;
+
+function estimateCalories(distanceMiles: number, loadedWeightLbs: number = DEFAULT_BODY_WEIGHT_LBS): number {
+  // Rough: ~100 cal/mile for a 160 lb person, scaled by the total load moved.
+  return Math.round(distanceMiles * (loadedWeightLbs / 1.6));
 }
 
-export function useRunTracker(options: { batterySaver?: boolean } = {}) {
-  const { batterySaver = false } = options;
+export function useRunTracker(options: { batterySaver?: boolean; loadedWeightLbs?: number } = {}) {
+  const { batterySaver = false, loadedWeightLbs } = options;
+  // Held in a ref so the watch callbacks always read the current value without
+  // being torn down and re-attached when the pack weight changes mid-setup.
+  const loadRef = useRef(loadedWeightLbs);
+  loadRef.current = loadedWeightLbs;
   const getInitialState = useCallback(
     (): RunTrackerState => ({
       isTracking: false,
@@ -219,7 +233,7 @@ export function useRunTracker(options: { batterySaver?: boolean } = {}) {
             elevationGainFt: Math.round(elevationRef.current),
             currentSpeedMph: point.speed != null ? Math.round(point.speed * MPS_TO_MPH * 10) / 10 : null,
             route: copyRoute ? [...routeRef.current] : prev.route,
-            caloriesEstimate: estimateCalories(distanceRef.current),
+            caloriesEstimate: estimateCalories(distanceRef.current, loadRef.current),
           }));
         },
       );
@@ -338,7 +352,7 @@ export function useRunTracker(options: { batterySaver?: boolean } = {}) {
       distanceMiles: Math.round(distanceRef.current * 100) / 100,
       elevationGainFt: Math.round(elevationRef.current),
       route: [...routeRef.current],
-      caloriesEstimate: estimateCalories(distanceRef.current),
+      caloriesEstimate: estimateCalories(distanceRef.current, loadRef.current),
       isTracking: false,
       isPaused: false,
     };

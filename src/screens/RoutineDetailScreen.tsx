@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { appMuscles, getLibraryItem } from '../data/exerciseLibrary';
+import { getExerciseById, libraryExerciseId } from '../data/exercises';
 import { MuscleBodyMap } from '../components/MuscleBodyMap';
 import { muscleLabel, percentShares, plural } from '../features/plan';
 import { routineMinutes, useRoutineStore } from '../store/useRoutineStore';
@@ -185,7 +186,7 @@ export default function RoutineDetailScreen() {
         </Text>
         {routine.items.map((it, i) => {
           const lib = getLibraryItem(it.key);
-          const cardio = lib?.group === 'cardio' || lib?.group === 'swim';
+          const timedSeconds = getExerciseById(libraryExerciseId(it.key))?.duration_seconds ?? null;
           return (
             <Animated.View key={it.uid} entering={FadeInDown.delay(Math.min(i, 8) * motion.stagger).duration(300)}>
               <Tap
@@ -200,7 +201,7 @@ export default function RoutineDetailScreen() {
                 <View style={{ flex: 1, marginLeft: space.md }}>
                   <Text variant="callout" tone="secondary">
                     {it.sets} {it.sets === 1 ? 'set' : 'sets'}
-                    {cardio ? '' : ` x ${it.reps} reps`}
+                    {timedSeconds ? ` x ${timedSeconds}s` : ` x ${it.reps} reps`}
                   </Text>
                   <Text variant="headline" style={{ fontSize: 18, marginTop: 2 }} numberOfLines={2}>
                     {lib?.name ?? it.key}

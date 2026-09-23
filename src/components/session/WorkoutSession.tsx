@@ -123,7 +123,7 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
   const units = useUserStore((u) => u.profile?.settings.units ?? 'imperial');
   const now = useNow(visible);
   const [phase, setPhase] = useState<'log' | 'summary'>('log');
-  const [restFor, setRestFor] = useState<string | null>(null);
+  const [restFor, setRestFor] = useState<{ exerciseId: string; slotKey: string } | null>(null);
   const pager = useRef<FlatList<SessionExercise>>(null);
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(advanceTimer.current), []);
@@ -266,7 +266,7 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
               <Tap
                 feedback="opacity"
                 hitSlop={10}
-                onPress={() => current && setRestFor(current.exerciseId)}
+                onPress={() => current && setRestFor({ exerciseId: current.exerciseId, slotKey: current.key })}
                 style={styles.topIcon}
                 accessibilityLabel="Rest timer"
               >
@@ -392,7 +392,7 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
               width={width}
               units={units}
               bottomPad={insets.bottom + 120}
-              onRest={() => setRestFor(item.exerciseId)}
+              onRest={() => setRestFor({ exerciseId: item.exerciseId, slotKey: item.key })}
               onToggle={(setId) => handleToggle(item, setId)}
             />
           )}
@@ -405,7 +405,7 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
         {phase === 'summary' ? <SessionSummary onBack={() => setPhase('log')} onDone={() => setPhase('log')} /> : null}
       </Animated.View>
 
-      <RestSheet exerciseId={restFor} onClose={() => setRestFor(null)} />
+      <RestSheet exerciseId={restFor?.exerciseId ?? null} slotKey={restFor?.slotKey} onClose={() => setRestFor(null)} />
       <SetInputAccessory />
     </View>
   );
@@ -441,7 +441,7 @@ function ExercisePage({
     [allExercises, exercise.key, exercise.supersetGroup],
   );
   const previous = useSessionStore((st) => st.previous[exercise.exerciseId]);
-  const rest = useSessionStore((st) => st.restOverrides[exercise.exerciseId] ?? st.restPrescribed[exercise.exerciseId] ?? ex?.rest_seconds ?? 0);
+  const rest = useSessionStore((st) => st.restOverrides[exercise.exerciseId] ?? st.restPrescribed[exercise.key] ?? ex?.rest_seconds ?? 0);
   const updateSet = useSessionStore((st) => st.updateSet);
   const addSet = useSessionStore((st) => st.addSet);
   const removeExercise = useSessionStore((st) => st.removeExercise);

@@ -171,6 +171,14 @@ export interface UserProfile {
   has_ruck_access: boolean;
   has_gym_access?: boolean;
   age_range?: 'under_30' | '30_44' | '45_59' | '60_plus';
+  /**
+   * Body weight in pounds, for the run/ruck calorie estimate.
+   *
+   * Optional: the estimate falls back to a 160 lb default, which is what it always
+   * silently used for everyone. Stored in pounds like `packWeightPounds`, and shown
+   * in the athlete's own unit.
+   */
+  body_weight_lbs?: number;
   movement_limitations?: string[];
   preferred_session_minutes?: number;
   preferred_intensity: 'low' | 'moderate' | 'high';

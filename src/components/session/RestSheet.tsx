@@ -14,9 +14,11 @@ const OPTIONS = [0, 30, 45, 60, 90, 120, 180];
 const label = (s: number) => (s === 0 ? 'Off' : s < 60 ? `${s} sec` : s % 60 === 0 ? `${s / 60} min` : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')} min`);
 
 /** Rest between sets for one movement. */
-export function RestSheet({ exerciseId, onClose }: { exerciseId: string | null; onClose: () => void }) {
+export function RestSheet({ exerciseId, slotKey, onClose }: { exerciseId: string | null; slotKey?: string | null; onClose: () => void }) {
   const ex = exerciseId ? getExerciseById(exerciseId) : undefined;
-  const override = useSessionStore((s) => (exerciseId ? s.restOverrides[exerciseId] ?? s.restPrescribed[exerciseId] : undefined));
+  const override = useSessionStore((s) => (exerciseId
+    ? s.restOverrides[exerciseId] ?? (slotKey ? s.restPrescribed[slotKey] : undefined)
+    : undefined));
   const setRestFor = useSessionStore((s) => s.setRestFor);
   const startRest = useSessionStore((s) => s.startRest);
   const resting = useSessionStore((s) => !!s.restEndsAt);

@@ -9,6 +9,7 @@ import { useBarometerAltitude } from '../hooks/useBarometerAltitude';
 import { useRunTracker } from '../hooks/useRunTracker';
 import { useReadinessStore } from '../store/useReadinessStore';
 import { KG_PER_LB } from '../store/useExerciseLogStore';
+import { DEFAULT_BODY_WEIGHT_LBS } from '../hooks/useRunTracker';
 import { useUserStore } from '../store/useUserStore';
 import type { RootStackParamList } from '../types/navigation';
 import { Button } from '../ui/Button';
@@ -56,7 +57,16 @@ export default function RunTrackerScreen() {
   // a metric rucker was being offered a 35 "kg" pack (77 lb).
   const [pack, setPack] = useState(() => (useUserStore.getState().profile?.settings.units === 'metric' ? '16' : '35'));
   const [terrain, setTerrain] = useState('Mixed');
-  const tracker = useRunTracker({ batterySaver });
+  /** `packWeightPounds` is stored in pounds whatever unit the athlete typed in. */
+  const packToPounds = (raw: string, isMetric: boolean) => {
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n <= 0) return undefined;
+    return Math.round(isMetric ? n / KG_PER_LB : n);
+  };
+
+  const bodyWeightLbs = useUserStore((st) => st.profile?.body_weight_lbs) ?? DEFAULT_BODY_WEIGHT_LBS;
+  const loadedWeightLbs = bodyWeightLbs + (type === 'ruck' ? packToPounds(pack, metric) ?? 0 : 0);
+  const tracker = useRunTracker({ batterySaver, loadedWeightLbs });
   const baro = useBarometerAltitude();
   const announced = useRef(0);
   const [finished, setFinished] = useState(false);
@@ -101,13 +111,6 @@ export default function RunTrackerScreen() {
     }
   }, [tracker.isTracking, tracker.isPaused, pulse]);
   const dotStyle = useAnimatedStyle(() => ({ opacity: pulse.get() }));
-
-  /** `packWeightPounds` is stored in pounds whatever unit the athlete typed in. */
-  const packToPounds = (raw: string, isMetric: boolean) => {
-    const n = Number(raw);
-    if (!Number.isFinite(n) || n <= 0) return undefined;
-    return Math.round(isMetric ? n / KG_PER_LB : n);
-  };
 
   const start = useCallback(async () => {
     haptic.medium();
@@ -245,7 +248,7 @@ export default function RunTrackerScreen() {
           <Small label="Steps" value={tracker.steps.toLocaleString()} />
           {/* The barometer reports feet; a metric athlete should not have to convert. */}
           <Small label="Elevation" value={metric ? `${Math.round(elev * 0.3048)} m` : `${elev} ft`} />
-          <Small label="Calories" value={String(tracker.caloriesEstimate)} />
+          <Small label="Calories (est.)" value={String(tracker.caloriesEstimate)} />
         </View>
 
         {baro.isActive && baro.currentAltitudeFt != null ? (

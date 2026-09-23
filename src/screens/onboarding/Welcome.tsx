@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { AccessibilityInfo, ScrollView, StyleSheet, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import Animated, { interpolate, useAnimatedStyle, useSharedValue, withDelay, withTiming, type SharedValue } from 'react-native-reanimated';
@@ -32,7 +32,17 @@ export function Welcome({ onStart }: { onStart: () => void }) {
 
   // Gentle auto-advance until the user touches the carousel.
   const touched = useRef(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
   useEffect(() => {
+    let cancelled = false;
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((enabled) => { if (!cancelled) setReduceMotion(enabled); })
+      .catch(() => undefined);
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
+    return () => { cancelled = true; sub.remove(); };
+  }, []);
+  useEffect(() => {
+    if (reduceMotion) return undefined;
     const id = setInterval(() => {
       if (touched.current) return;
       setPage((p) => {
@@ -42,7 +52,7 @@ export function Welcome({ onStart }: { onStart: () => void }) {
       });
     }, 4200);
     return () => clearInterval(id);
-  }, [width]);
+  }, [width, reduceMotion]);
 
   const logoStyle = useAnimatedStyle(() => ({
     opacity: interpolate(intro.get(), [0, 0.7], [1, 0], 'clamp'),

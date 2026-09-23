@@ -552,7 +552,7 @@ function OnboardingFlow() {
       case 'name':
         return (
           <View>
-            <Question title="What should we call you?" subtitle="Your callsign shows on your profile." />
+            <Question title="What should we call you?" subtitle="This is the name shown on your profile." />
             <View style={{ paddingHorizontal: space.gutter }}>
               <TextInput
                 value={name}
@@ -566,7 +566,7 @@ function OnboardingFlow() {
                 onSubmitEditing={next}
                 style={styles.input}
                 selectionColor={color.accent}
-                accessibilityLabel="Callsign"
+                accessibilityLabel="Your name"
               />
             </View>
           </View>

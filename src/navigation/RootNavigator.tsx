@@ -102,11 +102,14 @@ const linking = {
         screens: {
           Train: 'train',
           Ranks: 'ranks',
+          // Only registered for Military Prep athletes; the link does not resolve
+          // for anyone else, so do not put it in general marketing.
           Test: 'test',
-          Plans: 'my-plans',
           Profile: 'profile',
         },
       },
+      // Reachable by every athlete, unlike the Plans *tab* the removed `my-plans`
+      // alias pointed at.
       PlanBrowse: 'plans',
       LibraryPlanDetail: 'plans/:planId',
       LibraryPlanDay: 'plans/:planId/:dayId',

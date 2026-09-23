@@ -87,6 +87,7 @@ interface SessionState {
   /** Rest the athlete chose for an exercise. Persists across workouts and always wins. */
   restOverrides: Record<string, number>;
   /** Rest this plan/routine prescribes. Session-scoped, so it never edits a saved preference. */
+  /** Keyed by the session slot key, not the exercise id: one day can program the same movement twice with different rests. */
   restPrescribed: Record<string, number>;
   previous: Record<string, PreviousSet[]>;
 
@@ -107,7 +108,7 @@ interface SessionState {
   addExercises: (keys: string[]) => void;
   setRestFor: (exerciseId: string, seconds: number) => void;
   /** Rest for an exercise: the athlete's choice, else what this workout prescribes, else the clip's. */
-  restFor: (exerciseId: string) => number;
+  restFor: (exerciseId: string, slotKey?: string) => number;
   startRest: (seconds: number) => void;
   adjustRest: (delta: number) => void;
   endRest: () => void;
@@ -292,7 +293,7 @@ export const useSessionStore = create<SessionState>()(
           return [{ key: `${routine.id}:${i}:${it.key}`, exerciseId: id, section: routine.name, kind: kindFor(ex), weighted: isWeighted(ex), requiredSets: sets.length, sets }];
         });
         const prescribed: Record<string, number> = {};
-        routine.items.forEach((it) => (prescribed[libraryExerciseId(it.key)] = it.rest));
+        routine.items.forEach((it, i) => (prescribed[`${routine.id}:${i}:${it.key}`] = it.rest));
         set({
           active: true,
           minimized: false,
@@ -343,7 +344,7 @@ export const useSessionStore = create<SessionState>()(
               done: false,
             };
           });
-          prescribed[id] = slot.rest_seconds;
+          prescribed[`${day.id}:${i}:${slot.video_key}`] = slot.rest_seconds;
           // Counted before the warm-ups go in. `isExerciseDone` only counts working
           // sets, so folding warm-ups into requiredSets made the target unreachable:
           // the exercise never ticked, Finish never appeared, and because buildMission
@@ -417,7 +418,7 @@ export const useSessionStore = create<SessionState>()(
         // Resting after the last set matters too (circuits, supersets, next exercise).
         if (nowDone) {
           const ex = getExerciseById(after.exerciseId);
-          const rest = get().restFor(after.exerciseId);
+          const rest = get().restFor(after.exerciseId, after.key);
           if (rest > 0) {
             get().startRest(rest);
             set({ restSetId: setId });
@@ -526,9 +527,10 @@ export const useSessionStore = create<SessionState>()(
 
       setRestFor: (exerciseId, seconds) => set((s) => ({ restOverrides: { ...s.restOverrides, [exerciseId]: seconds } })),
 
-      restFor: (exerciseId) => {
+      restFor: (exerciseId, slotKey) => {
         const s = get();
-        return s.restOverrides[exerciseId] ?? s.restPrescribed[exerciseId] ?? getExerciseById(exerciseId)?.rest_seconds ?? 0;
+        const prescribed = slotKey ? s.restPrescribed[slotKey] : undefined;
+        return s.restOverrides[exerciseId] ?? prescribed ?? getExerciseById(exerciseId)?.rest_seconds ?? 0;
       },
       startRest: (seconds) => set({ restEndsAt: Date.now() + seconds * 1000, restTotal: seconds }),
       adjustRest: (delta) =>

@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { getExerciseById, libraryExerciseId } from '../data/exercises';
 
 /** One movement in a user-planned workout. `key` is a clip in the exercise library. */
 export interface RoutineItem {
@@ -132,9 +133,12 @@ export const useRoutineStore = create<RoutineState>()(
   ),
 );
 
-/** Rough duration: work at ~40s per set plus the prescribed rest. */
+/** Rough duration: a timed exercise costs its own duration, everything else ~40s per set. */
 export function routineMinutes(r: Pick<Routine, 'items'>) {
-  const secs = r.items.reduce((t, i) => t + i.sets * 40 + Math.max(0, i.sets - 1) * i.rest, 0);
+  const secs = r.items.reduce((t, i) => {
+    const perSet = getExerciseById(libraryExerciseId(i.key))?.duration_seconds ?? 40;
+    return t + i.sets * perSet + Math.max(0, i.sets - 1) * i.rest;
+  }, 0);
   // Round to 5 for anything substantial, but keep short routines honest: a single
   // set of one movement claimed "5 min" because the floor and the step were the same.
   const minutes = secs / 60;

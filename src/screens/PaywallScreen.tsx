@@ -155,6 +155,14 @@ export default function PaywallScreen() {
   };
 
   const selectedPrice = plan === 'annual' && annual ? annual.priceString : monthly;
+  // Empty unless the store actually has an introductory offer. Today the 15 free
+  // days are granted app-side so there is none — but the moment one is configured in
+  // App Store Connect, charging through an undisclosed intro offer is an Apple
+  // rejection, and `introPriceString` was being captured and rendered nowhere.
+  const introPrice = plan === 'annual' && annual ? null : offering?.introPriceString ?? null;
+  const introDisclosure = introPrice
+    ? ` An introductory rate of ${introPrice} applies first, then it renews at ${selectedPrice}.`
+    : '';
   const ctaTitle =
     access === 'subscriber' ? 'Manage membership' : !isConfigured ? 'Connecting…' : !offering ? 'Loading pricing…' : 'Continue';
 
@@ -243,7 +251,7 @@ export default function PaywallScreen() {
             ? `Manage or cancel anytime in your ${store} account settings.`
             : !offering
             ? 'Pricing is loading from the App Store.'
-            : `${GRUNTZ_PRO_LABEL} is an auto-renewing ${plan === 'annual' && annual ? 'yearly' : 'monthly'} subscription at ${selectedPrice}. Payment is charged to your ${store} account at confirmation and renews unless cancelled at least 24 hours before the period ends. Manage or cancel anytime in account settings.`}
+            : `${GRUNTZ_PRO_LABEL} is an auto-renewing ${plan === 'annual' && annual ? 'yearly' : 'monthly'} subscription at ${selectedPrice}.${introDisclosure} Payment is charged to your ${store} account at confirmation and renews unless cancelled at least 24 hours before the period ends. Manage or cancel anytime in account settings.`}
         </Text>
       </ScrollView>
 

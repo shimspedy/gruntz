@@ -152,9 +152,27 @@ export function Ruler({
   };
 
   return (
-    <View style={{ height: 120 }}>
+    <View
+      style={{ height: 120 }}
+      accessible
+      accessibilityRole="adjustable"
+      accessibilityLabel="Weeks until your test"
+      accessibilityValue={{ min, max, now: value, text: `${value} ${value === 1 ? 'week' : 'weeks'}` }}
+      accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+      onAccessibilityAction={(event) => {
+        const next = event.nativeEvent.actionName === 'increment'
+          ? Math.min(max, value + 1)
+          : Math.max(min, value - 1);
+        if (next === value) return;
+        last.current = next;
+        haptic.selection();
+        onChange(next);
+        ref.current?.scrollTo({ x: (next - min) * step, animated: true });
+      }}
+    >
       <ScrollView
         ref={ref}
+        importantForAccessibility="no-hide-descendants"
         horizontal
         showsHorizontalScrollIndicator={false}
         snapToInterval={step}

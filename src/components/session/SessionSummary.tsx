@@ -5,7 +5,6 @@ import { useNow } from '../../hooks/useNow';
 import { getLocalDateKey } from '../../utils/dateKey';
 import { navigationRef } from '../../navigation/ref';
 import { clearWorkoutProgress } from '../../services/notifications';
-import { useMissionStore } from '../../store/useMissionStore';
 import { isExerciseDone, useSessionStore } from '../../store/useSessionStore';
 import { useUserStore } from '../../store/useUserStore';
 import { useProgramStore } from '../../store/useProgramStore';
@@ -64,7 +63,6 @@ export function SessionSummary({ onBack, onDone }: { onBack: () => void; onDone:
     const rankBefore = before.current_rank;
     const xpBefore = before.current_xp;
     useUserStore.getState().completeMission(fresh);
-    useMissionStore.getState().finishMission();
     void clearWorkoutProgress();
     // If that was the last workout of the program week, move to the next one.
     useProgramStore.getState().advanceWeekIfComplete();

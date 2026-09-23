@@ -26,6 +26,8 @@ const INTENSITY: UserProfile['preferred_intensity'][] = ['low', 'moderate', 'hig
 // progression for 45-59 and 60+. It was asked once in onboarding, was skippable with
 // "Prefer not to say" (silently defaulting to 30-44), and could never be changed
 // afterwards, so a 65-year-old who declined got standard adult progression forever.
+const BODY_WEIGHT_LBS = [120, 140, 160, 180, 200, 220, 250];
+const BODY_WEIGHT_KG = [55, 65, 75, 85, 95, 105, 115];
 const AGES: { id: NonNullable<UserProfile['age_range']>; label: string }[] = [
   { id: 'under_30', label: 'Under 30' },
   { id: '30_44', label: '30 – 44' },
@@ -55,6 +57,8 @@ export default function TrainingPreferencesScreen() {
   const [intensity, setIntensity] = useState(profile?.preferred_intensity ?? 'moderate');
   const [limits, setLimits] = useState<string[]>(profile?.movement_limitations ?? []);
   const [age, setAge] = useState<NonNullable<UserProfile['age_range']> | undefined>(profile?.age_range);
+  const metric = profile?.settings.units === 'metric';
+  const [bodyWeight, setBodyWeight] = useState<number | undefined>(profile?.body_weight_lbs);
 
   if (!profile) {
     return (
@@ -83,6 +87,7 @@ export default function TrainingPreferencesScreen() {
       preferred_intensity: intensity,
       movement_limitations: limits,
       age_range: age,
+      body_weight_lbs: bodyWeight,
     });
     // Deliberately doesn't switch the plan you're following — it only changes what's suggested.
     toast('Preferences saved', {
@@ -134,6 +139,21 @@ export default function TrainingPreferencesScreen() {
           {INTENSITY.map((i) => (
             <Chip key={i} label={cap(i)} active={intensity === i} onPress={() => setIntensity(i)} />
           ))}
+        </Section>
+
+        <Section title={metric ? 'Body weight (kg)' : 'Body weight (lb)'}>
+          {(metric ? BODY_WEIGHT_KG : BODY_WEIGHT_LBS).map((w) => {
+            // Stored in pounds either way, so the metric options convert on save.
+            const lbs = metric ? Math.round(w / 0.45359237) : w;
+            return (
+              <Chip
+                key={w}
+                label={String(w)}
+                active={bodyWeight != null && Math.abs(bodyWeight - lbs) < 3}
+                onPress={() => setBodyWeight(lbs)}
+              />
+            );
+          })}
         </Section>
 
         <Section title="Age">

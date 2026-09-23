@@ -67,6 +67,11 @@ function duration(sec: number): string {
 export function slotPrescription(slot: PlanExerciseSlot): string {
   const sets = `${slot.sets} ×`;
   const each = slot.per_side ? ' each' : '';
+  const warmups = slot.warmup_sets ? ` · ${Math.min(3, slot.warmup_sets)} warm-up` : '';
+  return `${corePrescription(slot, sets, each)}${warmups}`;
+}
+
+function corePrescription(slot: PlanExerciseSlot, sets: string, each: string): string {
   switch (slot.measure) {
     case 'time':
       return `${sets} ${duration(slot.duration_seconds ?? 0)}${each}`;
