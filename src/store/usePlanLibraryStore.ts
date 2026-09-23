@@ -21,7 +21,7 @@ interface PlanLibraryState {
   /** Set when the final day of a plan is finished, so the app can mark the moment once. */
   justCompleted: string | null;
   clearJustCompleted: () => void;
-  restartPlan: () => void;
+  restartPlan: (planId?: string) => void;
 }
 
 export const usePlanLibraryStore = create<PlanLibraryState>()(
@@ -41,6 +41,10 @@ export const usePlanLibraryStore = create<PlanLibraryState>()(
         const parked = activePlanId && startedAt ? { ...progressByPlan, [activePlanId]: { completedDayIds, cycle, startedAt } } : progressByPlan;
         const resumed = parked[planId];
         set({
+          // Cleared on switch: justCompleted refers to the plan that finished, but
+          // completedDayIds always belongs to the ACTIVE plan — so a stale card left
+          // on screen could "Run this plan again" and blank the new plan's progress.
+          justCompleted: null,
           activePlanId: planId,
           startedAt: resumed?.startedAt ?? new Date().toISOString(),
           completedDayIds: resumed?.completedDayIds ?? [],
@@ -75,8 +79,16 @@ export const usePlanLibraryStore = create<PlanLibraryState>()(
 
       clearJustCompleted: () => set({ justCompleted: null }),
 
-      /** Start the same plan again from day one, keeping the rounds counter. */
-      restartPlan: () => set({ completedDayIds: [], justCompleted: null }),
+      /**
+       * Start the active plan again from day one, keeping the rounds counter.
+       *
+       * `planId` guards against restarting the wrong plan: the completion card can
+       * outlive the plan it describes, and `completedDayIds` always belongs to
+       * whichever plan is active now.
+       */
+      restartPlan: (planId) => set((state) => (
+        planId && state.activePlanId !== planId ? state : { completedDayIds: [], justCompleted: null }
+      )),
     }),
     {
       name: '@gruntz_plan_library',

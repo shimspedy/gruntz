@@ -41,6 +41,12 @@ export default function LibraryPlanDetailScreen() {
 
   const following = activeId === plan.id;
   const next = following ? nextPlanDay(plan, completed) : null;
+  // Every day ticked. `restartPlan` used to be reachable only from the completion
+  // card on Train, and both of that card's other buttons dismissed it for good —
+  // after which nextPlanDay wrapped to day 1, markDayDone early-returned because it
+  // was already complete, and the plan sat at "29 of 29 · Round 2" forever. The only
+  // escape was tapping "Undo done" on up to 29 separate screens.
+  const planFinished = following && plan.days.length > 0 && plan.days.every((d) => completed.includes(d.id));
   const progress = planProgress(plan, completed);
   const minutes = planMinutes(plan);
   const s = plan.summary;
@@ -194,7 +200,19 @@ export default function LibraryPlanDetailScreen() {
       <View style={[styles.footer, { paddingBottom: insets.bottom + space.md }]}>
         <LinearGradient colors={['rgba(0,0,0,0)', color.bg]} style={styles.footerFade} pointerEvents="none" />
         {following ? (
-          <Button title="Stop following" variant="secondary" onPress={stop} />
+          <>
+            {planFinished ? (
+              <Button
+                title="Start this plan again"
+                onPress={() => {
+                  haptic.success();
+                  usePlanLibraryStore.getState().restartPlan(plan.id);
+                  toast(`${plan.title} · round ${cycle + 1}`, { tone: 'success', icon: 'restart' });
+                }}
+              />
+            ) : null}
+            <Button title="Stop following" variant="secondary" onPress={stop} />
+          </>
         ) : (
           <Button title="Follow this plan" onPress={follow} />
         )}

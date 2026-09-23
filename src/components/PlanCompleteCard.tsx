@@ -38,7 +38,7 @@ export function PlanCompleteCard() {
 
   const again = () => {
     haptic.success();
-    usePlanLibraryStore.getState().restartPlan();
+    usePlanLibraryStore.getState().restartPlan(plan.id);
     toast(`${plan.title} · round ${cycle + 1}`, { icon: 'restart' });
   };
 

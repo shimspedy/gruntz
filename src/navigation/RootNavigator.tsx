@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AppState, BackHandler, Platform, StyleSheet, View } from 'react-native';
+import { AppState, BackHandler, Linking, Platform, StyleSheet, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DarkTheme, NavigationContainer, type InitialState, type NavigationState } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -201,7 +201,13 @@ function restorable(state: InitialState | undefined): InitialState | undefined {
     route.state ? { ...route, state: restorable(route.state as InitialState) } : route,
   );
   if (!kept.length) return undefined;
-  return { ...state, routes: kept, index: kept.length - 1 } as InitialState;
+  // A stack's index is its top; a TAB navigator's index is the selected tab, and
+  // forcing it to the last entry reopened the app on the last tab (Profile) on
+  // every cold start, whatever the user was actually looking at. Keep the saved
+  // index where it still points at a surviving route, and only clamp when the
+  // screens above it were dropped.
+  const saved = typeof state?.index === 'number' ? state.index : kept.length - 1;
+  return { ...state, routes: kept, index: Math.min(Math.max(saved, 0), kept.length - 1) } as InitialState;
 }
 
 /**
@@ -325,6 +331,26 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   useEffect(() => {
     setNotificationsEnabled(remindersOn);
   }, [remindersOn]);
+  /**
+   * Whether this launch came from a deep link.
+   *
+   * `initialState` beats the URL-derived state in React Navigation and
+   * short-circuits the wait for it, so passing the saved state unconditionally
+   * meant a `gruntz://plans/:planId` tapped from a message or an ad opened the
+   * user's last screen instead of the plan — for everyone whose saved state was
+   * under 12 h old, i.e. exactly the engaged users most likely to tap one.
+   * `null` means "not resolved yet"; boot waits for it, which is a single
+   * already-resolved call on a cold start.
+   */
+  const [launchedFromLink, setLaunchedFromLink] = useState<boolean | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    Linking.getInitialURL()
+      .then((url) => { if (!cancelled) setLaunchedFromLink(Boolean(url)); })
+      .catch(() => { if (!cancelled) setLaunchedFromLink(false); });
+    return () => { cancelled = true; };
+  }, []);
+
   // Safety valve: never hold the splash more than 3 s on a slow store.
   const [timedOut, setTimedOut] = useState(false);
 
@@ -395,7 +421,7 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   // session, challenge and routine stores could render their defaults for a frame
   // and then jump once their own persisted state arrived.
   const storesReady = programHydrated && sessionHydrated && routineHydrated;
-  if (!fontsReady || !hasHydrated || !nav.ready || (!storesReady && !timedOut) || (!subscriptionHydrated && !timedOut)) return <Boot />;
+  if (!fontsReady || !hasHydrated || !nav.ready || (launchedFromLink === null && !timedOut) || (!storesReady && !timedOut) || (!subscriptionHydrated && !timedOut)) return <Boot />;
 
   return (
     <View style={styles.fill}>
@@ -403,7 +429,7 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
         ref={navigationRef}
         theme={theme}
         linking={linking}
-        initialState={isOnboarded ? nav.initial : undefined}
+        initialState={isOnboarded && !launchedFromLink ? nav.initial : undefined}
         onStateChange={isOnboarded ? nav.save : undefined}
       >
         {isOnboarded ? <AppStack /> : <OnboardingFlow />}
