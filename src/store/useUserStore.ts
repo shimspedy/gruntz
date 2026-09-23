@@ -29,6 +29,8 @@ interface UserState {
   setHydrated: (hydrated: boolean) => void;
   addXP: (amount: number) => void;
   recordChallengeActivity: (challenge: Pick<DailyChallenge, 'id' | 'type' | 'unit'>, amount: number) => void;
+  /** Credit a run/ruck tracked in the app toward lifetime distance. */
+  recordTrackedDistance: (miles: number) => void;
   recordChallengeCompletion: (params: {
     challengeDate: string;
     xpAmount: number;
@@ -212,6 +214,20 @@ export const useUserStore = create<UserState>()(
         const safe = Number.isFinite(amount) ? Math.max(0, Math.round(amount)) : 0;
         if (!safe) return;
         set((state) => ({ progress: { ...state.progress, ...applyXP(state.progress, safe) } }));
+      },
+
+      // Distance covered on a tracked run or ruck. Without this the only writer of
+      // total_distance_miles was recordChallengeActivity, so the Stats Distance tile
+      // read 0.0 mi no matter how many runs the athlete tracked in the app.
+      recordTrackedDistance: (miles) => {
+        const safeMiles = roundMetric(Math.max(0, miles));
+        if (!safeMiles) return;
+        set((state) => ({
+          progress: {
+            ...state.progress,
+            total_distance_miles: roundMetric(state.progress.total_distance_miles + safeMiles),
+          },
+        }));
       },
 
       recordChallengeActivity: (challenge, amount) => {

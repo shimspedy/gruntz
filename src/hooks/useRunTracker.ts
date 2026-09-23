@@ -38,10 +38,22 @@ interface TrackerInternals {
   pausedDuration: number;
   pauseStart: number | null;
   lastAltitude: number | null;
+  /**
+   * Steps banked from earlier pedometer subscriptions.
+   *
+   * `watchStepCount` reports steps since THIS subscription began, and pause/resume
+   * tears the subscription down and makes a new one — so writing the raw value
+   * straight to state reset the tile to near zero after every traffic light.
+   */
+  stepsBanked: number;
 }
 
 const METERS_TO_MILES = 0.000621371;
 const METERS_TO_FEET = 3.28084;
+/** Fixes worse than this are position noise, not movement; they do not add distance. */
+const MAX_FIX_ACCURACY_M = 25;
+/** Matches the barometer hook's threshold, so the two sources agree on what a climb is. */
+const MIN_ELEVATION_GAIN_M = 1.5;
 /** Refresh the on-screen route line every N fixes rather than on every one. */
 const ROUTE_COPY_EVERY = 5;
 
@@ -107,6 +119,7 @@ export function useRunTracker(options: { batterySaver?: boolean } = {}) {
     pausedDuration: 0,
     pauseStart: null,
     lastAltitude: null,
+    stepsBanked: 0,
   });
   const distanceRef = useRef(0);
   const elevationRef = useRef(0);
@@ -127,8 +140,9 @@ export function useRunTracker(options: { batterySaver?: boolean } = {}) {
 
       internals.current.pedometerSub?.remove();
       internals.current.pedometerSub = Pedometer.watchStepCount((result) => {
-        stepsRef.current = result.steps;
-        setState((prev) => ({ ...prev, steps: result.steps }));
+        const total = internals.current.stepsBanked + result.steps;
+        stepsRef.current = total;
+        setState((prev) => ({ ...prev, steps: total }));
       });
       return true;
     } catch {
@@ -156,20 +170,40 @@ export function useRunTracker(options: { batterySaver?: boolean } = {}) {
             speed: location.coords.speed,
           };
 
+          // A fix is only trusted to move you as far as its own accuracy allows.
+          // With no accuracy check at all, GPS wander under buildings accumulated
+          // real mileage while the athlete stood still — roughly 0.37 mi over a
+          // five-minute stop at this hook's 2 s / 3 m watch settings.
+          const accuracy = location.coords.accuracy ?? null;
+          const usable = accuracy == null || accuracy <= MAX_FIX_ACCURACY_M;
+
           const prev = routeRef.current[routeRef.current.length - 1];
-          if (prev) {
+          if (prev && usable) {
             const dist = haversineMeters(prev.latitude, prev.longitude, point.latitude, point.longitude);
-            if (dist > 2 && dist < 100) {
+            // Require the step to exceed the fix's own error, so noise cannot
+            // masquerade as movement.
+            const floor = Math.max(2, Math.min(accuracy ?? 0, MAX_FIX_ACCURACY_M));
+            if (dist > floor && dist < 100) {
               distanceRef.current += dist * METERS_TO_MILES;
             }
           }
 
-          if (point.altitude != null) {
+          // Same threshold the barometer hook uses. Summing every positive raw
+          // delta turned ±5 m of GPS vertical noise into thousands of feet of
+          // "climb" on flat ground, and RunTrackerScreen falls back to this figure
+          // whenever the barometer reports exactly 0.
+          if (point.altitude != null && usable) {
             if (internals.current.lastAltitude != null) {
               const gain = point.altitude - internals.current.lastAltitude;
-              if (gain > 0) elevationRef.current += gain * METERS_TO_FEET;
+              if (gain > MIN_ELEVATION_GAIN_M) {
+                elevationRef.current += gain * METERS_TO_FEET;
+                internals.current.lastAltitude = point.altitude;
+              } else if (gain < -MIN_ELEVATION_GAIN_M) {
+                internals.current.lastAltitude = point.altitude;
+              }
+            } else {
+              internals.current.lastAltitude = point.altitude;
             }
-            internals.current.lastAltitude = point.altitude;
           }
 
           routeRef.current.push(point);
@@ -231,6 +265,7 @@ export function useRunTracker(options: { batterySaver?: boolean } = {}) {
     if (status !== 'granted') return false;
 
     // Reset refs
+    internals.current.stepsBanked = 0;
     distanceRef.current = 0;
     elevationRef.current = 0;
     routeRef.current = [];
@@ -258,6 +293,8 @@ export function useRunTracker(options: { batterySaver?: boolean } = {}) {
     internals.current.pauseStart = Date.now();
     if (internals.current.timerInterval) clearInterval(internals.current.timerInterval);
     internals.current.locationSub?.remove();
+    // Bank what this subscription counted; the next one starts from zero again.
+    internals.current.stepsBanked = stepsRef.current;
     internals.current.pedometerSub?.remove();
     internals.current.locationSub = null;
     internals.current.pedometerSub = null;
