@@ -222,8 +222,11 @@ export default function PaywallScreen() {
                 onPress={() => setPlan('annual')}
                 badge={annual.percentSavings ? `Save ${annual.percentSavings}%` : 'Best value'}
                 title="Yearly"
-                subtitle={annual.priceString + ' / year'}
-                right={annual.pricePerMonthString ? perMonth(annual.pricePerMonthString) : ''}
+                // Guideline 3.1.2(c): the billed amount has to be the most prominent
+                // price on the card; the per-month figure is derived, so it sits
+                // underneath in smaller type. Swapping these got 1.8 (29) rejected.
+                right={`${annual.priceString} / year`}
+                subtitle={annual.pricePerMonthString ? `Equal to ${perMonth(annual.pricePerMonthString)}` : undefined}
               />
             ) : null}
             <PlanCard selected={plan === 'monthly' || !annual} onPress={() => setPlan('monthly')} title="Monthly" right={monthly ? perMonth(monthly) : 'Loading…'} />
@@ -330,7 +333,7 @@ function PlanCard({
       scaleTo={0.98}
       accessibilityRole="radio"
       accessibilityState={{ selected }}
-      accessibilityLabel={`${title} ${right}`}
+      accessibilityLabel={[title, right, subtitle].filter(Boolean).join(', ')}
     >
       <Animated.View style={[styles.plan, box]}>
         {badge ? (
@@ -344,7 +347,7 @@ function PlanCard({
           <View style={{ flex: 1 }}>
             <Text style={[styles.planTitle, { color: selected ? '#06101F' : color.textSecondary }]}>{title}</Text>
             {subtitle ? (
-              <Text variant="subhead" style={{ color: ink, marginTop: 2 }} tabular>
+              <Text variant="footnote" style={{ color: ink, marginTop: 2 }} tabular>
                 {subtitle}
               </Text>
             ) : null}
