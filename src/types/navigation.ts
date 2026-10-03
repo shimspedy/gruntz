@@ -1,5 +1,6 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { Rank } from './index';
+import type { ActivityType } from './activity';
 
 export type TabParamList = {
   Train: undefined;
@@ -48,7 +49,9 @@ export type RootStackParamList = {
   TrainingPreferences: undefined;
   LeaderTools: undefined;
   Paywall: undefined;
-  RunTracker: { type?: 'run' | 'ruck' } | undefined;
+  RunTracker: { type?: ActivityType } | undefined;
+  ActivityHistory: undefined;
+  ActivityDetail: { sessionId: string };
   Celebration: CelebrationParams;
 };
 

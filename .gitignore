@@ -46,3 +46,6 @@ ai-proxy/node_modules/
 marketing/play/build/
 
 secrets/
+
+# Local Netlify folder
+.netlify

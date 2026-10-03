@@ -69,9 +69,13 @@ function resetHarness() {
     },
     'expo-secure-store': { deleteItemAsync: async key => events.push(key) },
     './backup': { pauseAutomaticBackups: async () => events.push('backup-paused') },
+    './activityTracking': { stopActiveActivityForDataChange: async () => events.push('tracking-stopped') },
     './notifications': Object.fromEntries(['cancelDailyReminder','cancelRestDone','cancelTrialEndingReminder','cancelWeeklyRecap','clearWorkoutProgress','setNotificationsEnabled'].map(name => [name, async () => {}])),
   };
   for (const [name, store] of Object.entries(stores)) mocks[`../store/${name}`] = { [name]: store };
+  mocks['../store/useUserStore'].flushUserPersistence = async () => {};
+  mocks['../store/useReadinessStore'].flushReadinessPersistence = async () => {};
+  mocks['../store/useReadinessStore'].clearReadinessPersistence = async () => { events.push('activity-files-cleared'); };
   mocks['../store/useUiStore'] = { useUiStore: stores.useUiStore, useChromePrefs: stores.useChromePrefs };
   return { ...load('src/services/resetLocalData.ts', mocks), events, stores };
 }
@@ -80,6 +84,7 @@ test('delete local data clears every live store and preserves billing plus cloud
   const { resetLocalData, events, stores } = resetHarness();
   await resetLocalData();
   assert.equal(events[0], 'backup-paused');
+  assert.ok(events.includes('activity-files-cleared'));
   for (const [name, store] of Object.entries(stores)) if (name !== 'useUserStore') assert.equal(store.state.data, null, name);
   assert.deepEqual(events.at(-1), ['@gruntz_user','@gruntz_routines','@gruntz_readiness']);
   assert.equal(stores.useProgramStore.state.hasHydrated, true);

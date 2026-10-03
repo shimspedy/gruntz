@@ -14,8 +14,9 @@
       "buildNumber": "37",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSMotionUsageDescription": "Gruntz uses motion sensors to count your reps during workouts.",
-        "NSLocationWhenInUseUsageDescription": "Gruntz uses your location to track runs and rucks."
+        "NSMotionUsageDescription": "Gruntz uses motion sensors to count workout reps and steps during runs, rucks and hikes.",
+        "NSLocationWhenInUseUsageDescription": "Gruntz uses your location to record the route, distance and pace of runs, rucks and hikes you start.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow Gruntz to record your active run, ruck or hike while the screen is locked or you use another app. Recording stops when you end the activity."
       }
     },
     "android": {
@@ -51,7 +52,11 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Gruntz uses your location to track runs and rucks."
+          "locationWhenInUsePermission": "Gruntz uses your location to record the route, distance and pace of runs, rucks and hikes you start.",
+          "locationAlwaysAndWhenInUsePermission": "Allow Gruntz to record your active run, ruck or hike while the screen is locked or you use another app. Recording stops when you end the activity.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
         }
       ],
       "expo-font",
@@ -68,7 +73,8 @@
           }
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "@maplibre/maplibre-react-native"
     ],
     "extra": {
       "eas": {

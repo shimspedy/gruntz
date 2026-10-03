@@ -32,6 +32,8 @@ import ProgramDetailScreen from '../screens/ProgramDetailScreen';
 import ProgramSelectScreen from '../screens/ProgramSelectScreen';
 import RanksScreen from '../screens/RanksScreen';
 import RunTrackerScreen from '../screens/RunTrackerScreen';
+import ActivityHistoryScreen from '../screens/ActivityHistoryScreen';
+import ActivityDetailScreen from '../screens/ActivityDetailScreen';
 import ServiceProfileScreen from '../screens/ServiceProfileScreen';
 import BackupScreen from '../screens/BackupScreen';
 import DataTransferScreen from '../screens/DataTransferScreen';
@@ -132,6 +134,8 @@ const linking = {
       Achievements: 'achievements',
       Streak: 'streak',
       Stats: 'stats',
+      ActivityHistory: 'activities',
+      ActivityDetail: 'activities/:sessionId',
       Settings: 'settings',
       Paywall: 'paywall',
     },
@@ -197,6 +201,8 @@ function AppStack() {
       <Stack.Screen name="Achievements" component={AchievementsScreen} />
       <Stack.Screen name="Streak" component={StreakScreen} />
       <Stack.Screen name="Stats" component={StatsScreen} />
+      <Stack.Screen name="ActivityHistory" component={ActivityHistoryScreen} />
+      <Stack.Screen name="ActivityDetail" component={ActivityDetailScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="ServiceProfile" component={ServiceProfileScreen} />
       <Stack.Screen name="Backup" component={BackupScreen} />

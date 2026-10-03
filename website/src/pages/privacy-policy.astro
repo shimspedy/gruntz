@@ -22,8 +22,9 @@ import { site } from '../data/site';
   <h2>1. Information We Collect</h2>
   <p>
     Gruntz is local-first. Your progress and settings are stored on the device, and no account is
-    required to train. The one exception is progress backup, which you can turn on yourself and is
-    described below; when it is off, nothing you log leaves your phone.
+    required to train. Optional progress backup uploads the data described below. Viewing a route
+    map requests map tiles from our map provider, and sharing an activity card sends the image
+    only to the destination you choose.
   </p>
 
   <h3>Information stored on the device</h3>
@@ -33,11 +34,17 @@ import { site } from '../data/site';
     <li>Mission history, streaks, XP, achievements, and related progress metrics.</li>
     <li>Settings such as notification preferences, reminders, and theme preferences.</li>
     <li>Locally saved subscription state used to reflect entitlement status inside the app.</li>
+    <li>Outdoor activity history, including GPS routes, timestamps, distance, duration and elevation.</li>
   </ul>
 
   <h3>Permissions and fitness data</h3>
   <ul>
-    <li>Location permission may be requested when you choose to track a run or ruck session.</li>
+    <li>
+      Location permission is requested when you start a run, ruck or hike. If you choose background
+      recording and grant Always location access, an activity can continue while the screen is
+      locked or you use another app. Ending or pausing the activity stops GPS recording; Gruntz
+      does not start location recording simply because you open the app.
+    </li>
     <li>
       Motion-related sensors, including pedometer and barometer where available, may be used to
       support workout or run-tracker metrics.
@@ -58,8 +65,13 @@ import { site } from '../data/site';
     </li>
     <li>
       A copy of your <strong>training history and app progress</strong> — logged workouts,
-      streaks, achievements, plan state, check-ins and settings — is uploaded so it can be
+      streaks, achievements, plan state, check-ins, outdoor activity stats and settings — is uploaded so it can be
       restored if you lose, break or replace your phone.
+    </li>
+    <li>
+      Precise GPS routes stay on your device unless you separately turn on
+      <strong>Include GPS routes in backup</strong>. This optional setting includes saved route
+      coordinates in your Supabase backup; it is off by default.
     </li>
     <li>
       Backups are stored with Supabase, our database provider, and protected by row-level
@@ -73,6 +85,17 @@ import { site } from '../data/site';
     You can delete your backup, or delete your entire account, at any time from inside the app
     (Profile → Back up progress). Deleting your account permanently removes your email address
     and your stored backup from our servers. See <a href="#retention">Data Retention</a>.
+  </p>
+
+  <h3>Route maps and activity cards</h3>
+  <p>
+    Maps use OpenFreeMap and OpenStreetMap data. Loading map tiles sends the map provider your
+    IP address and requests for the geographical area displayed; it does not upload your full
+    GPS route as an activity record. Your route is drawn on your device. An activity card is
+    generated on your device, and the system share sheet lets you choose where to send it.
+    Share previews hide the route within 200 metres of its start and finish by default. This
+    reduces exposure of those endpoints but cannot guarantee that a route or its surroundings
+    will not reveal a location. You can review the image and change this setting before sharing.
   </p>
 
   <h3>Purchase and subscription data</h3>
@@ -112,6 +135,7 @@ import { site } from '../data/site';
       sign-in code emails — both only if you enable progress backup.
     </li>
     <li>Apple App Store or Google Play for payment processing and store-managed subscriptions.</li>
+    <li>OpenFreeMap for map tiles and styles when you view a route map.</li>
     <li>
       Platform-level services used by the operating system to deliver notifications and fitness
       permissions.
@@ -149,6 +173,8 @@ import { site } from '../data/site';
   <h2>7. Your Choices</h2>
   <ul>
     <li>You can decline optional permissions such as notifications or location access.</li>
+    <li>You can use foreground recording, pause or end an activity, and revoke background location access in device settings.</li>
+    <li>You can review an activity card and its route visibility before opening the system share sheet.</li>
     <li>You can cancel subscriptions through Apple App Store or Google Play account settings.</li>
     <li>You can remove locally stored app data by deleting the app or clearing device data.</li>
     <li>

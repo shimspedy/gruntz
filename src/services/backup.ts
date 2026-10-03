@@ -14,6 +14,12 @@ export type BackupMeta = {
 
 export type AuthResult = 'sent' | 'rate-limited' | 'unavailable' | 'error';
 export type VerifyResult = 'signed-in' | 'invalid-code' | 'unavailable' | 'error';
+export type PushBackupResult = 'ok' | 'needs-review' | 'signed-out' | 'unavailable' | 'too-large' | 'error';
+export type RestoreBackupResult = 'restored' | 'no-backup' | 'signed-out' | 'unavailable' | 'too-new' | 'too-large' | 'error';
+
+function isBackupTooLarge(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && 'code' in error && error.code === 'backup-too-large';
+}
 
 /**
  * Backup and restore for an offline-first app.
@@ -200,11 +206,11 @@ export async function getSignedInEmail(): Promise<string | null> {
  * Upserted on `user_id`, so there is exactly one backup per athlete and a push is
  * idempotent — running it twice costs a round trip and changes nothing.
  */
-export function pushBackup(appVersion?: string, options: { replaceExisting?: boolean } = {}): Promise<'ok' | 'needs-review' | 'signed-out' | 'unavailable' | 'error'> {
+export function pushBackup(appVersion?: string, options: { replaceExisting?: boolean } = {}): Promise<PushBackupResult> {
   return serialize(() => pushBackupNow(appVersion, options));
 }
 
-async function pushBackupNow(appVersion: string | undefined, options: { replaceExisting?: boolean }): Promise<'ok' | 'needs-review' | 'signed-out' | 'unavailable' | 'error'> {
+async function pushBackupNow(appVersion: string | undefined, options: { replaceExisting?: boolean }): Promise<PushBackupResult> {
   const supabase = getSupabase();
   if (!supabase) return 'unavailable';
   try {
@@ -244,7 +250,7 @@ async function pushBackupNow(appVersion: string | undefined, options: { replaceE
     return 'ok';
   } catch (error) {
     if (__DEV__) console.warn('[backup] pushBackup threw', error);
-    return 'error';
+    return isBackupTooLarge(error) ? 'too-large' : 'error';
   }
 }
 
@@ -277,12 +283,12 @@ export async function fetchBackupMeta(): Promise<BackupMeta | null> {
  * only once local storage has actually been written, so the UI can tell the athlete
  * to restart with confidence rather than hope.
  */
-export function restoreBackup(): Promise<'restored' | 'no-backup' | 'signed-out' | 'unavailable' | 'too-new' | 'error'> {
+export function restoreBackup(): Promise<RestoreBackupResult> {
   const resume = suspendAutomaticBackups();
   return serialize(restoreBackupNow).finally(resume);
 }
 
-async function restoreBackupNow(): Promise<'restored' | 'no-backup' | 'signed-out' | 'unavailable' | 'too-new' | 'error'> {
+async function restoreBackupNow(): Promise<RestoreBackupResult> {
   const supabase = getSupabase();
   if (!supabase) return 'unavailable';
   try {
@@ -304,7 +310,7 @@ async function restoreBackupNow(): Promise<'restored' | 'no-backup' | 'signed-ou
     return 'restored';
   } catch (error) {
     if (__DEV__) console.warn('[backup] restoreBackup threw', error);
-    return 'error';
+    return isBackupTooLarge(error) ? 'too-large' : 'error';
   }
 }
 

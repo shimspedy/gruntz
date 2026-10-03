@@ -88,6 +88,8 @@ export interface UserProgress {
   workouts_completed: number;
   total_reps: number;
   total_distance_miles: number;
+  /** Saved activity IDs already included in distance/records, retained for crash-safe replay. */
+  credited_activity_ids?: string[];
   best_run_times: Record<string, number>;
   best_ruck_times: Record<string, number>;
   best_swim_times: Record<string, number>;

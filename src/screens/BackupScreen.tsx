@@ -11,10 +11,13 @@ import {
   requestSignInCode,
   reconcileTrialStart,
   restoreBackup,
+  scheduleBackup,
   signOut,
+  suspendAutomaticBackups,
   type BackupMeta,
 } from '../services/backup';
 import { verifySignInCode } from '../services/backup';
+import { flushReadinessPersistence, useReadinessStore } from '../store/useReadinessStore';
 import { Button } from '../ui/Button';
 import { EmptyState, Group, NavHeader, Row } from '../ui/Layout';
 import { Text } from '../ui/Text';
@@ -49,6 +52,8 @@ export default function BackupScreen() {
   const [signedInEmail, setSignedInEmail] = useState<string | null>(null);
   const [meta, setMeta] = useState<BackupMeta | null>(null);
   const [busy, setBusy] = useState(false);
+  const includeRoutes = useReadinessStore((state) => state.includeActivityRoutesInBackup);
+  const setIncludeRoutes = useReadinessStore((state) => state.setIncludeActivityRoutesInBackup);
 
   const refresh = useCallback(async () => {
     const current = await getSignedInEmail();
@@ -98,6 +103,51 @@ export default function BackupScreen() {
     );
   };
 
+  const showBackupTooLarge = () => Alert.alert(
+    'Backup is too large',
+    'This backup exceeds the 32 MB limit. Turn off “Include GPS routes in backup” if enabled, then try Back up now again. All activity history and routes remain on this device, and your existing cloud backup is unchanged.',
+  );
+
+  const changeRouteBackup = async (include: boolean) => {
+    setBusy(true);
+    const resume = suspendAutomaticBackups();
+    let saved = false;
+    try {
+      setIncludeRoutes(include);
+      await flushReadinessPersistence();
+      saved = true;
+    } catch {
+      // Keep the visible choice aligned with the previously durable consent.
+      setIncludeRoutes(includeRoutes);
+      await flushReadinessPersistence().catch(() => undefined);
+      Alert.alert('Setting couldn’t be saved', 'Try changing this setting again before backing up. Your local routes are still safe.');
+    } finally {
+      resume();
+      setBusy(false);
+    }
+    if (!saved) return;
+    scheduleBackup();
+    if (!include) {
+      Alert.alert('Routes excluded from future backups', 'Your local routes are kept. Any routes already in your cloud backup remain there until a new backup succeeds or you delete that backup. Choose Back up now to replace it now.');
+    }
+  };
+
+  const toggleRouteBackup = () => {
+    if (busy) return;
+    if (includeRoutes) {
+      void changeRouteBackup(false);
+      return;
+    }
+    Alert.alert(
+      'Include precise GPS routes?',
+      'Saved run, ruck and hike routes, including precise start and end locations, will be uploaded to Supabase in your account’s private backup. Activity totals are backed up even when this setting is off.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Include routes', onPress: () => void changeRouteBackup(true) },
+      ],
+    );
+  };
+
   const verify = async () => {
     if (!new RegExp(`^\\d{${OTP_CODE_LENGTH}}$`).test(code.trim())) {
       toast(`Enter the ${OTP_CODE_LENGTH}-digit code`, { tone: 'error', icon: 'alert' });
@@ -120,6 +170,8 @@ export default function BackupScreen() {
       setBusy(false);
       if (backupResult === 'needs-review') {
         Alert.alert('Your existing backup is safe', 'Restore it onto this phone, or choose Back up now to replace it with the progress on this phone. Automatic backup is paused until you choose.');
+      } else if (backupResult === 'too-large') {
+        showBackupTooLarge();
       } else {
         toast(backupResult === 'ok' ? 'Signed in · progress backed up' : 'Signed in · backup will retry after you train', { icon: 'check' });
       }
@@ -149,6 +201,10 @@ export default function BackupScreen() {
       haptic.success();
       await refresh();
       toast('Progress backed up', { icon: 'check' });
+      return;
+    }
+    if (result === 'too-large') {
+      showBackupTooLarge();
       return;
     }
     Alert.alert('Backup didn’t finish', 'We couldn’t reach the server. Nothing on this device has changed.');
@@ -187,6 +243,8 @@ export default function BackupScreen() {
       ? 'There’s no backup on this account yet.'
       : result === 'too-new'
         ? 'That backup was made by a newer version of Gruntz. Update the app, then restore.'
+        : result === 'too-large'
+          ? 'That backup exceeds the 32 MB restore limit. On your original device, turn off GPS route backup and choose Back up now, then retry here. Keep your original device; nothing on this phone has changed.'
         : 'We couldn’t reach the server. Nothing on this device has changed.';
     Alert.alert('Nothing restored', message);
   };
@@ -286,6 +344,21 @@ export default function BackupScreen() {
               phone by signing in with this email.
             </Text>
 
+            <Group style={styles.group}>
+              <Row
+                icon="location"
+                title="Include GPS routes in backup"
+                subtitle="Uploads precise saved locations to Supabase in your account’s private backup."
+                toggle={includeRoutes}
+                onToggle={toggleRouteBackup}
+              />
+            </Group>
+            <Text variant="callout" tone="secondary" style={styles.note}>
+              {includeRoutes
+                ? 'Backups include your activity totals and precise GPS routes, including start and end locations.'
+                : 'Backups include activity totals. GPS routes stay on this device unless you turn this setting on.'}
+            </Text>
+
             <Button title="Back up now" onPress={() => void backUpNow()} loading={busy} />
             <View style={styles.spacer} />
             <Button
@@ -311,7 +384,8 @@ export default function BackupScreen() {
             <Text variant="callout" tone="secondary" style={styles.note}>
               Gruntz works completely offline and always will — everything you log is saved on
               this phone. Adding your email means there’s a copy to restore from if this phone
-              is lost, broken or replaced. No password, no ads, nothing shared.
+              is lost, broken or replaced. No password or ads. GPS routes stay on this device
+              unless you separately turn on route backup after signing in.
             </Text>
 
             {stage === 'email' ? (

@@ -79,9 +79,11 @@ test('explicit timezone is retained and malformed trailing timestamps are reject
 
 function snapshotModule(disk, prepare = async () => () => {}) {
   return load('src/services/backupSnapshot.ts', {
+    'react-native': { Platform: { OS: 'ios' } },
     '@react-native-async-storage/async-storage': disk,
     '../config/backup': { BACKUP_SCHEMA_VERSION: 1 },
     './backupRestoreStores': { prepareStoreRestore: prepare },
+    './activityTracking': { stopActiveActivityForDataChange: async () => {} },
   });
 }
 
@@ -125,7 +127,7 @@ test('restore cannot import subscription state or invalid workout records', () =
   assert.throws(() => service.validateSnapshot(snapshot({ '@gruntz_exercise_log': serialized({ logs: { squat: 'bad' } }) })), /workout history/);
 });
 
-function backupModule({ remote = { user_id: 'athlete' }, lookupError = null, seed = {} } = {}) {
+function backupModule({ remote = { user_id: 'athlete' }, lookupError = null, seed = {}, captureError, restoreError } = {}) {
   const disk = storage(seed);
   const writes = [];
   let captured = 0;
@@ -148,8 +150,8 @@ function backupModule({ remote = { user_id: 'athlete' }, lookupError = null, see
     '../config/backup': { BACKUP_SCHEMA_VERSION: 1, BACKUP_DEBOUNCE_MS: 20000, isBackupAvailable: () => true },
     './supabaseClient': { getSupabase: () => api },
     './backupSnapshot': {
-      captureSnapshot: async () => { captured += 1; return snapshot({ '@gruntz_user': serialized({ progress: {} }) }); },
-      snapshotWorkoutCount: () => 1, applySnapshot: async () => {},
+      captureSnapshot: async () => { captured += 1; if (captureError) throw captureError; return snapshot({ '@gruntz_user': serialized({ progress: {} }) }); },
+      snapshotWorkoutCount: () => 1, applySnapshot: async () => { if (restoreError) throw restoreError; },
     },
   });
   return { service, disk, writes, captured: () => captured, api };
@@ -198,6 +200,17 @@ test('OTP rate limits produce a specific recoverable result', async () => {
   assert.equal(await backupModule().service.requestSignInCode('athlete@example.com'), 'rate-limited');
 });
 
+test('oversized upload and restore return a specific result without replacing cloud data or claiming success', async () => {
+  const error = Object.assign(new Error('limit'), { code: 'backup-too-large' });
+  const upload = backupModule({ remote: null, captureError: error });
+  assert.equal(await upload.service.pushBackup(), 'too-large');
+  assert.equal(upload.writes.length, 0);
+  assert.equal(upload.disk.data.has('@gruntz_backup_owner'), false);
+  const restore = backupModule({ remote: { payload: snapshot({}) }, restoreError: error });
+  assert.equal(await restore.service.restoreBackup(), 'too-large');
+  assert.equal(restore.disk.data.has('@gruntz_backup_owner'), false);
+});
+
 test('multiple Strong aliases resolving to one library exercise keep all their sets', () => {
   let received;
   const service = load('src/services/workoutTransfer.ts', {
@@ -239,6 +252,8 @@ test('restoring replaces live state including absent stores, preserves actions a
     targets.push(store);
     mocks[`../store/${name}`] = { [name]: store };
   }
+  mocks['../store/useUserStore'].flushUserPersistence = async () => {};
+  mocks['../store/useReadinessStore'].flushReadinessPersistence = async () => {};
   const { prepareStoreRestore } = load('src/services/backupRestoreStores.ts', mocks);
   const commit = await prepareStoreRestore({ useUserStore: serialized({ count: 4, action: 'malicious' }, 0) });
   assert.equal(targets[0].getState().count, 99);

@@ -1,3 +1,5 @@
+import { isTrackedSession } from '../features/activityHistory';
+
 type RestorableStore = {
   getState: () => Record<string, unknown>;
   getInitialState: () => Record<string, unknown>;
@@ -30,6 +32,11 @@ async function storesForRestore() {
 /** Prepare every store before writing anything. Uses each store's existing migration. */
 export async function prepareStoreRestore(values: Record<string, string>): Promise<() => Promise<void>> {
   const stores = await storesForRestore();
+  const [{ flushUserPersistence }, { flushReadinessPersistence }] = await Promise.all([
+    import('../store/useUserStore'), import('../store/useReadinessStore'),
+  ]);
+  // Completed activity writes must settle before the backup replaces their keys.
+  await Promise.all([flushUserPersistence(), flushReadinessPersistence()]);
   const updates: { target: RestorableStore; options: ReturnType<RestorableStore['persist']['getOptions']>; next: Record<string, unknown>; previous: Record<string, unknown> }[] = [];
   for (const store of stores) {
     // The structural type keeps each store's own state/actions intact.
@@ -52,6 +59,10 @@ export async function prepareStoreRestore(values: Record<string, string>): Promi
       const state = Object.fromEntries(Object.entries(persisted as Record<string, unknown>)
         .filter(([key]) => key in initial && typeof initial[key] !== 'function'
           && key !== 'hasHydrated' && key !== 'hydrationFailed'));
+      if (options.name === '@gruntz_readiness' && state.trackedSessions !== undefined
+        && (!Array.isArray(state.trackedSessions) || state.trackedSessions.some((activity: unknown) => !isTrackedSession(activity)))) {
+        throw new Error('That backup contains invalid activity history or GPS routes.');
+      }
       next = options.merge ? options.merge(state, initial) : { ...initial, ...state };
     }
     updates.push({ target, options, next, previous: target.getState() });

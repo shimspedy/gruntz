@@ -2,6 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { DailyChallenge } from '../data/dailyChallenges';
+import type { ActivityType } from '../types/activity';
+import { createFlushableStorage } from './flushableStorage';
 import { UserProgress, UserProfile, Rank, CompletedMission, UserAchievement, UserSettings } from '../types';
 import { getLevelForXP, getRank, getXPToNextLevel, calculateMissionXP, calculateStreakBonus, isStreakAlive, getDefaultProgress } from '../utils/xp';
 import { achievements } from '../data/achievements';
@@ -32,7 +34,7 @@ interface UserState {
   addXP: (amount: number) => void;
   recordChallengeActivity: (challenge: Pick<DailyChallenge, 'id' | 'type' | 'unit'>, amount: number) => void;
   /** Credit a run/ruck tracked in the app toward lifetime distance and personal bests. */
-  recordTrackedSession: (input: { type: 'run' | 'ruck'; miles: number; seconds: number }) => void;
+  recordTrackedSession: (input: { id?: string; type: ActivityType; miles: number; seconds: number }) => void;
   recordChallengeCompletion: (params: {
     challengeDate: string;
     xpAmount: number;
@@ -49,11 +51,9 @@ const initialProgress = getDefaultProgress('local');
 const STORAGE_KEY = '@gruntz_user';
 // Do not let a failed read flush defaults over the only saved copy.
 let userStorageWritable = false;
-const userStorage = {
-  getItem: (key: string) => AsyncStorage.getItem(key),
-  removeItem: (key: string) => AsyncStorage.removeItem(key),
-  setItem: (key: string, value: string) => userStorageWritable ? AsyncStorage.setItem(key, value) : Promise.resolve(),
-};
+const userPersistence = createFlushableStorage(AsyncStorage, () => userStorageWritable);
+const userStorage = userPersistence.storage;
+export const flushUserPersistence = userPersistence.flush;
 /** Roughly three years of daily training before the oldest claim is forgotten. */
 const MAX_CLAIMED_MISSIONS = 1000;
 /**
@@ -133,6 +133,9 @@ function migratePersistedUserState(persistedState: unknown): PersistedUserState 
       ? {
           ...persisted.progress,
           claimed_missions: normalizeClaimedMissions(persisted.progress.claimed_missions),
+          credited_activity_ids: Array.isArray(persisted.progress.credited_activity_ids)
+            ? [...new Set(persisted.progress.credited_activity_ids.filter((id): id is string => typeof id === 'string' && id.length > 0 && id.length <= 200))]
+            : [],
         }
       : persisted.progress,
   };
@@ -246,11 +249,22 @@ export const useUserStore = create<UserState>()(
       // how many runs the athlete tracked — and nothing anywhere wrote the best_*_times
       // maps, so the Records section could never populate despite its empty state
       // promising "tracked sessions set your personal bests".
-      recordTrackedSession: ({ type, miles, seconds }) => {
+      recordTrackedSession: ({ id, type, miles, seconds }) => {
+        if (!Number.isFinite(miles) || !Number.isFinite(seconds)) return;
+        if (id !== undefined && (!id.length || id.length > 200)) return;
         const safeMiles = roundMetric(Math.max(0, miles));
         const safeSeconds = Math.round(Math.max(0, seconds));
-        if (!safeMiles) return;
+        if (!safeMiles && !id) return;
         set((state) => {
+          const credited = state.progress.credited_activity_ids ?? [];
+          if (id && credited.includes(id)) return state;
+          const progress = {
+            ...state.progress,
+            total_distance_miles: roundMetric(state.progress.total_distance_miles + safeMiles),
+            credited_activity_ids: id ? [...credited, id] : credited,
+          };
+          // Hikes contribute to distance without creating running or loaded-ruck records.
+          if (type === 'hike') return { progress };
           const key = type === 'ruck' ? 'best_ruck_times' : 'best_run_times';
           const bests = { ...state.progress[key] };
           if (safeSeconds > 0) {
@@ -267,8 +281,7 @@ export const useUserStore = create<UserState>()(
           }
           return {
             progress: {
-              ...state.progress,
-              total_distance_miles: roundMetric(state.progress.total_distance_miles + safeMiles),
+              ...progress,
               [key]: bests,
             },
           };

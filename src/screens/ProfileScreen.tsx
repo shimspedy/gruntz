@@ -166,6 +166,7 @@ export default function ProfileScreen() {
         />
         <Row icon="flag" title="Service & test profile" onPress={() => navigation.navigate('ServiceProfile')} />
         <Row icon="people" title="Leader tools" value="Coming soon" onPress={() => navigation.navigate('LeaderTools')} />
+        <Row icon="mapPin" title="Activity history" subtitle="Runs, rucks, hikes and share cards" onPress={() => navigation.navigate('ActivityHistory')} />
         <Row icon="share" title="Share my streak" onPress={() => void shareStreak(progress.streak_days, rankTitle(progress.current_rank, military))} />
         {/* Optional, and deliberately here rather than in onboarding: nobody is asked
             to make an account before they have something worth keeping. Hidden

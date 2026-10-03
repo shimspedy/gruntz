@@ -2,12 +2,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { pauseAutomaticBackups } from './backup';
 import { cancelDailyReminder, cancelRestDone, cancelTrialEndingReminder, cancelWeeklyRecap, clearWorkoutProgress, setNotificationsEnabled } from './notifications';
-import { useUserStore } from '../store/useUserStore';
+import { flushUserPersistence, useUserStore } from '../store/useUserStore';
 import { useProgramStore } from '../store/useProgramStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { useRoutineStore } from '../store/useRoutineStore';
 import { useChallengeStore } from '../store/useChallengeStore';
-import { useReadinessStore } from '../store/useReadinessStore';
+import { clearReadinessPersistence, flushReadinessPersistence, useReadinessStore } from '../store/useReadinessStore';
 import { usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { useExerciseLogStore } from '../store/useExerciseLogStore';
 import { useExerciseNotesStore } from '../store/useExerciseNotesStore';
@@ -18,6 +18,8 @@ import { useChromePrefs, useUiStore } from '../store/useUiStore';
 export async function resetLocalData() {
   // A device-only reset must never upload an empty profile over the cloud backup.
   await pauseAutomaticBackups();
+  const { stopActiveActivityForDataChange } = await import('./activityTracking');
+  await stopActiveActivityForDataChange();
   setNotificationsEnabled(false);
   await Promise.all([cancelDailyReminder(), cancelWeeklyRecap(), cancelTrialEndingReminder(), cancelRestDone(), clearWorkoutProgress()]);
   await SecureStore.deleteItemAsync('gruntz_assessment');
@@ -34,6 +36,8 @@ export async function resetLocalData() {
   useUiStore.setState(useUiStore.getInitialState());
   useProgramStore.setState({ ...useProgramStore.getInitialState(), hasHydrated: true });
   useUserStore.getState().reset();
+  await Promise.all([flushUserPersistence(), flushReadinessPersistence()]);
+  await clearReadinessPersistence();
   await useSessionStore.persist.clearStorage();
   const keys = await AsyncStorage.getAllKeys();
   // Billing remains store-managed and the original trial must not restart on erase.
@@ -44,6 +48,8 @@ export async function resetLocalData() {
 
 /** Error recovery also needs to reset the already hydrated in-memory stores. */
 export async function resetTransientState() {
+  const { stopActiveActivityForDataChange } = await import('./activityTracking');
+  await stopActiveActivityForDataChange();
   useSessionStore.getState().discard();
   useSessionStore.setState(useSessionStore.getInitialState());
   useChromePrefs.setState(useChromePrefs.getInitialState());

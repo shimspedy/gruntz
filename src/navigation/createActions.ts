@@ -1,4 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
+import { useActivityStatus } from '../hooks/useRunTracker';
 import { getProgramWorkoutForDate, getNextProgramWorkout } from '../data/programWorkouts';
 import { usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { useProgramStore } from '../store/useProgramStore';
@@ -23,6 +24,7 @@ export function useCreateActions(): CreateAction[] {
   const navigation = useNavigation();
   const close = () => useUiStore.getState().setCreateMenu(false);
   const sessionActive = useSessionStore((s) => s.active);
+  const activity = useActivityStatus();
 
   const openMission = () => {
     close();
@@ -79,8 +81,8 @@ export function useCreateActions(): CreateAction[] {
     },
     {
       icon: 'run',
-      title: 'Run or ruck',
-      subtitle: 'Track distance, pace and elevation',
+      title: activity.sessionId ? `${activity.isTracking ? 'Resume' : 'Save'} ${activity.activityType}` : 'Run, ruck or hike',
+      subtitle: activity.sessionId ? 'Return to your current activity' : 'Record your route and share the finish',
       onPress: () => {
         close();
         navigation.navigate('RunTracker');

@@ -93,6 +93,7 @@ export function getDefaultProgress(userId: string): UserProgress {
     workouts_completed: 0,
     total_reps: 0,
     total_distance_miles: 0,
+    credited_activity_ids: [],
     best_run_times: {},
     best_ruck_times: {},
     best_swim_times: {},

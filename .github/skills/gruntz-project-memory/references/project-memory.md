@@ -44,13 +44,22 @@
 ## Run Tracking Rules
 - GPS, pedometer, timer, and barometer listeners must clean up correctly on pause, stop, resume, and restart.
 - Paused runs must not continue accumulating steps or altitude in the background.
-- Current GPS is foreground-only: backgrounding automatically pauses and requires explicit resume. Async watcher attachment must be cancelled if the run stops or pauses before setup finishes.
+- GPS recording has one durable singleton owner with a global Expo TaskManager task. `@gruntz_active_activity` stores the active/finished draft; UI unmount does not stop recording. Native setup callbacks must be invalidated on pause/stop/reset.
+- Background recording requires iOS Always location or Android background permission and its foreground service. Foreground-only fallback pauses when backgrounded. A force-quit can interrupt GPS; reopen recovers to the last saved update and pauses, preserving gaps rather than inventing distance.
+- Run, ruck and hike history retains every saved activity; routes are bounded to 6,000 points with segment boundaries. Stable IDs make save/credit replay safe; both history and progress writes must be flushed before clearing a finished draft.
+- Android background step totals are partial; iOS queries historical active intervals. Do not present partial counts as complete.
 - Resuming a run should preserve prior elevation totals instead of resetting them.
 - If location permission is denied, the app should surface that to the user instead of failing silently.
 - Native sensor/location watcher setup should fail closed: return a safe false/error state, clean up listeners, and keep the app usable instead of throwing.
 - Pace formatting should normalize rounded seconds so the UI never renders impossible times like `12:60`.
 - Starting a new run must immediately clear stale distance, time, step, and route UI before the first fresh sensor update arrives.
 - Only show live barometer altitude UI while the barometer hook is active; do not render stale altitude after stop/pause/failure.
+
+## Activity Maps And Sharing
+- Use native MapLibre 11 with OpenFreeMap styles. Mapcn is a web/Tailwind component and is the design reference, not a native dependency. Keep map-data attribution in exported map images.
+- Share cards preview Field/Signal themes and export PNG through view-shot and the device share sheet. Convert native map/Skia artwork to a loaded React Native Image before capturing to avoid blank GPU surfaces.
+- Hide every point and crossing line within 200 metres of route start/end by default, including loop returns. Snapshot styles/bounds receive only the redacted route; never replace a paused gap with a connecting line.
+- Precise routes remain local unless the athlete separately opts into including GPS routes in cloud backup. Backups keep activity stats by default and validate route payloads before restore. Reset/restore await native recorder cancellation.
 
 ## Monetization Rules
 - The app uses a 15-day app-level free access window for new users.
@@ -65,6 +74,7 @@
 - Monthly and annual Pro have the same App Store subscription service level (1); changing billing duration must not imply a different feature tier.
 
 ## Release And Platform Notes
+- Android activity history uses two checksummed document-file revisions to avoid AsyncStorage SQLite row and database limits. Readiness backup, restore and reset I/O must use `readinessStorage`; await `clearReadinessPersistence()` for deletion because Zustand's `persist.clearStorage()` returns void.
 - RevenueCat and App Store Connect configuration can fail independently; verify dashboard mapping before assuming app-side purchase bugs.
 - Expo/React Native iOS builds commonly show Hermes script warnings; these are noise unless accompanied by real build errors.
 - RevenueCat helper methods should fail to an unavailable/fallback path if native configure or URL-opening calls reject.

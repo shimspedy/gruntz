@@ -19,6 +19,7 @@ import { setupNotificationChannels } from './src/services/notifications';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { ToastHost } from './src/ui/Toast';
 import { color } from './src/ui/tokens';
+import { initializeActivityTracking } from './src/services/activityTracking';
 
 // Dev-only: suppress known RevenueCat config warnings while App Store Connect
 // products haven't propagated. In production we WANT these logs surfaced so
@@ -67,6 +68,7 @@ export default function App() {
     // Prepare notification channels silently. Permission is requested in context
     // (onboarding reminder step or the Settings toggle), never at launch.
     setupNotificationChannels();
+    void initializeActivityTracking();
   }, []);
 
   useEffect(() => {

@@ -37,7 +37,7 @@ export const OTP_CODE_LENGTH = 8;
  * does not understand — half-restoring someone's training history is worse than
  * telling them to update the app.
  */
-export const BACKUP_SCHEMA_VERSION = 1;
+export const BACKUP_SCHEMA_VERSION = 2;
 
 /**
  * Snapshots are pushed after meaningful changes, never on every keystroke.

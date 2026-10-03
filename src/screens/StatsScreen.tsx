@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigation } from '@react-navigation/native';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getExerciseById } from '../data/exercises';
@@ -9,6 +10,7 @@ import { Icon } from '../ui/Icon';
 import { EmptyState, NavHeader } from '../ui/Layout';
 import { Bar } from '../ui/Progress';
 import { Text } from '../ui/Text';
+import { Tap } from '../ui/Pressable';
 import { color, font, radius, space } from '../ui/tokens';
 
 function duration(seconds: number) {
@@ -21,6 +23,7 @@ function duration(seconds: number) {
 }
 
 export default function StatsScreen() {
+  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const p = useUserStore((s) => s.progress);
   const units = useUserStore((s) => s.profile?.settings.units ?? 'imperial');
@@ -72,16 +75,19 @@ export default function StatsScreen() {
         <Text variant="section" style={styles.h}>
           Field sessions
         </Text>
+        <Tap onPress={() => navigation.navigate('ActivityHistory')} style={{ paddingHorizontal: space.md, paddingVertical: space.sm }} accessibilityLabel="View all outdoor activity history">
+          <Text variant="subhead" tone="accent">View history & share cards →</Text>
+        </Tap>
         {sessions.length ? (
           <View style={styles.card}>
             {sessions.slice(0, 8).map((s, i) => (
-              <View key={s.id} style={[styles.line, i > 0 && styles.divider]}>
+              <Tap key={s.id} onPress={() => navigation.navigate('ActivityDetail', { sessionId: s.id })} style={[styles.line, i > 0 && styles.divider]} accessibilityLabel={`View ${s.type} activity`}>
                 <View style={styles.lineIcon}>
-                  <Icon name={s.type === 'ruck' ? 'ruck' : 'run'} size={20} color={color.text} />
+                  <Icon name={s.type === 'ruck' ? 'ruck' : s.type === 'hike' ? 'elevation' : 'run'} size={20} color={color.text} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text variant="headline">
-                    {s.type === 'ruck' ? 'Ruck' : 'Run'} · {dist(s.distanceMiles)}
+                    {s.type === 'ruck' ? 'Ruck' : s.type === 'hike' ? 'Hike' : 'Run'} · {dist(s.distanceMiles)}
                   </Text>
                   <Text variant="subhead" tone="tertiary" style={{ marginTop: 2 }}>
                     {new Date(s.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
@@ -92,11 +98,11 @@ export default function StatsScreen() {
                 <Text variant="headline" tabular>
                   {duration(s.durationSeconds)}
                 </Text>
-              </View>
+              </Tap>
             ))}
           </View>
         ) : (
-          <EmptyState icon="run" title="No runs or rucks yet" body="Track one from the + menu and it lands here with your distance and time." />
+          <EmptyState icon="run" title="Your next adventure starts here" body="Record a run, ruck or hike from the + menu. Your route, stats and share card will be saved here." />
         )}
 
         <Text variant="section" style={styles.h}>
