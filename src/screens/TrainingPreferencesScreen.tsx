@@ -1,3 +1,5 @@
+import { scheduleDailyReminder } from '../services/notifications';
+import { notificationWeekdays } from '../utils/trainingDays';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -89,6 +91,10 @@ export default function TrainingPreferencesScreen() {
       age_range: age,
       body_weight_lbs: bodyWeight,
     });
+    if (profile.settings.notifications_enabled) {
+      const [hour, minute] = (profile.settings.reminder_time || '07:00').split(':').map(Number);
+      void scheduleDailyReminder(hour, minute, notificationWeekdays(days));
+    }
     // Deliberately doesn't switch the plan you're following — it only changes what's suggested.
     toast('Preferences saved', {
       icon: 'check',

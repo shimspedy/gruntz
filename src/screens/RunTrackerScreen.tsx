@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import { useNavigation, usePreventRemove, useRoute, type RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
@@ -70,11 +70,23 @@ export default function RunTrackerScreen() {
   const baro = useBarometerAltitude();
   const announced = useRef(0);
   const [finished, setFinished] = useState(false);
+  const [pending, setPending] = useState(false);
+  const pendingRef = useRef(false);
+  const saved = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
 
   const idle = !tracker.isTracking && !finished;
   const dist = metric ? tracker.distanceMiles * 1.609 : tracker.distanceMiles;
   const unit = metric ? 'km' : 'mi';
-  const elev = baro.elevationGainFt || tracker.elevationGainFt;
+  const elev = baro.startAltitudeFt != null ? baro.elevationGainFt : tracker.elevationGainFt;
+
+  useEffect(() => {
+    if (tracker.isPaused) baro.stop();
+  }, [tracker.isPaused, baro.stop]);
 
   useEffect(() => {
     if (tracker.isTracking && keepAwake) {
@@ -113,13 +125,22 @@ export default function RunTrackerScreen() {
   const dotStyle = useAnimatedStyle(() => ({ opacity: pulse.get() }));
 
   const start = useCallback(async () => {
+    if (pendingRef.current) return;
+    pendingRef.current = true;
+    setPending(true);
     haptic.medium();
-    const ok = await tracker.start();
-    if (!ok) {
-      Alert.alert('Location needed', `Allow location access to track your ${type}: distance, pace and route.`);
-      return;
+    try {
+      const ok = await tracker.start();
+      if (!mounted.current) return;
+      if (!ok) {
+        Alert.alert('Unable to start', `Check location access and GPS availability, then try your ${type} again.`);
+        return;
+      }
+      await baro.start();
+    } finally {
+      pendingRef.current = false;
+      if (mounted.current) setPending(false);
     }
-    await baro.start();
   }, [tracker, baro, type]);
 
   /**
@@ -130,6 +151,8 @@ export default function RunTrackerScreen() {
    * "End and save this session" — so a finished run was discarded with no warning.
    */
   const stopAndSave = useCallback(() => {
+    if (saved.current) return;
+    saved.current = true;
     const final = tracker.stop();
     baro.stop();
     addSession({
@@ -138,11 +161,12 @@ export default function RunTrackerScreen() {
       date: new Date().toISOString(),
       distanceMiles: final.distanceMiles,
       durationSeconds: Math.round(final.durationMs / 1000),
-      elevationFeet: baro.elevationGainFt || final.elevationGainFt,
+      elevationFeet: baro.startAltitudeFt != null ? baro.elevationGainFt : final.elevationGainFt,
       packWeightPounds: type === 'ruck' ? packToPounds(pack, metric) : undefined,
       terrain: type === 'ruck' ? terrain : undefined,
     });
     recordTrackedSession({ type, miles: final.distanceMiles, seconds: Math.round(final.durationMs / 1000) });
+    setFinished(true);
     haptic.success();
   }, [tracker, baro, addSession, recordTrackedSession, type, pack, terrain, metric]);
 
@@ -153,31 +177,27 @@ export default function RunTrackerScreen() {
       {
         text: `End ${label}`,
         style: 'destructive',
-        onPress: () => {
-          stopAndSave();
-          setFinished(true);
-        },
+        onPress: stopAndSave,
       },
     ]);
   };
 
-  const close = () => {
-    if (tracker.isTracking) {
-      Alert.alert('Session in progress', 'End and save this session, or keep tracking.', [
-        { text: 'Keep tracking', style: 'cancel' },
-        {
-          text: 'End session',
-          style: 'destructive',
-          onPress: () => {
-            stopAndSave();
-            navigation.goBack();
-          },
+  // Covers the native back gesture and Android hardware back as well as the X.
+  usePreventRemove(tracker.isTracking && !finished, ({ data }) => {
+    Alert.alert('Session in progress', 'End and save this session, or keep tracking.', [
+      { text: 'Keep tracking', style: 'cancel' },
+      {
+        text: 'End session',
+        style: 'destructive',
+        onPress: () => {
+          stopAndSave();
+          navigation.dispatch(data.action);
         },
-      ]);
-      return;
-    }
-    navigation.goBack();
-  };
+      },
+    ]);
+  });
+
+  const close = () => navigation.goBack();
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
@@ -259,7 +279,7 @@ export default function RunTrackerScreen() {
 
         {idle ? (
           <Text variant="footnote" tone="tertiary" align="center" style={styles.note}>
-            {batterySaver ? 'Battery saver: balanced GPS sampling.' : 'Precision GPS.'} Check weather, route, water and local conditions before you step off.
+            {batterySaver ? 'Battery saver: balanced GPS sampling.' : 'Precision GPS.'} Keep this screen open while tracking; background recording is not supported.
           </Text>
         ) : null}
       </ScrollView>
@@ -274,7 +294,7 @@ export default function RunTrackerScreen() {
             }}
           />
         ) : !tracker.isTracking ? (
-          <Button title={`Start ${type}`} icon="play" onPress={() => void start()} />
+          <Button title={`Start ${type}`} icon="play" loading={pending} onPress={() => void start()} />
         ) : (
           <View style={{ flexDirection: 'row', gap: 12 }}>
             {tracker.isPaused ? (
@@ -282,10 +302,20 @@ export default function RunTrackerScreen() {
                 title="Resume"
                 icon="play"
                 style={{ flex: 1 }}
+                loading={pending}
                 onPress={async () => {
-                  const ok = await tracker.resume();
-                  if (!ok) Alert.alert('Can’t resume', 'Check location access and try again.');
-                  else await baro.resume();
+                  if (pendingRef.current) return;
+                  pendingRef.current = true;
+                  setPending(true);
+                  try {
+                    const ok = await tracker.resume();
+                    if (!mounted.current) return;
+                    if (!ok) Alert.alert('Can’t resume', 'Check location access and try again.');
+                    else await baro.resume();
+                  } finally {
+                    pendingRef.current = false;
+                    if (mounted.current) setPending(false);
+                  }
                 }}
               />
             ) : (
@@ -294,13 +324,14 @@ export default function RunTrackerScreen() {
                 icon="pause"
                 variant="secondary"
                 style={{ flex: 1 }}
+                disabled={pending}
                 onPress={() => {
                   tracker.pause();
                   baro.stop();
                 }}
               />
             )}
-            <Button title="End" icon="stop" variant="secondary" style={{ flex: 1 }} onPress={end} />
+            <Button title="End" icon="stop" variant="secondary" style={{ flex: 1 }} disabled={pending} onPress={end} />
           </View>
         )}
       </View>

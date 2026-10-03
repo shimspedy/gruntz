@@ -57,6 +57,13 @@ import { LogoMark } from '../ui/Logo';
 import { color } from '../ui/tokens';
 import { navigationRef } from './ref';
 import { TabBar } from './TabBar';
+import { createInitialLinkResolver } from './initialLink';
+import { Button } from '../ui/Button';
+import { Text } from '../ui/Text';
+import { usePlanLibraryStore } from '../store/usePlanLibraryStore';
+import { useExerciseLogStore } from '../store/useExerciseLogStore';
+import { useExerciseNotesStore } from '../store/useExerciseNotesStore';
+import { useReadinessStore } from '../store/useReadinessStore';
 
 /** Coalesce navigation-state writes; a tab tap should not cost a disk write. */
 const NAV_SAVE_DEBOUNCE_MS = 600;
@@ -81,18 +88,23 @@ function notificationUrl(response: Notifications.NotificationResponse | null | u
   return typeof url === 'string' ? url : null;
 }
 
+const getInitialLink = createInitialLinkResolver({
+  getLink: () => Linking.getInitialURL(),
+  getNotificationLink: async () => notificationUrl(await Notifications.getLastNotificationResponseAsync()),
+  clearNotification: () => Notifications.clearLastNotificationResponseAsync(),
+});
+
 const linking = {
   prefixes: ['gruntz://', 'https://gruntz.app'],
-  async getInitialURL() {
-    const fromLink = await Linking.getInitialURL();
-    if (fromLink) return fromLink;
-    return notificationUrl(await Notifications.getLastNotificationResponseAsync());
-  },
+  getInitialURL: getInitialLink,
   subscribe(listener: (url: string) => void) {
     const linkSub = Linking.addEventListener('url', ({ url }) => listener(url));
     const responseSub = Notifications.addNotificationResponseReceivedListener((response) => {
       const url = notificationUrl(response);
-      if (url) listener(url);
+      if (url) {
+        listener(url);
+        void Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
+      }
     });
     return () => {
       linkSub.remove();
@@ -318,7 +330,7 @@ function useSavedNavigation(hydrated: boolean, onboarded: boolean) {
       timer.current = undefined;
       const state = pending.current;
       pending.current = undefined;
-      if (state) void AsyncStorage.setItem(NAV_KEY, JSON.stringify({ savedAt: Date.now(), state })).catch(() => undefined);
+      if (state && useUserStore.getState().isOnboarded) void AsyncStorage.setItem(NAV_KEY, JSON.stringify({ savedAt: Date.now(), state })).catch(() => undefined);
     };
     const sub = AppState.addEventListener('change', (next) => {
       if (next !== 'active') flush();
@@ -338,7 +350,7 @@ function useSavedNavigation(hydrated: boolean, onboarded: boolean) {
       timer.current = undefined;
       const next = pending.current;
       pending.current = undefined;
-      if (next) void AsyncStorage.setItem(NAV_KEY, JSON.stringify({ savedAt: Date.now(), state: next })).catch(() => undefined);
+      if (next && useUserStore.getState().isOnboarded) void AsyncStorage.setItem(NAV_KEY, JSON.stringify({ savedAt: Date.now(), state: next })).catch(() => undefined);
     }, NAV_SAVE_DEBOUNCE_MS);
   };
   return { ready, initial, save };
@@ -356,15 +368,25 @@ function Boot() {
 export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   const isOnboarded = useUserStore((s) => s.isOnboarded);
   const hasHydrated = useUserStore((s) => s.hasHydrated);
+  const hydrationFailed = useUserStore((s) => s.hydrationFailed);
   const updateStreak = useUserStore((s) => s.updateStreak);
   const subscriptionHydrated = useSubscriptionStore((s) => s.hasHydrated);
   const initializeSubscription = useSubscriptionStore((s) => s.initialize);
   const resetDailyChallenge = useChallengeStore((s) => s.resetDaily);
   const nav = useSavedNavigation(hasHydrated, isOnboarded);
   const programHydrated = useProgramStore((s) => s.hasHydrated);
+  const programHydrationFailed = useProgramStore((s) => s.hydrationFailed);
+  const subscriptionHydrationFailed = useSubscriptionStore((s) => s.hydrationFailed);
   useAndroidBack();
   const sessionHydrated = usePersistHydrated(useSessionStore);
   const routineHydrated = usePersistHydrated(useRoutineStore);
+  const planHydrated = usePersistHydrated(usePlanLibraryStore);
+  const logHydrated = usePersistHydrated(useExerciseLogStore);
+  const readinessHydrated = usePersistHydrated(useReadinessStore);
+  const challengeHydrated = usePersistHydrated(useChallengeStore);
+  const draftHydrated = usePersistHydrated(useOnboardingDraftStore);
+  const notesHydrated = usePersistHydrated(useExerciseNotesStore);
+  const storesReady = programHydrated && sessionHydrated && routineHydrated && planHydrated && logHydrated && readinessHydrated && challengeHydrated && draftHydrated && notesHydrated;
   const remindersOn = useUserStore((s) => s.profile?.settings.notifications_enabled ?? true);
   useEffect(() => {
     setNotificationsEnabled(remindersOn);
@@ -387,7 +409,7 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   const [launchedFromLink, setLaunchedFromLink] = useState<boolean | null>(null);
   useEffect(() => {
     let cancelled = false;
-    Linking.getInitialURL()
+    getInitialLink()
       .then((url) => { if (!cancelled) setLaunchedFromLink(Boolean(url)); })
       .catch(() => { if (!cancelled) setLaunchedFromLink(false); });
     return () => { cancelled = true; };
@@ -412,17 +434,16 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   }, [hasHydrated, isOnboarded]);
 
   useEffect(() => {
-    if (subscriptionHydrated) return;
-    const t = setTimeout(() => setTimedOut(true), 3000);
+    const t = setTimeout(() => setTimedOut(true), 6000);
     return () => clearTimeout(t);
-  }, [subscriptionHydrated]);
+  }, []);
 
   // Entitlements barely change, and re-checking them on every single foreground
   // meant a RevenueCat round trip each time the user glanced at another app.
   // Streak and daily-challenge rollover are local and still run every time.
   const lastEntitlementCheck = useRef(0);
   useEffect(() => {
-    if (!hasHydrated || !subscriptionHydrated) return;
+    if (!hasHydrated || !subscriptionHydrated || !storesReady || hydrationFailed || programHydrationFailed || subscriptionHydrationFailed) return;
     const refresh = () => {
       updateStreak();
       resetDailyChallenge();
@@ -457,13 +478,32 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
       sub.remove();
       clearTimeout(midnight);
     };
-  }, [hasHydrated, subscriptionHydrated, initializeSubscription, updateStreak, resetDailyChallenge]);
+  }, [hasHydrated, subscriptionHydrated, storesReady, hydrationFailed, programHydrationFailed, subscriptionHydrationFailed, initializeSubscription, updateStreak, resetDailyChallenge]);
 
   // The gate used to wait on the user and subscription stores only, so the program,
   // session, challenge and routine stores could render their defaults for a frame
   // and then jump once their own persisted state arrived.
-  const storesReady = programHydrated && sessionHydrated && routineHydrated;
-  if (!fontsReady || !hasHydrated || !nav.ready || (launchedFromLink === null && !timedOut) || (!storesReady && !timedOut) || (!subscriptionHydrated && !timedOut)) return <Boot />;
+  const waiting = !fontsReady || !hasHydrated || !nav.ready || launchedFromLink === null || !storesReady || !subscriptionHydrated;
+  if (hydrationFailed || programHydrationFailed || subscriptionHydrationFailed || (waiting && timedOut)) {
+    return (
+      <View style={[styles.fill, styles.boot, { paddingHorizontal: 28, gap: 20 }]}>
+        <LogoMark size={64} />
+        <Text variant="title" align="center">Couldn’t load your saved progress</Text>
+        <Text variant="callout" tone="secondary" align="center">Your saved data has been kept. Try loading it again, or close and reopen Gruntz.</Text>
+        <Button title="Try again" onPress={() => {
+          void Promise.all([
+            useUserStore.persist.rehydrate(), useProgramStore.persist.rehydrate(),
+            useSubscriptionStore.persist.rehydrate(), useSessionStore.persist.rehydrate(),
+            useRoutineStore.persist.rehydrate(), usePlanLibraryStore.persist.rehydrate(),
+            useExerciseLogStore.persist.rehydrate(), useReadinessStore.persist.rehydrate(),
+            useChallengeStore.persist.rehydrate(), useOnboardingDraftStore.persist.rehydrate(),
+            useExerciseNotesStore.persist.rehydrate(),
+          ]).catch(() => undefined);
+        }} />
+      </View>
+    );
+  }
+  if (waiting) return <Boot />;
 
   return (
     <View style={styles.fill}>

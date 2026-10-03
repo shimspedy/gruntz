@@ -19,6 +19,8 @@
 ## Current Workout Logging Rules
 - Partial set progress should display as in-progress, not complete.
 - Blank sets must not be savable.
+- Partial working sets belong in history and mission rep totals; only complete working-set targets mark a plan day done.
+- Prior weights must be converted from their recorded lb/kg unit before prefilling a new workout. Do not relabel already logged sets when swapping exercises.
 - Rest overlays should mask the screen and return the user to the same exercise if more sets remain.
 - Resetting a completed exercise should clear all logged sets for that exercise instance.
 - Keep row-level logging actions and info buttons as separate touch targets. Do not nest a secondary action inside the main exercise press target.
@@ -29,6 +31,9 @@
 - Repeated exercises inside a workout need unique instance keys; never use raw exercise IDs as React keys in mission lists.
 - If no program is selected, do not synthesize a default mission. The app should stay in an explicit "choose a program" state.
 - User settings that affect UX, permissions, or units should be stored in the persisted profile, not local screen state.
+- Never write persisted defaults after a hydration read/parse error. The boot gate must wait for training stores before daily rollover or edits.
+- Backup restore must update live stores along with disk and cancel pending session writes. A new device must not overwrite an existing cloud snapshot before explicit restore/replacement.
+- Device-only reset preserves the original subscription/trial and the persisted backup pause marker, clears live training stores, and cancels session write debounce.
 - Streak decay must be applied on app hydration and foreground, not only when a mission completes.
 
 ## Notification Rules
@@ -39,6 +44,7 @@
 ## Run Tracking Rules
 - GPS, pedometer, timer, and barometer listeners must clean up correctly on pause, stop, resume, and restart.
 - Paused runs must not continue accumulating steps or altitude in the background.
+- Current GPS is foreground-only: backgrounding automatically pauses and requires explicit resume. Async watcher attachment must be cancelled if the run stops or pauses before setup finishes.
 - Resuming a run should preserve prior elevation totals instead of resetting them.
 - If location permission is denied, the app should surface that to the user instead of failing silently.
 - Native sensor/location watcher setup should fail closed: return a safe false/error state, clean up listeners, and keep the app usable instead of throwing.
@@ -55,6 +61,8 @@
   - App Store product: `monthly`
 - Apple-side iOS subscription setup has already been handled by the user. When iOS billing issues come up, first verify app-side env values and RevenueCat product/offering mapping before re-explaining App Store Connect key setup.
 - Keep secrets out of repo files; `.env` stays local.
+- Development billing bypass is opt-in via `EXPO_PUBLIC_DEV_UNLOCK=true` and impossible in release builds. Verify store entitlement before calling a purchase successful; pending approval and unknown/offline entitlement are distinct states.
+- Monthly and annual Pro have the same App Store subscription service level (1); changing billing duration must not imply a different feature tier.
 
 ## Release And Platform Notes
 - RevenueCat and App Store Connect configuration can fail independently; verify dashboard mapping before assuming app-side purchase bugs.

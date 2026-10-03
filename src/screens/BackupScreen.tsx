@@ -92,14 +92,19 @@ export default function BackupScreen() {
       'Couldn’t send the code',
       result === 'unavailable'
         ? 'Backup isn’t available in this build.'
+        : result === 'rate-limited'
+          ? 'Please wait a minute before requesting another code, then try again.'
         : 'We couldn’t reach the server. Check your connection and try again — your training is safe on this device either way.',
     );
   };
 
   const verify = async () => {
+    if (!new RegExp(`^\\d{${OTP_CODE_LENGTH}}$`).test(code.trim())) {
+      toast(`Enter the ${OTP_CODE_LENGTH}-digit code`, { tone: 'error', icon: 'alert' });
+      return;
+    }
     setBusy(true);
     const result = await verifySignInCode(email, code);
-    setBusy(false);
     if (result === 'signed-in') {
       haptic.success();
       setCode('');
@@ -110,10 +115,17 @@ export default function BackupScreen() {
       await refresh();
       // First sign-in on a device that has been training: get it safe immediately,
       // rather than waiting for the next debounced push.
-      void pushBackup();
-      toast('Signed in · your progress will back up automatically', { icon: 'check' });
+      const backupResult = await pushBackup();
+      await refresh();
+      setBusy(false);
+      if (backupResult === 'needs-review') {
+        Alert.alert('Your existing backup is safe', 'Restore it onto this phone, or choose Back up now to replace it with the progress on this phone. Automatic backup is paused until you choose.');
+      } else {
+        toast(backupResult === 'ok' ? 'Signed in · progress backed up' : 'Signed in · backup will retry after you train', { icon: 'check' });
+      }
       return;
     }
+    setBusy(false);
     if (result === 'invalid-code') {
       haptic.error();
       Alert.alert('That code didn’t work', 'Codes expire after a few minutes. Send a new one and try again.');
@@ -122,10 +134,17 @@ export default function BackupScreen() {
     Alert.alert('Couldn’t sign in', 'Something went wrong. Your training is safe on this device.');
   };
 
-  const backUpNow = async () => {
+  const backUpNow = async (replaceExisting = false) => {
     setBusy(true);
-    const result = await pushBackup();
+    const result = await pushBackup(undefined, { replaceExisting });
     setBusy(false);
+    if (result === 'needs-review') {
+      Alert.alert('Replace the server backup?', 'This uploads the progress on this phone. Any existing backup on your account will be replaced. To keep that backup, cancel and choose Restore on this phone.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Replace backup', style: 'destructive', onPress: () => void backUpNow(true) },
+      ]);
+      return;
+    }
     if (result === 'ok') {
       haptic.success();
       await refresh();
@@ -158,11 +177,9 @@ export default function BackupScreen() {
     setBusy(false);
     if (result === 'restored') {
       haptic.success();
-      // The stores read AsyncStorage once at startup, so the app has to be reopened
-      // for this to take effect. Saying so is better than looking broken.
       Alert.alert(
         'Progress restored',
-        'Close and reopen Gruntz to finish. Your training history, plan and streak will be back where you left them.',
+        'Your training history, plan and streak are ready on this phone.',
       );
       return;
     }
@@ -230,8 +247,7 @@ export default function BackupScreen() {
     setBusy(true);
     const result = await deleteAccount();
     setBusy(false);
-    // `deleteAccount` signs out locally whatever happened, so refresh either way:
-    // the screen must never keep showing an account that is gone.
+    // Refresh after deletion so the screen cannot keep showing a removed account.
     await refresh();
     if (result === 'deleted') {
       haptic.success();
@@ -280,11 +296,11 @@ export default function BackupScreen() {
             />
 
             <Group style={styles.group}>
-              <Row icon="back" title="Sign out" onPress={() => void signOut().then(refresh)} />
-              <Row icon="alert" title="Delete my backup" onPress={confirmDelete} />
+              <Row icon="back" title="Sign out" onPress={busy ? undefined : () => void signOut().then(refresh)} />
+              <Row icon="alert" title="Delete my backup" onPress={busy ? undefined : confirmDelete} />
               {/* Required by Apple 5.1.1(v), and materially different from the row
                   above: this removes the identity and the email, not just the copy. */}
-              <Row icon="trash" tone="danger" title="Delete my account" onPress={confirmDeleteAccount} />
+              <Row icon="trash" tone="danger" title="Delete my account" onPress={busy ? undefined : confirmDeleteAccount} />
             </Group>
           </>
         ) : (
@@ -323,7 +339,7 @@ export default function BackupScreen() {
                 </Text>
                 <TextInput
                   value={code}
-                  onChangeText={setCode}
+                  onChangeText={(value) => setCode(value.replace(/\D/g, ''))}
                   placeholder={'0'.repeat(OTP_CODE_LENGTH)}
                   placeholderTextColor={color.textTertiary}
                   keyboardType="number-pad"
@@ -336,8 +352,11 @@ export default function BackupScreen() {
                 />
                 <Button title="Sign in" onPress={() => void verify()} loading={busy} />
                 <View style={styles.spacer} />
+                <Button title="Send another code" variant="secondary" onPress={() => void sendCode()} disabled={busy} />
+                <View style={styles.spacer} />
                 <Button
                   title="Use a different email"
+                  disabled={busy}
                   variant="secondary"
                   onPress={() => { setStage('email'); setCode(''); }}
                 />

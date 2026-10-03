@@ -11,6 +11,7 @@ import {
   purchaseAnnualRevenueCatPackage,
   purchaseCurrentRevenueCatPackage,
   type OfferingSnapshot,
+  type PurchaseStatus,
   presentRevenueCatCustomerCenter,
   restoreRevenueCatPurchases,
 } from '../services/subscription';
@@ -22,6 +23,13 @@ import { useUserStore } from './useUserStore';
 
 const STORAGE_KEY = '@gruntz_subscription';
 const DAY_MS = 24 * 60 * 60 * 1000;
+// A failed read must not replace the original trial or entitlement with defaults.
+let subscriptionStorageWritable = false;
+const subscriptionStorage = {
+  getItem: (key: string) => AsyncStorage.getItem(key),
+  removeItem: (key: string) => AsyncStorage.removeItem(key),
+  setItem: (key: string, value: string) => subscriptionStorageWritable ? AsyncStorage.setItem(key, value) : Promise.resolve(),
+};
 
 export type AccessState = 'trial' | 'subscriber' | 'locked';
 
@@ -35,14 +43,16 @@ interface SubscriptionState {
   isConfigured: boolean;
   isLoading: boolean;
   hasHydrated: boolean;
+  hydrationFailed: boolean;
   lastError: string | null;
 
   startTrialIfNeeded: (startAt?: string) => void;
+  adoptTrialStart: (startAt: string) => void;
   initialize: () => Promise<void>;
   refresh: () => Promise<void>;
   loadOffering: () => Promise<void>;
-  purchaseMonthly: () => Promise<'purchased' | 'cancelled' | 'unavailable' | 'error'>;
-  purchaseAnnual: () => Promise<'purchased' | 'cancelled' | 'unavailable' | 'error'>;
+  purchaseMonthly: () => Promise<PurchaseStatus>;
+  purchaseAnnual: () => Promise<PurchaseStatus>;
   restoreAccess: () => Promise<'restored' | 'none' | 'unavailable' | 'error'>;
   openCustomerCenter: () => Promise<'presented' | 'unavailable' | 'error'>;
   openSubscriptionManagement: () => Promise<void>;
@@ -59,7 +69,8 @@ function migratePersistedSubscriptionState(persistedState: unknown): Partial<Sub
   }
 
   return {
-    trialStartedAt: typeof persistedState.trialStartedAt === 'string' ? persistedState.trialStartedAt : null,
+    trialStartedAt: typeof persistedState.trialStartedAt === 'string' && Number.isFinite(Date.parse(persistedState.trialStartedAt))
+      ? persistedState.trialStartedAt : null,
     entitlementActive: persistedState.entitlementActive === true,
     entitlementExpiresAt:
       typeof persistedState.entitlementExpiresAt === 'string' ? persistedState.entitlementExpiresAt : null,
@@ -68,10 +79,10 @@ function migratePersistedSubscriptionState(persistedState: unknown): Partial<Sub
         ? persistedState.entitlementProductIdentifier
         : null,
     managementUrl: typeof persistedState.managementUrl === 'string' ? persistedState.managementUrl : null,
-    currentOffering: isRecord(persistedState.currentOffering)
-      ? (persistedState.currentOffering as unknown as OfferingSnapshot)
-      : null,
-    isConfigured: persistedState.isConfigured === true,
+    // Native package objects do not survive a restart. Pricing must be fetched
+    // again before enabling a purchase, even when a previous screen was cached.
+    currentOffering: null,
+    isConfigured: false,
   };
 }
 
@@ -79,8 +90,10 @@ export function getTrialEndsAt(trialStartedAt: string | null) {
   if (!trialStartedAt) {
     return null;
   }
-  const started = new Date(trialStartedAt);
-  return new Date(started.getTime() + GRUNTZ_TRIAL_DAYS * DAY_MS).toISOString();
+  const started = Date.parse(trialStartedAt);
+  const endsAt = started + GRUNTZ_TRIAL_DAYS * DAY_MS;
+  if (!Number.isFinite(endsAt) || Math.abs(endsAt) > 8.64e15) return null;
+  return new Date(endsAt).toISOString();
 }
 
 export function getTrialDaysRemaining(trialStartedAt: string | null) {
@@ -130,16 +143,15 @@ function userFacingError(raw: string | undefined | null, fallback: string): stri
 }
 
 type PurchaseRunner = () => Promise<{
-  status: 'purchased' | 'cancelled' | 'unavailable' | 'error';
+  status: PurchaseStatus;
   customerInfo: Awaited<ReturnType<typeof loadRevenueCatState>>['customerInfo'];
   message?: string;
 }>;
 
 async function runPurchase(
   set: (partial: Partial<SubscriptionState>) => void,
-  get: () => SubscriptionState,
   runner: PurchaseRunner,
-): Promise<'purchased' | 'cancelled' | 'unavailable' | 'error'> {
+): Promise<PurchaseStatus> {
   set({ isLoading: true, lastError: null });
 
   try {
@@ -165,14 +177,7 @@ async function runPurchase(
 
     set({ isLoading: false, isConfigured: configured, lastError: null });
 
-    if (result.status === 'purchased') {
-      get().refresh().catch((err) => {
-        if (__DEV__) console.warn('[subscription] background refresh after purchase failed', err);
-      });
-      return 'purchased';
-    }
-
-    return 'cancelled';
+    return result.status;
   } catch (error) {
     set({
       isLoading: false,
@@ -226,18 +231,28 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       isConfigured: false,
       isLoading: false,
       hasHydrated: false,
+      hydrationFailed: false,
       lastError: null,
 
       startTrialIfNeeded: (startAt) => {
         if (get().trialStartedAt) {
           return;
         }
-        const startedAt = startAt ?? new Date().toISOString();
+        const startedAt = startAt && getTrialEndsAt(startAt) ? startAt : new Date().toISOString();
         set({ trialStartedAt: startedAt });
         const endsAt = getTrialEndsAt(startedAt);
         if (endsAt) {
           void scheduleTrialEndingReminder(endsAt);
         }
+      },
+
+      adoptTrialStart: (startAt) => {
+        const endsAt = getTrialEndsAt(startAt);
+        if (!endsAt) return;
+        const current = get().trialStartedAt;
+        if (current && Date.parse(current) <= Date.parse(startAt)) return;
+        set({ trialStartedAt: startAt });
+        if (!get().entitlementActive) void scheduleTrialEndingReminder(endsAt);
       },
 
       initialize: async () => {
@@ -253,16 +268,9 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             syncEntitlementState(set, customerInfo, true);
           });
 
-          // During an active trial (and not already a subscriber), defer the
-          // full offerings fetch for faster startup — the listener will catch
-          // any entitlement changes in real time.
-          const shouldDeferBillingSync =
-            hasTrialAccess(get().trialStartedAt) && !get().entitlementActive;
-          if (shouldDeferBillingSync) {
-            set({ isLoading: false, isConfigured: isRevenueCatAvailable() });
-            return;
-          }
-
+          // A listener does not trigger a fetch. Always check existing purchases,
+          // including during the app trial; a returning subscriber may have paid
+          // on another device or while the app was closed.
           const state = await loadRevenueCatState({ includeOfferings: false });
           syncEntitlementState(set, state.customerInfo, state.customerInfoKnown);
           set({
@@ -294,9 +302,13 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           set({
             currentOffering: state.currentOffering,
             isConfigured: state.configured,
+            lastError: !state.configured
+              ? 'Purchases are unavailable on this device right now.'
+              : state.offeringsError ?? null,
           });
         } catch (error) {
           set({
+            currentOffering: null,
             lastError: userFacingError(
               error instanceof Error ? error.message : null,
               'Subscription is temporarily unavailable. Please try again later.',
@@ -308,8 +320,8 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         }
       },
 
-      purchaseMonthly: async () => runPurchase(set, get, purchaseCurrentRevenueCatPackage),
-      purchaseAnnual: async () => runPurchase(set, get, purchaseAnnualRevenueCatPackage),
+      purchaseMonthly: async () => runPurchase(set, purchaseCurrentRevenueCatPackage),
+      purchaseAnnual: async () => runPurchase(set, purchaseAnnualRevenueCatPackage),
 
       restoreAccess: async () => {
         set({ isLoading: true, lastError: null });
@@ -355,55 +367,54 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
       openCustomerCenter: async () => {
         set({ isLoading: true, lastError: null });
-        const result = await presentRevenueCatCustomerCenter();
-
-        if (result.customerInfo) {
-          syncEntitlementState(set, result.customerInfo, true);
+        try {
+          const result = await presentRevenueCatCustomerCenter();
+          if (result.customerInfo) syncEntitlementState(set, result.customerInfo, true);
+          if (result.status === 'presented') return 'presented';
+          // Callers already use the returned status to decide whether to fall
+          // back. Report a successful fallback so it is not opened a second time.
+          if (await openManagementUrl(get().managementUrl)) return 'presented';
+          set({ lastError: 'Unable to open subscription management right now.' });
+          return result.status;
+        } catch {
+          set({ lastError: 'Unable to open subscription management right now.' });
+          return 'error';
+        } finally {
+          set({ isLoading: false, isConfigured: isRevenueCatAvailable() });
         }
-
-        if (result.status !== 'presented') {
-          const fallbackOpened = await openManagementUrl(get().managementUrl);
-          if (!fallbackOpened) {
-            set({
-              lastError: userFacingError(
-                result.message,
-                'Unable to open subscription management right now.',
-              ),
-            });
-          } else {
-            set({ lastError: null });
-          }
-        } else {
-          set({ lastError: null });
-          await get().refresh();
-        }
-
-        set({ isLoading: false, isConfigured: isRevenueCatAvailable() });
-        return result.status;
       },
 
       openSubscriptionManagement: async () => {
-        await openManagementUrl(get().managementUrl);
+        const opened = await openManagementUrl(get().managementUrl);
+        set({ lastError: opened ? null : 'Unable to open subscription management right now.' });
       },
 
       clearError: () => set({ lastError: null }),
     }),
     {
       name: STORAGE_KEY,
-      version: 1,
-      storage: createJSONStorage(() => AsyncStorage),
+      version: 2,
+      storage: createJSONStorage(() => subscriptionStorage),
       migrate: (persistedState) => migratePersistedSubscriptionState(persistedState),
+      merge: (persistedState, currentState) => ({
+        ...currentState,
+        ...migratePersistedSubscriptionState(persistedState),
+      }),
       partialize: (state) => ({
         trialStartedAt: state.trialStartedAt,
         entitlementActive: state.entitlementActive,
         entitlementExpiresAt: state.entitlementExpiresAt,
         entitlementProductIdentifier: state.entitlementProductIdentifier,
         managementUrl: state.managementUrl,
-        currentOffering: state.currentOffering,
-        isConfigured: state.isConfigured,
       }),
-      onRehydrateStorage: () => () => {
-        useSubscriptionStore.setState({ hasHydrated: true });
+      onRehydrateStorage: () => (_state, error) => {
+        if (error) {
+          subscriptionStorageWritable = false;
+          useSubscriptionStore.setState({ hasHydrated: true, hydrationFailed: true });
+          return;
+        }
+        subscriptionStorageWritable = true;
+        useSubscriptionStore.setState({ hasHydrated: true, hydrationFailed: false });
       },
     }
   )

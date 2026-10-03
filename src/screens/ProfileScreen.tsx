@@ -57,7 +57,6 @@ export default function ProfileScreen() {
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
   const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
   const openCustomerCenter = useSubscriptionStore((s) => s.openCustomerCenter);
-  const openSubscriptionManagement = useSubscriptionStore((s) => s.openSubscriptionManagement);
   const access = getAccessState({ trialStartedAt, entitlementActive });
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(profile?.display_name ?? '');
@@ -77,7 +76,9 @@ export default function ProfileScreen() {
   const membership = async () => {
     if (access === 'subscriber') {
       const r = await openCustomerCenter();
-      if (r === 'unavailable' || r === 'error') await openSubscriptionManagement();
+      if (r !== 'presented') {
+        Alert.alert('Management unavailable', 'Open your subscription settings in the App Store or Google Play to manage your membership.');
+      }
       return;
     }
     navigation.navigate('Paywall');

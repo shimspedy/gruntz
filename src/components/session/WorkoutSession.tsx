@@ -195,7 +195,12 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
 
   const handleToggle = useCallback(
     (ex: SessionExercise, setId: string) => {
+      clearTimeout(advanceTimer.current);
       const r = useSessionStore.getState().toggleSet(ex.key, setId);
+      if (r.needsValue) {
+        toast(`Enter ${ex.kind === 'reps' ? 'reps' : ex.kind === 'time' ? 'a time' : 'a distance'} before logging this set.`, { tone: 'info', icon: 'info' });
+        return;
+      }
       if (r.completedExercise) {
         const state = useSessionStore.getState();
         const nextIndex = state.exercises.findIndex((e, i) => i > state.index && !isExerciseDone(e));
@@ -205,7 +210,7 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
           clearTimeout(advanceTimer.current);
           advanceTimer.current = setTimeout(() => {
             const st = useSessionStore.getState();
-            if (st.active && st.exercises.length > target) st.setIndex(target);
+            if (st.active && st.startedAt === state.startedAt && st.exercises.length > target) st.setIndex(target);
           }, 650);
         } else {
           toast('Every exercise logged. Finish when ready.', { tone: 'info', icon: 'flag' });
@@ -453,7 +458,10 @@ function ExercisePage({
   const replace = () => {
     if (!alternative) return;
     haptic.light();
-    replaceExercise(exercise.key, alternative.id);
+    if (!replaceExercise(exercise.key, alternative.id)) {
+      toast('Uncheck logged sets before swapping, or add another exercise.', { tone: 'info', icon: 'info' });
+      return;
+    }
     toast(`Swapped to ${alternative.name}`, { tone: 'info', icon: 'replace' });
   };
   const remove = () => {

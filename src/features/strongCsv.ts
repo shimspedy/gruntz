@@ -46,24 +46,62 @@ const REST_TIMER_ROW = 'rest timer';
  * `split(',')` silently shifts every later column — which would put reps in the
  * distance field rather than failing loudly.
  */
-function splitCsvLine(line: string): string[] {
-  const out: string[] = [];
+function csvRecords(text: string): { cells: string[]; line: number; malformed: boolean }[] {
+  const records: { cells: string[]; line: number; malformed: boolean }[] = [];
+  let cells: string[] = [];
   let field = '';
   let quoted = false;
-  for (let i = 0; i < line.length; i += 1) {
-    const char = line[i];
-    if (quoted) {
-      if (char === '"') {
-        if (line[i + 1] === '"') { field += '"'; i += 1; } else { quoted = false; }
-      } else field += char;
-      continue;
-    }
-    if (char === '"') { quoted = true; continue; }
-    if (char === ',') { out.push(field); field = ''; continue; }
-    field += char;
+  let line = 1;
+  let startLine = 1;
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i];
+    if (char === '"') {
+      if (quoted && text[i + 1] === '"') { field += '"'; i += 1; }
+      else quoted = !quoted;
+    } else if (char === ',' && !quoted) {
+      cells.push(field); field = '';
+    } else if (char === '\n' || char === '\r') {
+      const newline = char === '\r' && text[i + 1] === '\n' ? '\r\n' : char;
+      if (newline.length === 2) i += 1;
+      if (quoted) field += newline;
+      else {
+        cells.push(field);
+        if (cells.some((cell) => cell.trim())) records.push({ cells, line: startLine, malformed: false });
+        cells = []; field = ''; startLine = line + 1;
+      }
+      line += 1;
+    } else field += char;
   }
-  out.push(field);
-  return out;
+  cells.push(field);
+  if (cells.some((cell) => cell.trim())) records.push({ cells, line: startLine, malformed: quoted });
+  return records;
+}
+
+/** Strong uses local timestamps; ISO exports with explicit offsets retain theirs. */
+export function parseStrongDate(value: string): string | null {
+  const text = value.trim();
+  const local = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/.exec(text);
+  if (local) {
+    const [, y, mo, d, h = '0', min = '0', s = '0'] = local;
+    const date = new Date(Number(y), Number(mo) - 1, Number(d), Number(h), Number(min), Number(s));
+    // JavaScript rolls February 30 into March; reject it instead of changing history.
+    if (date.getFullYear() !== Number(y) || date.getMonth() !== Number(mo) - 1
+      || date.getDate() !== Number(d) || date.getHours() !== Number(h)
+      || date.getMinutes() !== Number(min) || date.getSeconds() !== Number(s)) return null;
+    return date.toISOString();
+  }
+  // Only accept an explicit offset for ISO timestamps, avoiding engine-dependent
+  // interpretation of unknown date formats on Hermes versus the browser.
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/.test(text)) {
+    const ms = Date.parse(text);
+    return Number.isFinite(ms) ? new Date(ms).toISOString() : null;
+  }
+  const spreadsheetDate = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(text);
+  if (spreadsheetDate) {
+    const [, month, day, year] = spreadsheetDate;
+    return parseStrongDate(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+  }
+  return null;
 }
 
 function escapeCsv(value: string): string {
@@ -99,11 +137,11 @@ function num(value: string): number | undefined {
 }
 
 export function parseStrongCsv(text: string): StrongParseResult {
-  const lines = text.split(/\r\n|\n|\r/).filter((line) => line.trim().length);
+  const lines = csvRecords(text.replace(/^\uFEFF/, ''));
   const skipped: StrongParseResult['skipped'] = [];
   if (!lines.length) return { workouts: [], skipped };
 
-  const header = splitCsvLine(lines[0]!).map((h) => h.trim().toLowerCase());
+  const header = lines[0]!.cells.map((h) => h.trim().toLowerCase());
   const at = (name: string) => header.indexOf(name.toLowerCase());
   const idx = {
     date: at('Date'), workoutName: at('Workout Name'), duration: at('Duration'),
@@ -118,9 +156,8 @@ export function parseStrongCsv(text: string): StrongParseResult {
   // Keyed by date+name so the rows of one workout regroup no matter their order.
   const byWorkout = new Map<string, ParsedStrongWorkout>();
 
-  lines.slice(1).forEach((line, offset) => {
-    const lineNumber = offset + 2;
-    const cells = splitCsvLine(line);
+  lines.slice(1).forEach(({ cells, line: lineNumber, malformed }) => {
+    if (malformed) { skipped.push({ line: lineNumber, reason: 'Unclosed CSV quote' }); return; }
     const cell = (i: number) => (i >= 0 ? (cells[i] ?? '').trim() : '');
 
     const date = cell(idx.date);
@@ -130,6 +167,10 @@ export function parseStrongCsv(text: string): StrongParseResult {
       return;
     }
 
+    if (!parseStrongDate(date)) {
+      skipped.push({ line: lineNumber, reason: 'Invalid workout date' });
+      return;
+    }
     const workoutName = cell(idx.workoutName) || 'Workout';
     const key = `${date}::${workoutName}`;
     let workout = byWorkout.get(key);
@@ -159,7 +200,7 @@ export function parseStrongCsv(text: string): StrongParseResult {
     }
 
     const order = num(setOrder);
-    if (order === undefined) {
+    if (order === undefined || !Number.isInteger(order) || order < 1) {
       skipped.push({ line: lineNumber, reason: `Unrecognised Set Order "${setOrder}"` });
       return;
     }
@@ -169,23 +210,33 @@ export function parseStrongCsv(text: string): StrongParseResult {
 
     const distance = cell(idx.distance);
     const distanceValue = num(distance);
+    const weight = num(cell(idx.weight));
+    const reps = num(cell(idx.reps));
+    const seconds = num(cell(idx.seconds));
+    if ([weight, reps, seconds].some((value) => value !== undefined && value < 0)
+      || (reps !== undefined && !Number.isInteger(reps))) {
+      skipped.push({ line: lineNumber, reason: 'Invalid set values' });
+      return;
+    }
     exercise.sets.push({
       order,
-      weight: num(cell(idx.weight)) || undefined,
-      reps: num(cell(idx.reps)) || undefined,
-      seconds: num(cell(idx.seconds)) || undefined,
+      weight,
+      reps: reps || undefined,
+      seconds: seconds || undefined,
       // Strong writes a literal 0 for "no distance"; keeping it would render "0" on
       // every strength set.
-      distance: distanceValue ? distance : undefined,
+      distance: distance && distanceValue !== 0 ? distance : undefined,
       rpe: num(cell(idx.rpe)),
     });
   });
 
-  const workouts = [...byWorkout.values()];
+  const workouts = [...byWorkout.values()].map((workout) => ({
+    ...workout, exercises: workout.exercises.filter((exercise) => exercise.sets.length > 0),
+  })).filter((workout) => workout.exercises.length > 0);
   for (const workout of workouts) {
     for (const exercise of workout.exercises) exercise.sets.sort((a, b) => a.order - b.order);
   }
-  workouts.sort((a, b) => a.startedAt.localeCompare(b.startedAt));
+  workouts.sort((a, b) => parseStrongDate(a.startedAt)!.localeCompare(parseStrongDate(b.startedAt)!));
   return { workouts, skipped };
 }
 

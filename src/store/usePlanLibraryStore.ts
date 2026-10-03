@@ -15,7 +15,7 @@ interface PlanLibraryState {
 
   follow: (planId: string) => void;
   unfollow: () => void;
-  markDayDone: (dayId: string) => void;
+  markDayDone: (dayId: string, planId?: string) => void;
   /** Un-marks a day the user completed by mistake. */
   unmarkDay: (dayId: string) => void;
   /** Set when the final day of a plan is finished, so the app can mark the moment once. */
@@ -35,6 +35,7 @@ export const usePlanLibraryStore = create<PlanLibraryState>()(
       justCompleted: null,
 
       follow: (planId) => {
+        if (!getWorkoutPlan(planId)) return;
         const { activePlanId, completedDayIds, cycle, startedAt, progressByPlan } = get();
         if (activePlanId === planId) return;
         // Park the current plan's progress before switching, and pick up where this one left off.
@@ -57,6 +58,7 @@ export const usePlanLibraryStore = create<PlanLibraryState>()(
         const { activePlanId, completedDayIds, cycle, startedAt, progressByPlan } = get();
         set({
           activePlanId: null,
+          justCompleted: null,
           startedAt: null,
           completedDayIds: [],
           cycle: 0,
@@ -64,18 +66,31 @@ export const usePlanLibraryStore = create<PlanLibraryState>()(
         });
       },
 
-      markDayDone: (dayId) => {
-        const { activePlanId, completedDayIds, cycle } = get();
-        const plan = activePlanId ? getWorkoutPlan(activePlanId) : undefined;
+      markDayDone: (dayId, planId) => {
+        const state = get();
+        const targetId = planId ?? state.activePlanId;
+        const plan = targetId ? getWorkoutPlan(targetId) : undefined;
+        const progress = targetId === state.activePlanId ? state : targetId ? state.progressByPlan[targetId] : undefined;
+        if (!progress) return;
+        const { completedDayIds, cycle } = progress;
         if (!plan || !plan.days.some((d) => d.id === dayId) || completedDayIds.includes(dayId)) return;
         const done = [...completedDayIds, dayId];
         // The final day keeps every tick visible; the next day started begins the new cycle.
         const finishedPlan = plan.days.every((d) => done.includes(d.id));
-        set(finishedPlan ? { completedDayIds: done, cycle: cycle + 1, justCompleted: plan.id } : { completedDayIds: done });
+        if (targetId !== state.activePlanId) {
+          set({ progressByPlan: { ...state.progressByPlan, [plan.id]: { completedDayIds: done, cycle: cycle + (finishedPlan ? 1 : 0), startedAt: progress.startedAt ?? new Date().toISOString() } } });
+        } else {
+          set(finishedPlan ? { completedDayIds: done, cycle: cycle + 1, justCompleted: plan.id } : { completedDayIds: done });
+        }
       },
 
       unmarkDay: (dayId) =>
-        set((s) => ({ completedDayIds: s.completedDayIds.filter((id) => id !== dayId) })),
+        set((s) => {
+          if (!s.completedDayIds.includes(dayId)) return s;
+          const plan = s.activePlanId ? getWorkoutPlan(s.activePlanId) : undefined;
+          const wasComplete = !!plan?.days.length && plan.days.every((d) => s.completedDayIds.includes(d.id));
+          return { completedDayIds: s.completedDayIds.filter((id) => id !== dayId), cycle: Math.max(0, s.cycle - (wasComplete ? 1 : 0)), justCompleted: null };
+        }),
 
       clearJustCompleted: () => set({ justCompleted: null }),
 

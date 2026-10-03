@@ -1,3 +1,4 @@
+import { setNotificationsEnabled } from '../../services/notifications';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BackHandler, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -256,6 +257,7 @@ function OnboardingFlow() {
   const askNotifications = async () => {
     try {
       const granted = await requestNotificationPermission();
+      setNotificationsEnabled(granted);
       if (granted) {
         await setupNotificationChannels();
         // Their answer on the schedule step decides which days get a reminder —

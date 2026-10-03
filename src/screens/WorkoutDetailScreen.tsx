@@ -66,7 +66,8 @@ export default function WorkoutDetailScreen() {
   const weekday = date ? WEEKDAYS[date.getDay()] : '';
 
   let cta: { title: string; icon?: 'play'; disabled?: boolean; onPress?: () => void } = { title: 'Start Workout', icon: 'play' };
-  if (completed) cta = { title: isToday ? 'Completed today' : 'Completed', disabled: true };
+  if (!exercises.length) cta = { title: 'Recovery day', disabled: true };
+  else if (completed) cta = { title: isToday ? 'Completed today' : 'Completed', disabled: true };
   else if (!unlocked) cta = { title: 'Unlock Gruntz Pro', onPress: () => navigation.navigate('Paywall') };
   else if (sameSession) cta = { title: 'Resume Workout', icon: 'play', onPress: () => session.expand() };
   // Both of these used to be dead disabled buttons: one with nowhere to go, one with no way to train early.

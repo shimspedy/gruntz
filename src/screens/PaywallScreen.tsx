@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Platform, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -45,13 +45,14 @@ export default function PaywallScreen() {
   const purchaseAnnual = useSubscriptionStore((s) => s.purchaseAnnual);
   const restoreAccess = useSubscriptionStore((s) => s.restoreAccess);
   const openCustomerCenter = useSubscriptionStore((s) => s.openCustomerCenter);
-  const openSubscriptionManagement = useSubscriptionStore((s) => s.openSubscriptionManagement);
 
   const access = getAccessState({ trialStartedAt, entitlementActive });
   const trialLeft = getTrialDaysRemaining(trialStartedAt);
   const monthly = getDisplayedMonthlyPrice(offering);
   const annual = offering?.annual ?? null;
   const [plan, setPlan] = useState<'annual' | 'monthly'>(annual ? 'annual' : 'monthly');
+  const billingBusy = useRef(false);
+  const selectedPlan = plan === 'annual' && annual ? 'annual' : monthly ? 'monthly' : annual ? 'annual' : 'monthly';
   const store = Platform.OS === 'ios' ? 'App Store' : 'Google Play';
 
   useEffect(() => {
@@ -60,8 +61,8 @@ export default function PaywallScreen() {
   }, [annual?.productIdentifier]);
 
   useEffect(() => {
-    if (isConfigured && access !== 'subscriber') void loadOffering();
-  }, [isConfigured, access, loadOffering]);
+    void loadOffering();
+  }, [loadOffering]);
 
   const dismiss = () => {
     if (inOnboarding) {
@@ -74,50 +75,62 @@ export default function PaywallScreen() {
   };
 
   const buy = async () => {
-    const r = await (plan === 'annual' && annual ? purchaseAnnual() : purchaseMonthly());
-    if (r === 'purchased') {
-      haptic.success();
-      toast(`Welcome to ${GRUNTZ_PRO_LABEL}`, { icon: 'starFill' });
-      dismiss();
-      return;
-    }
-    // A cancel is the user's own decision and needs no explanation. Everything else
-    // used to be silent: the only signal was a banner further down the ScrollView,
-    // below the benefits box and both plan cards, while the CTA sits in a fixed
-    // footer — so on a phone the spinner just stopped and nothing visibly happened,
-    // and a recoverable payment problem read as a broken app.
-    if (r === 'cancelled') return;
-    haptic.error();
-    if (r === 'unavailable') {
+    if (billingBusy.current) return;
+    billingBusy.current = true;
+    try {
+      const r = await (selectedPlan === 'annual' ? purchaseAnnual() : purchaseMonthly());
+      if (r === 'purchased') {
+        haptic.success();
+        toast(`Welcome to ${GRUNTZ_PRO_LABEL}`, { icon: 'starFill' });
+        dismiss();
+        return;
+      }
+      // A cancel is the user's own decision and needs no explanation. Everything else
+      // used to be silent: the only signal was a banner further down the ScrollView,
+      // below the benefits box and both plan cards, while the CTA sits in a fixed
+      // footer — so on a phone the spinner just stopped and nothing visibly happened,
+      // and a recoverable payment problem read as a broken app.
+      if (r === 'cancelled') return;
+      if (r === 'pending') {
+        Alert.alert(
+          'Waiting for purchase confirmation',
+          'Your payment may be pending approval or your access is still being confirmed. Please do not purchase again. If payment has completed, use Restore purchases to check your membership.',
+        );
+        return;
+      }
+      haptic.error();
+      if (r === 'unavailable') {
+        Alert.alert(
+          'Subscriptions unavailable',
+          `Purchases aren't available on this device right now. If you've already subscribed, use Restore purchases — you won't be charged twice.`,
+        );
+        return;
+      }
       Alert.alert(
-        'Subscriptions unavailable',
-        `Purchases aren't available on this device right now. If you've already subscribed, use Restore purchases — you won't be charged twice.`,
+        "Purchase didn't finish",
+        // Read fresh: the render-time `lastError` predates this purchase attempt.
+        `${useSubscriptionStore.getState().lastError ?? `We couldn't confirm the purchase with the ${store}.`} If payment completed, use Restore purchases before trying again.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Try again', onPress: () => void buy() },
+        ],
       );
-      return;
+    } finally {
+      billingBusy.current = false;
     }
-    Alert.alert(
-      "Purchase didn't finish",
-      // Read fresh: the render-time `lastError` predates this purchase attempt.
-      `${useSubscriptionStore.getState().lastError ?? `We couldn't complete the purchase with the ${store}.`} You haven't been charged.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Try again', onPress: () => void buy() },
-      ],
-    );
   };
 
   const primary = async () => {
     if (access === 'subscriber') {
       const r = await openCustomerCenter();
-      if (r === 'unavailable' || r === 'error') await openSubscriptionManagement();
+      if (r !== 'presented') Alert.alert('Management unavailable', 'Open your subscription settings in the App Store or Google Play to manage your membership.');
       return;
     }
-    // Subscribing during the free trial starts billing today and forfeits the rest
-    // of it. That is worth saying out loud rather than discovering on the receipt.
+    // The app trial and any store introductory offer have separate terms.
     if (access === 'trial' && trialLeft > 1) {
       Alert.alert(
         `You still have ${trialLeft} free days`,
-        `Subscribing now starts billing today and gives up the remaining ${trialLeft} days. You keep full access either way until then.`,
+        'Your included app trial already gives you full access. Review the store’s price and billing schedule before subscribing.',
         [
           { text: `Keep my ${trialLeft} days`, style: 'cancel' },
           { text: 'Subscribe now', onPress: () => void buy() },
@@ -129,24 +142,30 @@ export default function PaywallScreen() {
   };
 
   const restore = async () => {
-    const r = await restoreAccess();
-    if (r === 'restored') {
-      toast('Purchases restored');
-      dismiss();
-    } else if (r === 'none') {
-      Alert.alert('Nothing to restore', 'No active subscription was found for this account. If you subscribed with a different Apple ID, sign in with that one and try again.');
-    } else if (r === 'unavailable') {
-      // Not a network problem, and retrying cannot help — offering "Try again" here
-      // invited an infinite loop against a guaranteed failure.
-      Alert.alert(
-        'Purchases unavailable',
-        `In-app purchases aren't available on this device right now, so there's nothing to restore. Try again after updating the app.`,
-      );
-    } else {
-      Alert.alert('Restore didn’t finish', `We couldn’t reach the ${store}. Check your connection and try again — you won’t be charged twice.`, [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Try again', onPress: () => void restore() },
-      ]);
+    if (billingBusy.current || isLoading) return;
+    billingBusy.current = true;
+    try {
+      const r = await restoreAccess();
+      if (r === 'restored') {
+        toast('Purchases restored');
+        dismiss();
+      } else if (r === 'none') {
+        Alert.alert('Nothing to restore', `No active subscription was found for this account. Check that you are signed into the ${store} account used to subscribe.`);
+      } else if (r === 'unavailable') {
+        // Not a network problem, and retrying cannot help — offering "Try again" here
+        // invited an infinite loop against a guaranteed failure.
+        Alert.alert(
+          'Purchases unavailable',
+          `In-app purchases aren't available on this device right now, so there's nothing to restore. Try again after updating the app.`,
+        );
+      } else {
+        Alert.alert('Restore didn’t finish', `We couldn’t reach the ${store}. Check your connection and try again — you won’t be charged twice.`, [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Try again', onPress: () => void restore() },
+        ]);
+      }
+    } finally {
+      billingBusy.current = false;
     }
   };
 
@@ -154,17 +173,14 @@ export default function PaywallScreen() {
     if (!(await openExternalUrl(url))) Alert.alert('Link unavailable', 'Try again in a moment.');
   };
 
-  const selectedPrice = plan === 'annual' && annual ? annual.priceString : monthly;
-  // Empty unless the store actually has an introductory offer. Today the 15 free
-  // days are granted app-side so there is none — but the moment one is configured in
-  // App Store Connect, charging through an undisclosed intro offer is an Apple
-  // rejection, and `introPriceString` was being captured and rendered nowhere.
-  const introPrice = plan === 'annual' && annual ? null : offering?.introPriceString ?? null;
-  const introDisclosure = introPrice
-    ? ` An introductory rate of ${introPrice} applies first, then it renews at ${selectedPrice}.`
-    : '';
-  const ctaTitle =
-    access === 'subscriber' ? 'Manage membership' : !isConfigured ? 'Connecting…' : !offering ? 'Loading pricing…' : 'Continue';
+  const selectedPrice = selectedPlan === 'annual' && annual ? annual.priceString : monthly;
+  const introDisclosure = selectedPlan === 'annual' && annual ? annual.introDisclosure : offering?.introDisclosure;
+  const ctaTitle = access === 'subscriber'
+    ? 'Manage membership'
+    : isLoading ? 'Loading pricing…'
+    : !isConfigured ? 'Purchases unavailable'
+    : !offering ? 'Pricing unavailable'
+    : 'Continue';
 
   return (
     <View style={styles.screen}>
@@ -192,7 +208,7 @@ export default function PaywallScreen() {
           </Text>
           <Text variant="callout" tone="secondary" align="center" style={{ marginTop: space.sm }}>
             {access === 'trial'
-              ? `${trialLeft} of ${GRUNTZ_TRIAL_DAYS} free days left · subscribing now starts billing today`
+              ? `${trialLeft} of ${GRUNTZ_TRIAL_DAYS} included free days left`
               : access === 'locked'
                 ? 'Your included access has ended'
                 : access === 'subscriber'
@@ -218,9 +234,9 @@ export default function PaywallScreen() {
           <Animated.View entering={FadeIn.delay(160).duration(360)} style={{ marginTop: space.xl, gap: space.md }}>
             {annual ? (
               <PlanCard
-                selected={plan === 'annual'}
+                selected={selectedPlan === 'annual'}
                 onPress={() => setPlan('annual')}
-                badge={annual.percentSavings ? `Save ${annual.percentSavings}%` : 'Best value'}
+                badge={annual.percentSavings ? `Save ${annual.percentSavings}%` : undefined}
                 title="Yearly"
                 // Guideline 3.1.2(c): the billed amount has to be the most prominent
                 // price on the card; the per-month figure is derived, so it sits
@@ -229,7 +245,9 @@ export default function PaywallScreen() {
                 subtitle={annual.pricePerMonthString ? `Equal to ${perMonth(annual.pricePerMonthString)}` : undefined}
               />
             ) : null}
-            <PlanCard selected={plan === 'monthly' || !annual} onPress={() => setPlan('monthly')} title="Monthly" right={monthly ? perMonth(monthly) : 'Loading…'} />
+            {monthly ? (
+              <PlanCard selected={selectedPlan === 'monthly'} onPress={() => setPlan('monthly')} title="Monthly" right={perMonth(monthly)} />
+            ) : null}
           </Animated.View>
         ) : null}
 
@@ -237,9 +255,9 @@ export default function PaywallScreen() {
           <View style={styles.warning}>
             <Icon name="alert" size={18} color={color.flame} />
             <Text variant="footnote" tone="secondary" style={{ flex: 1 }}>
-              We couldn’t reach the {store}. Check your connection and try again.
+              {lastError}
             </Text>
-            <Tap feedback="opacity" onPress={() => void loadOffering()} accessibilityLabel="Retry">
+            <Tap feedback="opacity" disabled={isLoading} onPress={() => void loadOffering()} accessibilityLabel="Retry">
               <Text variant="subhead" tone="accent">
                 Retry
               </Text>
@@ -253,8 +271,8 @@ export default function PaywallScreen() {
           {access === 'subscriber'
             ? `Manage or cancel anytime in your ${store} account settings.`
             : !offering
-            ? 'Pricing is loading from the App Store.'
-            : `${GRUNTZ_PRO_LABEL} is an auto-renewing ${plan === 'annual' && annual ? 'yearly' : 'monthly'} subscription at ${selectedPrice}.${introDisclosure} Payment is charged to your ${store} account at confirmation and renews unless cancelled at least 24 hours before the period ends. Manage or cancel anytime in account settings.`}
+            ? isLoading ? `Pricing is loading from the ${store}.` : `Subscription pricing is unavailable. Retry when connected to the ${store}.`
+            : `${GRUNTZ_PRO_LABEL} is an auto-renewing ${selectedPlan === 'annual' ? 'yearly' : 'monthly'} subscription at ${selectedPrice}. ${introDisclosure ?? ''} Payment is charged to your ${store} account at confirmation and renews unless cancelled at least 24 hours before the period ends. Manage or cancel anytime in account settings.`}
         </Text>
       </ScrollView>
 
@@ -273,7 +291,7 @@ export default function PaywallScreen() {
         </View>
         <View style={styles.links}>
           {/* These were bare text well under the 44pt minimum. */}
-          <Tap feedback="opacity" hitSlop={12} onPress={() => void restore()} style={styles.link} accessibilityLabel="Restore purchases">
+          <Tap feedback="opacity" disabled={isLoading} hitSlop={12} onPress={() => void restore()} style={styles.link} accessibilityLabel="Restore purchases">
             <Text variant="footnote" tone="secondary">
               Restore
             </Text>

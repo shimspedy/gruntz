@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNow } from '../../hooks/useNow';
@@ -23,6 +23,7 @@ import { maybeRequestReview } from '../../utils/socialActions';
 export function SessionSummary({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
   const insets = useSafeAreaInsets();
   const s = useSessionStore();
+  const saving = useRef(false);
   const progress = useUserStore((u) => u.progress);
   // Rebuilt at save time rather than reused: this memo only re-runs when the store
   // object changes, so `duration_minutes` froze at whatever Date.now() was when it
@@ -52,8 +53,10 @@ export function SessionSummary({ onBack, onDone }: { onBack: () => void; onDone:
   const date = new Date();
 
   const save = () => {
-    if (!mission || !canSave) return;
-    const fresh = useSessionStore.getState().buildMission() ?? mission;
+    if (saving.current || !canSave) return;
+    const fresh = useSessionStore.getState().buildMission();
+    if (!fresh) return;
+    saving.current = true;
     const before = useUserStore.getState().progress;
     // completeMission dedupes on mission_date + workout_day_id and returns state
     // unchanged, but save() used to carry on regardless: it wiped the session and

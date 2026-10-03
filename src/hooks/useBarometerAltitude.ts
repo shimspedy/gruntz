@@ -48,6 +48,7 @@ export function useBarometerAltitude() {
   const gainRef = useRef(0);
   const lossRef = useRef(0);
   const startAltRef = useRef<number | null>(null);
+  const generation = useRef(0);
 
   const handleData = useCallback((data: BarometerMeasurement) => {
     const altMeters = HPA_TO_ALTITUDE_METERS(data.pressure);
@@ -77,17 +78,21 @@ export function useBarometerAltitude() {
       currentAltitudeFt: Math.round(altFeet),
       elevationGainFt: Math.round(gainRef.current),
       elevationLossFt: Math.round(lossRef.current),
-      startAltitudeFt: startAltRef.current ? Math.round(startAltRef.current) : null,
+      startAltitudeFt: startAltRef.current != null ? Math.round(startAltRef.current) : null,
     });
   }, []);
 
   const beginListening = useCallback(async (reset: boolean) => {
+    const token = ++generation.current;
     try {
       const available = await Barometer.isAvailableAsync();
+      if (token !== generation.current) return false;
       if (!available) return false;
 
       subscriptionRef.current?.remove();
       subscriptionRef.current = null;
+      // A climb while paused must not be added when the sensor reconnects.
+      lastAltRef.current = null;
 
       if (reset) {
         gainRef.current = 0;
@@ -97,7 +102,9 @@ export function useBarometerAltitude() {
       }
 
       Barometer.setUpdateInterval(2000); // 2 sec is plenty for altitude
-      subscriptionRef.current = Barometer.addListener(handleData);
+      subscriptionRef.current = Barometer.addListener((data) => {
+        if (token === generation.current) handleData(data);
+      });
 
       setState((prev) => ({
         isActive: true,
@@ -109,6 +116,7 @@ export function useBarometerAltitude() {
       }));
       return true;
     } catch {
+      if (token !== generation.current) return false;
       subscriptionRef.current?.remove();
       subscriptionRef.current = null;
       setState((prev) => ({ ...prev, isActive: false }));
@@ -121,6 +129,7 @@ export function useBarometerAltitude() {
   const resume = useCallback(async () => beginListening(false), [beginListening]);
 
   const stop = useCallback(() => {
+    generation.current += 1;
     subscriptionRef.current?.remove();
     subscriptionRef.current = null;
     setState((prev) => ({ ...prev, isActive: false }));
@@ -141,6 +150,7 @@ export function useBarometerAltitude() {
 
   useEffect(() => {
     return () => {
+      generation.current += 1;
       subscriptionRef.current?.remove();
     };
   }, []);

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Linking, LogBox, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -47,7 +47,8 @@ export default function App() {
     DMSans_900Black,
   });
 
-  const fontsReady = fontsLoaded || !!fontError;
+  const [fontTimedOut, setFontTimedOut] = useState(false);
+  const fontsReady = fontsLoaded || !!fontError || fontTimedOut;
 
   useEffect(() => {
     // A font that never resolves must not leave the app stuck behind the splash.
@@ -55,7 +56,10 @@ export default function App() {
   }, [fontsReady]);
 
   useEffect(() => {
-    const t = setTimeout(() => void SplashScreen.hideAsync().catch(() => undefined), 4000);
+    const t = setTimeout(() => {
+      setFontTimedOut(true);
+      void SplashScreen.hideAsync().catch(() => undefined);
+    }, 4000);
     return () => clearTimeout(t);
   }, []);
 

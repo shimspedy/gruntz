@@ -1,5 +1,4 @@
 export const GRUNTZ_TRIAL_DAYS = 15;
-export const GRUNTZ_MONTHLY_PRICE_FALLBACK = '$4.99/month';
 export const GRUNTZ_PRO_LABEL = 'Gruntz Pro';
 export const GRUNTZ_MONTHLY_PRODUCT_ID = 'monthly';
 
@@ -48,7 +47,7 @@ export function getDisplayedMonthlyPrice(offering?: RevenueCatPriceCandidate | n
 }
 
 /**
- * Development builds (simulator, dev client) run fully unlocked: every screen is reachable
- * without a purchase, and onboarding skips the paywall. Release builds are unaffected.
+ * Opt-in development bypass. Keep billing and access gates testable by default;
+ * release builds cannot enable the bypass.
  */
-export const DEV_UNLOCK = __DEV__;
+export const DEV_UNLOCK = __DEV__ && process.env.EXPO_PUBLIC_DEV_UNLOCK === 'true';

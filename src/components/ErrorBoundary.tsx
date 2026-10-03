@@ -1,6 +1,6 @@
 import React from 'react';
 import { Alert, View, StyleSheet, Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { resetTransientState } from '../services/resetLocalData';
 import { Button } from '../ui/Button';
 import { LogoMark } from '../ui/Logo';
 import { Text } from '../ui/Text';
@@ -14,19 +14,6 @@ interface State {
   error: Error | null;
   retries: number;
 }
-
-/**
- * Persisted state that a crash loop most often comes from — a half-written session
- * or a store whose shape changed. Cleared only when the user asks, after retrying
- * has visibly failed. Profile and progress (`@gruntz_user`) are NOT in this list:
- * they hold the work, and are the last thing we would throw away.
- */
-const RECOVERABLE_KEYS = [
-  '@gruntz_session',
-  '@gruntz_chrome',
-  '@gruntz_onboarding_draft',
-  '@gruntz_readiness',
-];
 
 /** Retries past this point are clearly not going to work. */
 const RETRY_LIMIT = 2;
@@ -59,16 +46,16 @@ export class ErrorBoundary extends React.Component<Props, State> {
   clearSavedState = () => {
     Alert.alert(
       'Reset saved app state?',
-      'This clears your in-progress workout and app settings. Your profile, history and progress are kept.',
+      'This clears your in-progress workout and navigation state. Your profile, history and progress are kept.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Reset',
           style: 'destructive',
           onPress: () => {
-            void AsyncStorage.multiRemove(RECOVERABLE_KEYS)
-              .catch(() => undefined)
-              .finally(() => this.setState({ error: null, retries: 0 }));
+            void resetTransientState()
+              .then(() => this.setState({ error: null, retries: 0 }))
+              .catch(() => Alert.alert('Reset didn’t finish', 'Please close and reopen Gruntz, then try again.'));
           },
         },
       ],

@@ -47,6 +47,13 @@ interface UserState {
 
 const initialProgress = getDefaultProgress('local');
 const STORAGE_KEY = '@gruntz_user';
+// Do not let a failed read flush defaults over the only saved copy.
+let userStorageWritable = false;
+const userStorage = {
+  getItem: (key: string) => AsyncStorage.getItem(key),
+  removeItem: (key: string) => AsyncStorage.removeItem(key),
+  setItem: (key: string, value: string) => userStorageWritable ? AsyncStorage.setItem(key, value) : Promise.resolve(),
+};
 /** Roughly three years of daily training before the oldest claim is forgotten. */
 const MAX_CLAIMED_MISSIONS = 1000;
 /**
@@ -504,7 +511,7 @@ export const useUserStore = create<UserState>()(
     {
       name: STORAGE_KEY,
       version: 1,
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => userStorage),
       migrate: (persistedState) => migratePersistedUserState(persistedState),
       partialize: (state) => ({
         profile: state.profile,
@@ -540,11 +547,13 @@ export const useUserStore = create<UserState>()(
       },
       onRehydrateStorage: () => (_state, error) => {
         if (error) {
+          userStorageWritable = false;
           console.warn('[useUserStore] rehydrate failed; keeping defaults without overwriting storage', error);
           useUserStore.setState({ hasHydrated: true, hydrationFailed: true });
           return;
         }
-        useUserStore.setState({ hasHydrated: true });
+        userStorageWritable = true;
+        useUserStore.setState({ hasHydrated: true, hydrationFailed: false });
       },
     }
   )

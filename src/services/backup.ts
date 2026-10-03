@@ -12,7 +12,7 @@ export type BackupMeta = {
   trialStartedAt: string | null;
 };
 
-export type AuthResult = 'sent' | 'unavailable' | 'error';
+export type AuthResult = 'sent' | 'rate-limited' | 'unavailable' | 'error';
 export type VerifyResult = 'signed-in' | 'invalid-code' | 'unavailable' | 'error';
 
 /**
@@ -28,6 +28,36 @@ function deviceLabel(): string {
 }
 
 const SUBSCRIPTION_KEY = '@gruntz_subscription';
+const BACKUP_OWNER_KEY = '@gruntz_backup_owner';
+let operationQueue: Promise<unknown> = Promise.resolve();
+let suspended = 0;
+let pendingPush: ReturnType<typeof setTimeout> | null = null;
+
+// Serialize uploads, restores and deletion so a late upload cannot undo a restore
+// or recreate a backup immediately after deletion.
+function serialize<T>(operation: () => Promise<T>): Promise<T> {
+  const next = operationQueue.then(operation, operation);
+  operationQueue = next.catch(() => undefined);
+  return next;
+}
+
+export function suspendAutomaticBackups(): () => void {
+  suspended += 1;
+  if (pendingPush) clearTimeout(pendingPush);
+  pendingPush = null;
+  let resumed = false;
+  return () => { if (!resumed) { resumed = true; suspended -= 1; } };
+}
+
+/** Keep the cloud copy safe across a device reset and subsequent app launches. */
+export async function pauseAutomaticBackups(): Promise<void> {
+  const resume = suspendAutomaticBackups();
+  try {
+    await serialize(() => AsyncStorage.setItem(BACKUP_OWNER_KEY, 'paused'));
+  } finally {
+    resume();
+  }
+}
 
 /** The trial start on this device, read straight from the persisted store. */
 async function readLocalTrialStart(): Promise<string | null> {
@@ -66,13 +96,9 @@ export async function reconcileTrialStart(): Promise<'adopted' | 'kept-local' | 
       if (Number.isFinite(localMs) && localMs <= remoteMs) return 'kept-local';
     }
 
-    const raw = await AsyncStorage.getItem(SUBSCRIPTION_KEY);
-    const parsed = raw ? JSON.parse(raw) as { state?: Record<string, unknown>; version?: number } : { state: {} };
-    const next = {
-      ...parsed,
-      state: { ...(parsed.state ?? {}), trialStartedAt: new Date(remoteMs).toISOString() },
-    };
-    await AsyncStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(next));
+    const { useSubscriptionStore } = await import('../store/useSubscriptionStore');
+    if (!useSubscriptionStore.persist.hasHydrated()) await useSubscriptionStore.persist.rehydrate();
+    useSubscriptionStore.getState().adoptTrialStart(new Date(remoteMs).toISOString());
     return 'adopted';
   } catch (error) {
     if (__DEV__) console.warn('[backup] reconcileTrialStart failed', error);
@@ -91,7 +117,7 @@ export async function requestSignInCode(email: string): Promise<AuthResult> {
     });
     if (error) {
       if (__DEV__) console.warn('[backup] requestSignInCode failed', error);
-      return 'error';
+      return error.status === 429 ? 'rate-limited' : 'error';
     }
     return 'sent';
   } catch (error) {
@@ -151,7 +177,7 @@ export async function signOut(): Promise<void> {
   const supabase = getSupabase();
   if (!supabase) return;
   try {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
   } catch (error) {
     if (__DEV__) console.warn('[backup] signOut failed', error);
   }
@@ -174,7 +200,11 @@ export async function getSignedInEmail(): Promise<string | null> {
  * Upserted on `user_id`, so there is exactly one backup per athlete and a push is
  * idempotent — running it twice costs a round trip and changes nothing.
  */
-export async function pushBackup(appVersion?: string): Promise<'ok' | 'signed-out' | 'unavailable' | 'error'> {
+export function pushBackup(appVersion?: string, options: { replaceExisting?: boolean } = {}): Promise<'ok' | 'needs-review' | 'signed-out' | 'unavailable' | 'error'> {
+  return serialize(() => pushBackupNow(appVersion, options));
+}
+
+async function pushBackupNow(appVersion: string | undefined, options: { replaceExisting?: boolean }): Promise<'ok' | 'needs-review' | 'signed-out' | 'unavailable' | 'error'> {
   const supabase = getSupabase();
   if (!supabase) return 'unavailable';
   try {
@@ -182,7 +212,18 @@ export async function pushBackup(appVersion?: string): Promise<'ok' | 'signed-ou
     const userId = data.session?.user.id;
     if (!userId) return 'signed-out';
 
+    if (suspended) return 'needs-review';
+    const owner = await AsyncStorage.getItem(BACKUP_OWNER_KEY);
+    if (owner !== userId && !options.replaceExisting) {
+      if (owner === 'paused') return 'needs-review';
+      const { data: existing, error: lookupError } = await supabase.from('backups')
+        .select('user_id').eq('user_id', userId).maybeSingle();
+      // A failed lookup is never evidence that overwriting the cloud is safe.
+      if (lookupError) return 'error';
+      if (existing) return 'needs-review';
+    }
     const snapshot = await captureSnapshot();
+    if (!Object.keys(snapshot.stores).length) return 'error';
     const { error } = await supabase.from('backups').upsert({
       user_id: userId,
       payload: snapshot,
@@ -199,6 +240,7 @@ export async function pushBackup(appVersion?: string): Promise<'ok' | 'signed-ou
       if (__DEV__) console.warn('[backup] pushBackup failed', error);
       return 'error';
     }
+    await AsyncStorage.setItem(BACKUP_OWNER_KEY, userId);
     return 'ok';
   } catch (error) {
     if (__DEV__) console.warn('[backup] pushBackup threw', error);
@@ -235,7 +277,12 @@ export async function fetchBackupMeta(): Promise<BackupMeta | null> {
  * only once local storage has actually been written, so the UI can tell the athlete
  * to restart with confidence rather than hope.
  */
-export async function restoreBackup(): Promise<'restored' | 'no-backup' | 'signed-out' | 'unavailable' | 'too-new' | 'error'> {
+export function restoreBackup(): Promise<'restored' | 'no-backup' | 'signed-out' | 'unavailable' | 'too-new' | 'error'> {
+  const resume = suspendAutomaticBackups();
+  return serialize(restoreBackupNow).finally(resume);
+}
+
+async function restoreBackupNow(): Promise<'restored' | 'no-backup' | 'signed-out' | 'unavailable' | 'too-new' | 'error'> {
   const supabase = getSupabase();
   if (!supabase) return 'unavailable';
   try {
@@ -253,6 +300,7 @@ export async function restoreBackup(): Promise<'restored' | 'no-backup' | 'signe
     if (snapshot.schema_version > BACKUP_SCHEMA_VERSION) return 'too-new';
 
     await applySnapshot(snapshot);
+    await AsyncStorage.setItem(BACKUP_OWNER_KEY, sessionData.session.user.id);
     return 'restored';
   } catch (error) {
     if (__DEV__) console.warn('[backup] restoreBackup threw', error);
@@ -261,13 +309,19 @@ export async function restoreBackup(): Promise<'restored' | 'no-backup' | 'signe
 }
 
 /** Delete the stored backup. The athlete's local training is untouched. */
-export async function deleteBackup(): Promise<'deleted' | 'signed-out' | 'unavailable' | 'error'> {
+export function deleteBackup(): Promise<'deleted' | 'signed-out' | 'unavailable' | 'error'> {
+  const resume = suspendAutomaticBackups();
+  return serialize(deleteBackupNow).finally(resume);
+}
+
+async function deleteBackupNow(): Promise<'deleted' | 'signed-out' | 'unavailable' | 'error'> {
   const supabase = getSupabase();
   if (!supabase) return 'unavailable';
   try {
     const { data } = await supabase.auth.getSession();
     const userId = data.session?.user.id;
     if (!userId) return 'signed-out';
+    await AsyncStorage.setItem(BACKUP_OWNER_KEY, 'paused');
     const { error } = await supabase.from('backups').delete().eq('user_id', userId);
     if (error) {
       if (__DEV__) console.warn('[backup] deleteBackup failed', error);
@@ -291,8 +345,8 @@ export async function deleteBackup(): Promise<'deleted' | 'signed-out' | 'unavai
  * function takes the athlete's id from their verified token, so this call carries no
  * body: there is nothing here that could name somebody else's account.
  *
- * The local signOut runs even when the server call failed, so a half-deleted state
- * never leaves someone looking signed in to an account that is gone.
+ * Failed requests keep the session available for retry. Successful deletion clears
+ * the session on this device without signing out other devices unnecessarily.
  */
 export async function deleteAccount(): Promise<'deleted' | 'signed-out' | 'unavailable' | 'error'> {
   const supabase = getSupabase();
@@ -301,13 +355,13 @@ export async function deleteAccount(): Promise<'deleted' | 'signed-out' | 'unava
     const { data } = await supabase.auth.getSession();
     if (!data.session?.user.id) return 'signed-out';
 
-    const { error } = await supabase.functions.invoke('delete-account', { method: 'POST' });
-    if (error) {
+    const { data: result, error } = await supabase.functions.invoke('delete-account', { method: 'POST' });
+    if (error || result?.ok !== true) {
       if (__DEV__) console.warn('[backup] deleteAccount failed', error);
       return 'error';
     }
 
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
     return 'deleted';
   } catch (error) {
     if (__DEV__) console.warn('[backup] deleteAccount threw', error);
@@ -315,7 +369,6 @@ export async function deleteAccount(): Promise<'deleted' | 'signed-out' | 'unava
   }
 }
 
-let pendingPush: ReturnType<typeof setTimeout> | null = null;
 let backgroundListenerAttached = false;
 
 /**
@@ -328,7 +381,7 @@ let backgroundListenerAttached = false;
  * whole state rather than a delta.
  */
 export function scheduleBackup(): void {
-  if (!isBackupAvailable()) return;
+  if (!isBackupAvailable() || suspended) return;
   if (pendingPush) clearTimeout(pendingPush);
   pendingPush = setTimeout(() => {
     pendingPush = null;

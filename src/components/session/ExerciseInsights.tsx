@@ -63,7 +63,10 @@ export function ExerciseInsights({
 
   const swap = (key: string, name: string) => {
     haptic.light();
-    useSessionStore.getState().replaceExercise(exerciseKey, libraryExerciseId(key));
+    if (!useSessionStore.getState().replaceExercise(exerciseKey, libraryExerciseId(key))) {
+      toast('Uncheck logged sets before swapping, or add another exercise.', { tone: 'info', icon: 'info' });
+      return;
+    }
     toast(`Swapped to ${name}`, { tone: 'info', icon: 'replace' });
   };
 

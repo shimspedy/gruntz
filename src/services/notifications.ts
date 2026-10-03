@@ -178,6 +178,7 @@ export async function clearWorkoutProgress() {
 /** Fires when a rest ends while the app is in the background or the phone is locked. */
 export async function scheduleRestDone(endsAt: number, nextLabel?: string) {
   await cancelRestDone();
+  if (!remindersEnabled) return;
   if (endsAt <= Date.now() + 1000) return;
   await withNotificationGuard(async () => {
     await Notifications.scheduleNotificationAsync({

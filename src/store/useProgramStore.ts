@@ -44,6 +44,7 @@ interface ProgramState {
   assessment: UserAssessment;
   hasSeenProgramSelect: boolean;
   hasHydrated: boolean;
+  hydrationFailed: boolean;
 
   selectProgram: (id: ProgramId) => void;
   /** Stop following a built-in program — used when a library plan takes over. */
@@ -57,6 +58,12 @@ interface ProgramState {
 
 const STORAGE_KEY = '@gruntz_program';
 const ASSESSMENT_KEY = 'gruntz_assessment';
+let programStorageWritable = false;
+const programStorage = {
+  getItem: (key: string) => AsyncStorage.getItem(key),
+  removeItem: (key: string) => AsyncStorage.removeItem(key),
+  setItem: (key: string, value: string) => programStorageWritable ? AsyncStorage.setItem(key, value) : Promise.resolve(),
+};
 
 type PersistedProgramState = {
   selectedProgram?: ProgramId | null;
@@ -86,6 +93,7 @@ export const useProgramStore = create<ProgramState>()(
       assessment: {},
       hasSeenProgramSelect: false,
       hasHydrated: false,
+      hydrationFailed: false,
 
       selectProgram: (id) => {
         set({ selectedProgram: id, currentWeek: 1 });
@@ -156,7 +164,7 @@ export const useProgramStore = create<ProgramState>()(
     {
       name: STORAGE_KEY,
       version: 2,
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => programStorage),
       migrate: (persistedState) => migratePersistedProgramState(persistedState),
       partialize: (state) => ({
         selectedProgram: state.selectedProgram,
@@ -178,10 +186,14 @@ export const useProgramStore = create<ProgramState>()(
         };
       },
       onRehydrateStorage: () => (_state, error) => {
-        if (error && __DEV__) {
-          console.warn('[useProgramStore] rehydrate failed', error);
+        if (error) {
+          programStorageWritable = false;
+          if (__DEV__) console.warn('[useProgramStore] rehydrate failed', error);
+          useProgramStore.setState({ hasHydrated: true, hydrationFailed: true });
+          return;
         }
-        useProgramStore.setState({ hasHydrated: true });
+        programStorageWritable = true;
+        useProgramStore.setState({ hasHydrated: true, hydrationFailed: false });
         // Load assessment from SecureStore after main state is hydrated.
         void useProgramStore.getState().loadPersistedState();
       },

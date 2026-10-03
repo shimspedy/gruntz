@@ -2,8 +2,6 @@ import React from 'react';
 import { Alert, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 import { GRUNTZ_PRIVACY_POLICY_URL, GRUNTZ_SUPPORT_URL, GRUNTZ_TERMS_OF_USE_URL } from '../config/legal';
 import { Linking } from 'react-native';
@@ -19,10 +17,7 @@ import {
   setupNotificationChannels,
 } from '../services/notifications';
 import { useReadinessStore } from '../store/useReadinessStore';
-import { useExerciseLogStore } from '../store/useExerciseLogStore';
-import { useExerciseNotesStore } from '../store/useExerciseNotesStore';
-import { usePlanLibraryStore } from '../store/usePlanLibraryStore';
-import { convertSessionWeights, useSessionStore } from '../store/useSessionStore';
+import { convertSessionWeights } from '../store/useSessionStore';
 import { getAccessState, useSubscriptionStore } from '../store/useSubscriptionStore';
 import { useUserStore } from '../store/useUserStore';
 import { notificationWeekdays, trainingWeekdays } from '../utils/trainingDays';
@@ -38,6 +33,7 @@ import { space } from '../ui/tokens';
 import { color } from '../ui/tokens';
 import { openExternalUrl } from '../utils/externalLinks';
 import { maybeRequestReview } from '../utils/socialActions';
+import { resetLocalData } from '../services/resetLocalData';
 
 /** Times people actually train. Settings said "change it anytime" while 07:00 was hardcoded. */
 const REMINDER_TIMES = ['05:30', '06:00', '06:30', '07:00', '08:00', '12:00', '17:00', '18:00', '19:00', '20:00'];
@@ -56,7 +52,6 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const profile = useUserStore((s) => s.profile);
   const updateSettings = useUserStore((s) => s.updateSettings);
-  const resetUser = useUserStore((s) => s.reset);
   const fieldMode = useReadinessStore((s) => s.fieldMode);
   const audioCues = useReadinessStore((s) => s.audioCues);
   const keepScreenAwake = useReadinessStore((s) => s.keepScreenAwake);
@@ -84,7 +79,7 @@ export default function SettingsScreen() {
           setNotificationsEnabled(false);
           Alert.alert('Notifications are off', 'Gruntz needs permission in Settings before it can remind you.', [
             { text: 'Not now', style: 'cancel' },
-            { text: 'Open Settings', onPress: () => void Linking.openSettings() },
+            { text: 'Open Settings', onPress: () => void Linking.openSettings().catch(() => undefined) },
           ]);
           return;
         }
@@ -93,6 +88,7 @@ export default function SettingsScreen() {
         // silently discarding a time the athlete had chosen in the picker below.
         const savedTime = profile?.settings.reminder_time || '07:00';
         const [savedHour, savedMinute] = savedTime.split(':').map(Number);
+        setNotificationsEnabled(true);
         await scheduleDailyReminder(savedHour, savedMinute, notificationWeekdays(profile?.workout_days_per_week));
         await scheduleWeeklyRecap();
         updateSettings({ notifications_enabled: true, reminder_time: savedTime });
@@ -101,6 +97,7 @@ export default function SettingsScreen() {
         return;
       }
       // Turning reminders off must silence everything, including the trial nudge and rest alert.
+      setNotificationsEnabled(false);
       await cancelDailyReminder();
       await cancelWeeklyRecap();
       await cancelTrialEndingReminder();
@@ -116,7 +113,7 @@ export default function SettingsScreen() {
     haptic.warning();
     Alert.alert(
       'Delete all data?',
-      'This erases your profile, workouts, streaks, challenges and achievements on this device. It can’t be undone. Your subscription is managed by the App Store and must be cancelled separately.',
+      'This erases your profile, workouts, streaks, challenges and achievements on this device. It can’t be undone. Your cloud backup is kept and automatic backups are paused. Your subscription and original trial are unchanged; cancel subscriptions separately in the store.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -125,21 +122,7 @@ export default function SettingsScreen() {
           onPress: () => {
             void (async () => {
               try {
-                // Clear storage first so persist middleware can't flush stale state back.
-                const keys = await AsyncStorage.getAllKeys();
-                const ours = keys.filter((k) => k.startsWith('@gruntz'));
-                if (ours.length) await AsyncStorage.multiRemove(ours);
-                await SecureStore.deleteItemAsync('gruntz_assessment').catch(() => {});
-                await Promise.all([cancelDailyReminder(), cancelWeeklyRecap(), cancelTrialEndingReminder(), cancelRestDone()]);
-                setNotificationsEnabled(false);
-                // Stores hold their own copies in memory; without this they re-persist after the wipe.
-                useSessionStore.getState().discard();
-                usePlanLibraryStore.getState().unfollow();
-                useExerciseLogStore.setState({ logs: {} });
-                useExerciseNotesStore.setState({ notes: {} });
-                useSessionStore.getState().discard();
-                // RootNavigator watches isOnboarded and returns to onboarding.
-                resetUser();
+                await resetLocalData();
               } catch {
                 Alert.alert('Couldn’t erase all data', 'Try again, or reinstall the app to fully reset.');
               }

@@ -4,6 +4,7 @@ import { matchExercise } from '../features/exerciseMatch';
 import {
   formatStrongDate,
   parseStrongCsv,
+  parseStrongDate,
   toStrongCsv,
   type ParsedStrongWorkout,
   type StrongRow,
@@ -17,6 +18,7 @@ import {
   type ExerciseLogEntry,
 } from '../store/useExerciseLogStore';
 import { useExerciseNotesStore } from '../store/useExerciseNotesStore';
+import { scheduleBackup } from './backup';
 
 /**
  * Taking training history in and out of Gruntz, in Strong's CSV format.
@@ -124,7 +126,7 @@ export async function exportWorkouts(options: ExportOptions): Promise<ExportResu
       dialogTitle: 'Export workouts',
     });
 
-    const workouts = new Set(rows.map((r) => r.date)).size;
+    const workouts = new Set(rows.map((r) => `${r.date}::${r.workoutName}`)).size;
     return { status: 'shared', workouts, sets: rows.length, fileName };
   } catch (error) {
     if (__DEV__) console.warn('[transfer] exportWorkouts failed', error);
@@ -272,21 +274,6 @@ export function estimateCapPressure(plan: ImportPlan): {
   return { crowdedExercises, exceedsExerciseCeiling: union.size > MAX_TRACKED_EXERCISES };
 }
 
-/** `2026-09-22 12:25:05` (local, as Strong writes it) -> an ISO instant. */
-function toIso(strongDate: string): string | null {
-  const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/.exec(strongDate.trim());
-  if (!m) {
-    const fallback = new Date(strongDate);
-    return Number.isNaN(fallback.getTime()) ? null : fallback.toISOString();
-  }
-  const [, y, mo, d, h, min, s] = m;
-  // Built field by field rather than handed to `new Date(string)`, whose handling of
-  // a space-separated date is engine-dependent — on one engine local, on another
-  // UTC, which would shift every imported workout by the timezone offset.
-  const date = new Date(Number(y), Number(mo) - 1, Number(d), Number(h), Number(min), Number(s ?? '0'));
-  return Number.isNaN(date.getTime()) ? null : date.toISOString();
-}
-
 /**
  * What the import did. Every count is post-cap — see `mergeEntries`.
  *
@@ -319,10 +306,9 @@ export function applyImport(plan: ImportPlan, unit: Unit): ImportResult {
   for (const row of plan.rows) if (row.match) keyByName.set(row.foreignName, row.match.key);
 
   const incoming: Record<string, ExerciseLogEntry[]> = {};
-  let sets = 0;
 
   for (const workout of plan.parsed) {
-    const at = toIso(workout.startedAt);
+    const at = parseStrongDate(workout.startedAt);
     if (!at) continue;
 
     for (const exercise of workout.exercises) {
@@ -354,19 +340,29 @@ export function applyImport(plan: ImportPlan, unit: Unit): ImportResult {
           distance: set.distance,
         })),
       };
-      sets += entry.sets.length;
-      (incoming[key] ??= []).push(entry);
+      const entries = incoming[key] ??= [];
+      const existing = entries.find((item) => item.id === entry.id);
+      // Different Strong names can resolve to one library movement. Keep every
+      // set in that workout instead of dropping the second alias during dedupe.
+      if (existing) existing.sets.push(...entry.sets);
+      else entries.push(entry);
     }
   }
 
+  const before = useExerciseLogStore.getState().logs;
+  const newSets = Object.entries(incoming).reduce((total, [key, entries]) => {
+    const ids = new Set((before[key] ?? []).map((entry) => entry.id));
+    return total + entries.filter((entry) => !ids.has(entry.id)).reduce((sum, entry) => sum + entry.sets.length, 0);
+  }, 0);
   const report = useExerciseLogStore.getState().mergeEntries(incoming);
+  if (report.entries) scheduleBackup();
   return {
     entries: report.entries,
     sets: report.sets,
     exercises: report.exercises,
     skippedExercises: plan.rows.filter((r) => !r.match).length,
     // `sets` here was the number built; the report's is the number kept.
-    droppedSets: Math.max(0, sets - report.sets),
+    droppedSets: Math.max(0, newSets - report.sets),
     evictedEntries: report.evictedEntries,
     evictedExercises: report.evictedExercises,
   };
