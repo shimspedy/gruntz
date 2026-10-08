@@ -295,8 +295,10 @@ export default function ExerciseDetailScreen() {
         </View>
       ) : null}
 
-      <Sheet visible={picker} onClose={() => setPicker(false)} title="Add to a workout">
-        <ScrollView style={{ maxHeight: 360 }} showsVerticalScrollIndicator={false}>
+      {/* A few workouts fit the sheet; a long list makes the sheet itself scroll. A scroll
+          view nested inside a fit-to-content system sheet is laid out over the sheet's title. */}
+      <Sheet visible={picker} onClose={() => setPicker(false)} title="Add to a workout" scrollable={routines.length > 5}>
+        <View>
           {routines.map((r) => (
             <Tap
               key={r.id}
@@ -337,7 +339,7 @@ export default function ExerciseDetailScreen() {
               New workout
             </Text>
           </Tap>
-        </ScrollView>
+        </View>
       </Sheet>
     </View>
   );

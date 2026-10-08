@@ -74,8 +74,15 @@ async function signedInUserId(): Promise<TeamResult<string>> {
   }
 }
 
+let demoTeam: Team | null = null;
+/** Dev-only: a roster to show without an account, for App Store screenshots. */
+export function setDemoTeam(team: Team | null) {
+  if (__DEV__) demoTeam = team;
+}
+
 /** The caller's team and roster, or `null` when they are not in one. */
 export async function fetchMyTeam(): Promise<TeamResult<Team | null>> {
+  if (__DEV__ && demoTeam) return { ok: true, value: demoTeam };
   const user = await signedInUserId();
   if (!user.ok) return user;
   const supabase = getSupabase();

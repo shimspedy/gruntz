@@ -24,6 +24,8 @@ SLIDES = [
     ('05', 'Plan your<br>own workouts', 'a_routine', '64', 'center 45%'),
     ('06', 'Ace your<br>PT test', 'a_test', '08', 'center 40%'),
     ('07', '412 exercise<br>videos', 'a_lib', '39', 'center 35%'),
+    ('08', 'Track every<br>ruck and run', 'a_track', None, None),
+    ('09', 'Train as<br>a team', 'a_team', '60', 'center 45%'),
 ]
 
 SCREEN_W = 860 if IPAD else 560 if ANDROID else 900

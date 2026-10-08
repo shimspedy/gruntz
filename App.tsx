@@ -77,7 +77,13 @@ export default function App() {
     const sub = Linking.addEventListener('url', ({ url }) => {
       if (url.includes('seed-demo')) require('./src/dev/seedDemo').seedDemo();
     });
-    return () => sub.remove();
+    // Or start the bundler with EXPO_PUBLIC_SEED_DEMO=1: opening a link from outside the app
+    // raises a system prompt that screenshot automation cannot answer.
+    const seed = process.env.EXPO_PUBLIC_SEED_DEMO === '1' ? setTimeout(() => require('./src/dev/seedDemo').seedDemo(), 3500) : undefined;
+    return () => {
+      sub.remove();
+      clearTimeout(seed);
+    };
   }, []);
 
   return (

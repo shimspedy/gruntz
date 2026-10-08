@@ -310,9 +310,11 @@ function LogScoresSheet({ visible, onClose, testId, events }: { visible: boolean
     toast('Scores saved', { icon: 'check' });
   };
 
+  // `scrollable`: the sheet itself scrolls. A scroll view nested inside a fit-to-content
+  // system sheet was laid out over the sheet's title.
   return (
-    <Sheet visible={visible} onClose={onClose} title="Log scores" avoidKeyboard dragHandleOnly>
-      <ScrollView style={{ maxHeight: 460, flexShrink: 1 }} contentContainerStyle={{ paddingHorizontal: space.gutter, paddingTop: space.sm }} keyboardShouldPersistTaps="handled">
+    <Sheet visible={visible} onClose={onClose} title="Log scores" scrollable>
+      <View style={{ paddingHorizontal: space.gutter, paddingTop: space.sm }}>
         <View style={styles.logHead}>
           <Text variant="footnote" tone="tertiary" style={{ flex: 1 }}>
             Event
@@ -350,7 +352,7 @@ function LogScoresSheet({ visible, onClose, testId, events }: { visible: boolean
             ))}
           </View>
         ))}
-      </ScrollView>
+      </View>
       <View style={{ paddingHorizontal: space.gutter, paddingTop: space.md }}>
         <Button title="Save scores" onPress={save} />
       </View>

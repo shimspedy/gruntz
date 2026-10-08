@@ -121,6 +121,8 @@ export function SheetScreen({ route }: NativeStackScreenProps<RootStackParamList
         style={styles.fill}
         contentContainerStyle={[styles.sheet, { paddingBottom: bottom }]}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        automaticallyAdjustKeyboardInsets
         showsVerticalScrollIndicator={false}
       >
         {body}
