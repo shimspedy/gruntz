@@ -87,6 +87,33 @@ import { site } from '../data/site';
     and your stored backup from our servers. See <a href="#retention">Data Retention</a>.
   </p>
 
+  <h3>Optional teams</h3>
+  <p>
+    Teams are optional and off unless you create or join one (Profile → Leader tools). A team
+    uses the same account and email sign-in as progress backup. If you are in a team:
+  </p>
+  <ul>
+    <li>
+      The other members of that team can see your <strong>display name</strong>, your
+      <strong>completed session count</strong>, your <strong>streak length</strong>, and a
+      <strong>green, amber or red readiness status</strong> taken from that day's check-in, with
+      the time it was last updated.
+    </li>
+    <li>
+      Nothing else is shared with a team. Weights, reps, sleep, limitations, test scores, GPS
+      routes and location are not sent to it.
+    </li>
+    <li>
+      Team data is stored with Supabase and protected by row-level security, so a team and its
+      roster are readable only by that team's members. A team can only be joined with its invite
+      code.
+    </li>
+    <li>
+      Leaving a team removes your entry from it and stops sharing. A team leader can remove a
+      member. Deleting your account also removes you from your team.
+    </li>
+  </ul>
+
   <h3>Route maps and activity cards</h3>
   <p>
     Maps use OpenFreeMap and OpenStreetMap data. Loading map tiles sends the map provider your
@@ -119,6 +146,7 @@ import { site } from '../data/site';
     <li>Determine premium access status and restore purchases.</li>
     <li>Send a one-time sign-in code to your email address, if you enable progress backup.</li>
     <li>Store and restore your backed-up training history, if you enable progress backup.</li>
+    <li>Show your name, session count, streak and readiness status to your team, if you join one.</li>
     <li>Respond to support requests you send to us.</li>
   </ul>
 
@@ -131,8 +159,8 @@ import { site } from '../data/site';
   <ul>
     <li>RevenueCat for subscription and entitlement management.</li>
     <li>
-      Supabase for optional account sign-in and progress backup storage, and Resend for delivering
-      sign-in code emails — both only if you enable progress backup.
+      Supabase for optional account sign-in, progress backup storage and team rosters, and Resend
+      for delivering sign-in code emails — only if you enable progress backup or use teams.
     </li>
     <li>Apple App Store or Google Play for payment processing and store-managed subscriptions.</li>
     <li>OpenFreeMap for map tiles and styles when you view a route map.</li>
@@ -154,6 +182,10 @@ import { site } from '../data/site';
     Profile → Back up progress inside the app. Deleting your account removes your email address
     and your backup from our servers permanently and cannot be undone; the copy of your training
     on your own phone is left untouched.
+  </p>
+  <p>
+    If you join a team, your team entry is retained until you leave the team, are removed from
+    it, or delete your account. A team with no members left is deleted.
   </p>
 
   <h2>5. Security</h2>
