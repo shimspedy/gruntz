@@ -48,6 +48,8 @@ export type RootStackParamList = {
   DataTransfer: undefined;
   TrainingPreferences: undefined;
   LeaderTools: undefined;
+  /** The route behind every `<Sheet>`; `id` names the content its owner published. */
+  Sheet: { id: string; scroll?: boolean };
   Paywall: undefined;
   RunTracker: { type?: ActivityType } | undefined;
   ActivityHistory: undefined;

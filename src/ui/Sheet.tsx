@@ -1,20 +1,12 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Modal, ScrollView, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
-import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, {
-  Extrapolation,
-  interpolate,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
-import { scheduleOnRN } from 'react-native-worklets';
+import React, { useEffect, useRef } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { KeyboardAwareSheetBody } from './KeyboardAware';
-import { Tap } from './Pressable';
+import { create } from 'zustand';
+import { navigationRef } from '../navigation/ref';
+import type { RootStackParamList } from '../types/navigation';
 import { Text } from './Text';
-import { color, motion, radius, space } from './tokens';
+import { color, space } from './tokens';
 
 export interface SheetProps {
   visible: boolean;
@@ -23,176 +15,125 @@ export interface SheetProps {
   children: React.ReactNode;
   /** Hide the hairline under the title (for sheets whose first row is a hero). */
   plainHeader?: boolean;
-  /** Fired after the exit animation finishes. */
+  /** Fired once the sheet has gone. */
   onDismissed?: () => void;
+  /** Kept for callers; the system sheet moves itself clear of the keyboard. */
   avoidKeyboard?: boolean;
   /**
-   * Let the body scroll when it is taller than the sheet's cap.
-   *
-   * The sheet caps at `screenH - insets.top - 24`, but its children neither scroll
-   * nor shrink, so a tall body simply lays out past the bottom of the screen. The
-   * readiness check-in measured ~722 pt against 623 available on a 667 pt phone —
-   * the overflow was exactly the Save button plus the disclaimer, so the check-in
-   * could not be saved at all. Opt-in rather than automatic: some sheets hold their
-   * own scrollables or gesture handlers that must not be nested.
+   * For a body that can be taller than the screen: the sheet opens tall and the body
+   * scrolls inside it, instead of sizing itself to content it cannot fit.
    */
   scrollable?: boolean;
-  /** Drag only from the handle and title. Implied by `scrollable`; set it when the body holds its own scroll view. */
+  /** Kept for callers; a system sheet already hands drags inside a scroll view to the scroll view. */
   dragHandleOnly?: boolean;
 }
 
-/**
- * Bottom sheet: dimmed backdrop, drag handle, springs in, follows the finger, flicks closed.
- * Short interruptions only — anything with steps is a modal route instead.
- */
-export function Sheet({ visible, onClose, title, children, plainHeader, onDismissed, avoidKeyboard, scrollable, dragHandleOnly }: SheetProps) {
-  const handleOnly = !!scrollable || !!dragHandleOnly;
-  const [mounted, setMounted] = useState(visible);
-  const { height: screenH } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
-  const sheetH = useSharedValue(screenH);
-  const offset = useSharedValue(screenH);
-  const progress = useSharedValue(0);
+type Entry = Pick<SheetProps, 'title' | 'children' | 'plainHeader' | 'onClose' | 'onDismissed'>;
 
-  const finishClose = useCallback(() => {
-    setMounted(false);
-    onDismissed?.();
-  }, [onDismissed]);
+/**
+ * What each open sheet is showing. The sheet itself is a navigator route (so it can be
+ * a real system sheet), but its content still belongs to whoever rendered `<Sheet>`:
+ * that component publishes its children here on every render and the route draws them.
+ */
+const useSheets = create<{ entries: Record<string, Entry> }>(() => ({ entries: {} }));
+
+const publish = (id: string, entry: Entry) => useSheets.setState((s) => ({ entries: { ...s.entries, [id]: entry } }));
+const retract = (id: string) =>
+  useSheets.setState((s) => {
+    if (!(id in s.entries)) return s;
+    const { [id]: _gone, ...entries } = s.entries;
+    return { entries };
+  });
+
+let nextId = 0;
+
+/**
+ * Bottom sheet, presented as the platform's own form sheet: system grabber, detents, drag
+ * to dismiss, and keyboard handling come from the OS rather than being rebuilt here.
+ * Short interruptions only — anything with steps is a modal route instead.
+ *
+ * Renders nothing in place. While `visible`, a `Sheet` route is on the stack showing
+ * these children; closing it from either side (the caller, or a drag) keeps both in step.
+ */
+export function Sheet({ visible, onClose, title, children, plainHeader, onDismissed, scrollable }: SheetProps) {
+  const id = useRef(`sheet-${++nextId}`).current;
+
+  // Every render while open, so the route always draws the caller's latest closure.
+  useEffect(() => {
+    if (visible) publish(id, { title, children, plainHeader, onClose, onDismissed });
+  });
 
   useEffect(() => {
-    if (visible) {
-      setMounted(true);
-      // Re-arm the entrance on every open: the height is remembered from last time, so
-      // without this the second open stayed off-screen behind a tap-swallowing backdrop.
-      if (sheetH.get() > 0) {
-        offset.set(sheetH.get() + 40);
-        offset.set(withSpring(0, motion.sheet));
-        progress.set(withTiming(1, { duration: motion.base, easing: motion.easeOut }));
-      }
-    } else if (mounted) {
-      progress.set(withTiming(0, { duration: 200, easing: motion.easeOut }));
-      offset.set(
-        withTiming(sheetH.get() + 40, { duration: 230, easing: motion.easeOut }, (done) => {
-          if (done) scheduleOnRN(finishClose);
-        }),
-      );
-    }
-  }, [visible, mounted, offset, progress, sheetH, finishClose]);
+    if (!visible || !navigationRef.isReady()) return undefined;
+    navigationRef.navigate('Sheet', { id, scroll: !!scrollable });
+    return () => {
+      // Retract first: the route calls `onClose` when it goes away with content still
+      // published, which is how a drag-dismiss reaches the caller. A close that started
+      // with the caller must not echo back.
+      retract(id);
+      const top = navigationRef.isReady() ? navigationRef.getCurrentRoute() : undefined;
+      if (top?.name === 'Sheet' && (top.params as { id?: string } | undefined)?.id === id) navigationRef.goBack();
+    };
+  }, [visible, id, scrollable]);
 
-  const onLayout = (e: LayoutChangeEvent) => {
-    const h = e.nativeEvent.layout.height;
-    const first = sheetH.get() === screenH;
-    sheetH.set(h);
-    if (first && visible) {
-      offset.set(h + 40);
-      // No overshoot on the way in: nothing was thrown, so nothing should bounce.
-      offset.set(withSpring(0, { duration: motion.sheet.duration, dampingRatio: 1 }));
-      progress.set(withTiming(1, { duration: motion.base, easing: motion.easeOut }));
-    }
-  };
+  return null;
+}
 
-  const pan = Gesture.Pan()
-    .activeOffsetY([-6, 6])
-    .onChange((e) => {
-      const next = offset.get() + e.changeY;
-      // Rubber-band when pulled above the resting point.
-      offset.set(next < 0 ? next * 0.25 : next);
-    })
-    .onEnd((e) => {
-      const projected = offset.get() + e.velocityY * 0.12;
-      if (projected > sheetH.get() * 0.4 || e.velocityY > 900) {
-        scheduleOnRN(onClose);
-      } else {
-        offset.set(withSpring(0, { ...motion.sheet, velocity: e.velocityY }));
-      }
-    });
+/** The route behind every `<Sheet>`. Registered once in the root stack as a form sheet. */
+export function SheetScreen({ route }: NativeStackScreenProps<RootStackParamList, 'Sheet'>) {
+  const { id, scroll } = route.params;
+  const insets = useSafeAreaInsets();
+  const entry = useSheets((s) => s.entries[id]);
+  const latest = useRef(entry);
+  if (entry) latest.current = entry;
 
-  const backdropStyle = useAnimatedStyle(() => ({
-    opacity: progress.get() * interpolate(offset.get(), [0, sheetH.get()], [1, 0], Extrapolation.CLAMP),
-  }));
-  const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: offset.get() }] }));
-
-  if (!mounted) return null;
-
-  return (
-    <Modal transparent visible statusBarTranslucent animationType="none" onRequestClose={onClose}>
-      <GestureHandlerRootView style={StyleSheet.absoluteFill}>
-        <Animated.View style={[StyleSheet.absoluteFill, styles.backdrop, backdropStyle]}>
-          <Tap feedback="none" style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close" />
-        </Animated.View>
-        {(() => {
-          const header = (
-            <View collapsable={false}>
-              <View style={styles.handle} />
-              {title ? (
-                <View style={[styles.titleRow, !plainHeader && styles.titleDivider]}>
-                  <Text variant="headline" align="center" style={styles.title}>
-                    {title}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-          );
-          const sheet = (
-            <Animated.View
-              onLayout={onLayout}
-              style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, space.md) + space.xs, maxHeight: screenH - insets.top - 24 }, sheetStyle]}
-            >
-              {/* Fills the gap that opens under the sheet when it is pulled up past its resting point. */}
-              <View style={styles.underlay} />
-              {handleOnly ? <GestureDetector gesture={pan}>{header}</GestureDetector> : header}
-            {(() => {
-              const body = avoidKeyboard ? <KeyboardAwareSheetBody>{children}</KeyboardAwareSheetBody> : children;
-              if (!scrollable) return body;
-              return (
-                <ScrollView
-                  style={styles.scrollBody}
-                  contentContainerStyle={styles.scrollContent}
-                  showsVerticalScrollIndicator={false}
-                  bounces={false}
-                >
-                  {body}
-                </ScrollView>
-              );
-            })()}
-            </Animated.View>
-          );
-          // With a scrolling body the drag belongs to the header alone: wrapped around the
-          // whole sheet it won against the list, so dragging the content moved or closed
-          // the sheet instead of scrolling it.
-          return handleOnly ? sheet : <GestureDetector gesture={pan}>{sheet}</GestureDetector>;
-        })()}
-      </GestureHandlerRootView>
-    </Modal>
+  useEffect(
+    () => () => {
+      // Still published means the sheet was dismissed by the user, not by its owner.
+      const open = useSheets.getState().entries[id];
+      retract(id);
+      open?.onClose();
+      (open ?? latest.current)?.onDismissed?.();
+    },
+    [id],
   );
+
+  const shown = entry ?? latest.current;
+  if (!shown) return <View style={styles.sheet} />;
+
+  const body = (
+    <>
+      {shown.title ? (
+        <View style={[styles.titleRow, !shown.plainHeader && styles.titleDivider]}>
+          <Text variant="headline" align="center" style={styles.title}>
+            {shown.title}
+          </Text>
+        </View>
+      ) : null}
+      {shown.children}
+    </>
+  );
+  const bottom = Math.max(insets.bottom, space.md) + space.xs;
+
+  if (scroll) {
+    return (
+      <ScrollView
+        style={styles.fill}
+        contentContainerStyle={[styles.sheet, { paddingBottom: bottom }]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {body}
+      </ScrollView>
+    );
+  }
+  return <View style={[styles.sheet, { paddingBottom: bottom }]}>{body}</View>;
 }
 
 const styles = StyleSheet.create({
-  // flexShrink lets the body give way to the sheet's maxHeight instead of laying
-  // out past the bottom of the screen; the ScrollView then reaches the overflow.
-  scrollBody: { flexShrink: 1 },
-  scrollContent: { flexGrow: 1 },
-  backdrop: { backgroundColor: color.scrim },
-  underlay: { position: 'absolute', left: 0, right: 0, top: '100%', height: 300, backgroundColor: color.bgRaised },
-  sheet: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: color.bgRaised,
-    borderTopLeftRadius: radius.xl + 4,
-    borderTopRightRadius: radius.xl + 4,
-    borderCurve: 'continuous',
-    paddingTop: 10,
-  },
-  handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: color.lineStrong,
-    marginBottom: space.sm,
-  },
+  fill: { flex: 1, backgroundColor: color.bgRaised },
+  // Top padding clears the system grabber.
+  sheet: { backgroundColor: color.bgRaised, paddingTop: 26 },
   titleRow: { paddingBottom: space.md, paddingTop: space.xs },
   titleDivider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: color.line, marginBottom: space.xs },
   title: { fontSize: 19 },

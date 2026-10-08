@@ -21,6 +21,7 @@ import ExerciseLibraryScreen from '../screens/ExerciseLibraryScreen';
 import RoutineDetailScreen from '../screens/RoutineDetailScreen';
 import RoutineEditorScreen from '../screens/RoutineEditorScreen';
 import LeaderToolsScreen from '../screens/LeaderToolsScreen';
+import { SheetScreen } from '../ui/Sheet';
 import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
 import LibraryPlanDayScreen from '../screens/LibraryPlanDayScreen';
 import LibraryPlanDetailScreen from '../screens/LibraryPlanDetailScreen';
@@ -209,6 +210,18 @@ function AppStack() {
       <Stack.Screen name="DataTransfer" component={DataTransferScreen} />
       <Stack.Screen name="TrainingPreferences" component={TrainingPreferencesScreen} />
       <Stack.Screen name="LeaderTools" component={LeaderToolsScreen} />
+      <Stack.Screen
+        name="Sheet"
+        component={SheetScreen}
+        options={({ route }) => ({
+          presentation: 'formSheet',
+          // Sized to its content; a body that may not fit opens tall and scrolls instead.
+          sheetAllowedDetents: route.params.scroll ? [0.92] : 'fitToContents',
+          sheetGrabberVisible: true,
+          sheetCornerRadius: 32,
+          contentStyle: { backgroundColor: color.bgRaised },
+        })}
+      />
       <Stack.Group screenOptions={{ presentation: 'fullScreenModal', gestureEnabled: false }}>
         <Stack.Screen name="Paywall" component={PaywallScreen} />
         <Stack.Screen name="RunTracker" component={RunTrackerScreen} />
@@ -237,6 +250,8 @@ const NAV_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 const TRANSIENT = new Set(['Celebration', 'Paywall', 'RunTracker', 'RoutineEditor']);
 const isTransient = (r: { name: string; params?: object }) => {
   if (TRANSIENT.has(r.name)) return true;
+  // A sheet's content lives in memory with whoever opened it; there is nothing to restore.
+  if (r.name === 'Sheet') return true;
   if (r.name === 'ExerciseLibrary' && !!(r.params as { pick?: boolean } | undefined)?.pick) return true;
   // A screen pinned to a date is only valid on that date. Restoring one saved up to
   // twelve hours ago could present yesterday's workout as today's.
