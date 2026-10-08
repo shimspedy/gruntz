@@ -9,7 +9,9 @@ export function KeyboardAwareSheetBody({ children }: { children: React.ReactNode
   const style = useAnimatedStyle(() => ({
     paddingBottom: Math.max(0, keyboard.height.get() - insets.bottom),
   }));
-  return <Animated.View style={style}>{children}</Animated.View>;
+  // Shrinkable, so a body taller than the space left above the keyboard gives way to
+  // the sheet's cap and scrolls instead of pushing its last rows under the keys.
+  return <Animated.View style={[{ flexShrink: 1 }, style]}>{children}</Animated.View>;
 }
 
 /** Bottom-pinned footer (CTA bar) that rides up with the keyboard. */

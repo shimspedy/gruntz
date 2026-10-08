@@ -132,7 +132,8 @@ export type StrongParseResult = {
 function num(value: string): number | undefined {
   const trimmed = value?.trim();
   if (!trimmed) return undefined;
-  const parsed = Number(trimmed);
+  // A quoted "72,5" is a decimal comma, never a thousands separator, in a weight or rep column.
+  const parsed = Number(/^-?\d+,\d+$/.test(trimmed) ? trimmed.replace(',', '.') : trimmed);
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 

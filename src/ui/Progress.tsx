@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
-import Animated, { useAnimatedProps, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, useAnimatedProps, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 import { color, motion, radius } from './tokens';
 
@@ -14,17 +14,24 @@ interface RingProps {
   tint?: string;
   children?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
+  /**
+   * For a ring fed by a clock: start at the current value and move linearly between
+   * ticks of this many ms. The default eased sweep from zero made a countdown fill
+   * up before it drained, then pulse on every tick.
+   */
+  tickMs?: number;
 }
 
 /** Circular progress. Animates from its previous value, never from zero after mount. */
-export function Ring({ progress, size = 56, stroke = 4, trackColor = color.line, tint = color.accent, children, style }: RingProps) {
+export function Ring({ progress, size = 56, stroke = 4, trackColor = color.line, tint = color.accent, children, style, tickMs }: RingProps) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
-  const p = useSharedValue(0);
+  const clamped = Math.max(0, Math.min(1, progress));
+  const p = useSharedValue(tickMs ? clamped : 0);
 
   useEffect(() => {
-    p.set(withTiming(Math.max(0, Math.min(1, progress)), { duration: 700, easing: motion.easeOut }));
-  }, [progress, p]);
+    p.set(withTiming(clamped, tickMs ? { duration: tickMs, easing: Easing.linear } : { duration: 700, easing: motion.easeOut }));
+  }, [clamped, p, tickMs]);
 
   const animatedProps = useAnimatedProps(() => ({ strokeDashoffset: c * (1 - p.get()) }));
 

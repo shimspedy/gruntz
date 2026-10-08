@@ -4,7 +4,10 @@ import { Canvas, Circle, Path, Skia, useCanvasRef } from '@shopify/react-native-
 import type { RoutePoint } from '../../types/activity';
 import { projectedRoute } from '../../utils/activityRoute';
 import { Text } from '../../ui/Text';
+import { color } from '../../ui/tokens';
 import { Icon } from '../../ui/Icon';
+
+const THUMBNAIL_POINTS = 240;
 
 export interface ActivityRouteArtRef { snapshot: () => Promise<string> }
 
@@ -13,9 +16,17 @@ export const ActivityRouteArt = forwardRef<ActivityRouteArtRef, { route: RoutePo
   const [width, setWidth] = useState(0);
   const canvas = useCanvasRef();
   const drawing = useMemo(() => {
-    const segments = projectedRoute(route);
+    // Checked first: every row renders once at width 0 before it is measured.
+    if (width <= 0) return null;
+    const projected = projectedRoute(route);
+    // A thumbnail can't show 6000 points; a list of them stalls scrolling building the paths.
+    const total = projected.reduce((sum, segment) => sum + segment.length, 0);
+    const stride = height < 140 ? Math.ceil(total / THUMBNAIL_POINTS) : 1;
+    const segments = stride > 1
+      ? projected.map((segment) => segment.filter((_, index) => index % stride === 0 || index === segment.length - 1))
+      : projected;
     const points = segments.flat();
-    if (width <= 0 || points.length < 2) return null;
+    if (points.length < 2) return null;
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     for (const point of points) {
       minX = Math.min(minX, point.x); maxX = Math.max(maxX, point.x);
@@ -49,15 +60,15 @@ export const ActivityRouteArt = forwardRef<ActivityRouteArtRef, { route: RoutePo
           <Canvas ref={canvas} style={StyleSheet.absoluteFill}>
             <Path path={drawing.path} color={tint} style="stroke" strokeWidth={height < 140 ? 8 : 16} opacity={0.1} strokeCap="round" strokeJoin="round" />
             <Path path={drawing.path} color={tint} style="stroke" strokeWidth={height < 140 ? 2 : 4} strokeCap="round" strokeJoin="round" />
-            <Circle cx={drawing.start.x} cy={drawing.start.y} r={height < 140 ? 3 : 6} color="#F4F5F2" />
-            <Circle cx={drawing.start.x} cy={drawing.start.y} r={height < 140 ? 1.5 : 3} color="#111B21" />
+            <Circle cx={drawing.start.x} cy={drawing.start.y} r={height < 140 ? 3 : 6} color={color.text} />
+            <Circle cx={drawing.start.x} cy={drawing.start.y} r={height < 140 ? 1.5 : 3} color={color.bg} />
             <Circle cx={drawing.end.x} cy={drawing.end.y} r={height < 140 ? 3 : 6} color={tint} />
           </Canvas>
           {height >= 140 ? <Text variant="caption" style={styles.sketchLabel}>ROUTE SKETCH</Text> : null}
         </>
       ) : (
         <View style={styles.empty}>
-          <Icon name="location" size={26} color="#879799" />
+          <Icon name="location" size={26} color={color.textQuaternary} />
           <Text variant="callout" align="center" style={styles.emptyText}>{emptyLabel}</Text>
         </View>
       )}
@@ -66,8 +77,8 @@ export const ActivityRouteArt = forwardRef<ActivityRouteArtRef, { route: RoutePo
 });
 
 const styles = StyleSheet.create({
-  wrap: { backgroundColor: '#111B21', overflow: 'hidden' },
+  wrap: { backgroundColor: color.bg, overflow: 'hidden' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
-  emptyText: { color: '#BBC6C6', maxWidth: 250 },
-  sketchLabel: { position: 'absolute', bottom: 12, left: 14, color: '#99AAAA', letterSpacing: 1.6 },
+  emptyText: { color: color.textSecondary, maxWidth: 250 },
+  sketchLabel: { position: 'absolute', bottom: 12, left: 14, color: color.textTertiary, letterSpacing: 1.6 },
 });

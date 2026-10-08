@@ -83,8 +83,9 @@ function scorePlan(plan: WorkoutPlan, profile: UserProfile, relaxed = false): Pl
   const direct = goals.filter((g) => profile.goals.includes(g));
   const related = goals.filter((g) => !direct.includes(g) && profile.goals.some((u) => RELATED_GOALS[u]?.includes(g)));
   score += direct.length * 3 + related.length * 1.5;
-  if (direct.length) reasons.push(`Built for ${direct.join(' & ').toLowerCase()}`);
-  else if (related.length) reasons.push(`Supports ${related.join(' & ').toLowerCase()}`);
+  // Goals are verb phrases ("Get Stronger"), so "Built for get stronger" read as a typo.
+  if (direct.length) reasons.push(`Goal: ${direct.join(' & ')}`);
+  else if (related.length) reasons.push(`Supports your goal: ${related.join(' & ')}`);
 
   if (levelGap === 0) { score += 3; reasons.push(`${m.fitness_level[0].toUpperCase()}${m.fitness_level.slice(1)} level`); }
   else if (levelGap === -1) score += 1;

@@ -22,14 +22,14 @@ export function NavHeader({
   onBack?: () => void;
   icon?: 'back' | 'close' | 'chevronDown';
   transparent?: boolean;
-  /** Page-sheet modals start below the status bar already. */
+  /** Page-sheet modals start below the status bar already (iOS; on Android a modal is full screen). */
   inSheet?: boolean;
 }) {
   // Optional: the header is also used by surfaces that live outside the navigator (the workout layer).
   const navigation = React.useContext(NavigationContext);
   const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.header, { paddingTop: inSheet ? space.xs : insets.top, backgroundColor: transparent ? 'transparent' : color.bg }]}>
+    <View style={[styles.header, { paddingTop: inSheet && process.env.EXPO_OS === 'ios' ? space.xs : insets.top, backgroundColor: transparent ? 'transparent' : color.bg }]}>
       <View style={styles.headerRow}>
         <Tap
           feedback="opacity"
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  chipActive: { backgroundColor: '#F5F5F7' },
+  chipActive: { backgroundColor: color.cta },
   hairline: { height: StyleSheet.hairlineWidth, backgroundColor: color.line },
   empty: { alignItems: 'center', paddingVertical: space.xxl, paddingHorizontal: space.xl },
   emptyIcon: {

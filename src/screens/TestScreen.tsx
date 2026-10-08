@@ -81,7 +81,7 @@ function parseValue(text: string, unit: string) {
     const [m, s] = text.split(':').map((n) => Number(n) || 0);
     return m * 60 + s;
   }
-  return Number(text.replace(/[^0-9.]/g, '')) || 0;
+  return Number(text.replace(/,/g, '.').replace(/[^0-9.]/g, '')) || 0;
 }
 
 export default function TestScreen() {
@@ -311,8 +311,8 @@ function LogScoresSheet({ visible, onClose, testId, events }: { visible: boolean
   };
 
   return (
-    <Sheet visible={visible} onClose={onClose} title="Log scores" avoidKeyboard>
-      <ScrollView style={{ maxHeight: 460 }} contentContainerStyle={{ paddingHorizontal: space.gutter, paddingTop: space.sm }} keyboardShouldPersistTaps="handled">
+    <Sheet visible={visible} onClose={onClose} title="Log scores" avoidKeyboard dragHandleOnly>
+      <ScrollView style={{ maxHeight: 460, flexShrink: 1 }} contentContainerStyle={{ paddingHorizontal: space.gutter, paddingTop: space.sm }} keyboardShouldPersistTaps="handled">
         <View style={styles.logHead}>
           <Text variant="footnote" tone="tertiary" style={{ flex: 1 }}>
             Event
@@ -336,6 +336,7 @@ function LogScoresSheet({ visible, onClose, testId, events }: { visible: boolean
             </View>
             {(['current', 'target'] as const).map((field) => (
               <TextInput
+                maxFontSizeMultiplier={1.8}
                 key={field}
                 value={draft[e.id]?.[field] ?? ''}
                 onChangeText={(t) => setDraft((d) => ({ ...d, [e.id]: { ...(d[e.id] ?? { current: '', target: '' }), [field]: t } }))}

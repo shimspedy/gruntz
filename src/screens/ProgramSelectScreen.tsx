@@ -81,6 +81,6 @@ const styles = StyleSheet.create({
     backgroundColor: color.accent,
     justifyContent: 'center',
   },
-  tagCurrent: { backgroundColor: '#F5F5F7' },
+  tagCurrent: { backgroundColor: color.cta },
   copy: { position: 'absolute', left: space.lg, right: space.lg, bottom: space.lg },
 });

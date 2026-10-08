@@ -671,6 +671,8 @@ export const useSessionStore = create<SessionState>()(
         get().exercises.forEach((e) => {
           const done = e.sets.filter((st) => st.done && !st.warmup);
           if (done.length) {
+            // Re-inserted so the trim below drops the least recently used, not the first ever logged.
+            delete previous[e.exerciseId];
             previous[e.exerciseId] = done.map(({ reps, weight, seconds, distance }) => ({ reps, weight, seconds, distance, unit }));
           }
         });

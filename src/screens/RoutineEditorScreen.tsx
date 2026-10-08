@@ -72,7 +72,7 @@ export default function RoutineEditorScreen() {
   };
 
   return (
-    <View style={[styles.screen, { paddingTop: space.sm }]}>
+    <View style={[styles.screen, { paddingTop: process.env.EXPO_OS === 'ios' ? space.sm : insets.top }]}>
       <View style={styles.header}>
         <Tap feedback="opacity" hitSlop={10} onPress={() => navigation.goBack()} accessibilityLabel="Cancel">
           <Icon name="close" size={24} color={color.text} />
@@ -181,10 +181,10 @@ function ItemRow({ item, index, last }: { item: RoutineItem; index: number; last
             {cardio ? '' : ` x ${item.reps} reps`} · {item.rest}s rest
           </Text>
         </View>
-        <Tap feedback="opacity" hitSlop={10} onPress={() => moveItem(item.uid, -1)} disabled={index === 0} style={styles.iconBtn} accessibilityLabel="Move up">
+        <Tap repeatable feedback="opacity" hitSlop={10} onPress={() => moveItem(item.uid, -1)} disabled={index === 0} style={styles.iconBtn} accessibilityLabel="Move up">
           <Icon name="chevronUp" size={17} color={index === 0 ? color.textQuaternary : color.textSecondary} />
         </Tap>
-        <Tap feedback="opacity" hitSlop={10} onPress={() => moveItem(item.uid, 1)} disabled={isLast} style={styles.iconBtn} accessibilityLabel="Move down">
+        <Tap repeatable feedback="opacity" hitSlop={10} onPress={() => moveItem(item.uid, 1)} disabled={isLast} style={styles.iconBtn} accessibilityLabel="Move down">
           <Icon name="chevronDown" size={17} color={isLast ? color.textQuaternary : color.textSecondary} />
         </Tap>
         <Tap
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   label: { paddingHorizontal: space.gutter, marginTop: space.xl, marginBottom: 12 },
   days: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: space.gutter },
   day: { width: 42, height: 42, borderRadius: 21, backgroundColor: color.surface, alignItems: 'center', justifyContent: 'center' },
-  dayOn: { backgroundColor: '#F5F5F7' },
+  dayOn: { backgroundColor: color.cta },
   item: { paddingHorizontal: space.gutter, paddingVertical: space.md },
   divider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: color.line },
   itemHead: { flexDirection: 'row', alignItems: 'center' },

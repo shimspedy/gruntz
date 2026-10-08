@@ -220,3 +220,18 @@ test('oversized backup is rejected rather than silently trimming older history',
   assert.throws(() => service.validateSnapshot(huge), { code: 'backup-too-large' });
   assert.deepEqual(disk.events, []);
 });
+
+test('a workout done ahead of schedule keeps the streak alive on the next launch', async () => {
+  const load = loader(storage());
+  const { useUserStore } = load('src/store/useUserStore.ts');
+  await tick();
+  const future = new Date(Date.now() + 3 * 86400000);
+  const mission_date = `${future.getFullYear()}-${String(future.getMonth() + 1).padStart(2, '0')}-${String(future.getDate()).padStart(2, '0')}`;
+  useUserStore.getState().completeMission({
+    mission_date, workout_day_id: 'early', exercises: [], total_xp: 10, completion_bonus: 0, pr_bonus: 0, has_personal_record: false,
+  });
+  assert.equal(useUserStore.getState().progress.streak_days, 1);
+  assert.notEqual(useUserStore.getState().progress.last_workout_date, mission_date);
+  useUserStore.getState().updateStreak();
+  assert.equal(useUserStore.getState().progress.streak_days, 1);
+});

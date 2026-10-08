@@ -8,6 +8,7 @@ import { getPlanExercise, getSlotLibraryItem, getWorkoutPlan } from '../data/wor
 import { dayMinutesLabel, restLabel, slotPrescription } from '../features/planDisplay';
 import { planSessionId, usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { useSessionStore } from '../store/useSessionStore';
+import { useTrainingAccess } from '../store/useSubscriptionStore';
 import type { RootStackParamList } from '../types/navigation';
 import { Button } from '../ui/Button';
 import { ExerciseThumb } from '../ui/ExerciseArt';
@@ -25,8 +26,12 @@ export default function LibraryPlanDayScreen() {
   const { params } = useRoute<RouteProp<RootStackParamList, 'LibraryPlanDay'>>();
   const plan = getWorkoutPlan(params.planId);
   const day = plan?.days.find((d) => d.id === params.dayId);
-  const session = useSessionStore();
+  // Narrow selectors: this screen stays mounted under the live workout, and the whole
+  // store changes on every logged set.
+  const sessionActive = useSessionStore((st) => st.active);
+  const sessionDayId = useSessionStore((st) => st.workoutDayId);
   const following = usePlanLibraryStore((s) => s.activePlanId === params.planId);
+  const unlocked = useTrainingAccess();
   const done = usePlanLibraryStore((s) => s.completedDayIds.includes(params.dayId));
   // How many exercises share each superset letter. Every row used to re-scan the
   // whole day to answer that, which is O(n squared) on a 25-exercise day.
@@ -47,20 +52,22 @@ export default function LibraryPlanDayScreen() {
     );
   }
 
-  const running = session.active && session.workoutDayId === planSessionId(plan.id, day.id);
+  const running = sessionActive && sessionDayId === planSessionId(plan.id, day.id);
 
   const start = () => {
-    if (running) return session.expand();
-    if (session.active) {
-      Alert.alert('Another workout is running', `Finish ${session.title || 'it'} first, or discard it and start this one.`, [
-        { text: 'Open it', onPress: () => session.expand() },
-        { text: 'Discard and start', style: 'destructive', onPress: () => { session.discard(); haptic.medium(); session.startPlanDay(plan, day, getLocalDateKey()); } },
+    if (running) return useSessionStore.getState().expand();
+    // Plans are what Gruntz Pro sells; browsing them stays open, training from them does not.
+    if (!unlocked) return navigation.navigate('Paywall');
+    if (sessionActive) {
+      Alert.alert('Another workout is running', `Finish ${useSessionStore.getState().title || 'it'} first, or discard it and start this one.`, [
+        { text: 'Open it', onPress: () => useSessionStore.getState().expand() },
+        { text: 'Discard and start', style: 'destructive', onPress: () => { useSessionStore.getState().discard(); haptic.medium(); useSessionStore.getState().startPlanDay(plan, day, getLocalDateKey()); } },
         { text: 'Cancel', style: 'cancel' },
       ]);
       return;
     }
     haptic.medium();
-    session.startPlanDay(plan, day, getLocalDateKey());
+    useSessionStore.getState().startPlanDay(plan, day, getLocalDateKey());
   };
 
   return (
@@ -137,8 +144,8 @@ export default function LibraryPlanDayScreen() {
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + space.md }]}>
         <LinearGradient colors={['rgba(0,0,0,0)', color.bg]} style={styles.footerFade} pointerEvents="none" />
-        <Button title={running ? 'Resume workout' : 'Start workout'} icon="play" onPress={start} />
-        {following ? (
+        <Button title={running ? 'Resume workout' : unlocked ? 'Start workout' : 'Unlock Gruntz Pro'} icon={running || unlocked ? 'play' : undefined} onPress={start} />
+        {following && (unlocked || done) ? (
           <Tap
             feedback="opacity"
             hitSlop={10}

@@ -25,7 +25,7 @@ export interface ButtonProps {
 }
 
 const fills: Record<Variant, { bg: string; fg: string; border?: string }> = {
-  primary: { bg: '#F5F5F7', fg: color.onCta },
+  primary: { bg: color.cta, fg: color.onCta },
   secondary: { bg: color.surface, fg: color.text },
   accent: { bg: color.accent, fg: '#FFFFFF' },
   outline: { bg: 'transparent', fg: color.text, border: color.lineStrong },

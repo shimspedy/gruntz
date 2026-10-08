@@ -109,7 +109,7 @@ export function ChallengeSheet() {
   const quick = done ? [] : quickAdds(challenge, remaining);
 
   const submitCustom = () => {
-    const v = Number.parseFloat(custom);
+    const v = Number.parseFloat(custom.replace(',', '.'));
     if (!Number.isFinite(v) || v <= 0) {
       // Silently doing nothing reads as a broken button.
       haptic.warning();

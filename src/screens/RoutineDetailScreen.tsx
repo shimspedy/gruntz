@@ -36,7 +36,10 @@ export default function RoutineDetailScreen() {
   const insets = useSafeAreaInsets();
   const { params } = useRoute<RouteProp<RootStackParamList, 'RoutineDetail'>>();
   const routine = useRoutineStore((s) => s.routines.find((r) => r.id === params.routineId));
-  const session = useSessionStore();
+  // Narrow selectors: this screen stays mounted under the live workout, and the whole
+  // store changes on every logged set.
+  const sessionActive = useSessionStore((st) => st.active);
+  const sessionDayId = useSessionStore((st) => st.workoutDayId);
 
   if (!routine) {
     return (
@@ -60,7 +63,7 @@ export default function RoutineDetailScreen() {
     .slice(0, 4)
     .map(({ key, pct }) => ({ muscle: key, pct }));
 
-  const running = session.active && session.workoutDayId === `routine:${routine.id}`;
+  const running = sessionActive && sessionDayId === `routine:${routine.id}`;
 
   const edit = () => {
     useRoutineStore.getState().editDraft(routine.id);
@@ -118,17 +121,17 @@ export default function RoutineDetailScreen() {
   };
 
   const start = () => {
-    if (running) return session.expand();
-    if (session.active) {
-      Alert.alert('Another workout is running', `Finish ${session.title || 'it'} first, or discard it and start this one.`, [
-        { text: 'Open it', onPress: () => session.expand() },
+    if (running) return useSessionStore.getState().expand();
+    if (sessionActive) {
+      Alert.alert('Another workout is running', `Finish ${useSessionStore.getState().title || 'it'} first, or discard it and start this one.`, [
+        { text: 'Open it', onPress: () => useSessionStore.getState().expand() },
         {
           text: 'Discard and start',
           style: 'destructive',
           onPress: () => {
-            session.discard();
+            useSessionStore.getState().discard();
             haptic.medium();
-            session.startRoutine(routine, getLocalDateKey());
+            useSessionStore.getState().startRoutine(routine, getLocalDateKey());
           },
         },
         { text: 'Cancel', style: 'cancel' },
@@ -136,7 +139,7 @@ export default function RoutineDetailScreen() {
       return;
     }
     haptic.medium();
-    session.startRoutine(routine, getLocalDateKey());
+    useSessionStore.getState().startRoutine(routine, getLocalDateKey());
   };
 
   return (

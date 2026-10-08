@@ -140,7 +140,7 @@ function backupModule({ remote = { user_id: 'athlete' }, lookupError = null, see
     from: () => ({
       select() { return this; }, eq() { return this; },
       maybeSingle: async () => ({ data: remote, error: lookupError }),
-      upsert: async (payload) => { writes.push(payload); return { error: null }; },
+      upsert(payload) { writes.push(payload); return { select: () => ({ maybeSingle: async () => ({ data: { updated_at: '2026-10-07T12:00:00.000Z' }, error: null }) }) }; },
       delete() { return { eq: async () => ({ error: null }) }; },
     }),
   };
@@ -176,6 +176,17 @@ test('explicit replacement establishes ownership; future automatic backup succee
   assert.equal(disk.data.get('@gruntz_backup_owner'), 'athlete');
   assert.equal(await service.pushBackup(), 'ok');
   assert.equal(writes.length, 2);
+});
+
+test('a device that fell behind cannot overwrite a newer cloud backup automatically', async () => {
+  const seed = { '@gruntz_backup_owner': 'athlete', '@gruntz_backup_synced_at': '2026-10-01T08:00:00.000Z' };
+  const stale = backupModule({ seed, remote: { user_id: 'athlete', updated_at: '2026-10-05T08:00:00.000Z' } });
+  assert.equal(await stale.service.pushBackup(), 'needs-review');
+  assert.equal(stale.writes.length, 0);
+  assert.equal(await stale.service.pushBackup(undefined, { replaceExisting: true }), 'ok');
+  const current = backupModule({ seed, remote: { user_id: 'athlete', updated_at: '2026-10-01T08:00:00.000Z' } });
+  assert.equal(await current.service.pushBackup(), 'ok');
+  assert.equal(current.disk.data.get('@gruntz_backup_synced_at'), '2026-10-07T12:00:00.000Z');
 });
 
 test('device reset pause survives relaunch and requires explicit consent', async () => {

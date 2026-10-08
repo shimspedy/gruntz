@@ -135,6 +135,9 @@ function file(): WorkoutPlansFile {
   return FILE;
 }
 
+/** Whether the plan file has been parsed yet, so a caller can choose to wait a frame for it. */
+export const plansLoaded = () => FILE !== null;
+
 /** How many plans ship with the app — a plain number, so counters don't load the file. */
 export const PLAN_COUNT = 528;
 

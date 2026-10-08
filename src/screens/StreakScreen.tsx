@@ -130,13 +130,14 @@ export default function StreakScreen() {
             <Text variant="headline" style={{ fontSize: 21 }}>
               {month.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
             </Text>
-            <View style={{ flexDirection: 'row', gap: 18 }}>
-              <Tap feedback="opacity" hitSlop={10} onPress={() => shiftMonth(-1)} accessibilityLabel="Previous month">
+            <View style={{ flexDirection: 'row' }}>
+              <Tap repeatable feedback="opacity" onPress={() => shiftMonth(-1)} style={styles.monthStep} accessibilityLabel="Previous month">
                 <Icon name="chevronLeft" size={20} weight="semibold" />
               </Tap>
               <Tap
+                repeatable
                 feedback="opacity"
-                hitSlop={10}
+                style={styles.monthStep}
                 onPress={() => shiftMonth(1)}
                 disabled={atCurrentMonth}
                 accessibilityLabel="Next month"
@@ -199,12 +200,12 @@ function Flame({ lit }: { lit: boolean }) {
       <Svg width={112} height={132} viewBox="0 0 112 132">
         <Defs>
           <LinearGradient id="outer" x1="0.5" y1="0" x2="0.5" y2="1">
-            <Stop offset="0" stopColor={lit ? '#FF7A1A' : '#3A3A3C'} />
-            <Stop offset="1" stopColor={lit ? '#FF3D00' : '#2A2A2C'} />
+            <Stop offset="0" stopColor={lit ? '#FF7A1A' : color.lineStrong} />
+            <Stop offset="1" stopColor={lit ? '#FF3D00' : color.line} />
           </LinearGradient>
           <LinearGradient id="inner" x1="0.5" y1="0" x2="0.5" y2="1">
             <Stop offset="0" stopColor={lit ? '#FFC23D' : '#48484A'} />
-            <Stop offset="1" stopColor={lit ? '#FF9A1F' : '#3A3A3C'} />
+            <Stop offset="1" stopColor={lit ? '#FF9A1F' : color.lineStrong} />
           </LinearGradient>
         </Defs>
         <Path
@@ -218,6 +219,7 @@ function Flame({ lit }: { lit: boolean }) {
 }
 
 const styles = StyleSheet.create({
+  monthStep: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   screen: { flex: 1, backgroundColor: color.bg },
   hero: {
     backgroundColor: color.bgRaised,
@@ -239,7 +241,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  weekDotOn: { backgroundColor: '#F5F5F7', borderColor: '#F5F5F7' },
+  weekDotOn: { backgroundColor: color.cta, borderColor: color.cta },
   cards: { flexDirection: 'row', gap: 12, paddingHorizontal: space.md, marginTop: space.lg },
   card: {
     flex: 1,
@@ -261,6 +263,6 @@ const styles = StyleSheet.create({
   calHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: space.lg },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
   day: { backgroundColor: color.surfaceHigh, alignItems: 'center', justifyContent: 'center' },
-  dayOn: { backgroundColor: '#F5F5F7', borderWidth: 3, borderColor: '#3A3A3C' },
+  dayOn: { backgroundColor: color.cta, borderWidth: 3, borderColor: color.lineStrong },
   dayToday: { borderWidth: 1.5, borderColor: color.text },
 });

@@ -58,7 +58,8 @@ export function SessionMiniBar() {
             {resting
               ? `Resting · ${formatClock(restEndsAt - now)}`
               : ex
-                ? `${ex.name} · Set ${Math.min(setsDone + 1, workingSets.length)} of ${workingSets.length}`
+                // The plan's own name for the movement, as the workout screen shows it; the video's name alone read as a different exercise.
+                ? `${current?.prescribedName ?? ex.name} · Set ${Math.min(setsDone + 1, workingSets.length)} of ${workingSets.length}`
                 : 'Workout in progress'}
           </Text>
           {/* Skipping rest used to mean reopening the whole session first. */}
@@ -71,8 +72,9 @@ export function SessionMiniBar() {
                 endRest();
               }}
               accessibilityLabel="Skip rest"
+              style={styles.skip}
             >
-              <Text variant="caption" tone="accent">Skip</Text>
+              <Text variant="subhead" tone="accent">Skip</Text>
             </Tap>
           ) : null}
         </View>
@@ -82,6 +84,7 @@ export function SessionMiniBar() {
 }
 
 const styles = StyleSheet.create({
+  skip: { minHeight: 44, paddingHorizontal: 12, justifyContent: 'center' },
   bar: {
     height: layout.miniBar,
     paddingHorizontal: space.md,

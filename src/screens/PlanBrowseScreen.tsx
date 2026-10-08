@@ -1,8 +1,10 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
-import { useNavigation, useScrollToTop } from '@react-navigation/native';
+import { useNavigation, useRoute, useScrollToTop } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PlanCard, PlanRow } from '../components/PlanCards';
+import { TabHeader } from '../components/TabHeader';
+import { useTabChromeInset } from '../navigation/TabBar';
 import { allPlans, planCategories, PLAN_COUNT, type WorkoutPlan } from '../data/workoutPlans';
 import { EQUIPMENT_LABEL } from '../features/planDisplay';
 import { effectiveEquipmentAccess, recommendPlans } from '../features/planRecommend';
@@ -50,6 +52,10 @@ export default function PlanBrowseScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  // The same screen is a tab root (non-military) and a pushed screen. As a tab it has
+  // nothing to go back to, and its list has to clear the floating tab bar.
+  const isTab = useRoute().name === 'Plans';
+  const tabBottom = useTabChromeInset();
   const profile = useUserStore((s) => s.profile);
   const activeId = usePlanLibraryStore((s) => s.activePlanId);
   const [kind, setKind] = useState<Kind>('program');
@@ -64,6 +70,7 @@ export default function PlanBrowseScreen() {
   const filtered = !!category || days > 0 || !!level || !!gear || !!query.trim();
 
   const matched = useMemo(() => (profile ? recommendPlans(profile, 8) : []), [profile]);
+  const categories = useMemo(() => planCategories(kind), [kind]);
 
   const plans = useMemo(() => {
     const inCategory = category ? new Set(planCategories().find((c) => c.id === category)?.plan_ids ?? []) : null;
@@ -94,7 +101,7 @@ export default function PlanBrowseScreen() {
 
   // Stable identity, so the memoised rows are not invalidated on every render.
   const open = useCallback((plan: WorkoutPlan) => navigation.navigate('LibraryPlanDetail', { planId: plan.id }), [navigation]);
-  const cardWidth = Math.round(width * 0.62);
+  const cardWidth = Math.round(Math.min(width * 0.62, 300));
 
   const header = (
     <View>
@@ -134,6 +141,7 @@ export default function PlanBrowseScreen() {
       <View style={styles.search}>
         <Icon name="scope" size={16} color={color.textTertiary} />
         <TextInput
+          maxFontSizeMultiplier={1.8}
           value={query}
           onChangeText={(t) => {
             setQuery(t);
@@ -165,7 +173,7 @@ export default function PlanBrowseScreen() {
       />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
         <Chip label="All" active={!category} onPress={() => setCategory(null)} />
-        {planCategories(kind).map((c) => (
+        {categories.map((c) => (
           <Chip key={c.id} label={CATEGORY_LABEL[c.id] ?? c.name} active={category === c.id} onPress={() => { setCategory(category === c.id ? null : c.id); resetTop(); }} />
         ))}
       </ScrollView>
@@ -203,7 +211,13 @@ export default function PlanBrowseScreen() {
 
   return (
     <View style={styles.screen}>
-      <NavHeader title="Plans" />
+      {isTab ? (
+        <View style={{ paddingTop: insets.top }}>
+          <TabHeader />
+        </View>
+      ) : (
+        <NavHeader title="Plans" />
+      )}
       <FlatList
         data={plans}
         keyExtractor={(p) => p.id}
@@ -216,7 +230,7 @@ export default function PlanBrowseScreen() {
             <Button title="Clear filters" variant="secondary" onPress={clearFilters} />
           </EmptyState>
         }
-        contentContainerStyle={{ paddingBottom: insets.bottom + space.xxl }}
+        contentContainerStyle={{ paddingBottom: isTab ? tabBottom : insets.bottom + space.xxl }}
         ref={list}
         initialNumToRender={8}
         windowSize={7}

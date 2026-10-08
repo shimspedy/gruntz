@@ -8,6 +8,7 @@ const METERS_TO_FEET = 3.28084;
 const MAX_GPS_GAP_MS = 120000;
 const MAX_FIX_ACCURACY_M = 35;
 const MAX_SPEED_MPS = 12;
+const ALTITUDE_SMOOTHING = 0.2;
 const DRAFT_READ_ERROR = 'Your saved activity could not be read. Retry after freeing storage; discard it only if you no longer need it.';
 const WAITING_FOR_GPS_NOTICE = 'Waiting for a precise GPS signal. Recording will continue when location is available; the missing route will not add distance.';
 
@@ -57,6 +58,8 @@ export interface ActivityTrackingDependencies {
   startBackground(options: ActivityTrackingOptions): Promise<void>;
   stopBackground(): Promise<void>;
   hasBackground(): Promise<boolean>;
+  /** False while the app is running in the background. Absent in tests that don't model it. */
+  isForeground?(): boolean;
   watchForeground(options: ActivityTrackingOptions, onLocation: (location: ActivityLocation) => void, onError: () => void): Promise<Subscription>;
   stepsAvailable(): Promise<boolean>;
   watchSteps(onSteps: (steps: number) => void): Subscription;
@@ -143,6 +146,11 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
   let generation = 0;
   let actionPending = false;
   let stopCutoff: number | null = null;
+  // When the last usable fix arrived. Not the anchor's time: the anchor stays put while standing still.
+  let lastGoodFixAt: number | null = null;
+  // Phone altitude wanders by metres between fixes; smoothing it first stops that noise
+  // ratcheting the climb upward on a flat route.
+  let smoothedAltitude: number | null = null;
   let foreground: Subscription | null = null;
   let pedometer: Subscription | null = null;
   let stepGeneration = 0;
@@ -227,6 +235,11 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
       loaded = true;
       readBlocked = false;
       recovering = !!draft && draft.status === 'recording';
+      // iOS can relaunch a killed app in the background to deliver locations, and that
+      // relaunch may mount the UI before the first task event. The recording is still
+      // live then; treating it as an interrupted one paused it and stopped the GPS.
+      if (draft?.status === 'recording' && source === 'ui' && deps.isForeground && !deps.isForeground()
+        && await deps.hasBackground().catch(() => false)) source = 'task';
       if (draft && source === 'ui' && draft.status === 'recording') {
         // A fresh JS process cannot know when the OS/user stopped the old run.
         // Keep only the last durable duration; explicit Resume starts a new leg.
@@ -317,14 +330,20 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
     draft.lastTimestamp = timestamp;
     const accuracy = p.accuracy;
     if (!finite(p.latitude) || Math.abs(p.latitude) > 90 || !finite(p.longitude) || Math.abs(p.longitude) > 180
-      || !positive(accuracy) || accuracy > MAX_FIX_ACCURACY_M) { breakSegment(); return; }
+      // An imprecise fix is skipped, not treated as a break. Dropping the anchor here threw away
+      // the progress since it, so a fix like this every few seconds (tree cover, tall buildings)
+      // recorded a fraction of the real distance, or none. A long run of them still ends the
+      // segment through the gap check below.
+      || !positive(accuracy) || accuracy > MAX_FIX_ACCURACY_M) return;
     const point: RoutePoint = { latitude: p.latitude, longitude: p.longitude, altitude: finite(p.altitude) ? p.altitude : null,
       speed: positive(p.speed) && p.speed <= MAX_SPEED_MPS ? p.speed : null, timestamp, segment: draft.segment };
     const previous = draft.anchor;
     if (previous) {
       const meters = distanceMeters(previous, point);
       const seconds = (timestamp - previous.timestamp) / 1000;
-      if (seconds > MAX_GPS_GAP_MS / 1000) {
+      // Measured from the last usable fix: measuring from the anchor reported a "signal gap"
+      // after two minutes at a rest stop with GPS working the whole time.
+      if (timestamp - Math.max(previous.timestamp, lastGoodFixAt ?? 0) > MAX_GPS_GAP_MS) {
         breakSegment();
         point.segment = draft.segment;
         state = { ...state, recoveryNotice: 'GPS resumed after a signal gap. The missing route was not added to your distance.' };
@@ -338,12 +357,15 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
       }
     }
     if (!draft.anchor) draft.anchor = { ...point, accuracy };
+    lastGoodFixAt = timestamp;
     if (point.altitude !== null && (p.altitudeAccuracy == null || (positive(p.altitudeAccuracy) && p.altitudeAccuracy <= 20))) {
-      if (draft.altitudeAnchor === null) draft.altitudeAnchor = point.altitude;
+      smoothedAltitude = smoothedAltitude === null || draft.altitudeAnchor === null
+        ? point.altitude : smoothedAltitude + (point.altitude - smoothedAltitude) * ALTITUDE_SMOOTHING;
+      if (draft.altitudeAnchor === null) draft.altitudeAnchor = smoothedAltitude;
       else {
-        const gain = point.altitude - draft.altitudeAnchor;
-        if (gain > 2.5) { draft.elevationMeters += gain; draft.altitudeAnchor = point.altitude; }
-        else if (gain < -2.5) draft.altitudeAnchor = point.altitude;
+        const gain = smoothedAltitude - draft.altitudeAnchor;
+        if (gain > 2.5) { draft.elevationMeters += gain; draft.altitudeAnchor = smoothedAltitude; }
+        else if (gain < -2.5) draft.altitudeAnchor = smoothedAltitude;
       }
     }
     draft.route.push(point);

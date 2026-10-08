@@ -35,6 +35,8 @@ function deviceLabel(): string {
 
 const SUBSCRIPTION_KEY = '@gruntz_subscription';
 const BACKUP_OWNER_KEY = '@gruntz_backup_owner';
+/** The server's `updated_at` for the copy this device last wrote or restored. */
+const BACKUP_SYNCED_AT_KEY = '@gruntz_backup_synced_at';
 let operationQueue: Promise<unknown> = Promise.resolve();
 let suspended = 0;
 let pendingPush: ReturnType<typeof setTimeout> | null = null;
@@ -227,10 +229,22 @@ async function pushBackupNow(appVersion: string | undefined, options: { replaceE
       // A failed lookup is never evidence that overwriting the cloud is safe.
       if (lookupError) return 'error';
       if (existing) return 'needs-review';
+    } else if (!options.replaceExisting) {
+      // Owning the backup once is not owning it forever: an old phone still signed in
+      // used to overwrite whatever a newer device had saved since. If the cloud copy
+      // changed after this device last synced, someone has to choose.
+      const syncedAt = Date.parse((await AsyncStorage.getItem(BACKUP_SYNCED_AT_KEY)) ?? '');
+      if (Number.isFinite(syncedAt)) {
+        const { data: existing, error: lookupError } = await supabase.from('backups')
+          .select('updated_at').eq('user_id', userId).maybeSingle();
+        if (lookupError) return 'error';
+        const cloudAt = Date.parse(existing?.updated_at ?? '');
+        if (Number.isFinite(cloudAt) && cloudAt > syncedAt) return 'needs-review';
+      }
     }
     const snapshot = await captureSnapshot();
     if (!Object.keys(snapshot.stores).length) return 'error';
-    const { error } = await supabase.from('backups').upsert({
+    const { data: saved, error } = await supabase.from('backups').upsert({
       user_id: userId,
       payload: snapshot,
       schema_version: BACKUP_SCHEMA_VERSION,
@@ -240,13 +254,15 @@ async function pushBackupNow(appVersion: string | undefined, options: { replaceE
       // Sent outside the payload on purpose — see the migration. Entitlement is
       // never backed up; only when the trial began.
       trial_started_at: await readLocalTrialStart(),
-    }, { onConflict: 'user_id' });
+    }, { onConflict: 'user_id' }).select('updated_at').maybeSingle();
 
     if (error) {
       if (__DEV__) console.warn('[backup] pushBackup failed', error);
       return 'error';
     }
     await AsyncStorage.setItem(BACKUP_OWNER_KEY, userId);
+    if (saved?.updated_at) await AsyncStorage.setItem(BACKUP_SYNCED_AT_KEY, saved.updated_at);
+    else await AsyncStorage.removeItem(BACKUP_SYNCED_AT_KEY);
     return 'ok';
   } catch (error) {
     if (__DEV__) console.warn('[backup] pushBackup threw', error);
@@ -295,7 +311,7 @@ async function restoreBackupNow(): Promise<RestoreBackupResult> {
     const { data: sessionData } = await supabase.auth.getSession();
     if (!sessionData.session?.user.id) return 'signed-out';
 
-    const { data, error } = await supabase.from('backups').select('payload').maybeSingle();
+    const { data, error } = await supabase.from('backups').select('payload, updated_at').maybeSingle();
     if (error) {
       if (__DEV__) console.warn('[backup] restoreBackup fetch failed', error);
       return 'error';
@@ -307,6 +323,7 @@ async function restoreBackupNow(): Promise<RestoreBackupResult> {
 
     await applySnapshot(snapshot);
     await AsyncStorage.setItem(BACKUP_OWNER_KEY, sessionData.session.user.id);
+    if (data.updated_at) await AsyncStorage.setItem(BACKUP_SYNCED_AT_KEY, data.updated_at);
     return 'restored';
   } catch (error) {
     if (__DEV__) console.warn('[backup] restoreBackup threw', error);

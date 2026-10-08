@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -55,6 +55,51 @@ const SEARCH_SYNONYMS: Record<string, string> = {
   bb: 'barbell',
   kb: 'kettlebell',
 };
+
+// Memoized, with key-based handlers: a keystroke or a tick used to re-render every mounted row.
+const LibraryRow = React.memo(function LibraryRow({
+  item,
+  picking,
+  selected,
+  onPress,
+  onLongPress,
+}: {
+  item: LibraryItem;
+  picking: boolean;
+  selected: boolean;
+  onPress: (key: string) => void;
+  onLongPress: (key: string) => void;
+}) {
+  return (
+    <Tap
+      feedback="highlight"
+      baseColor={color.bg}
+      pressedColor={color.bgRaised}
+      style={styles.row}
+      onPress={() => onPress(item.key)}
+      onLongPress={() => onLongPress(item.key)}
+      accessibilityLabel={item.name}
+      accessibilityState={picking ? { checked: selected } : undefined}
+    >
+      <ExerciseThumb mediaKey={item.key} size={60} />
+      <View style={{ flex: 1, marginLeft: space.md }}>
+        <Text variant="headline" numberOfLines={1}>
+          {item.name}
+        </Text>
+        <Text variant="subhead" tone="tertiary" style={{ marginTop: 2 }} numberOfLines={1}>
+          {item.primary.slice(0, 2).join(', ')} · {GROUP_LABEL[item.group]}
+        </Text>
+      </View>
+      {picking ? (
+        <View style={[styles.check, selected && styles.checkOn]}>
+          {selected ? <Icon name="check" size={14} color="#FFFFFF" weight="bold" /> : null}
+        </View>
+      ) : (
+        <Icon name="chevronRight" size={15} color={color.textTertiary} weight="semibold" />
+      )}
+    </Tap>
+  );
+});
 
 export default function ExerciseLibraryScreen() {
   const navigation = useNavigation();
@@ -115,41 +160,35 @@ export default function ExerciseLibraryScreen() {
     [rows],
   );
 
-  const renderItem = ({ item }: { item: LibraryItem }) => (
-    <Tap
-      feedback="highlight"
-      baseColor={color.bg}
-      pressedColor={color.bgRaised}
-      style={styles.row}
-      onPress={() => {
-        if (!picking) return navigation.navigate('ExerciseDetail', { mediaKey: item.key });
-        haptic.selection();
-        setPicked((p) => (p.includes(item.key) ? p.filter((k) => k !== item.key) : [...p, item.key]));
-      }}
-      onLongPress={() => {
-        haptic.light();
-        navigation.navigate('ExerciseDetail', { mediaKey: item.key });
-      }}
-      accessibilityLabel={item.name}
-      accessibilityState={picking ? { checked: picked.includes(item.key) } : undefined}
-    >
-      <ExerciseThumb mediaKey={item.key} size={60} />
-      <View style={{ flex: 1, marginLeft: space.md }}>
-        <Text variant="headline" numberOfLines={1}>
-          {item.name}
-        </Text>
-        <Text variant="subhead" tone="tertiary" style={{ marginTop: 2 }} numberOfLines={1}>
-          {item.primary.slice(0, 2).join(', ')} · {GROUP_LABEL[item.group]}
-        </Text>
-      </View>
-      {picking ? (
-        <View style={[styles.check, picked.includes(item.key) && styles.checkOn]}>
-          {picked.includes(item.key) ? <Icon name="check" size={14} color="#FFFFFF" weight="bold" /> : null}
+  const openDetail = useCallback((key: string) => navigation.navigate('ExerciseDetail', { mediaKey: key }), [navigation]);
+  const onRowPress = useCallback(
+    (key: string) => {
+      if (!picking) return openDetail(key);
+      haptic.selection();
+      setPicked((p) => (p.includes(key) ? p.filter((k) => k !== key) : [...p, key]));
+    },
+    [picking, openDetail],
+  );
+  const onRowLongPress = useCallback(
+    (key: string) => {
+      haptic.light();
+      openDetail(key);
+    },
+    [openDetail],
+  );
+  const pickedSet = useMemo(() => new Set(picked), [picked]);
+  const renderRow = useCallback(
+    ({ item }: { item: LibraryItem | { letter: string } }) =>
+      'letter' in item ? (
+        <View style={styles.letter}>
+          <Text variant="overline" tone="tertiary">
+            {item.letter}
+          </Text>
         </View>
       ) : (
-        <Icon name="chevronRight" size={15} color={color.textTertiary} weight="semibold" />
-      )}
-    </Tap>
+        <LibraryRow item={item} picking={picking} selected={pickedSet.has(item.key)} onPress={onRowPress} onLongPress={onRowLongPress} />
+      ),
+    [picking, pickedSet, onRowPress, onRowLongPress],
   );
 
   return (
@@ -181,17 +220,7 @@ export default function ExerciseLibraryScreen() {
       <FlatList
         data={rows}
         keyExtractor={(i) => ('letter' in i ? `letter:${i.letter}` : i.key)}
-        renderItem={({ item }) =>
-          'letter' in item ? (
-            <View style={styles.letter}>
-              <Text variant="overline" tone="tertiary">
-                {item.letter}
-              </Text>
-            </View>
-          ) : (
-            renderItem({ item })
-          )
-        }
+        renderItem={renderRow}
         stickyHeaderIndices={stickyIndices.length ? stickyIndices : undefined}
         extraData={picked}
         initialNumToRender={12}

@@ -8,7 +8,8 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as Speech from 'expo-speech';
 import * as Location from 'expo-location';
 import { useRunTracker, type RunTrackerState } from '../hooks/useRunTracker';
-import { initializeActivityTracking } from '../services/activityTracking';
+import { discardActiveActivity, initializeActivityTracking } from '../services/activityTracking';
+import { useTrainingAccess } from '../store/useSubscriptionStore';
 import { scheduleBackup } from '../services/backup';
 import { flushReadinessPersistence, useReadinessStore } from '../store/useReadinessStore';
 import { KG_PER_LB } from '../store/useExerciseLogStore';
@@ -48,6 +49,7 @@ function pace(minPerMile: number | null, metric: boolean) {
 
 export default function RunTrackerScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'RunTracker'>>();
+  const unlocked = useTrainingAccess();
   const { params } = useRoute<RouteProp<RootStackParamList, 'RunTracker'>>();
   const insets = useSafeAreaInsets();
   const batterySaver = useReadinessStore((s) => s.batterySaver);
@@ -158,6 +160,9 @@ export default function RunTrackerScreen() {
 
   const start = async () => {
     if (pendingRef.current || promptOpen.current || !tracker.ready) return;
+    // Only a new recording is gated. An activity already in progress or waiting to be
+    // saved never reaches this handler, so nothing recorded can be locked away.
+    if (!unlocked) return navigation.navigate('Paywall');
     if (!backgroundTracking) return begin(false);
     promptOpen.current = true;
     const permission = await Location.getBackgroundPermissionsAsync().catch(() => null);
@@ -282,6 +287,7 @@ export default function RunTrackerScreen() {
                     Pack ({metric ? 'kg' : 'lb'})
                   </Text>
                   <TextInput
+                    maxFontSizeMultiplier={1.8}
                     value={pack}
                     onChangeText={setPack}
                     keyboardType="number-pad"
@@ -354,7 +360,12 @@ export default function RunTrackerScreen() {
             {tracker.isTracking && !tracker.backgroundEnabled ? <Button title="Open location settings" variant="secondary" onPress={() => void Linking.openSettings().catch(() => Alert.alert('Settings unavailable', 'Open your device settings and select Gruntz.'))} style={{ marginTop: 12 }} /> : null}
           </View>
         ) : null}
-        {tracker.error && !tracker.sessionId ? <View style={styles.statusBox}><Text variant="footnote" tone="secondary">{tracker.error}</Text><Button title="Retry saved activity" variant="secondary" onPress={() => void initializeActivityTracking()} style={{ marginTop: 12 }} /></View> : null}
+        {tracker.error && !tracker.sessionId ? <View style={styles.statusBox}><Text variant="footnote" tone="secondary">{tracker.error}</Text><Button title="Retry saved activity" variant="secondary" onPress={() => void initializeActivityTracking()} style={{ marginTop: 12 }} />
+          {/* The message says to discard it if it isn't needed; without this there was no way to, and tracking stayed blocked. */}
+          <Button title="Discard saved activity" variant="secondary" onPress={() => Alert.alert('Discard this activity?', 'The unsaved recording will be removed from this device.', [
+            { text: 'Keep', style: 'cancel' },
+            { text: 'Discard', style: 'destructive', onPress: () => void discardActiveActivity().then(() => initializeActivityTracking()).catch(() => undefined) },
+          ])} style={{ marginTop: 8 }} /></View> : null}
         {idle ? <Button title="Activity history" variant="secondary" icon="mapPin" onPress={() => navigation.navigate('ActivityHistory')} style={{ marginHorizontal: space.md, marginTop: space.lg }} /> : null}
       </ScrollView>
 

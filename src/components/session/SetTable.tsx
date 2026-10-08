@@ -175,7 +175,12 @@ function SetRow({
   const done = useSharedValue(set.done ? 1 : 0);
   const pop = useSharedValue(1);
 
+  // Only a change pops the tick. Running on mount replayed the bounce on every
+  // finished set each time the pager remounted the page.
+  const wasDone = useRef(set.done);
   useEffect(() => {
+    if (wasDone.current === set.done) return;
+    wasDone.current = set.done;
     done.set(withTiming(set.done ? 1 : 0, { duration: motion.base, easing: motion.easeOut }));
     if (set.done) {
       pop.set(0.82);
@@ -206,7 +211,8 @@ function SetRow({
 
   const commitWeight = (t: string) => {
     setWeightDraft(null);
-    const n = Number(t.replace(/[^0-9.]/g, '').replace(/\.(?=.*\.)/g, ''));
+    // Comma first: the decimal pad in most of Europe has no ".", and stripping the comma turned 72,5 into 725.
+    const n = Number(t.replace(/,/g, '.').replace(/[^0-9.]/g, '').replace(/\.(?=.*\.)/g, ''));
     onChange({ weight: t.trim() && Number.isFinite(n) && n > 0 ? Math.min(n, MAX_WEIGHT) : undefined });
   };
   const commitValue = (t: string) => {
@@ -232,6 +238,7 @@ function SetRow({
       {exercise.weighted ? (
         <Animated.View style={[styles.colInput, styles.inputBox, inputStyle]}>
           <TextInput
+            maxFontSizeMultiplier={1.4}
             value={weightValue}
             onChangeText={setWeightDraft}
             onBlur={() => commitWeight(weightValue)}
@@ -250,6 +257,7 @@ function SetRow({
       ) : null}
       <Animated.View style={[styles.colInput, styles.inputBox, inputStyle]}>
         <TextInput
+          maxFontSizeMultiplier={1.4}
           value={value}
           onChangeText={setValueDraft}
           onBlur={() => commitValue(value)}
@@ -266,6 +274,8 @@ function SetRow({
       <View style={styles.colCheck}>
         <Tap
           scaleTo={0.88}
+          // The tick is 38pt in a 52pt row; the slop fills the row without reaching the input.
+          hitSlop={{ top: 7, bottom: 7, left: 4, right: 10 }}
           onPress={() => {
             // Flush whatever is still in the inputs first. The page ScrollView uses
             // keyboardShouldPersistTaps="handled", so tapping this tick does NOT blur

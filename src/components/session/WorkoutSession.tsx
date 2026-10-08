@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActionSheetIOS, Alert, AppState, FlatList, ScrollView, StyleSheet, View, useWindowDimensions, type ViewToken } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -109,7 +109,7 @@ export function WorkoutSessionHost() {
 
 function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Gesture.Pan>; visible: boolean }) {
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   // Granular selectors, not the whole store: `restEndsAt` ticks every second and
   // `previous`/`restOverrides` change on every swap, and subscribing to all of it
   // re-rendered the pager, carousel and clock on each one.
@@ -121,7 +121,6 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
   const minimize = useSessionStore((st) => st.minimize);
   const setIndex = useSessionStore((st) => st.setIndex);
   const units = useUserStore((u) => u.profile?.settings.units ?? 'imperial');
-  const now = useNow(visible);
   const [phase, setPhase] = useState<'log' | 'summary'>('log');
   const [restFor, setRestFor] = useState<{ exerciseId: string; slotKey: string } | null>(null);
   const pager = useRef<FlatList<SessionExercise>>(null);
@@ -220,6 +219,24 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
     [],
   );
 
+  const handleRest = useCallback((ex: SessionExercise) => setRestFor({ exerciseId: ex.exerciseId, slotKey: ex.key }), []);
+  const bottomPad = insets.bottom + 120;
+  const renderPage = useCallback(
+    ({ item, index: page }: { item: SessionExercise; index: number }) => (
+      <ExercisePage
+        exercise={item}
+        active={visible && page === index}
+        width={width}
+        height={height}
+        units={units}
+        bottomPad={bottomPad}
+        onRest={handleRest}
+        onToggle={handleToggle}
+      />
+    ),
+    [visible, index, width, height, units, bottomPad, handleRest, handleToggle],
+  );
+
   const summaryStyle = useAnimatedStyle(() => ({ transform: [{ translateX: (1 - summaryX.get()) * width }] }));
   const logStyle = useAnimatedStyle(() => ({ transform: [{ translateX: -summaryX.get() * width * 0.3 }], opacity: 1 - summaryX.get() * 0.4 }));
 
@@ -277,9 +294,7 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
               >
                 <Icon name="stopwatch" size={24} color={color.textSecondary} />
               </Tap>
-              <Text variant="headline" tabular style={styles.clock} accessibilityLabel={`Elapsed time ${startedAt ? formatClock(now - startedAt) : '0:00'}`}>
-                {startedAt ? formatClock(now - startedAt) : '0:00'}
-              </Text>
+              <SessionClock startedAt={startedAt} visible={visible} />
               {allDone ? (
                 <Animated.View key="finish" entering={FadeIn.duration(240)} exiting={FadeOut.duration(120)}>
                   <Tap
@@ -390,17 +405,7 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
           // scroll position and which insight tab was open. 5 keeps the neighbours.
           windowSize={5}
           removeClippedSubviews={false}
-          renderItem={({ item, index: page }) => (
-            <ExercisePage
-              exercise={item}
-              active={visible && page === index}
-              width={width}
-              units={units}
-              bottomPad={insets.bottom + 120}
-              onRest={() => setRestFor({ exerciseId: item.exerciseId, slotKey: item.key })}
-              onToggle={(setId) => handleToggle(item, setId)}
-            />
-          )}
+          renderItem={renderPage}
         />
         )}
         <RestBanner bottom={insets.bottom + space.md} />
@@ -416,10 +421,22 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
   );
 }
 
-function ExercisePage({
+// Isolated so the once-a-second tick repaints one label, not the pager and every mounted page.
+function SessionClock({ startedAt, visible }: { startedAt: number | null; visible: boolean }) {
+  const now = useNow(visible);
+  const label = startedAt ? formatClock(now - startedAt) : '0:00';
+  return (
+    <Text variant="headline" tabular style={styles.clock} accessibilityLabel={`Elapsed time ${label}`}>
+      {label}
+    </Text>
+  );
+}
+
+const ExercisePage = React.memo(function ExercisePage({
   exercise,
   active,
   width,
+  height,
   units,
   bottomPad,
   onRest,
@@ -428,22 +445,23 @@ function ExercisePage({
   exercise: SessionExercise;
   active: boolean;
   width: number;
+  height: number;
   units: 'imperial' | 'metric';
   bottomPad: number;
-  onRest: () => void;
-  onToggle: (setId: string) => void;
+  onRest: (exercise: SessionExercise) => void;
+  onToggle: (exercise: SessionExercise, setId: string) => void;
 }) {
   const ex = getExerciseById(exercise.exerciseId);
-  const allExercises = useSessionStore((st) => st.exercises);
-  // The other exercises in this superset, named so the pairing can be followed.
-  const supersetPartners = useMemo(
-    () => (exercise.supersetGroup
-      ? allExercises
+  // The other exercises in this superset, named so the pairing can be followed. Selected as a
+  // string so logging a set elsewhere in the workout doesn't re-render this page.
+  const supersetPartners = useSessionStore((st) =>
+    exercise.supersetGroup
+      ? st.exercises
         .filter((e) => e.key !== exercise.key && e.supersetGroup === exercise.supersetGroup)
         .map((e) => e.prescribedName ?? getExerciseById(e.exerciseId)?.name)
         .filter((name): name is string => !!name)
-      : []),
-    [allExercises, exercise.key, exercise.supersetGroup],
+        .join(' and ')
+      : '',
   );
   const previous = useSessionStore((st) => st.previous[exercise.exerciseId]);
   const rest = useSessionStore((st) => st.restOverrides[exercise.exerciseId] ?? st.restPrescribed[exercise.key] ?? ex?.rest_seconds ?? 0);
@@ -453,7 +471,8 @@ function ExercisePage({
   const replaceExercise = useSessionStore((st) => st.replaceExercise);
   const alternative = ex?.gym_alternative_id ? getExerciseById(ex.gym_alternative_id) : undefined;
   // Sized so the set table starts above the fold: logging is the job, the video is the reference.
-  const videoH = Math.round(width * 0.6);
+  // Height-capped too: on a wide window 60% of the width pushed the table off screen.
+  const videoH = Math.round(Math.min(width * 0.6, height * 0.38));
 
   const replace = () => {
     if (!alternative) return;
@@ -522,9 +541,9 @@ function ExercisePage({
           <Text variant="caption" tone="accent" style={styles.supersetTag}>
             {`SUPERSET ${exercise.supersetGroup}`}
           </Text>
-          {supersetPartners.length ? (
+          {supersetPartners ? (
             <Text variant="subhead" tone="secondary" style={styles.supersetHint}>
-              {`Alternate sets with ${supersetPartners.join(' and ')}, then rest.`}
+              {`Alternate sets with ${supersetPartners}, then rest.`}
             </Text>
           ) : null}
         </View>
@@ -536,7 +555,7 @@ function ExercisePage({
         <Tap
           feedback="opacity"
           hitSlop={8}
-          onPress={onRest}
+          onPress={() => onRest(exercise)}
           style={styles.restIcon}
           accessibilityLabel={rest > 0 ? `Rest timer, ${rest} seconds` : 'Rest timer, off'}
         >
@@ -568,14 +587,14 @@ function ExercisePage({
         previous={previous}
         units={units}
         onChange={(setId, patch) => updateSet(exercise.key, setId, patch)}
-        onToggle={onToggle}
+        onToggle={(setId) => onToggle(exercise, setId)}
         onAdd={() => addSet(exercise.key)}
       />
 
       <ExerciseInsights exercise={ex} exerciseKey={exercise.key} unit={units === 'metric' ? 'kg' : 'lb'} />
     </ScrollView>
   );
-}
+});
 
 const styles = StyleSheet.create({
   layer: { backgroundColor: color.bg, overflow: 'hidden', zIndex: 50 },
@@ -586,7 +605,7 @@ const styles = StyleSheet.create({
     height: 44,
     paddingHorizontal: 22,
     borderRadius: radius.pill,
-    backgroundColor: '#F5F5F7',
+    backgroundColor: color.cta,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -627,7 +646,7 @@ const styles = StyleSheet.create({
     height: 48,
     paddingHorizontal: 24,
     borderRadius: radius.pill,
-    backgroundColor: '#F5F5F7',
+    backgroundColor: color.cta,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: space.sm,

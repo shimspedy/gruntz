@@ -48,6 +48,7 @@ export const activityTracker = createActivityTracker({
     }
   },
   hasBackground: () => Location.hasStartedLocationUpdatesAsync(ACTIVITY_LOCATION_TASK),
+  isForeground: () => !AppState.currentState || AppState.currentState === 'active',
   watchForeground: (options, onLocation, onError) => Location.watchPositionAsync(locationOptions(options), onLocation, onError),
   stepsAvailable: async () => {
     if (!await Pedometer.isAvailableAsync()) return false;

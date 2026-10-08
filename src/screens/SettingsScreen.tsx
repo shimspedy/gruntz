@@ -9,6 +9,7 @@ import {
   cancelDailyReminder,
   cancelRestDone,
   cancelTrialEndingReminder,
+  scheduleTrialEndingReminder,
   cancelWeeklyRecap,
   setNotificationsEnabled,
   requestNotificationPermission,
@@ -18,7 +19,7 @@ import {
 } from '../services/notifications';
 import { useReadinessStore } from '../store/useReadinessStore';
 import { convertSessionWeights } from '../store/useSessionStore';
-import { getAccessState, useSubscriptionStore } from '../store/useSubscriptionStore';
+import { getAccessState, getTrialEndsAt, useSubscriptionStore } from '../store/useSubscriptionStore';
 import { useUserStore } from '../store/useUserStore';
 import { notificationWeekdays, trainingWeekdays } from '../utils/trainingDays';
 import { Group, NavHeader, Row } from '../ui/Layout';
@@ -91,6 +92,10 @@ export default function SettingsScreen() {
         setNotificationsEnabled(true);
         await scheduleDailyReminder(savedHour, savedMinute, notificationWeekdays(profile?.workout_days_per_week));
         await scheduleWeeklyRecap();
+        // Turning reminders off cancels the trial nudge too, so turning them on has to bring it back.
+        const sub = useSubscriptionStore.getState();
+        const trialEndsAt = sub.entitlementActive ? null : getTrialEndsAt(sub.trialStartedAt);
+        if (trialEndsAt) await scheduleTrialEndingReminder(trialEndsAt);
         updateSettings({ notifications_enabled: true, reminder_time: savedTime });
         setNotificationsEnabled(true);
         toast(`Reminders on · ${formatTime(savedTime)}`, { icon: 'bell' });

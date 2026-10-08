@@ -392,7 +392,10 @@ export const useUserStore = create<UserState>()(
             return state;
           }
 
-          const today = mission.mission_date || getLocalDateKey();
+          // The day the work was actually done, not the day it was scheduled for. A workout
+          // done early ("Do it now · Friday's workout") carried a future mission date; stored
+          // as last_workout_date it read as a negative gap and the next launch reset the streak.
+          const today = getLocalDateKey();
           const wasStreakAlive = state.progress.last_workout_date
             ? isStreakAlive(state.progress.last_workout_date, state.profile?.workout_days_per_week)
             : false;
@@ -422,7 +425,7 @@ export const useUserStore = create<UserState>()(
               ...state.progress,
               ...applyXP(state.progress, totalXP),
               streak_days: newStreak,
-              last_workout_date: state.progress.last_workout_date && state.progress.last_workout_date > today ? state.progress.last_workout_date : today,
+              last_workout_date: today,
               workouts_completed: state.progress.workouts_completed + 1,
               total_reps: state.progress.total_reps + totalNewReps,
               exercises_completed: newExercisesCompleted,

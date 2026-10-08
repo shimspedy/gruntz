@@ -44,7 +44,7 @@ export function TabHeader() {
           style={styles.proWrap}
         >
           {isPro ? (
-            <LinearGradient colors={['#6FB4FF', '#2D8CFF', '#EAF3FF']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.pro}>
+            <LinearGradient colors={['#6FB4FF', color.accent, '#EAF3FF']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.pro}>
               <Text style={[styles.proText, { color: '#06101F' }]}>PRO</Text>
             </LinearGradient>
           ) : (
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   proWrap: { borderRadius: radius.pill },
   pro: { height: 32, paddingHorizontal: 13, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
-  proFree: { backgroundColor: '#F5F5F7' },
+  proFree: { backgroundColor: color.cta },
   proText: { fontFamily: font.bold, fontSize: 14, letterSpacing: 0.8, color: '#000' },
   streak: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   streakText: { fontFamily: font.semibold, fontSize: 19, color: color.text },

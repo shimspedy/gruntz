@@ -7,6 +7,7 @@ import { getProgramById } from '../data/programs';
 import { claimedDates } from '../features/plan';
 import { useTabChromeInset } from '../navigation/TabBar';
 import { useProgramStore } from '../store/useProgramStore';
+import { useReadinessStore } from '../store/useReadinessStore';
 import { getAccessState, getTrialDaysRemaining, useSubscriptionStore } from '../store/useSubscriptionStore';
 import { rankTitle } from '../data/ranks';
 import { useUserStore } from '../store/useUserStore';
@@ -52,6 +53,7 @@ export default function ProfileScreen() {
   const profile = useUserStore((s) => s.profile);
   const setProfile = useUserStore((s) => s.setProfile);
   const progress = useUserStore((s) => s.progress);
+  const teamName = useReadinessStore((s) => s.teamName);
   const military = useUserStore((s) => !!s.profile?.goals.includes('Military Prep'));
   const program = useProgramStore((s) => s.selectedProgram);
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
@@ -60,6 +62,15 @@ export default function ProfileScreen() {
   const access = getAccessState({ trialStartedAt, entitlementActive });
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(profile?.display_name ?? '');
+  const saveName = () => {
+    const next = name.trim() || 'Athlete';
+    const changed = next !== (profile?.display_name ?? '');
+    if (profile && changed) setProfile({ ...profile, display_name: next });
+    haptic.success();
+    setEditing(false);
+    // Saying "updated" when nothing changed teaches people the toast is noise.
+    if (changed) toast('Profile updated');
+  };
 
   const weeks = useMemo(() => weeklyMissions(claimedDates(progress.claimed_missions)), [progress.claimed_missions]);
   const thisWeek = weeks[WEEKS - 1].count;
@@ -148,6 +159,13 @@ export default function ProfileScreen() {
             </Text>
           </View>
         ))}
+        {weeks.every((w) => w.count === 0) ? (
+          <View style={styles.chartEmpty} pointerEvents="none">
+            <Text variant="callout" tone="secondary" align="center">
+              Finish a workout and your weeks start filling in here.
+            </Text>
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.tiles}>
@@ -165,7 +183,7 @@ export default function ProfileScreen() {
           onPress={membership}
         />
         <Row icon="flag" title="Service & test profile" onPress={() => navigation.navigate('ServiceProfile')} />
-        <Row icon="people" title="Leader tools" value="Coming soon" onPress={() => navigation.navigate('LeaderTools')} />
+        <Row icon="people" title="Leader tools" subtitle="Teams, invite codes and a shared roster" value={teamName || undefined} onPress={() => navigation.navigate('LeaderTools')} />
         <Row icon="mapPin" title="Activity history" subtitle="Runs, rucks, hikes and share cards" onPress={() => navigation.navigate('ActivityHistory')} />
         <Row icon="share" title="Share my streak" onPress={() => void shareStreak(progress.streak_days, rankTitle(progress.current_rank, military))} />
         {/* Optional, and deliberately here rather than in onboarding: nobody is asked
@@ -202,6 +220,7 @@ export default function ProfileScreen() {
             Name
           </Text>
           <TextInput
+            maxFontSizeMultiplier={1.8}
             value={name}
             onChangeText={setName}
             placeholder="Your name"
@@ -211,21 +230,15 @@ export default function ProfileScreen() {
             autoCapitalize="words"
             autoCorrect={false}
             returnKeyType="done"
+            onSubmitEditing={saveName}
             style={styles.input}
             selectionColor={color.accent}
           />
           <Button
             title="Save"
             style={{ marginTop: space.lg }}
-            onPress={() => {
-              const next = name.trim() || 'Athlete';
-              const changed = next !== (profile?.display_name ?? '');
-              if (profile && changed) setProfile({ ...profile, display_name: next });
-              haptic.success();
-              setEditing(false);
-              // Saying "updated" when nothing changed teaches people the toast is noise.
-              if (changed) toast('Profile updated');
-            }}
+            haptic={false}
+            onPress={saveName}
           />
         </View>
       </Sheet>
@@ -270,7 +283,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: color.bg },
   topBar: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, paddingHorizontal: space.md, height: 52, alignItems: 'center' },
   identity: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.gutter + 4, marginTop: space.xs },
-  avatar: { width: 112, height: 112, borderRadius: 56, backgroundColor: '#F5F5F7', alignItems: 'center', justifyContent: 'center' },
+  avatar: { width: 112, height: 112, borderRadius: 56, backgroundColor: color.cta, alignItems: 'center', justifyContent: 'center' },
   initial: { fontFamily: font.bold, fontSize: 48, color: '#000' },
   avatarBadge: { position: 'absolute', right: -6, bottom: -4 },
   stats: { flexDirection: 'row', marginTop: space.md },
@@ -290,6 +303,7 @@ const styles = StyleSheet.create({
     backgroundColor: color.bgRaised,
   },
   col: { flex: 1, alignItems: 'center', justifyContent: 'flex-end' },
+  chartEmpty: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.xl, paddingBottom: space.xl },
   bar: { width: 22, borderRadius: 6 },
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingHorizontal: space.md, marginTop: space.xl },
   tile: {

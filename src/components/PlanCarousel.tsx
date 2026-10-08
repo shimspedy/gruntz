@@ -26,9 +26,12 @@ interface Props {
  * The week's missions as tall hero cards. The focused card sits centred at full size;
  * neighbours peek at the edges, slightly smaller and dimmer, and grow as they scroll in.
  */
+export const HERO_MAX_WIDTH = 380;
+
 export function PlanCarousel({ days, onOpen }: Props) {
   const { width } = useWindowDimensions();
-  const cardW = Math.round(width * 0.8);
+  // Capped: on an iPad or an unfolded Duo 80% of the window made the card taller than the screen.
+  const cardW = Math.round(Math.min(width * 0.8, HERO_MAX_WIDTH));
   const gap = 14;
   const snap = cardW + gap;
   const side = (width - cardW) / 2;
@@ -170,7 +173,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(60,60,64,0.72)',
     justifyContent: 'center',
   },
-  dayChipToday: { backgroundColor: '#F5F5F7' },
+  dayChipToday: { backgroundColor: color.cta },
   doneBadge: {
     position: 'absolute',
     top: space.lg,

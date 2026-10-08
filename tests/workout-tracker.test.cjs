@@ -12,7 +12,7 @@ function trackerHarness(options = {}) {
   const disk = options.disk ?? new Map();
   const watches = [];
   const stepWatches = [];
-  let backgroundStarted = false;
+  let backgroundStarted = options.backgroundStarted ?? false;
   let backgroundStarts = 0;
   let backgroundStops = 0;
   let foregroundGranted = true;
@@ -41,6 +41,7 @@ function trackerHarness(options = {}) {
     startBackground: async () => { backgroundStarts++; if (failLocation) throw new Error('native GPS'); backgroundStarted = true; },
     stopBackground: async () => { if (failStop) throw new Error('native stop'); if (backgroundStarted) backgroundStops++; backgroundStarted = false; },
     hasBackground: async () => backgroundStarted,
+    isForeground: options.isForeground,
     watchForeground: async (_, callback, errorCallback) => {
       if (failLocation) throw new Error('GPS unavailable');
       const watch = { callback, errorCallback, removed: false, remove() { this.removed = true; } };
@@ -102,6 +103,49 @@ test('paused movement and poor GPS fixes never add mileage, while valid small mo
   assert.ok(env.engine.getSnapshot().distanceMiles > before);
   env.advance(2000); await env.fix(150, 3, -1);
   assert.equal(env.engine.getSnapshot().currentSpeedMph, null);
+});
+
+test('an imprecise fix every few seconds does not throw away the distance walked between them', async () => {
+  const env = trackerHarness();
+  await env.engine.start(); await env.fix(0, 10);
+  // 1.5 m/s for ten minutes, every fifth fix too imprecise to use.
+  for (let i = 1; i <= 300; i++) { env.advance(2000); await env.fix(i * 3, i % 5 === 0 ? 40 : 10, 1.5); }
+  const meters = env.engine.getSnapshot().distanceMiles / 0.000621371;
+  assert.ok(meters > 850 && meters <= 900, `recorded ${meters} m of 900`);
+  assert.equal(new Set(env.engine.getSnapshot().route.map((point) => point.segment)).size, 1);
+});
+
+test('standing still with a working GPS is not reported as a signal gap', async () => {
+  const env = trackerHarness();
+  await env.engine.start(); await env.fix(0);
+  for (let i = 0; i < 100; i++) { env.advance(2000); await env.fix(0, 3, 0); }
+  for (let i = 1; i <= 10; i++) { env.advance(2000); await env.fix(i * 6); }
+  const snapshot = env.engine.getSnapshot();
+  assert.equal(snapshot.recoveryNotice, null);
+  assert.equal(new Set(snapshot.route.map((point) => point.segment)).size, 1);
+  assert.ok(snapshot.distanceMiles > 0);
+});
+
+test('altitude noise on a flat route does not add up to a climb, while a real hill still counts', async () => {
+  const flat = trackerHarness(); await flat.engine.start();
+  for (let i = 0; i <= 300; i++) { await flat.engine.acceptLocations([flat.point(i * 4, 5, 2, flat.now(), 100 + (i % 2 ? 3 : -3))]); flat.advance(2000); }
+  assert.ok(flat.engine.getSnapshot().elevationGainFt < 30, `flat route recorded ${flat.engine.getSnapshot().elevationGainFt} ft`);
+  const hill = trackerHarness(); await hill.engine.start();
+  for (let i = 0; i <= 300; i++) { await hill.engine.acceptLocations([hill.point(i * 4, 5, 2, hill.now(), 100 + i / 3)]); hill.advance(2000); }
+  const feet = hill.engine.getSnapshot().elevationGainFt;
+  assert.ok(feet > 280 && feet < 340, `100 m hill recorded ${feet} ft`);
+});
+
+test('a background relaunch with GPS still running keeps recording instead of pausing it', async () => {
+  const first = trackerHarness({ platform: 'ios' }); await first.engine.start(); await first.fix(0); first.advance(3000); await first.fix(20);
+  await first.flush();
+  const relaunched = trackerHarness({ platform: 'ios', disk: first.disk, backgroundStarted: true, isForeground: () => false });
+  await relaunched.engine.hydrate();
+  assert.equal(relaunched.engine.getSnapshot().isPaused, false);
+  assert.equal(relaunched.backgroundStops, 0);
+  const opened = trackerHarness({ platform: 'ios', disk: first.disk, backgroundStarted: true, isForeground: () => true });
+  await opened.engine.hydrate();
+  assert.equal(opened.engine.getSnapshot().isPaused, true);
 });
 
 test('late foreground watch is removed after stop and duplicate starts do not reset data', async () => {

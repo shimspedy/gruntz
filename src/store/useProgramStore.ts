@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import type { ProgramId, UserAssessment } from '../types';
 import { getProgramMaxWeek, getProgramWeek } from '../data/programWorkouts';
+import { getLocalDateKey } from '../utils/dateKey';
 import { getClaimedWorkoutIds, useUserStore } from './useUserStore';
 
 const VALID_PROGRAMS: ProgramId[] = ['basecamp', 'raider', 'recon'];
@@ -41,6 +42,8 @@ function sanitizeAssessment(raw: unknown): UserAssessment {
 interface ProgramState {
   selectedProgram: ProgramId | null;
   currentWeek: number;
+  /** Local date the current run of the program began; null for programs chosen before this was tracked. */
+  programStartedOn: string | null;
   assessment: UserAssessment;
   hasSeenProgramSelect: boolean;
   hasHydrated: boolean;
@@ -68,6 +71,7 @@ const programStorage = {
 type PersistedProgramState = {
   selectedProgram?: ProgramId | null;
   currentWeek?: number;
+  programStartedOn?: string | null;
   hasSeenProgramSelect?: boolean;
 };
 
@@ -81,6 +85,7 @@ function migratePersistedProgramState(persistedState: unknown): PersistedProgram
   return {
     selectedProgram: program,
     currentWeek: week,
+    programStartedOn: typeof raw.programStartedOn === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.programStartedOn) ? raw.programStartedOn : null,
     hasSeenProgramSelect: raw.hasSeenProgramSelect === true,
   };
 }
@@ -90,16 +95,17 @@ export const useProgramStore = create<ProgramState>()(
     (set, get) => ({
       selectedProgram: null,
       currentWeek: 1,
+      programStartedOn: null,
       assessment: {},
       hasSeenProgramSelect: false,
       hasHydrated: false,
       hydrationFailed: false,
 
       selectProgram: (id) => {
-        set({ selectedProgram: id, currentWeek: 1 });
+        set({ selectedProgram: id, currentWeek: 1, programStartedOn: getLocalDateKey() });
       },
 
-      clearProgram: () => set({ selectedProgram: null, currentWeek: 1 }),
+      clearProgram: () => set({ selectedProgram: null, currentWeek: 1, programStartedOn: null }),
 
       /**
        * Advance the program a week once every workout in the current one is claimed.
@@ -113,9 +119,12 @@ export const useProgramStore = create<ProgramState>()(
        * change, which is what marks this as a missing writer rather than a decision.
        *
        * Completion is by workout id, not by date, so catching up on a missed day
-       * still advances, and finishing days out of order is fine. Advancing cannot
-       * cascade: the next week's days are unclaimed by definition. The final week is
+       * still advances, and finishing days out of order is fine. The final week is
        * held rather than run off the end of the program.
+       *
+       * Only claims from this run of the program count. Counting every claim ever
+       * made meant a program restarted after a break raced ahead a week per workout,
+       * because its later weeks were already "complete" from the first time through.
        */
       advanceWeekIfComplete: () => {
         const { selectedProgram, currentWeek } = get();
@@ -125,7 +134,11 @@ export const useProgramStore = create<ProgramState>()(
         const days = getProgramWeek(selectedProgram, currentWeek, userState.profile);
         if (!days.length) return;
 
-        const claimed = getClaimedWorkoutIds(userState.progress.claimed_missions);
+        const startedOn = get().programStartedOn;
+        const thisRun = startedOn
+          ? new Set(Array.from(userState.progress.claimed_missions).filter((claimKey) => claimKey.slice(0, 10) >= startedOn))
+          : userState.progress.claimed_missions;
+        const claimed = getClaimedWorkoutIds(thisRun);
         if (!days.every((day) => claimed.has(day.id))) return;
 
         set({ currentWeek: currentWeek + 1 });
@@ -169,6 +182,7 @@ export const useProgramStore = create<ProgramState>()(
       partialize: (state) => ({
         selectedProgram: state.selectedProgram,
         currentWeek: state.currentWeek,
+        programStartedOn: state.programStartedOn,
         hasSeenProgramSelect: state.hasSeenProgramSelect,
       }),
       merge: (persistedState, currentState) => {
@@ -179,6 +193,7 @@ export const useProgramStore = create<ProgramState>()(
             persisted.selectedProgram !== undefined ? persisted.selectedProgram ?? null : currentState.selectedProgram,
           currentWeek:
             typeof persisted.currentWeek === 'number' ? persisted.currentWeek : currentState.currentWeek,
+          programStartedOn: persisted.programStartedOn ?? currentState.programStartedOn,
           hasSeenProgramSelect:
             typeof persisted.hasSeenProgramSelect === 'boolean'
               ? persisted.hasSeenProgramSelect

@@ -181,5 +181,5 @@ const styles = StyleSheet.create({
   optionActive: { backgroundColor: color.surface },
   optionThumb: { width: 56, height: 56, borderRadius: radius.sm, borderCurve: 'continuous' },
   radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: color.lineStrong, alignItems: 'center', justifyContent: 'center' },
-  radioOn: { backgroundColor: '#F5F5F7', borderColor: '#F5F5F7' },
+  radioOn: { backgroundColor: color.cta, borderColor: color.cta },
 });

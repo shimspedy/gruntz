@@ -157,5 +157,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  optionActive: { backgroundColor: '#F5F5F7' },
+  optionActive: { backgroundColor: color.cta },
 });

@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { GRUNTZ_TRIAL_DAYS, DEV_UNLOCK } from '../config/monetization';
@@ -22,6 +23,32 @@ import {
 import { useUserStore } from './useUserStore';
 
 const STORAGE_KEY = '@gruntz_subscription';
+
+/**
+ * The trial start, mirrored in the Keychain. App storage is wiped by an uninstall, so
+ * deleting and reinstalling used to hand out a fresh trial every time; the Keychain
+ * survives it. Only ever moves earlier, and a failure here never blocks the app.
+ */
+const TRIAL_PIN_KEY = 'gruntz_trial_started_at';
+let trialPinQueue: Promise<unknown> = Promise.resolve();
+const validInstant = (value: string | null | undefined): value is string => !!value && Number.isFinite(Date.parse(value));
+
+function pinTrialStart(startedAt: string) {
+  trialPinQueue = trialPinQueue.then(async () => {
+    const pinned = await SecureStore.getItemAsync(TRIAL_PIN_KEY);
+    if (validInstant(pinned) && Date.parse(pinned) <= Date.parse(startedAt)) return;
+    await SecureStore.setItemAsync(TRIAL_PIN_KEY, startedAt);
+  }).catch(() => undefined);
+}
+
+function reconcilePinnedTrialStart() {
+  trialPinQueue = trialPinQueue.then(async () => {
+    const pinned = await SecureStore.getItemAsync(TRIAL_PIN_KEY);
+    const local = useSubscriptionStore.getState().trialStartedAt;
+    if (validInstant(pinned)) useSubscriptionStore.getState().adoptTrialStart(pinned);
+    else if (validInstant(local)) await SecureStore.setItemAsync(TRIAL_PIN_KEY, local);
+  }).catch(() => undefined);
+}
 const DAY_MS = 24 * 60 * 60 * 1000;
 // A failed read must not replace the original trial or entitlement with defaults.
 let subscriptionStorageWritable = false;
@@ -117,6 +144,13 @@ export function hasTrialAccess(trialStartedAt: string | null) {
 
 export function hasTrainingAccess(state: Pick<SubscriptionState, 'trialStartedAt' | 'entitlementActive'>) {
   return DEV_UNLOCK || state.entitlementActive || hasTrialAccess(state.trialStartedAt);
+}
+
+/** Whether Pro features (plans, programs, GPS tracking) are open: subscribed, or still inside the included trial. */
+export function useTrainingAccess() {
+  const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
+  const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
+  return hasTrainingAccess({ trialStartedAt, entitlementActive });
 }
 
 export function getAccessState(state: Pick<SubscriptionState, 'trialStartedAt' | 'entitlementActive'>): AccessState {
@@ -240,6 +274,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         }
         const startedAt = startAt && getTrialEndsAt(startAt) ? startAt : new Date().toISOString();
         set({ trialStartedAt: startedAt });
+        pinTrialStart(startedAt);
         const endsAt = getTrialEndsAt(startedAt);
         if (endsAt) {
           void scheduleTrialEndingReminder(endsAt);
@@ -252,6 +287,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         const current = get().trialStartedAt;
         if (current && Date.parse(current) <= Date.parse(startAt)) return;
         set({ trialStartedAt: startAt });
+        pinTrialStart(startAt);
         if (!get().entitlementActive) void scheduleTrialEndingReminder(endsAt);
       },
 
@@ -415,6 +451,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         }
         subscriptionStorageWritable = true;
         useSubscriptionStore.setState({ hasHydrated: true, hydrationFailed: false });
+        reconcilePinnedTrialStart();
       },
     }
   )

@@ -71,8 +71,10 @@ function store(overrides = {}) {
     presentRevenueCatCustomerCenter: async () => ({ status: 'error', customerInfo: null }),
     ...overrides,
   };
+  const keychain = overrides.keychain ?? new Map();
   const exports = load('src/store/useSubscriptionStore.ts', {
     '@react-native-async-storage/async-storage': {},
+    'expo-secure-store': { getItemAsync: async (key) => keychain.get(key) ?? null, setItemAsync: async (key, value) => { keychain.set(key, value); } },
     zustand: require('zustand'),
     'zustand/middleware': { createJSONStorage: () => ({}), persist: (initializer, options) => { persistence = options; return initializer; } },
     '../config/monetization': config,
@@ -80,7 +82,7 @@ function store(overrides = {}) {
     '../services/notifications': { cancelTrialEndingReminder: async () => {}, scheduleTrialEndingReminder: async () => {} },
     './useUserStore': { useUserStore: { getState: () => ({ isOnboarded: true }) } },
   });
-  return { ...exports, persistence, serviceApi, state: () => exports.useSubscriptionStore.getState() };
+  return { ...exports, persistence, serviceApi, keychain, state: () => exports.useSubscriptionStore.getState() };
 }
 
 test('RevenueCat config runs once when startup and paywall initialize concurrently', async () => {
@@ -240,4 +242,21 @@ test('development billing bypass is explicit and cannot be enabled in release', 
   assert.equal(read(true, undefined).DEV_UNLOCK, false);
   assert.equal(read(true, 'true').DEV_UNLOCK, true);
   assert.equal(read(false, 'true').DEV_UNLOCK, false);
+});
+
+test('reinstalling does not restart the trial: the Keychain copy of the start date wins', async () => {
+  const firstInstall = '2026-01-01T00:00:00.000Z';
+  const keychain = new Map([['gruntz_trial_started_at', firstInstall]]);
+  const fresh = store({ keychain });
+  fresh.state().startTrialIfNeeded();
+  fresh.persistence.onRehydrateStorage()(undefined, undefined);
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  assert.equal(fresh.state().trialStartedAt, firstInstall);
+  assert.equal(keychain.get('gruntz_trial_started_at'), firstInstall);
+  assert.equal(fresh.hasTrainingAccess(fresh.state()), false);
+
+  const firstEver = store();
+  firstEver.state().startTrialIfNeeded();
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  assert.equal(firstEver.keychain.get('gruntz_trial_started_at'), firstEver.state().trialStartedAt);
 });

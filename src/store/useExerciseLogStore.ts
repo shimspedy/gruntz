@@ -71,14 +71,20 @@ export function mergeLogs(
     if (!entries.length) continue;
     const existing = logs[key] ?? [];
     const seen = new Set(existing.map((e) => e.id));
+    // Ids differ between a session logged here and the same session read back from an
+    // export, so an id match alone re-imported every workout as a second copy. The
+    // same instant with the same sets is the same session whatever it is called.
+    const content = (e: ExerciseLogEntry) => `${Date.parse(e.at)}|${JSON.stringify(e.sets.map((st) => [st.reps ?? null, st.weight ?? null, st.seconds ?? null, st.distance ?? null]))}`;
+    const seenContent = new Set(existing.map(content));
     const fresh: ExerciseLogEntry[] = [];
     for (const entry of entries) {
       // Deduped against the batch as well as against storage: two source workouts
       // can normalise onto one instant (a CSV whose dates lost their clock time),
       // and writing both would store one entry twice under a single id, which
       // `removeEntry` would then delete in pairs.
-      if (seen.has(entry.id)) continue;
+      if (seen.has(entry.id) || seenContent.has(content(entry))) continue;
       seen.add(entry.id);
+      seenContent.add(content(entry));
       fresh.push(entry);
     }
     if (!fresh.length) continue;

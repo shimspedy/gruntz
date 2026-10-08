@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     borderColor: color.line,
     padding: 4,
   },
-  thumb: { position: 'absolute', backgroundColor: '#F5F5F7', borderRadius: radius.pill },
+  thumb: { position: 'absolute', backgroundColor: color.cta, borderRadius: radius.pill },
   segment: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   label: { fontSize: 15 },
   labelLg: { fontSize: 17 },

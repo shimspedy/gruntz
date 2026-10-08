@@ -35,7 +35,7 @@ export function OptionRow({
   useEffect(() => {
     t.set(withTiming(selected ? 1 : 0, { duration: 180, easing: motion.easeOut }));
   }, [selected, t]);
-  const box = useAnimatedStyle(() => ({ backgroundColor: interpolateColor(t.get(), [0, 1], [color.surface, '#F5F5F7']) }));
+  const box = useAnimatedStyle(() => ({ backgroundColor: interpolateColor(t.get(), [0, 1], [color.surface, color.cta]) }));
   const ink = selected ? '#000000' : color.text;
   return (
     <Animated.View entering={FadeInDown.delay(80 + index * motion.stagger).duration(360).easing(motion.easeOut)}>
@@ -59,7 +59,7 @@ export function OptionRow({
             {label}
           </Text>
           {meta ? (
-            <Text variant="callout" style={{ color: selected ? '#3A3A3C' : color.textTertiary }}>
+            <Text variant="callout" style={{ color: selected ? color.lineStrong : color.textTertiary }}>
               {meta}
             </Text>
           ) : null}
@@ -87,7 +87,7 @@ export function GridTile({
   useEffect(() => {
     t.set(withTiming(selected ? 1 : 0, { duration: 180, easing: motion.easeOut }));
   }, [selected, t]);
-  const box = useAnimatedStyle(() => ({ backgroundColor: interpolateColor(t.get(), [0, 1], [color.surface, '#F5F5F7']) }));
+  const box = useAnimatedStyle(() => ({ backgroundColor: interpolateColor(t.get(), [0, 1], [color.surface, color.cta]) }));
   return (
     <Animated.View style={{ flexBasis: '46%', flexGrow: 1 }} entering={FadeInDown.delay(80 + index * motion.stagger).duration(360)}>
       <Tap
@@ -190,7 +190,7 @@ export function Ruler({
                   {i + min}
                 </Text>
               ) : null}
-              <View style={[styles.tick, { height: major ? 46 : 26, backgroundColor: major ? '#6E6E73' : '#3A3A3C' }]} />
+              <View style={[styles.tick, { height: major ? 46 : 26, backgroundColor: major ? '#6E6E73' : color.lineStrong }]} />
             </View>
           );
         })}

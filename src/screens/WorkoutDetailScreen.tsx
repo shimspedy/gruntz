@@ -43,7 +43,10 @@ export default function WorkoutDetailScreen() {
   const claimed = useUserStore((s) => s.progress.claimed_missions);
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
   const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
-  const session = useSessionStore();
+  // Narrow selectors: this screen stays mounted under the live workout, and the whole
+  // store changes on every logged set.
+  const sessionActive = useSessionStore((st) => st.active);
+  const sessionDayId = useSessionStore((st) => st.workoutDayId);
 
   const day = useMemo(() => getProgramWorkoutDay(program, params.workoutId, profile), [program, params.workoutId, profile]);
   const exercises = useMemo(() => workoutExercises(day), [day]);
@@ -61,7 +64,7 @@ export default function WorkoutDetailScreen() {
   const isToday = params.dateKey === getLocalDateKey();
   const completed = claimed.has(`${params.dateKey}:${day.id}`);
   const unlocked = hasTrainingAccess({ trialStartedAt, entitlementActive });
-  const sameSession = session.active && session.workoutDayId === day.id;
+  const sameSession = sessionActive && sessionDayId === day.id;
   const date = parseLocalDateKey(params.dateKey);
   const weekday = date ? WEEKDAYS[date.getDay()] : '';
 
@@ -69,15 +72,15 @@ export default function WorkoutDetailScreen() {
   if (!exercises.length) cta = { title: 'Recovery day', disabled: true };
   else if (completed) cta = { title: isToday ? 'Completed today' : 'Completed', disabled: true };
   else if (!unlocked) cta = { title: 'Unlock Gruntz Pro', onPress: () => navigation.navigate('Paywall') };
-  else if (sameSession) cta = { title: 'Resume Workout', icon: 'play', onPress: () => session.expand() };
+  else if (sameSession) cta = { title: 'Resume Workout', icon: 'play', onPress: () => useSessionStore.getState().expand() };
   // Both of these used to be dead disabled buttons: one with nowhere to go, one with no way to train early.
-  else if (session.active) cta = { title: 'Go to your current workout', icon: 'play', onPress: () => session.expand() };
+  else if (sessionActive) cta = { title: 'Go to your current workout', icon: 'play', onPress: () => useSessionStore.getState().expand() };
   else if (!isToday) cta = { title: `Do it now · ${weekday}'s workout`, icon: 'play' };
 
   const start = () => {
     if (cta.onPress) return cta.onPress();
     haptic.medium();
-    session.start(day, params.dateKey);
+    useSessionStore.getState().start(day, params.dateKey);
   };
 
   let row = 0;

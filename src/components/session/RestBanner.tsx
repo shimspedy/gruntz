@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Keyboard, StyleSheet, View } from 'react-native';
-import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
+import { StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown, FadeOutDown, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatClock, useNow } from '../../hooks/useNow';
 import { useSessionStore } from '../../store/useSessionStore';
+import { Icon } from '../../ui/Icon';
 import { Ring } from '../../ui/Progress';
 import { Tap } from '../../ui/Pressable';
 import { Text } from '../../ui/Text';
@@ -21,18 +23,13 @@ export function RestBanner({ bottom }: { bottom: number }) {
   // state for a beat so someone looking at their phone sees it end.
   const [over, setOver] = useState(false);
   // The banner is absolutely positioned, so the keyboard sat on top of Skip/−15/+15.
-  const [keyboard, setKeyboard] = useState(0);
+  // It rides the keyboard frame by frame; `bottom` already clears the home indicator,
+  // so only the part of the keyboard above that inset lifts it.
+  const keyboard = useAnimatedKeyboard();
+  const insets = useSafeAreaInsets();
+  const liftStyle = useAnimatedStyle(() => ({ transform: [{ translateY: -Math.max(0, keyboard.height.get() - insets.bottom) }] }));
 
   const remaining = restEndsAt ? restEndsAt - now : 0;
-
-  useEffect(() => {
-    const show = Keyboard.addListener('keyboardDidShow', (e) => setKeyboard(e.endCoordinates.height));
-    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboard(0));
-    return () => {
-      show.remove();
-      hide.remove();
-    };
-  }, []);
 
   useEffect(() => {
     if (!restEndsAt) {
@@ -60,9 +57,10 @@ export function RestBanner({ bottom }: { bottom: number }) {
 
   if (over) {
     return (
-      <Animated.View entering={FadeInDown.duration(200)} exiting={FadeOutDown.duration(180)} style={[styles.wrap, { bottom: bottom + keyboard }]}>
+      <Animated.View pointerEvents="box-none" style={[styles.lift, { bottom }, liftStyle]}>
+      <Animated.View entering={FadeInDown.duration(200)} exiting={FadeOutDown.duration(180)} style={styles.wrap}>
         <View style={styles.overDot}>
-          <Text variant="headline" tone="inverse">✓</Text>
+          <Icon name="check" size={20} color="#FFFFFF" weight="bold" />
         </View>
         <View style={{ flex: 1, marginLeft: 12 }}>
           <Text variant="footnote" tone="secondary">Rest</Text>
@@ -72,6 +70,7 @@ export function RestBanner({ bottom }: { bottom: number }) {
           <Text variant="headline" tone="inverse">Got it</Text>
         </Tap>
       </Animated.View>
+      </Animated.View>
     );
   }
 
@@ -79,8 +78,9 @@ export function RestBanner({ bottom }: { bottom: number }) {
   const ratio = restTotal > 0 ? remaining / (restTotal * 1000) : 0;
 
   return (
-    <Animated.View entering={FadeInDown.duration(240)} exiting={FadeOutDown.duration(180)} style={[styles.wrap, { bottom: bottom + keyboard }]}>
-      <Ring progress={ratio} size={44} stroke={3.5} trackColor="#2B3038">
+    <Animated.View pointerEvents="box-none" style={[styles.lift, { bottom }, liftStyle]}>
+    <Animated.View entering={FadeInDown.duration(240)} exiting={FadeOutDown.duration(180)} style={styles.wrap}>
+      <Ring progress={ratio} size={44} stroke={3.5} trackColor="#2B3038" tickMs={250}>
         <View />
       </Ring>
       <View style={{ flex: 1, marginLeft: 12 }}>
@@ -91,10 +91,10 @@ export function RestBanner({ bottom }: { bottom: number }) {
           {formatClock(remaining + 999)}
         </Text>
       </View>
-      <Tap onPress={() => { haptic.selection(); adjust(-15); }} style={styles.adj} accessibilityLabel="Subtract 15 seconds">
+      <Tap repeatable onPress={() => { haptic.selection(); adjust(-15); }} style={styles.adj} accessibilityLabel="Subtract 15 seconds">
         <Text variant="headline">−15</Text>
       </Tap>
-      <Tap onPress={() => { haptic.selection(); adjust(15); }} style={styles.adj} accessibilityLabel="Add 15 seconds">
+      <Tap repeatable onPress={() => { haptic.selection(); adjust(15); }} style={styles.adj} accessibilityLabel="Add 15 seconds">
         <Text variant="headline">+15</Text>
       </Tap>
       <Tap onPress={() => { haptic.light(); end(); }} style={styles.skip} accessibilityLabel="Skip rest">
@@ -103,14 +103,13 @@ export function RestBanner({ bottom }: { bottom: number }) {
         </Text>
       </Tap>
     </Animated.View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
+  lift: { position: 'absolute', left: space.md, right: space.md },
   wrap: {
-    position: 'absolute',
-    left: space.md,
-    right: space.md,
     height: 72,
     borderRadius: 36,
     borderCurve: 'continuous',
@@ -126,5 +125,5 @@ const styles = StyleSheet.create({
   },
   overDot: { width: 44, height: 44, borderRadius: 22, backgroundColor: color.accent, alignItems: 'center', justifyContent: 'center' },
   adj: { height: 44, paddingHorizontal: 12, borderRadius: radius.pill, backgroundColor: color.surface, alignItems: 'center', justifyContent: 'center' },
-  skip: { height: 44, paddingHorizontal: 18, borderRadius: radius.pill, backgroundColor: '#F5F5F7', alignItems: 'center', justifyContent: 'center' },
+  skip: { height: 44, paddingHorizontal: 18, borderRadius: radius.pill, backgroundColor: color.cta, alignItems: 'center', justifyContent: 'center' },
 });

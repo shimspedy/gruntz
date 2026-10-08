@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MyWorkouts } from '../components/MyWorkouts';
-import { PlanCarousel } from '../components/PlanCarousel';
+import { HERO_MAX_WIDTH, PlanCarousel } from '../components/PlanCarousel';
 import { PlanCompleteCard } from '../components/PlanCompleteCard';
 import { TabHeader } from '../components/TabHeader';
 import { getExerciseById } from '../data/exercises';
@@ -16,7 +16,7 @@ import { getPlanWeek, pickHero } from '../features/plan';
 import { useTabChromeInset } from '../navigation/TabBar';
 import { PLAN_COUNT, type WorkoutPlan } from '../data/workoutPlans';
 import { displayTitle, planDayHero } from '../features/planDisplay';
-import { nextPlanDay, useActivePlan, usePlanLibraryStore } from '../store/usePlanLibraryStore';
+import { nextPlanDay, useActivePlanDeferred, usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { useProgramStore } from '../store/useProgramStore';
 import { calculateDailyReadiness, getTodaysCheckIn, useReadinessStore } from '../store/useReadinessStore';
 import { useUiStore } from '../store/useUiStore';
@@ -61,7 +61,7 @@ export default function TrainScreen() {
   const today = getTodaysCheckIn(checkIns);
   const readiness = calculateDailyReadiness(today);
   const programInfo = program ? getProgramById(program) : undefined;
-  const activePlan = useActivePlan();
+  const { plan: activePlan, pending: planPending } = useActivePlanDeferred();
   const justCompleted = usePlanLibraryStore((s) => s.justCompleted);
 
   return (
@@ -89,6 +89,8 @@ export default function TrainScreen() {
       />
       {justCompleted ? (
         <PlanCompleteCard />
+      ) : planPending ? (
+        <PlanCardPlaceholder />
       ) : activePlan ? (
         <ActivePlanCard
           plan={activePlan}
@@ -104,7 +106,7 @@ export default function TrainScreen() {
       ) : (
         <ChooseProgram onPress={() => navigation.navigate('PlanBrowse')} />
       )}
-      {!activePlan && programInfo ? (
+      {!activePlan && !planPending && programInfo ? (
         <Text variant="footnote" tone="tertiary" align="center" style={{ marginTop: space.md }}>
           {programInfo.name} · Week {week} of {programInfo.duration_weeks}
         </Text>
@@ -140,7 +142,7 @@ export default function TrainScreen() {
         />
         <ToolRow icon="list" title="Exercise library" subtitle={`${EXERCISE_LIBRARY.length} movements with video`} onPress={() => navigation.navigate('ExerciseLibrary')} />
         <ToolRow icon="book" title="Workout plans" subtitle={`${PLAN_COUNT} plans with video`} onPress={() => navigation.navigate('PlanBrowse')} />
-        {program && !activePlan ? <ToolRow icon="calendar" title="Weekly plan" subtitle="Seven days at a glance" onPress={() => navigation.navigate('Plan')} /> : null}
+        {program && !activePlan && !planPending ? <ToolRow icon="calendar" title="Weekly plan" subtitle="Seven days at a glance" onPress={() => navigation.navigate('Plan')} /> : null}
       </View>
     </ScrollView>
   );
@@ -184,9 +186,16 @@ function ToolRow({ icon, title, subtitle, onPress }: { icon: IconName; title: st
   );
 }
 
+/** Holds the plan card's exact footprint for the frame before the plan is read, so nothing below it jumps. */
+function PlanCardPlaceholder() {
+  const { width } = useWindowDimensions();
+  const w = Math.round(Math.min(width * 0.8, HERO_MAX_WIDTH));
+  return <View style={[styles.emptyCard, { width: w, height: Math.round(w * 1.1) }]} accessibilityLabel="Loading your plan" />;
+}
+
 function ChooseProgram({ onPress }: { onPress: () => void }) {
   const { width } = useWindowDimensions();
-  const w = Math.round(width * 0.8);
+  const w = Math.round(Math.min(width * 0.8, HERO_MAX_WIDTH));
   return (
     <View style={[styles.emptyCard, { width: w, height: Math.round(w * 1.1) }]}>
       <HeroArt exercise={getExerciseById('deadlift')} style={StyleSheet.absoluteFill} />
@@ -209,7 +218,7 @@ function ActivePlanCard({ plan, onOpen, onOpenPlan }: { plan: WorkoutPlan; onOpe
   const cycle = usePlanLibraryStore((s) => s.cycle);
   const day = nextPlanDay(plan, completed);
   const doneCount = plan.days.filter((d) => completed.includes(d.id)).length;
-  const w = Math.round(width * 0.8);
+  const w = Math.round(Math.min(width * 0.8, HERO_MAX_WIDTH));
   return (
     // The card and the Start button did the same thing and were announced as two
     // separate controls. The card stays tappable; only the button is announced.
@@ -225,7 +234,7 @@ function ActivePlanCard({ plan, onOpen, onOpenPlan }: { plan: WorkoutPlan; onOpe
         <Text variant="hero" style={{ marginTop: 6 }} numberOfLines={2}>
           {displayTitle(day.title)}
         </Text>
-        <Text variant="callout" tone="secondary" style={{ marginTop: 6 }} numberOfLines={1}>
+        <Text variant="callout" tone="secondary" style={{ marginTop: 6 }} numberOfLines={2}>
           {plan.title} · ~{day.estimated_minutes} min
         </Text>
         <Button

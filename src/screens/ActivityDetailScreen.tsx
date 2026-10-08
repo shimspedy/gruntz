@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
   distance: { fontFamily: font.black, fontSize: 68, lineHeight: 76, letterSpacing: -2.5 },
   legacy: { backgroundColor: color.surface, borderRadius: 20, padding: 20, flexDirection: 'row', gap: 14, alignItems: 'center' },
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingVertical: 22 },
-  stat: { flexBasis: '46%', flexGrow: 1, padding: 16, backgroundColor: '#11191E', borderRadius: 16 },
+  stat: { flexBasis: '46%', flexGrow: 1, padding: 16, backgroundColor: color.bgRaised, borderRadius: 16 },
   notes: { backgroundColor: color.surface, borderRadius: 20, padding: 20 },
   themeRow: { flexDirection: 'row', gap: 12, marginVertical: 22 },
   privacy: { alignSelf: 'stretch', backgroundColor: color.surface, borderRadius: 20, padding: 18, gap: 8 },

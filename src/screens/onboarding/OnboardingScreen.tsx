@@ -126,6 +126,8 @@ const GUARDRAILS: { id: string; label: string; icon: IconName }[] = [
   { id: 'returning_after_break', label: 'Back after a break', icon: 'restart' },
 ];
 
+const NO_MATCHES: ReturnType<typeof recommendPlans> = [];
+
 export default function OnboardingScreen() {
   // Wait for saved answers so a user who closed the app mid-onboarding resumes where they were.
   const hydrated = useOnboardingDraftHydrated();
@@ -205,6 +207,22 @@ function OnboardingFlow() {
   );
   const next = useCallback(() => go(1), [go]);
 
+  // Single-choice steps move on by themselves: the answer is the decision, and a second
+  // tap on Continue for each of seven questions was pure friction. The pause lets the
+  // selection register first; Continue stays for anyone who came back to review.
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const indexRef = useRef(index);
+  indexRef.current = index;
+  useEffect(() => () => clearTimeout(advanceTimer.current), []);
+  const choose = (apply: () => void) => {
+    apply();
+    const from = indexRef.current;
+    clearTimeout(advanceTimer.current);
+    advanceTimer.current = setTimeout(() => {
+      if (indexRef.current === from) go(1);
+    }, 280);
+  };
+
   const toggle = (list: string[], set: (v: string[]) => void, v: string) => set(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
   const testDate = useMemo(() => {
@@ -214,10 +232,12 @@ function OnboardingFlow() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }, [noDate, weeksOut, military]);
 
-  const profile = useMemo<UserProfile>(
+  // Everything the recommenders score on. The name is added separately below so typing
+  // it doesn't re-score the catalog on every keystroke.
+  const scoringProfile = useMemo<UserProfile>(
     () => ({
       id: 'local',
-      display_name: name.trim() || 'Athlete',
+      display_name: 'Athlete',
       created_at: new Date().toISOString(),
       onboarding_complete: true,
       fitness_level: level ?? 'beginner',
@@ -238,12 +258,16 @@ function OnboardingFlow() {
       occupational_demands: [],
       settings: { notifications_enabled: remindersOn, reminder_time: '07:00', units: defaultUnits() },
     }),
-    [name, level, goals, gear, days, age, guardrails, minutes, intensity, branch, status, testType, testDate, remindersOn, military],
+    [level, goals, gear, days, age, guardrails, minutes, intensity, branch, status, testType, testDate, remindersOn, military],
   );
-  const recommendation = useMemo(() => recommendProgramForProfile(profile), [profile]);
+  const profile = useMemo<UserProfile>(() => ({ ...scoringProfile, display_name: name.trim() || 'Athlete' }), [scoringProfile, name]);
+  const recommendation = useMemo(() => recommendProgramForProfile(scoringProfile), [scoringProfile]);
   const program = getProgramById(recommendation.programId);
   // Library plans are the default result; the Gruntz program is offered alongside for Military Prep.
-  const planMatches = useMemo(() => recommendPlans(profile, 3), [profile]);
+  // Scoring them parses the 4 MB plan file, so it waits for the "generating" step instead of
+  // stalling the first frame of Welcome.
+  const plansNeeded = index >= steps.indexOf('generating');
+  const planMatches = useMemo(() => (plansNeeded ? recommendPlans(scoringProfile, 3) : NO_MATCHES), [plansNeeded, scoringProfile]);
   const offerBuiltIn = goals.includes('Military Prep') || planMatches.length === 0;
   const [choice, setChoice] = useState<string | null>(saved?.planChoice ?? null);
   const selectedPlan = choice ?? planMatches[0]?.plan.id ?? builtinKey(recommendation.programId);
@@ -393,14 +417,14 @@ function OnboardingFlow() {
         );
       case 'level':
         return (
-          <View>
+          <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Question title="How experienced are you with training?" />
             <View style={os.list}>
               {LEVELS.map((l, i) => (
-                <OptionRow key={l.id} index={i} label={l.label} meta={l.meta} icon={i === 0 ? 'gauge' : i === 1 ? 'chart' : 'bolt'} selected={level === l.id} onPress={() => setLevel(l.id)} />
+                <OptionRow key={l.id} index={i} label={l.label} meta={l.meta} icon={i === 0 ? 'gauge' : i === 1 ? 'chart' : 'bolt'} selected={level === l.id} onPress={() => choose(() => setLevel(l.id))} />
               ))}
             </View>
-          </View>
+          </ScrollView>
         );
       case 'story1':
         return military ? (
@@ -414,7 +438,7 @@ function OnboardingFlow() {
             <Question title="Which branch are you preparing for?" subtitle="Sets your test events and targets." />
             <View style={os.list}>
               {BRANCHES.map((b, i) => (
-                <OptionRow key={b.id} index={i} label={b.label} selected={branch === b.id} onPress={() => { setBranch(b.id); setTestType(branchDefaultTest[b.id]); }} />
+                <OptionRow key={b.id} index={i} label={b.label} selected={branch === b.id} onPress={() => choose(() => { setBranch(b.id); setTestType(branchDefaultTest[b.id]); })} />
               ))}
             </View>
           </ScrollView>
@@ -425,25 +449,25 @@ function OnboardingFlow() {
             <Question title="What’s your status?" />
             <View style={os.list}>
               {STATUSES.map((s, i) => (
-                <OptionRow key={s.id} index={i} label={s.label} selected={status === s.id} onPress={() => setStatus(s.id)} />
+                <OptionRow key={s.id} index={i} label={s.label} selected={status === s.id} onPress={() => choose(() => setStatus(s.id))} />
               ))}
             </View>
           </ScrollView>
         );
       case 'testChoice':
         return (
-          <View>
+          <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Question title="Which test is next?" />
             <View style={os.list}>
               {(['marine_pft', 'marine_cft'] as FitnessTestType[]).map((t, i) => (
                 <OptionRow key={t} index={i} label={militaryTests[t].name} meta={t === 'marine_pft' ? 'Physical' : 'Combat'} selected={testType === t} onPress={() => setTestType(t)} />
               ))}
             </View>
-          </View>
+          </ScrollView>
         );
       case 'testDate':
         return (
-          <View>
+          <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Question title="When is your next test?" />
             <View style={{ paddingHorizontal: space.gutter }}>
               <Segmented value={noDate ? 'none' : 'date'} onChange={(v) => setNoDate(v === 'none')} options={[{ value: 'date', label: 'I have a date' }, { value: 'none', label: 'Not scheduled' }]} />
@@ -473,7 +497,7 @@ function OnboardingFlow() {
                 </>
               )}
             </Animated.View>
-          </View>
+          </ScrollView>
         );
       case 'story2':
         return military ? (
@@ -483,29 +507,29 @@ function OnboardingFlow() {
         );
       case 'days':
         return (
-          <View>
+          <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Question title="How many days a week can you train?" />
             <View style={os.list}>
               {DAYS.map((d, i) => (
-                <OptionRow key={d.n} index={i} label={`${d.n} days / week`} meta={d.meta} selected={days === d.n} onPress={() => setDays(d.n)} />
+                <OptionRow key={d.n} index={i} label={`${d.n} days / week`} meta={d.meta} selected={days === d.n} onPress={() => choose(() => setDays(d.n))} />
               ))}
             </View>
-          </View>
+          </ScrollView>
         );
       case 'minutes':
         return (
-          <View>
+          <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Question title="How long should workouts be?" />
             <View style={os.list}>
               {MINUTES.map((m, i) => (
-                <OptionRow key={m.n} index={i} label={`${m.n} minutes`} meta={m.meta} selected={minutes === m.n} onPress={() => setMinutes(m.n)} />
+                <OptionRow key={m.n} index={i} label={`${m.n} minutes`} meta={m.meta} selected={minutes === m.n} onPress={() => choose(() => setMinutes(m.n))} />
               ))}
             </View>
-          </View>
+          </ScrollView>
         );
       case 'equipment':
         return (
-          <View>
+          <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Question title="What do you have access to?" subtitle="Pick all that apply." />
             <View style={os.grid}>
               <GridTile index={0} label="Gym" icon="dumbbell" selected={gear.includes('gym')} onPress={() => setGear((g) => toggleExclusive(g, 'gym'))} />
@@ -516,47 +540,48 @@ function OnboardingFlow() {
               <GridTile index={military ? 3 : 2} label="Pool" icon="swim" selected={gear.includes('pool')} onPress={() => setGear((g) => toggleExclusive(g, 'pool'))} />
               <GridTile index={military ? 4 : 3} label="Bodyweight only" icon="body" selected={gear.includes('none')} onPress={() => setGear((g) => (g.includes('none') ? [] : ['none']))} />
             </View>
-          </View>
+          </ScrollView>
         );
       case 'guardrails':
         return (
-          <View>
+          <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Question title="Anything we should plan around?" subtitle="Your first weeks start gentler." />
             <View style={os.grid}>
               {GUARDRAILS.map((g, i) => (
                 <GridTile key={g.id} index={i} label={g.label} icon={g.icon} selected={guardrails.includes(g.id)} onPress={() => toggle(guardrails, setGuardrails, g.id)} />
               ))}
             </View>
-          </View>
+          </ScrollView>
         );
       case 'age':
         return (
-          <View>
+          <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Question title="What’s your age range?" />
             <View style={os.list}>
               {AGES.map((a, i) => (
-                <OptionRow key={a.id} index={i} label={a.label} selected={age === a.id} onPress={() => setAge(a.id)} />
+                <OptionRow key={a.id} index={i} label={a.label} selected={age === a.id} onPress={() => choose(() => setAge(a.id))} />
               ))}
             </View>
-          </View>
+          </ScrollView>
         );
       case 'intensity':
         return (
-          <View>
+          <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Question title="How hard do you want to push?" />
             <View style={os.list}>
               {INTENSITIES.map((it, i) => (
-                <OptionRow key={it.id} index={i} label={it.label} meta={it.meta} selected={intensity === it.id} onPress={() => setIntensity(it.id)} />
+                <OptionRow key={it.id} index={i} label={it.label} meta={it.meta} selected={intensity === it.id} onPress={() => choose(() => setIntensity(it.id))} />
               ))}
             </View>
-          </View>
+          </ScrollView>
         );
       case 'name':
         return (
-          <View>
+          <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Question title="What should we call you?" subtitle="This is the name shown on your profile." />
             <View style={{ paddingHorizontal: space.gutter }}>
               <TextInput
+                maxFontSizeMultiplier={1.8}
                 value={name}
                 onChangeText={setName}
                 placeholder="Your name"
@@ -571,7 +596,7 @@ function OnboardingFlow() {
                 accessibilityLabel="Your name"
               />
             </View>
-          </View>
+          </ScrollView>
         );
       case 'notify':
         return (

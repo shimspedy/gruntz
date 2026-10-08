@@ -121,7 +121,7 @@ export function PlanReady({
         </View>
       </Animated.View>
 
-      <Animated.View entering={FadeInDown.delay(120).duration(420)} style={[styles.planCard, { height: width * 0.62 }]}>
+      <Animated.View entering={FadeInDown.delay(120).duration(420)} style={[styles.planCard, { height: Math.min(width * 0.62, 300) }]}>
         <HeroArt exercise={hero} style={StyleSheet.absoluteFill} />
         <LinearGradient colors={['rgba(0,0,0,0)', 'rgba(6,7,9,0.95)']} locations={[0.25, 0.9]} style={StyleSheet.absoluteFill} />
         <View style={styles.planCopy}>
@@ -217,24 +217,25 @@ export function Commit({ days, onSigned }: { days: number; onSigned: () => void 
   return (
     <View style={{ flex: 1 }}>
       <View style={styles.commitCopy}>
-        <Animated.View entering={FadeIn.delay(200).duration(700)}>
+        <Animated.View entering={FadeIn.delay(150).duration(450)}>
           <Text variant="question" align="center" style={{ fontSize: 21 }}>
             {lines[0]}
           </Text>
         </Animated.View>
-        <Animated.View entering={FadeIn.delay(1100).duration(700)}>
+        <Animated.View entering={FadeIn.delay(600).duration(450)}>
           <Text variant="question" align="center" style={{ fontSize: 21, fontFamily: font.bold }}>
             {lines[1]}
           </Text>
         </Animated.View>
-        <Animated.View entering={FadeIn.delay(2000).duration(700)}>
+        <Animated.View entering={FadeIn.delay(1050).duration(450)}>
           <Text variant="body" tone="secondary" align="center" style={{ marginTop: space.xl }}>
             {lines[2]}
           </Text>
         </Animated.View>
       </View>
 
-      <Animated.View entering={FadeIn.delay(2800).duration(600)} style={styles.signWrap}>
+      {/* The only control on the screen used to arrive after 3.4 s of nothing to do. */}
+      <Animated.View entering={FadeIn.delay(1400).duration(450)} style={styles.signWrap}>
         <Pressable
           onPressIn={pressIn}
           onPressOut={pressOut}

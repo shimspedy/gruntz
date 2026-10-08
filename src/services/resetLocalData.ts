@@ -41,7 +41,7 @@ export async function resetLocalData() {
   await useSessionStore.persist.clearStorage();
   const keys = await AsyncStorage.getAllKeys();
   // Billing remains store-managed and the original trial must not restart on erase.
-  const retained = new Set(['@gruntz_subscription', '@gruntz_backup_owner']);
+  const retained = new Set(['@gruntz_subscription', '@gruntz_backup_owner', '@gruntz_backup_synced_at']);
   const ours = keys.filter((key) => key.startsWith('@gruntz') && !retained.has(key));
   if (ours.length) await AsyncStorage.multiRemove(ours);
 }

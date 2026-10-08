@@ -1,7 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { getWorkoutPlan, type PlanDay, type WorkoutPlan } from '../data/workoutPlans';
+import { useEffect, useState } from 'react';
+import { getWorkoutPlan, plansLoaded, type PlanDay, type WorkoutPlan } from '../data/workoutPlans';
 
 /** The library plan the user follows, and which of its days they have finished. */
 interface PlanLibraryState {
@@ -131,6 +132,23 @@ export function nextPlanDay(plan: WorkoutPlan, completedDayIds: string[]): PlanD
 export function planProgress(plan: WorkoutPlan, completedDayIds: string[]) {
   const done = plan.days.filter((d) => completedDayIds.includes(d.id)).length;
   return { done, total: plan.days.length, fraction: plan.days.length ? done / plan.days.length : 0 };
+}
+
+/**
+ * The active plan for the first screen of the app. Parsing the plan file takes long enough
+ * to stall launch, so on a cold start this reports `pending` for the first frame and reads
+ * the file once that frame is on screen. After that it is immediate.
+ */
+export function useActivePlanDeferred(): { plan: WorkoutPlan | undefined; pending: boolean } {
+  const id = usePlanLibraryStore((s) => s.activePlanId);
+  const [ready, setReady] = useState(plansLoaded);
+  useEffect(() => {
+    if (ready) return undefined;
+    const frame = requestAnimationFrame(() => setTimeout(() => setReady(true), 0));
+    return () => cancelAnimationFrame(frame);
+  }, [ready]);
+  if (!id) return { plan: undefined, pending: false };
+  return ready ? { plan: getWorkoutPlan(id), pending: false } : { plan: undefined, pending: true };
 }
 
 export function useActivePlan(): WorkoutPlan | undefined {

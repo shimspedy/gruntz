@@ -37,13 +37,16 @@ export interface SheetProps {
    * own scrollables or gesture handlers that must not be nested.
    */
   scrollable?: boolean;
+  /** Drag only from the handle and title. Implied by `scrollable`; set it when the body holds its own scroll view. */
+  dragHandleOnly?: boolean;
 }
 
 /**
  * Bottom sheet: dimmed backdrop, drag handle, springs in, follows the finger, flicks closed.
  * Short interruptions only — anything with steps is a modal route instead.
  */
-export function Sheet({ visible, onClose, title, children, plainHeader, onDismissed, avoidKeyboard, scrollable }: SheetProps) {
+export function Sheet({ visible, onClose, title, children, plainHeader, onDismissed, avoidKeyboard, scrollable, dragHandleOnly }: SheetProps) {
+  const handleOnly = !!scrollable || !!dragHandleOnly;
   const [mounted, setMounted] = useState(visible);
   const { height: screenH } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -82,7 +85,8 @@ export function Sheet({ visible, onClose, title, children, plainHeader, onDismis
     sheetH.set(h);
     if (first && visible) {
       offset.set(h + 40);
-      offset.set(withSpring(0, motion.sheet));
+      // No overshoot on the way in: nothing was thrown, so nothing should bounce.
+      offset.set(withSpring(0, { duration: motion.sheet.duration, dampingRatio: 1 }));
       progress.set(withTiming(1, { duration: motion.base, easing: motion.easeOut }));
     }
   };
@@ -116,19 +120,27 @@ export function Sheet({ visible, onClose, title, children, plainHeader, onDismis
         <Animated.View style={[StyleSheet.absoluteFill, styles.backdrop, backdropStyle]}>
           <Tap feedback="none" style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close" />
         </Animated.View>
-        <GestureDetector gesture={pan}>
-          <Animated.View
-            onLayout={onLayout}
-            style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, space.md) + space.xs, maxHeight: screenH - insets.top - 24 }, sheetStyle]}
-          >
-            <View style={styles.handle} />
-            {title ? (
-              <View style={[styles.titleRow, !plainHeader && styles.titleDivider]}>
-                <Text variant="headline" align="center" style={styles.title}>
-                  {title}
-                </Text>
-              </View>
-            ) : null}
+        {(() => {
+          const header = (
+            <View collapsable={false}>
+              <View style={styles.handle} />
+              {title ? (
+                <View style={[styles.titleRow, !plainHeader && styles.titleDivider]}>
+                  <Text variant="headline" align="center" style={styles.title}>
+                    {title}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          );
+          const sheet = (
+            <Animated.View
+              onLayout={onLayout}
+              style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, space.md) + space.xs, maxHeight: screenH - insets.top - 24 }, sheetStyle]}
+            >
+              {/* Fills the gap that opens under the sheet when it is pulled up past its resting point. */}
+              <View style={styles.underlay} />
+              {handleOnly ? <GestureDetector gesture={pan}>{header}</GestureDetector> : header}
             {(() => {
               const body = avoidKeyboard ? <KeyboardAwareSheetBody>{children}</KeyboardAwareSheetBody> : children;
               if (!scrollable) return body;
@@ -143,8 +155,13 @@ export function Sheet({ visible, onClose, title, children, plainHeader, onDismis
                 </ScrollView>
               );
             })()}
-          </Animated.View>
-        </GestureDetector>
+            </Animated.View>
+          );
+          // With a scrolling body the drag belongs to the header alone: wrapped around the
+          // whole sheet it won against the list, so dragging the content moved or closed
+          // the sheet instead of scrolling it.
+          return handleOnly ? sheet : <GestureDetector gesture={pan}>{sheet}</GestureDetector>;
+        })()}
       </GestureHandlerRootView>
     </Modal>
   );
@@ -156,6 +173,7 @@ const styles = StyleSheet.create({
   scrollBody: { flexShrink: 1 },
   scrollContent: { flexGrow: 1 },
   backdrop: { backgroundColor: color.scrim },
+  underlay: { position: 'absolute', left: 0, right: 0, top: '100%', height: 300, backgroundColor: color.bgRaised },
   sheet: {
     position: 'absolute',
     left: 0,

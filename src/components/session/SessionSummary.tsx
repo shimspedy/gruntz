@@ -79,11 +79,15 @@ export function SessionSummary({ onBack, onDone }: { onBack: () => void; onDone:
     // over an XP bar already displaying level 6's numbers, and a level-up caused by an
     // achievement got no celebration at all.
     const after = useUserStore.getState().progress;
-    haptic.success();
+    // Team rosters show sessions and streak; a no-op for anyone not in a team.
+    void import('../../services/teams').then((teams) => teams.syncTeamStatus()).catch(() => undefined);
     const title = s.title;
     useSessionStore.getState().finish();
     onDone();
     if (repeatOfToday) {
+      // Otherwise the celebration screen owns the success haptic; firing one here as
+      // well stacked three buzzes inside half a second.
+      haptic.success();
       toast('Saved to your history · already counted today', { tone: 'info', icon: 'check' });
       return;
     }

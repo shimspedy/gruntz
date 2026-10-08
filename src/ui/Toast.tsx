@@ -3,6 +3,7 @@ import { AccessibilityInfo, Modal, Platform, StyleSheet, View } from 'react-nati
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FullWindowOverlay } from 'react-native-screens';
 import { create } from 'zustand';
 import { useSessionStore } from '../store/useSessionStore';
 import { Icon, type IconName } from './Icon';
@@ -89,41 +90,48 @@ export function ToastHost() {
   const style = useAnimatedStyle(() => ({ transform: [{ translateY: y.get() }] }));
   if (!message) return null;
 
-  return (
-    // Sheets are transparent native modals, so a toast rendered at the app root
-    // was painted underneath them and never seen. Presenting it the same way puts
-    // it back on top. Same flags as ui/Sheet so the two layers behave alike.
-    <Modal transparent visible statusBarTranslucent animationType="none">
-      <Animated.View
-        pointerEvents={action ? 'box-none' : 'none'}
-        accessibilityLiveRegion="polite"
-        style={[styles.toast, { paddingTop: insets.top + (sessionOpen ? 62 : 6), backgroundColor: tones[tone] }, style]}
-      >
-        <View style={styles.row}>
-          <View style={styles.check}>
-            <Icon name={icon ?? (tone === 'error' ? 'alert' : 'check')} size={15} color={tones[tone]} weight="bold" />
-          </View>
-          <Text variant="headline" style={{ flex: 1 }} numberOfLines={2}>
-            {message}
-          </Text>
-          {action ? (
-            <Tap
-              feedback="opacity"
-              hitSlop={12}
-              onPress={() => {
-                action.onPress();
-                clear();
-              }}
-              accessibilityRole="button"
-              accessibilityLabel={action.label}
-            >
-              <Text variant="cta" style={{ fontSize: 15 }}>
-                {action.label}
-              </Text>
-            </Tap>
-          ) : null}
+  const banner = (
+    <Animated.View
+      pointerEvents={action ? 'box-none' : 'none'}
+      accessibilityLiveRegion="polite"
+      style={[styles.toast, { paddingTop: insets.top + (sessionOpen ? 62 : 6), backgroundColor: tones[tone] }, style]}
+    >
+      <View style={styles.row}>
+        <View style={styles.check}>
+          <Icon name={icon ?? (tone === 'error' ? 'alert' : 'check')} size={15} color={tones[tone]} weight="bold" />
         </View>
-      </Animated.View>
+        <Text variant="headline" style={{ flex: 1 }} numberOfLines={2}>
+          {message}
+        </Text>
+        {action ? (
+          <Tap
+            feedback="opacity"
+            hitSlop={12}
+            onPress={() => {
+              action.onPress();
+              clear();
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={action.label}
+          >
+            <Text variant="cta" style={{ fontSize: 15 }}>
+              {action.label}
+            </Text>
+          </Tap>
+        ) : null}
+      </View>
+    </Animated.View>
+  );
+
+  // Sheets are transparent native modals, so a toast rendered at the app root was
+  // painted underneath them and never seen. On iOS a window-level overlay sits above
+  // them and, unlike a Modal, lets touches through: a Modal swallowed every tap for
+  // the three seconds the banner was up (Finish, the input it asked you to fill) and
+  // dropped the keyboard. Android has no equivalent, so it keeps the Modal.
+  if (Platform.OS === 'ios') return <FullWindowOverlay>{banner}</FullWindowOverlay>;
+  return (
+    <Modal transparent visible statusBarTranslucent animationType="none" onRequestClose={clear}>
+      {banner}
     </Modal>
   );
 }

@@ -39,6 +39,8 @@ export const color = {
   accentDeep: '#16325C',
   accentGlow: 'rgba(45,140,255,0.45)',
 
+  /** The primary action fill: an off-white, softer than `text` so a full-width button doesn't glare. */
+  cta: '#F5F5F7',
   ctaDisabled: '#8E8E93',
   onCta: '#000000',
 

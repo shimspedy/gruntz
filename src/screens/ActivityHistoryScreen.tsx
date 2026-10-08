@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -27,6 +27,7 @@ export default function ActivityHistoryScreen() {
   const activities = useMemo(() => sortActivities(sessions.filter((session) => filter === 'all' || session.type === filter)), [sessions, filter]);
   const totals = useMemo(() => activityTotals(activities), [activities]);
   const distance = activityDistance(totals.distanceMiles, units);
+  const open = useCallback((sessionId: string) => navigation.navigate('ActivityDetail', { sessionId }), [navigation]);
 
   return (
     <View style={styles.screen}>
@@ -52,18 +53,20 @@ export default function ActivityHistoryScreen() {
           body="Track an activity to save its route, distance and time. Your field notes build with every finish.">
           <Button title={filter === 'all' ? 'Track an activity' : `Start a ${activityLabel(filter).toLowerCase()}`} icon="plus" onPress={() => navigation.navigate('RunTracker', { type: filter === 'all' ? 'run' : filter })} />
         </EmptyState>}
-        renderItem={({ item }) => <HistoryCard session={item} units={units} onPress={() => navigation.navigate('ActivityDetail', { sessionId: item.id })} />}
-        ItemSeparatorComponent={() => <View style={{ height: 14 }} />} />
+        renderItem={({ item }) => <HistoryCard session={item} units={units} onOpen={open} />}
+        ItemSeparatorComponent={Separator} />
     </View>
   );
 }
 
-function HistoryCard({ session, units, onPress }: { session: TrackedSession; units: ActivityUnits; onPress: () => void }) {
+const Separator = () => <View style={{ height: 14 }} />;
+
+const HistoryCard = React.memo(function HistoryCard({ session, units, onOpen }: { session: TrackedSession; units: ActivityUnits; onOpen: (sessionId: string) => void }) {
   const tint = activityAccent(session.type);
   const distance = activityDistance(session.distanceMiles, units);
   const pace = activityPace(session, units);
   return (
-    <Tap onPress={onPress} accessibilityLabel={`${activityLabel(session.type)}, ${distance.value} ${distance.unit}, ${activityDateLabel(session)}, open activity`} style={styles.card} feedback="scale" scaleTo={0.985}>
+    <Tap onPress={() => onOpen(session.id)} accessibilityLabel={`${activityLabel(session.type)}, ${distance.value} ${distance.unit}, ${activityDateLabel(session)}, open activity`} style={styles.card} feedback="scale" scaleTo={0.985}>
       <View style={styles.cardHeader}>
         <View style={[styles.typeBadge, { backgroundColor: `${tint}16` }]}>
           <Icon name={session.type === 'ruck' ? 'ruck' : session.type === 'hike' ? 'elevation' : 'run'} size={15} color={tint} />
@@ -74,33 +77,33 @@ function HistoryCard({ session, units, onPress }: { session: TrackedSession; uni
       <View style={styles.cardBody}>
         <View style={{ flex: 1 }}>
           <Text tabular style={styles.cardDistance}>{distance.value}<Text variant="headline" tone="secondary"> {distance.unit}</Text></Text>
-          <Text variant="callout" numberOfLines={2} style={{ color: '#BDC9CE', marginTop: 5 }}>{session.title?.trim() || `${activityLabel(session.type)} · ${session.terrain || 'outdoors'}`}</Text>
+          <Text variant="callout" numberOfLines={2} style={{ color: color.textSecondary, marginTop: 5 }}>{session.title?.trim() || `${activityLabel(session.type)} · ${session.terrain || 'outdoors'}`}</Text>
         </View>
-        {session.route?.length ? <View style={styles.thumbnail}><ActivityRouteArt route={session.route} tint={tint} height={96} /></View> : <View style={styles.noRoute}><Icon name="location" size={24} color="#5C737C" /></View>}
+        {session.route?.length ? <View style={styles.thumbnail}><ActivityRouteArt route={session.route} tint={tint} height={96} /></View> : <View style={styles.noRoute}><Icon name="location" size={24} color={color.textQuaternary} /></View>}
       </View>
       <View style={styles.cardFooter}>
         <Text variant="footnote" tone="secondary" tabular>{activityDuration(session.durationSeconds)}</Text>
         <Text variant="footnote" tone="secondary" tabular>{pace.value} {pace.unit}</Text>
         <Text variant="footnote" tone="secondary" tabular>↑ {activityAscent(session.elevationFeet, units)}</Text>
-        <View style={{ flex: 1 }} /><Icon name="chevronRight" size={16} color="#AFBDC4" />
+        <View style={{ flex: 1 }} /><Icon name="chevronRight" size={16} color={color.textTertiary} />
       </View>
     </Tap>
   );
-}
+});
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: color.bg },
   intro: { paddingHorizontal: 4, paddingTop: 16, paddingBottom: 24 },
-  eyebrow: { color: '#A8F16A', fontSize: 11, letterSpacing: 1.6 },
-  totals: { flexDirection: 'row', padding: 18, gap: 14, backgroundColor: '#11191E', borderRadius: 20, borderWidth: StyleSheet.hairlineWidth, borderColor: '#293941' },
+  eyebrow: { color: color.accent, fontSize: 11, letterSpacing: 1.6 },
+  totals: { flexDirection: 'row', padding: 18, gap: 14, backgroundColor: color.bgRaised, borderRadius: 20, borderWidth: StyleSheet.hairlineWidth, borderColor: color.line },
   totalNumber: { fontFamily: font.bold, fontSize: 27, letterSpacing: -0.6, marginTop: 8 },
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, paddingVertical: 22 },
-  card: { backgroundColor: '#10181D', borderRadius: 22, borderWidth: StyleSheet.hairlineWidth, borderColor: '#2A3D46', padding: 18 },
+  card: { backgroundColor: color.bgRaised, borderRadius: 22, borderWidth: StyleSheet.hairlineWidth, borderColor: color.line, padding: 18 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   typeBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 12, paddingHorizontal: 9, paddingVertical: 6 },
   cardBody: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 14 },
   cardDistance: { fontFamily: font.heavy, fontSize: 37, letterSpacing: -1.2 },
   thumbnail: { width: 96, height: 96, borderRadius: 16, overflow: 'hidden' },
   noRoute: { width: 72, height: 72, alignItems: 'center', justifyContent: 'center' },
-  cardFooter: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#27383F', paddingTop: 14 },
+  cardFooter: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color.line, paddingTop: 14 },
 });

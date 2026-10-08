@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AppState, BackHandler, Linking, Platform, StyleSheet, View } from 'react-native';
+import { Alert, AppState, BackHandler, Linking, Platform, StyleSheet, View } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { startBackupLifecycle } from '../services/backup';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -383,6 +383,7 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   const programHydrated = useProgramStore((s) => s.hasHydrated);
   const programHydrationFailed = useProgramStore((s) => s.hydrationFailed);
   const subscriptionHydrationFailed = useSubscriptionStore((s) => s.hydrationFailed);
+  const [retried, setRetried] = useState(false);
   useAndroidBack();
   const sessionHydrated = usePersistHydrated(useSessionStore);
   const routineHydrated = usePersistHydrated(useRoutineStore);
@@ -497,6 +498,7 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
         <Text variant="title" align="center">Couldn’t load your saved progress</Text>
         <Text variant="callout" tone="secondary" align="center">Your saved data has been kept. Try loading it again, or close and reopen Gruntz.</Text>
         <Button title="Try again" onPress={() => {
+          setRetried(true);
           void Promise.all([
             useUserStore.persist.rehydrate(), useProgramStore.persist.rehydrate(),
             useSubscriptionStore.persist.rehydrate(), useSessionStore.persist.rehydrate(),
@@ -506,6 +508,34 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
             useExerciseNotesStore.persist.rehydrate(),
           ]).catch(() => undefined);
         }} />
+        {/* If a retry didn't help, the usual cause is an unreadable draft. Those are the only
+            things cleared here: training history, plans and the subscription are untouched. */}
+        {retried ? (
+          <Button
+            title="Clear unfinished workout and retry"
+            variant="secondary"
+            onPress={() =>
+              Alert.alert('Clear unfinished workout?', 'This removes a workout you had not finished and half-completed setup answers. Your history, plans and progress stay.', [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Clear and retry',
+                  style: 'destructive',
+                  onPress: () => {
+                    void AsyncStorage.multiRemove(['@gruntz_session', '@gruntz_chrome', '@gruntz_onboarding_draft', '@gruntz_nav_state'])
+                      .catch(() => undefined)
+                      .then(() => Promise.all([
+                        useSessionStore.persist.rehydrate(), useOnboardingDraftStore.persist.rehydrate(),
+                        useRoutineStore.persist.rehydrate(), usePlanLibraryStore.persist.rehydrate(),
+                        useExerciseLogStore.persist.rehydrate(), useReadinessStore.persist.rehydrate(),
+                        useChallengeStore.persist.rehydrate(), useExerciseNotesStore.persist.rehydrate(),
+                      ]))
+                      .catch(() => undefined);
+                  },
+                },
+              ])
+            }
+          />
+        ) : null}
       </View>
     );
   }

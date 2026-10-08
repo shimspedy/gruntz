@@ -272,7 +272,7 @@ export default function PaywallScreen() {
             ? `Manage or cancel anytime in your ${store} account settings.`
             : !offering
             ? isLoading ? `Pricing is loading from the ${store}.` : `Subscription pricing is unavailable. Retry when connected to the ${store}.`
-            : `${GRUNTZ_PRO_LABEL} is an auto-renewing ${selectedPlan === 'annual' ? 'yearly' : 'monthly'} subscription at ${selectedPrice}. ${introDisclosure ?? ''} Payment is charged to your ${store} account at confirmation and renews unless cancelled at least 24 hours before the period ends. Manage or cancel anytime in account settings.`}
+            : `${GRUNTZ_PRO_LABEL} is an auto-renewing ${selectedPlan === 'annual' ? 'yearly' : 'monthly'} subscription at ${selectedPrice}.${introDisclosure ? ` ${introDisclosure}` : ''} Payment is charged to your ${store} account at confirmation and renews unless cancelled at least 24 hours before the period ends. Manage or cancel anytime in account settings.`}
         </Text>
       </ScrollView>
 
@@ -339,7 +339,7 @@ function PlanCard({
   }, [selected, t]);
   const box = useAnimatedStyle(() => ({
     backgroundColor: interpolateColor(t.get(), [0, 1], ['rgba(0,0,0,0)', '#DCEBFF']),
-    borderColor: interpolateColor(t.get(), [0, 1], ['#3A3A3C', color.accent]),
+    borderColor: interpolateColor(t.get(), [0, 1], [color.lineStrong, color.accent]),
   }));
   const ink = selected ? '#06101F' : color.textSecondary;
   return (
@@ -355,7 +355,7 @@ function PlanCard({
     >
       <Animated.View style={[styles.plan, box]}>
         {badge ? (
-          <View style={[styles.planBadge, { backgroundColor: selected ? color.accent : '#2A2A2C' }]}>
+          <View style={[styles.planBadge, { backgroundColor: selected ? color.accent : color.line }]}>
             <Text variant="subhead" style={{ color: '#FFFFFF', fontFamily: font.semibold }}>
               {badge}
             </Text>
@@ -405,7 +405,8 @@ const styles = StyleSheet.create({
   // The auto-renew disclosure is the one block a buyer must be able to read.
   legal: { marginTop: space.lg, lineHeight: 19, fontSize: 13 },
   link: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
-  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: space.md, paddingTop: space.md, backgroundColor: 'rgba(0,0,0,0.92)' },
+  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: space.md, paddingTop: space.md, backgroundColor: color.bg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color.line },
+  // Opaque on purpose: at 92% the auto-renew disclosure scrolling underneath ghosted through the button and links.
   reassure: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 14 },
-  links: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginTop: 10 },
+  links: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 10 },
 });

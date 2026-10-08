@@ -21,6 +21,8 @@ export function Welcome({ onStart }: { onStart: () => void }) {
   const phoneHeight = Math.min(500, Math.round(height * 0.5));
   const insets = useSafeAreaInsets();
   const [page, setPage] = useState(0);
+  const pageRef = useRef(page);
+  pageRef.current = page;
   const x = useSharedValue(0);
   const intro = useSharedValue(0);
   const scroll = useRef<ScrollView>(null);
@@ -53,6 +55,12 @@ export function Welcome({ onStart }: { onStart: () => void }) {
     }, 4200);
     return () => clearInterval(id);
   }, [width, reduceMotion]);
+
+  // A paged ScrollView keeps its old offset when the window resizes (fold, rotation),
+  // which left it resting between two slides.
+  useEffect(() => {
+    scroll.current?.scrollTo({ x: pageRef.current * width, animated: false });
+  }, [width]);
 
   const logoStyle = useAnimatedStyle(() => ({
     opacity: interpolate(intro.get(), [0, 0.7], [1, 0], 'clamp'),

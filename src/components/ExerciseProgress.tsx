@@ -4,6 +4,7 @@ import Svg, { Circle, Line, Path } from 'react-native-svg';
 import { estimated1RM, recordProgression, summarize, toUnit, useExerciseLogStore, type LoggedSet, type SessionSummary } from '../store/useExerciseLogStore';
 import { Icon } from '../ui/Icon';
 import { Chip } from '../ui/Layout';
+import { Tap } from '../ui/Pressable';
 import { Text } from '../ui/Text';
 import { color, radius, space } from '../ui/tokens';
 
@@ -56,14 +57,18 @@ function Empty({ icon, title, body }: { icon: 'chart' | 'trophy' | 'calendar'; t
 
 // ─── History ──────────────────────────────────────────────────────────────
 
+const HISTORY_PAGE = 20;
+
 export function ExerciseHistory({ sessions, unit }: { sessions: SessionSummary[]; unit: Unit }) {
+  // Up to 300 sessions are kept per exercise; mounting them all at once froze the screen.
+  const [shown, setShown] = useState(HISTORY_PAGE);
   if (!sessions.length) {
     return <Empty icon="calendar" title="No history yet" body="Finish a workout with this exercise and every set you log shows up here." />;
   }
   const kind = kindOf(sessions);
   return (
     <View style={{ gap: space.md }}>
-      {[...sessions].reverse().map((s) => (
+      {sessions.slice(-shown).reverse().map((s) => (
         <View key={s.entry.id} style={styles.card}>
           <Text variant="headline">{fmtDay(s.date)}</Text>
           <Text variant="footnote" tone="tertiary" style={{ marginTop: 2 }} numberOfLines={1}>
@@ -102,6 +107,13 @@ export function ExerciseHistory({ sessions, unit }: { sessions: SessionSummary[]
           })}
         </View>
       ))}
+      {sessions.length > shown ? (
+        <Tap feedback="opacity" onPress={() => setShown((n) => n + HISTORY_PAGE)} style={styles.more} accessibilityRole="button" accessibilityLabel="Show older sessions">
+          <Text variant="headline" tone="accent">
+            {`Show older sessions (${sessions.length - shown})`}
+          </Text>
+        </Tap>
+      ) : null}
     </View>
   );
 }
@@ -417,6 +429,7 @@ export function ExerciseRecords({ sessions, unit }: { sessions: SessionSummary[]
 
 const styles = StyleSheet.create({
   card: { backgroundColor: color.surface, borderRadius: radius.lg, borderCurve: 'continuous', padding: space.md },
+  more: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   empty: { alignItems: 'center', paddingVertical: space.xxxl, paddingHorizontal: space.lg },
   emptyIcon: {
     width: 56,
