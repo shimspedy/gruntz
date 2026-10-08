@@ -189,7 +189,7 @@ const featureData = {
           <div class="feature-list reveal">
             <h3>{t.featuresHead.listTitle}</h3>
             <p>{t.featuresHead.listSub}</p>
-            <div role="tablist" aria-label={t.featuresHead.tablistLabel}>
+            <div role="tablist" aria-label={t.featuresHead.tablistLabel} id="feature-tabs" data-features={JSON.stringify(featureData)}>
               {t.features.map((f, i) => (
                 <button
                   class="feature-tab"
@@ -273,58 +273,7 @@ const featureData = {
 
   <Footer lang={lang} />
 
-  <script define:vars={{ featureData }}>
-    // Feature tabs: swap the phone screen and copy, with arrow-key support.
-    const { features, counter, screenAlt } = featureData;
-    const tabs = Array.from(document.querySelectorAll('.feature-tab'));
-    const screen = document.getElementById('feature-screen');
-    const headline = document.getElementById('feature-headline');
-    const text = document.getElementById('feature-text');
-    const count = document.getElementById('feature-count');
-    const panel = document.getElementById('feature-panel');
-
-    const select = (i, focus) => {
-      tabs.forEach((t, j) => {
-        t.setAttribute('aria-selected', String(i === j));
-        t.tabIndex = i === j ? 0 : -1;
-      });
-      const f = features[i];
-      screen.style.opacity = '0';
-      setTimeout(() => {
-        screen.src = f.screen;
-        screen.alt = `${f.name} ${screenAlt}`;
-        screen.style.opacity = '1';
-      }, 180);
-      headline.textContent = f.headline;
-      text.textContent = f.copy;
-      count.textContent = `${counter} ${String(i + 1).padStart(2, '0')}`;
-      panel.setAttribute('aria-labelledby', tabs[i].id);
-      if (focus) tabs[i].focus();
-    };
-
-    tabs.forEach((t, i) => {
-      t.addEventListener('click', () => select(i, false));
-      t.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); select((i + 1) % tabs.length, true); }
-        if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); select((i - 1 + tabs.length) % tabs.length, true); }
-      });
-    });
-
-    // Preload the other screens so switching tabs is instant.
-    features.slice(1).forEach((f) => { const img = new Image(); img.src = f.screen; });
-  </script>
-
-  <script>
-    // Fade sections in as they scroll into view.
-    const els = document.querySelectorAll('.reveal');
-    if ('IntersectionObserver' in window) {
-      const io = new IntersectionObserver(
-        (entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); } }),
-        { rootMargin: '0px 0px -6% 0px', threshold: 0.04 },
-      );
-      els.forEach((el) => io.observe(el));
-    } else {
-      els.forEach((el) => el.classList.add('is-visible'));
-    }
-  </script>
+  {/* Loaded as files, not inline: the site's Content-Security-Policy only runs scripts
+      from its own origin, so an inline script here is blocked and the tabs do nothing. */}
+  <script src="../scripts/home.ts"></script>
 </BaseLayout>

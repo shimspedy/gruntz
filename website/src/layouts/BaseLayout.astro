@@ -39,7 +39,8 @@ const alternates = isHome
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta name="theme-color" content="#070708" />
-    <script is:inline>document.documentElement.classList.add('js');</script>
+    {/* A file, not inline: the Content-Security-Policy blocks inline scripts. */}
+    <script is:inline src="/js-flag.js"></script>
     <link rel="canonical" href={canonical} />
     {alternates.map((a) => <link rel="alternate" hreflang={a.lang} href={a.href} />)}
     {isHome ? <link rel="alternate" hreflang="x-default" href={new URL('/', site.url).toString()} /> : null}
