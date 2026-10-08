@@ -193,3 +193,39 @@ test('all weeks of all built-in programs reference valid movements', () => {
   }
   assert.equal(days, 151);
 });
+
+test('a weight typed on one set carries to the sets still to do, without overwriting choices or logged sets', () => {
+  const env = createWorkoutEnv();
+  env.session.getState().start(env.day(), DATE);
+  const key = env.session.getState().exercises[0].key;
+  const sets = () => env.session.getState().exercises[0].sets;
+  assert.ok(sets().length >= 3);
+  const [first, second, third] = sets().map((set) => set.id);
+  env.session.getState().updateSet(key, first, { weight: 30 });
+  assert.deepEqual(sets().slice(0, 3).map((set) => set.weight), [30, 30, 30]);
+  // Correcting the first set moves the ones that were following it.
+  env.session.getState().updateSet(key, first, { weight: 35 });
+  assert.deepEqual(sets().slice(0, 3).map((set) => set.weight), [35, 35, 35]);
+  // A set the athlete changed is theirs, and a later edit never reaches back up.
+  env.session.getState().updateSet(key, third, { weight: 50 });
+  assert.deepEqual(sets().slice(0, 3).map((set) => set.weight), [35, 35, 50]);
+  // A logged set keeps what was logged.
+  env.session.getState().toggleSet(key, second);
+  env.session.getState().updateSet(key, first, { weight: 40 });
+  assert.deepEqual(sets().slice(0, 3).map((set) => set.weight), [40, 35, 50]);
+});
+
+test('sets below follow a weight keystroke by keystroke, including through a cleared field', () => {
+  const env = createWorkoutEnv();
+  env.session.getState().start(env.day(), DATE);
+  const key = env.session.getState().exercises[0].key;
+  const weights = () => env.session.getState().exercises[0].sets.slice(0, 3).map((set) => set.weight);
+  const first = env.session.getState().exercises[0].sets[0].id;
+  for (const typed of [4, 45]) env.session.getState().updateSet(key, first, { weight: typed });
+  assert.deepEqual(weights(), [45, 45, 45]);
+  for (const typed of [4, undefined, 5, 50]) env.session.getState().updateSet(key, first, { weight: typed });
+  assert.deepEqual(weights(), [50, 50, 50]);
+  // Editing reps alone never touches anyone's weight.
+  env.session.getState().updateSet(key, first, { reps: 8 });
+  assert.deepEqual(weights(), [50, 50, 50]);
+});

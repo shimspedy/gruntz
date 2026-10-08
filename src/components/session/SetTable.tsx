@@ -18,6 +18,13 @@ interface Props {
 }
 
 const MAX_WEIGHT = 2000;
+
+/** Typed weight to a number, or undefined when the field is empty or not a weight. */
+function parseWeight(t: string): number | undefined {
+  // Comma first: the decimal pad in most of Europe has no ".", and stripping the comma turned 72,5 into 725.
+  const n = Number(t.replace(/,/g, '.').replace(/[^0-9.]/g, '').replace(/\.(?=.*\.)/g, ''));
+  return t.trim() && Number.isFinite(n) && n > 0 ? Math.min(n, MAX_WEIGHT) : undefined;
+}
 const MAX_REPS = 999;
 const MAX_SECONDS = 4 * 60 * 60;
 
@@ -211,9 +218,7 @@ function SetRow({
 
   const commitWeight = (t: string) => {
     setWeightDraft(null);
-    // Comma first: the decimal pad in most of Europe has no ".", and stripping the comma turned 72,5 into 725.
-    const n = Number(t.replace(/,/g, '.').replace(/[^0-9.]/g, '').replace(/\.(?=.*\.)/g, ''));
-    onChange({ weight: t.trim() && Number.isFinite(n) && n > 0 ? Math.min(n, MAX_WEIGHT) : undefined });
+    onChange({ weight: parseWeight(t) });
   };
   const commitValue = (t: string) => {
     setValueDraft(null);
@@ -240,7 +245,12 @@ function SetRow({
           <TextInput
             maxFontSizeMultiplier={1.4}
             value={weightValue}
-            onChangeText={setWeightDraft}
+            // Stored as it is typed, not only on blur, so the sets below fill in while the
+            // field still has focus. The draft keeps the raw text ("22.") on screen.
+            onChangeText={(t) => {
+              setWeightDraft(t);
+              onChange({ weight: parseWeight(t) });
+            }}
             onBlur={() => commitWeight(weightValue)}
             onSubmitEditing={() => commitWeight(weightValue)}
             maxLength={7}

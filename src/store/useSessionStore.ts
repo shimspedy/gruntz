@@ -403,13 +403,28 @@ export const useSessionStore = create<SessionState>()(
 
       updateSet: (exKey, setId, patch) => {
         set((s) => ({
-          exercises: s.exercises.map((e) =>
-            e.key !== exKey ? e : { ...e, sets: e.sets.map((st) => {
-              if (st.id !== setId) return st;
+          exercises: s.exercises.map((e) => {
+            if (e.key !== exKey) return e;
+            const at = e.sets.findIndex((st) => st.id === setId);
+            const edited = e.sets[at];
+            // A weight carries down to the sets still to do, so it is typed once rather
+            // than once per set. Only sets that are empty or still hold the value this one
+            // just had are touched: anything the athlete set differently, or already
+            // logged, is theirs. Warm-ups and working sets don't fill each other.
+            // This runs on every keystroke, so clearing the field clears its followers too:
+            // otherwise they would be stranded on a half-typed number and stop following.
+            const carries = !!edited && 'weight' in patch && patch.weight !== edited.weight;
+            const carry = typeof patch.weight === 'number' && patch.weight > 0 ? patch.weight : undefined;
+            return { ...e, sets: e.sets.map((st, i) => {
+              if (st.id !== setId) {
+                const follows = carries && i > at && !st.done && !!st.warmup === !!edited.warmup
+                  && (st.weight == null || st.weight === edited.weight);
+                return follows ? { ...st, weight: carry } : st;
+              }
               const next = { ...st, ...patch };
               return next.done && !hasSetResult(e.kind, next) ? { ...next, done: false } : next;
-            }) },
-          ),
+            }) };
+          }),
         }));
         if (get().restSetId === setId && !get().exercises.find((e) => e.key === exKey)?.sets.find((st) => st.id === setId)?.done) get().endRest();
       },
