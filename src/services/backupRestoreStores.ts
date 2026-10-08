@@ -32,9 +32,11 @@ async function storesForRestore() {
 /** Prepare every store before writing anything. Uses each store's existing migration. */
 export async function prepareStoreRestore(values: Record<string, string>): Promise<() => Promise<void>> {
   const stores = await storesForRestore();
-  const [{ flushUserPersistence }, { flushReadinessPersistence }] = await Promise.all([
+  const [{ flushUserPersistence }, { flushReadinessPersistence, routeMigrationSettled }] = await Promise.all([
     import('../store/useUserStore'), import('../store/useReadinessStore'),
   ]);
+  // A route migration still writing would recreate routes of the history being replaced.
+  await routeMigrationSettled?.();
   // Completed activity writes must settle before the backup replaces their keys.
   await Promise.all([flushUserPersistence(), flushReadinessPersistence()]);
   const updates: { target: RestorableStore; options: ReturnType<RestorableStore['persist']['getOptions']>; next: Record<string, unknown>; previous: Record<string, unknown> }[] = [];

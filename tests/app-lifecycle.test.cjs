@@ -64,7 +64,7 @@ function resetHarness() {
   stores.useUserStore = { getState: () => ({ reset: () => events.push('user-reset') }) };
   const mocks = {
     '@react-native-async-storage/async-storage': {
-      getAllKeys: async () => ['@gruntz_user','@gruntz_routines','@gruntz_readiness','@gruntz_subscription','@gruntz_backup_owner','unrelated'],
+      getAllKeys: async () => ['@gruntz_user','@gruntz_routines','@gruntz_readiness','@gruntz_route:run-1','@gruntz_subscription','@gruntz_backup_owner','unrelated'],
       multiRemove: async keys => { events.push([...keys]); },
     },
     'expo-secure-store': { deleteItemAsync: async key => events.push(key) },
@@ -86,7 +86,7 @@ test('delete local data clears every live store and preserves billing plus cloud
   assert.equal(events[0], 'backup-paused');
   assert.ok(events.includes('activity-files-cleared'));
   for (const [name, store] of Object.entries(stores)) if (name !== 'useUserStore') assert.equal(store.state.data, null, name);
-  assert.deepEqual(events.at(-1), ['@gruntz_user','@gruntz_routines','@gruntz_readiness']);
+  assert.deepEqual(events.at(-1), ['@gruntz_user','@gruntz_routines','@gruntz_readiness','@gruntz_route:run-1']);
   assert.equal(stores.useProgramStore.state.hasHydrated, true);
 });
 

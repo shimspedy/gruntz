@@ -9,6 +9,7 @@ import { useReadinessStore, type TrackedSession } from '../store/useReadinessSto
 import { useUserStore } from '../store/useUserStore';
 import { activityAccent, activityAscent, activityDateLabel, activityDistance, activityDuration, activityLabel, activityPace, activityTotals, sortActivities, type ActivityUnits } from '../utils/activityDisplay';
 import { ActivityRouteArt } from '../components/activity/ActivityRouteArt';
+import { useActivityRoute } from '../hooks/useActivityRoute';
 import { Button } from '../ui/Button';
 import { Chip, EmptyState, NavHeader } from '../ui/Layout';
 import { Icon } from '../ui/Icon';
@@ -65,6 +66,8 @@ const HistoryCard = React.memo(function HistoryCard({ session, units, onOpen }: 
   const tint = activityAccent(session.type);
   const distance = activityDistance(session.distanceMiles, units);
   const pace = activityPace(session, units);
+  // Loaded per visible card; the summary above never waits for it.
+  const { route, status } = useActivityRoute(session);
   return (
     <Tap onPress={() => onOpen(session.id)} accessibilityLabel={`${activityLabel(session.type)}, ${distance.value} ${distance.unit}, ${activityDateLabel(session)}, open activity`} style={styles.card} feedback="scale" scaleTo={0.985}>
       <View style={styles.cardHeader}>
@@ -79,7 +82,7 @@ const HistoryCard = React.memo(function HistoryCard({ session, units, onOpen }: 
           <Text tabular style={styles.cardDistance}>{distance.value}<Text variant="headline" tone="secondary"> {distance.unit}</Text></Text>
           <Text variant="callout" numberOfLines={2} style={{ color: color.textSecondary, marginTop: 5 }}>{session.title?.trim() || `${activityLabel(session.type)} · ${session.terrain || 'outdoors'}`}</Text>
         </View>
-        {session.route?.length ? <View style={styles.thumbnail}><ActivityRouteArt route={session.route} tint={tint} height={96} /></View> : <View style={styles.noRoute}><Icon name="location" size={24} color={color.textQuaternary} /></View>}
+        {route.length ? <View style={styles.thumbnail}><ActivityRouteArt route={route} tint={tint} height={96} /></View> : status === 'loading' ? <View style={styles.thumbnail} /> : <View style={styles.noRoute}><Icon name="location" size={24} color={color.textQuaternary} /></View>}
       </View>
       <View style={styles.cardFooter}>
         <Text variant="footnote" tone="secondary" tabular>{activityDuration(session.durationSeconds)}</Text>

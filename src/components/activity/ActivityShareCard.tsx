@@ -15,9 +15,9 @@ export type ActivityCardTheme = 'field' | 'signal';
 export interface ActivityShareCardRef { prepareCapture: () => Promise<void> }
 
 export const ActivityShareCard = forwardRef<ActivityShareCardRef, {
-  session: TrackedSession; route: RoutePoint[]; units: ActivityUnits; tint: string; width: number;
+  session: TrackedSession; route: RoutePoint[]; routeRecorded: boolean; units: ActivityUnits; tint: string; width: number;
   theme: ActivityCardTheme; endpointsHidden: boolean; routeIncluded: boolean;
-}>(function ActivityShareCard({ session, route, units, tint, width, theme, endpointsHidden, routeIncluded }, ref) {
+}>(function ActivityShareCard({ session, route, routeRecorded, units, tint, width, theme, endpointsHidden, routeIncluded }, ref) {
   const artRef = useRef<ActivityRouteArtRef>(null);
   const [mapUri, setMapUri] = useState<string | null>(null);
   const [artUri, setArtUri] = useState<string | null>(null);
@@ -90,7 +90,7 @@ export const ActivityShareCard = forwardRef<ActivityShareCardRef, {
             onLoad={() => { loadedUri.current = imageUri; loadWaiters.current.splice(0).forEach(({ resolve }) => resolve()); }}
             onError={() => { loadWaiters.current.splice(0).forEach(({ reject }) => reject(new Error('The preview image could not load.'))); setMapUri(null); setArtUri(null); loadedUri.current = null; }} />
             : <ActivityRouteArt ref={artRef} route={route} tint={tint} height={mapHeight} />
-        ) : <ActivityRouteArt route={[]} tint={tint} height={mapHeight} emptyLabel={routeIncluded && session.route?.length ? 'Route hidden by endpoint privacy' : routeIncluded ? 'The miles still count.\nNo GPS route recorded.' : 'The miles. The effort.\nThe mission.'} />}
+        ) : <ActivityRouteArt route={[]} tint={tint} height={mapHeight} emptyLabel={routeIncluded && routeRecorded ? 'Route hidden by endpoint privacy' : routeIncluded ? 'The miles still count.\nNo GPS route recorded.' : 'The miles. The effort.\nThe mission.'} />}
         <View style={styles.routeBadge}>
           <View style={[styles.dot, { backgroundColor: tint }]} />
           <Text variant="caption" style={{ color: '#D9E5E6' }}>{routeIncluded && hasRoute ? endpointsHidden ? 'START / END HIDDEN' : 'FULL ROUTE' : 'ACTIVITY SUMMARY'}</Text>
