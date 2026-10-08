@@ -1,8 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BACKUP_SCHEMA_VERSION } from '../config/backup';
 import { prepareStoreRestore } from './backupRestoreStores';
-import { isTrackedSession } from '../features/activityHistory';
+import { isTrackedSession, splitTrackedSession } from '../features/activityHistory';
 import { READINESS_STORAGE_KEY, readinessStorage } from '../store/readinessStorage';
+import { loadRoute, pruneRoutes, stageRoutes } from '../store/activityRoutes';
+import type { RoutePoint } from '../types/activity';
 
 /** Reject oversized snapshots rather than silently dropping activity history or routes. */
 export const MAX_BACKUP_PAYLOAD_BYTES = 32 * 1024 * 1024;
@@ -29,6 +31,9 @@ function utf8Bytes(text: string): number {
  *
  * Snapshots are taken from persisted storage rather than live Zustand stores.
  * Android activity history uses complete file revisions; other stores use AsyncStorage.
+ * GPS routes are stored one item per activity (`@gruntz_route:<id>`), outside this
+ * allowlist. With the route preference on they are folded back into each activity
+ * as `route`, so the snapshot format is the one every earlier build reads and writes.
  * Apart from the explicit route privacy preference, what is on disk is what a fresh install would
  * rehydrate, so a restore reproduces the device rather than a re-serialisation of
  * whatever happens to be in memory. It also means this module does not import the
@@ -93,16 +98,25 @@ export async function captureSnapshot(): Promise<BackupSnapshot> {
     if (typeof value !== 'string' || !value.length) continue;
     if (key === '@gruntz_readiness') {
       const parsed: unknown = JSON.parse(value);
-      if (isRecord(parsed) && isRecord(parsed.state)
-        && parsed.state.includeActivityRoutesInBackup !== true
-        && Array.isArray(parsed.state.trackedSessions)) {
+      if (isRecord(parsed) && isRecord(parsed.state) && Array.isArray(parsed.state.trackedSessions)) {
         // Existing backup users have never consented to precise location uploads.
         // Only the cloud copy loses routes; local history remains complete.
-        parsed.state.trackedSessions = parsed.state.trackedSessions.map((activity: unknown) => {
-          if (!isRecord(activity)) return activity;
-          const { route: _route, ...summary } = activity;
-          return summary;
-        });
+        const include = parsed.state.includeActivityRoutesInBackup === true;
+        const activities: unknown[] = [];
+        for (const activity of parsed.state.trackedSessions as unknown[]) {
+          if (!isRecord(activity)) { activities.push(activity); continue; }
+          // `routePoints` describes this device's route storage and never travels.
+          const { route, routePoints, ...summary } = activity;
+          if (!include) { activities.push(summary); continue; }
+          // A route an older build left inline, not yet migrated, is used as it is.
+          if (route !== undefined) { activities.push({ ...summary, route }); continue; }
+          // A storage failure rejects the capture: uploading a copy without the
+          // route would replace a cloud backup that still has it.
+          const stored = typeof summary.id === 'string' && typeof routePoints === 'number' && routePoints > 0
+            ? await loadRoute(summary.id) : null;
+          activities.push(stored?.length ? { ...summary, route: stored } : summary);
+        }
+        parsed.state.trackedSessions = activities;
         stores[key] = JSON.stringify(parsed);
         continue;
       }
@@ -130,7 +144,7 @@ export async function captureSnapshot(): Promise<BackupSnapshot> {
  * overwrite the restored backup with the device's previous state.
  */
 export async function applySnapshot(snapshot: BackupSnapshot): Promise<void> {
-  const pairs = validateSnapshot(snapshot);
+  const { pairs, routes } = separateRoutes(validateSnapshot(snapshot));
   const updateMemory = await prepareStoreRestore(Object.fromEntries(pairs));
   // Stop the native task before replacing any data; a queued location callback
   // must not resurrect a draft belonging to the profile being replaced.
@@ -141,7 +155,11 @@ export async function applySnapshot(snapshot: BackupSnapshot): Promise<void> {
   const keys = [...BACKED_UP_KEYS, '@gruntz_session'];
   const previous = await readStores(keys);
   const missing = keys.filter((key) => !pairs.some(([saved]) => saved === key));
+  let staged: { rollback: () => Promise<void> } | undefined;
   try {
+    // Routes first, and nothing is deleted yet: summaries never reach disk ahead
+    // of their routes, and the device's current routes survive a failed restore.
+    staged = await stageRoutes(routes);
     await writeStores(pairs);
     if (missing.length) await removeStores(missing);
     await updateMemory();
@@ -150,10 +168,43 @@ export async function applySnapshot(snapshot: BackupSnapshot): Promise<void> {
     // a partial write fails, before reporting failure to the athlete.
     const oldValues = previous.filter((entry): entry is [string, string] => entry[1] !== null);
     const oldMissing = previous.filter(([, value]) => value === null).map(([key]) => key);
-    await writeStores(oldValues);
-    if (oldMissing.length) await removeStores(oldMissing);
+    try {
+      await writeStores(oldValues);
+      if (oldMissing.length) await removeStores(oldMissing);
+    } finally {
+      await staged?.rollback().catch(() => undefined);
+    }
     throw error;
   }
+  // The restore is committed. Routes of activities it replaced are now orphans;
+  // failing to delete them must not report a completed restore as failed.
+  await pruneRoutes(routes.map(([id]) => id)).catch(() => undefined);
+}
+
+/**
+ * A snapshot carries each route inline. Locally the summary and the route are
+ * stored separately, so split them before anything is written.
+ */
+function separateRoutes(validated: [string, string][]): { pairs: [string, string][]; routes: [string, RoutePoint[]][] } {
+  const routes: [string, RoutePoint[]][] = [];
+  const pairs = validated.map(([key, raw]): [string, string] => {
+    if (key !== READINESS_STORAGE_KEY) return [key, raw];
+    const parsed = JSON.parse(raw) as { state: { trackedSessions?: unknown[] } };
+    const activities = parsed.state.trackedSessions;
+    if (!Array.isArray(activities)) return [key, raw];
+    const counts = new Map<string, number>();
+    for (const activity of activities) if (isTrackedSession(activity)) counts.set(activity.id, (counts.get(activity.id) ?? 0) + 1);
+    parsed.state.trackedSessions = activities.map((activity) => {
+      // validateSnapshot has accepted every activity. Records sharing an ID cannot
+      // share one route item, so theirs stay inline rather than overwrite each other.
+      if (!isTrackedSession(activity) || counts.get(activity.id) !== 1) return activity;
+      const { summary, route } = splitTrackedSession(activity);
+      if (route) routes.push([summary.id, route]);
+      return summary;
+    });
+    return [key, JSON.stringify(parsed)];
+  });
+  return { pairs, routes };
 }
 
 

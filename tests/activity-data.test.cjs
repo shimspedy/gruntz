@@ -15,6 +15,7 @@ function storage(seed = {}) {
   const disk = {
     data, events, failKey: null, delay: null,
     getItem: async key => data.get(key) ?? null,
+    getAllKeys: async () => [...data.keys()],
     setItem: async (key, value) => {
       if (disk.delay) await disk.delay;
       if (key === disk.failKey) throw Error('disk unavailable');
@@ -58,20 +59,26 @@ test('long routes retain both pause boundaries and endpoints without changing re
   const disk = storage();
   const load = loader(disk);
   const { MAX_SAVED_ROUTE_POINTS } = load('src/features/activityHistory.ts');
-  const { useReadinessStore } = load('src/store/useReadinessStore.ts');
+  const { useReadinessStore, saveTrackedActivity } = load('src/store/useReadinessStore.ts');
+  const { loadRoute } = load('src/store/activityRoutes.ts');
   await tick();
   const route = Array.from({ length: 8000 }, (_, i) => point(i, i < 4000 ? 0 : 1));
-  assert.equal(useReadinessStore.getState().addTrackedSession(activity({ route, type: 'hike', distanceMiles: 15.5, durationSeconds: 9000 })), true);
+  assert.equal(await saveTrackedActivity(activity({ route, type: 'hike', distanceMiles: 15.5, durationSeconds: 9000 })), true);
   const saved = useReadinessStore.getState().trackedSessions[0];
-  assert.equal(saved.route.length, MAX_SAVED_ROUTE_POINTS);
-  assert.equal(saved.route[0].timestamp, route[0].timestamp);
-  assert.equal(saved.route.at(-1).timestamp, route.at(-1).timestamp);
-  assert.ok(saved.route.some(p => p.timestamp === route[3999].timestamp));
-  assert.ok(saved.route.some(p => p.timestamp === route[4000].timestamp));
+  // The summary holds a count; the points themselves live in route storage.
+  assert.equal(saved.route, undefined);
+  assert.equal(saved.routePoints, MAX_SAVED_ROUTE_POINTS);
+  const savedRoute = await loadRoute(saved.id);
+  assert.equal(savedRoute.length, MAX_SAVED_ROUTE_POINTS);
+  assert.equal(savedRoute[0].timestamp, route[0].timestamp);
+  assert.equal(savedRoute.at(-1).timestamp, route.at(-1).timestamp);
+  assert.ok(savedRoute.some(p => p.timestamp === route[3999].timestamp));
+  assert.ok(savedRoute.some(p => p.timestamp === route[4000].timestamp));
   assert.equal(saved.distanceMiles, 15.5);
   assert.equal(saved.durationSeconds, 9000);
   route[0].latitude = 0;
-  assert.equal(saved.route[0].latitude, 42);
+  assert.equal(savedRoute[0].latitude, 42);
+  assert.equal(JSON.parse(disk.data.get('@gruntz_route:activity-1')).points[0].latitude, 42);
 });
 
 test('durability waits for native storage and retries a failed latest write', async () => {
@@ -143,7 +150,12 @@ test('backup restores complete route metadata and legacy v1 activities through t
   await tick();
   const saved = activity({ type: 'hike', startedAt: new Date(START).toISOString(), steps: 15000, caloriesEstimate: 500, title: 'Morning hike', stepsLimited: true, route: [point(0), point(1)] });
   await service.applySnapshot(snapshot([saved]));
-  assert.deepEqual(readiness.useReadinessStore.getState().trackedSessions, [saved]);
+  // Every summary field is restored; the inline route ends up in route storage, not the store.
+  const { route: savedRoute, ...summary } = saved;
+  assert.deepEqual(readiness.useReadinessStore.getState().trackedSessions, [{ ...summary, routePoints: 2 }]);
+  assert.deepEqual(JSON.parse(disk.data.get('@gruntz_readiness')).state.trackedSessions, [{ ...summary, routePoints: 2 }]);
+  assert.deepEqual(await loader(disk)('src/store/activityRoutes.ts').loadRoute(saved.id), savedRoute);
+  assert.ok(disk.events.indexOf('write:@gruntz_route:activity-1') < disk.events.indexOf('write:@gruntz_readiness'));
   assert.equal(disk.data.has('@gruntz_active_activity'), false);
   const stopAt = disk.events.indexOf('tracking-stopped');
   assert.ok(stopAt >= 0 && stopAt < disk.events.lastIndexOf('write:@gruntz_readiness'));
@@ -152,26 +164,34 @@ test('backup restores complete route metadata and legacy v1 activities through t
   const captured = await service.captureSnapshot();
   assert.equal(captured.schema_version, 2);
   assert.equal(service.snapshotWorkoutCount(captured), 1);
-  assert.deepEqual(JSON.parse(captured.stores['@gruntz_readiness']).state.trackedSessions[0].route, saved.route);
+  // Captured exactly as an older build wrote it: the route inline, no local bookkeeping.
+  assert.deepEqual(JSON.parse(captured.stores['@gruntz_readiness']).state.trackedSessions, [saved]);
   const legacy = activity({ id: 'old-run' });
   await service.applySnapshot(snapshot([legacy], 1));
   assert.deepEqual(readiness.useReadinessStore.getState().trackedSessions, [legacy]);
+  // The replaced activity's route does not linger as an orphan.
+  assert.deepEqual([...disk.data.keys()].filter(key => key.startsWith('@gruntz_route:')), []);
   assert.equal(readiness.useReadinessStore.getState().includeActivityRoutesInBackup, false);
 });
 
 test('cloud routes require explicit opt-in, while local history always retains the route', async () => {
   const disk = storage();
   const load = loader(disk);
-  const { useReadinessStore, flushReadinessPersistence } = load('src/store/useReadinessStore.ts');
+  const { useReadinessStore, flushReadinessPersistence, saveTrackedActivity } = load('src/store/useReadinessStore.ts');
   const { captureSnapshot } = load('src/services/backupSnapshot.ts');
   await tick();
   assert.equal(useReadinessStore.getState().includeActivityRoutesInBackup, false);
   const saved = activity({ route: [point(0), point(1)] });
-  useReadinessStore.getState().addTrackedSession(saved);
+  await saveTrackedActivity(saved);
   await flushReadinessPersistence();
   const local = disk.data.get('@gruntz_readiness');
-  const first = JSON.parse((await captureSnapshot()).stores['@gruntz_readiness']).state;
+  const localRoute = disk.data.get('@gruntz_route:activity-1');
+  const firstCapture = await captureSnapshot();
+  assert.deepEqual(Object.keys(firstCapture.stores), ['@gruntz_readiness']);
+  assert.ok(!JSON.stringify(firstCapture).includes('latitude'));
+  const first = JSON.parse(firstCapture.stores['@gruntz_readiness']).state;
   assert.equal(first.trackedSessions[0].route, undefined);
+  assert.equal(first.trackedSessions[0].routePoints, undefined);
   assert.equal(first.trackedSessions[0].distanceMiles, 1);
   assert.equal(disk.data.get('@gruntz_readiness'), local);
   useReadinessStore.getState().setIncludeActivityRoutesInBackup(true);
@@ -181,7 +201,9 @@ test('cloud routes require explicit opt-in, while local history always retains t
   useReadinessStore.getState().setIncludeActivityRoutesInBackup(false);
   await flushReadinessPersistence();
   assert.equal(JSON.parse((await captureSnapshot()).stores['@gruntz_readiness']).state.trackedSessions[0].route, undefined);
-  assert.deepEqual(JSON.parse(disk.data.get('@gruntz_readiness')).state.trackedSessions[0].route, saved.route);
+  // Local history keeps the route throughout, now in its own item.
+  assert.equal(disk.data.get('@gruntz_route:activity-1'), localRoute);
+  assert.deepEqual(await loader(disk)('src/store/activityRoutes.ts').loadRoute('activity-1'), saved.route);
 });
 
 test('existing backup users with no route preference never upload precise routes', async () => {

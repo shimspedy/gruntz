@@ -11,7 +11,7 @@ import { useRunTracker, type RunTrackerState } from '../hooks/useRunTracker';
 import { discardActiveActivity, initializeActivityTracking } from '../services/activityTracking';
 import { useTrainingAccess } from '../store/useSubscriptionStore';
 import { scheduleBackup } from '../services/backup';
-import { flushReadinessPersistence, useReadinessStore } from '../store/useReadinessStore';
+import { flushReadinessPersistence, saveTrackedActivity, useReadinessStore } from '../store/useReadinessStore';
 import { KG_PER_LB } from '../store/useExerciseLogStore';
 import { DEFAULT_BODY_WEIGHT_LBS } from '../hooks/useRunTracker';
 import { flushUserPersistence, useUserStore } from '../store/useUserStore';
@@ -55,7 +55,6 @@ export default function RunTrackerScreen() {
   const batterySaver = useReadinessStore((s) => s.batterySaver);
   const keepAwake = useReadinessStore((s) => s.keepScreenAwake);
   const audioCues = useReadinessStore((s) => s.audioCues);
-  const addSession = useReadinessStore((s) => s.addTrackedSession);
   const recordTrackedSession = useUserStore((s) => s.recordTrackedSession);
   const metric = useUserStore((s) => s.profile?.settings.units === 'metric');
   const [type, setType] = useState<ActivityType>(params?.type ?? 'run');
@@ -208,7 +207,9 @@ export default function RunTrackerScreen() {
       const final = await tracker.stop();
       const id = final.sessionId;
       if (!id) throw new Error('No recorded activity was found.');
-      const added = addSession({
+      // The route is written to its own storage before the summary joins history. A
+      // failed write throws here: nothing is credited and the draft stays for a retry.
+      const added = await saveTrackedActivity({
         id,
         type: final.activityType,
         date: new Date().toISOString(),
@@ -239,7 +240,7 @@ export default function RunTrackerScreen() {
       pendingRef.current = false;
       if (mounted.current) setPending(false);
     }
-  }, [tracker, addSession, recordTrackedSession]);
+  }, [tracker, recordTrackedSession]);
 
   const end = () => {
     const label = type;

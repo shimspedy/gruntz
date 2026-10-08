@@ -1,5 +1,5 @@
 import type { RoutePoint } from '../types/activity';
-import type { TrackedSession } from '../store/useReadinessStore';
+import type { RecordedActivity, TrackedSession } from '../store/useReadinessStore';
 
 /** Bound each saved map, while retaining every activity's summary and full totals. */
 export const MAX_SAVED_ROUTE_POINTS = 6000;
@@ -23,7 +23,7 @@ export function isRoutePoint(value: unknown): value is RoutePoint {
 }
 
 /** Legacy run/ruck records do not need any of the optional map or sensor fields. */
-export function isTrackedSession(value: unknown, maxRoutePoints = MAX_SAVED_ROUTE_POINTS): value is TrackedSession {
+export function isTrackedSession(value: unknown, maxRoutePoints = MAX_SAVED_ROUTE_POINTS): value is RecordedActivity {
   if (!record(value) || typeof value.id !== 'string' || !value.id.length || value.id.length > 200
     || !['run', 'ruck', 'hike'].includes(value.type as string) || !date(value.date)
     || !nonnegative(value.distanceMiles) || !nonnegative(value.durationSeconds) || !nonnegative(value.elevationFeet)
@@ -32,7 +32,8 @@ export function isTrackedSession(value: unknown, maxRoutePoints = MAX_SAVED_ROUT
     || (value.startedAt !== undefined && !date(value.startedAt))
     || (value.steps !== undefined && (!nonnegative(value.steps) || !Number.isInteger(value.steps)))
     || (value.caloriesEstimate !== undefined && !nonnegative(value.caloriesEstimate))
-    || (value.stepsLimited !== undefined && typeof value.stepsLimited !== 'boolean')) return false;
+    || (value.stepsLimited !== undefined && typeof value.stepsLimited !== 'boolean')
+    || (value.routePoints !== undefined && (!nonnegative(value.routePoints) || !Number.isInteger(value.routePoints)))) return false;
   if (value.route === undefined) return true;
   if (!Array.isArray(value.route) || value.route.length > maxRoutePoints) return false;
   let previousTimestamp = -1;
@@ -62,9 +63,19 @@ export function compactSavedRoute(route: RoutePoint[]): RoutePoint[] | null {
 }
 
 /** Returns an independent saved record; the recording engine may keep mutating its own route. */
-export function prepareTrackedSession(value: TrackedSession): TrackedSession | null {
+export function prepareTrackedSession(value: RecordedActivity): RecordedActivity | null {
   if (!isTrackedSession(value, MAX_CAPTURED_ROUTE_POINTS)) return null;
   const route = value.route ? compactSavedRoute(value.route) : undefined;
   if (route === null) return null;
   return { ...value, ...(route ? { route } : {}) };
+}
+
+/**
+ * Separates a record into the summary the store keeps and the route stored on its
+ * own. `routePoints` always describes the route actually present, never a claim
+ * carried in from elsewhere.
+ */
+export function splitTrackedSession(value: RecordedActivity): { summary: TrackedSession; route?: RoutePoint[] } {
+  const { route, routePoints: _claimed, ...summary } = value;
+  return route?.length ? { summary: { ...summary, routePoints: route.length }, route } : { summary };
 }

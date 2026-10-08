@@ -37,6 +37,7 @@ export async function resetLocalData() {
   useProgramStore.setState({ ...useProgramStore.getInitialState(), hasHydrated: true });
   useUserStore.getState().reset();
   await Promise.all([flushUserPersistence(), flushReadinessPersistence()]);
+  // Also deletes every saved GPS route, which on Android are files the key sweep below cannot see.
   await clearReadinessPersistence();
   await useSessionStore.persist.clearStorage();
   const keys = await AsyncStorage.getAllKeys();

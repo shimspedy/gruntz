@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { Alert, Modal, PixelRatio, Platform, ScrollView, StyleSheet, Switch, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, PixelRatio, Platform, ScrollView, StyleSheet, Switch, useWindowDimensions, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Sharing from 'expo-sharing';
@@ -11,6 +11,7 @@ import { activityAccent, activityAscent, activityDateLabel, activityDistance, ac
 import { privateRoute } from '../utils/activityRoute';
 import { activityCaptureSize } from '../utils/activityCapture';
 import { ActivityRouteMap } from '../components/activity/ActivityRouteMap';
+import { useActivityRoute } from '../hooks/useActivityRoute';
 import { ActivityShareCard, type ActivityCardTheme, type ActivityShareCardRef } from '../components/activity/ActivityShareCard';
 import { Button } from '../ui/Button';
 import { Chip, EmptyState, IconButton, NavHeader, Stat } from '../ui/Layout';
@@ -23,6 +24,7 @@ export default function ActivityDetailScreen({ route, navigation }: NativeStackS
   const session = useReadinessStore((state) => state.trackedSessions.find((item) => item.id === route.params?.sessionId));
   const units = useUserStore((state) => state.profile?.settings.units ?? 'imperial');
   const [shareOpen, setShareOpen] = useState(false);
+  const { route: savedRoute, status: routeStatus } = useActivityRoute(session);
   if (!session) return <View style={styles.screen}><NavHeader title="Activity" /><EmptyState icon="location" title="Activity unavailable" body="This activity may have been removed or replaced by a backup."><Button title="Open field history" onPress={() => navigation.replace('ActivityHistory')} /></EmptyState></View>;
   const distance = activityDistance(session.distanceMiles, units);
   const pace = activityPace(session, units);
@@ -35,7 +37,9 @@ export default function ActivityDetailScreen({ route, navigation }: NativeStackS
         <Text variant="overline" style={{ color: tint }}>{activityDateLabel(session, true)}</Text>
         <Text variant="title" style={{ marginTop: 10 }}>{session.title?.trim() || `${activityLabel(session.type)} · mission complete`}</Text>
         <View style={styles.heroDistance}><Text tabular style={styles.distance}>{distance.value}</Text><Text variant="section" tone="secondary" style={{ paddingBottom: 9 }}>{distance.unit}</Text></View>
-        {session.route?.length ? <ActivityRouteMap route={session.route} tint={tint} /> : <View style={styles.legacy}><Icon name="location" size={24} color={color.textSecondary} /><Text variant="callout" tone="secondary" style={{ flex: 1 }}>This activity has saved stats but no GPS route. New tracked activities include their route.</Text></View>}
+        {savedRoute.length ? <ActivityRouteMap route={savedRoute} tint={tint} />
+          : routeStatus === 'loading' ? <View style={styles.routeLoading} accessibilityLabel="Loading route"><ActivityIndicator color={tint} /></View>
+            : <View style={styles.legacy}><Icon name="location" size={24} color={color.textSecondary} /><Text variant="callout" tone="secondary" style={{ flex: 1 }}>{routeStatus === 'missing' ? 'This activity’s route couldn’t be loaded. Its stats are saved.' : 'This activity has saved stats but no GPS route. New tracked activities include their route.'}</Text></View>}
         <View style={styles.stats}>
           <Stat label="Active time" value={activityDuration(session.durationSeconds)} style={styles.stat} />
           <Stat label={`Average pace ${pace.unit}`} value={pace.value} style={styles.stat} />
@@ -67,7 +71,9 @@ function SharePreview({ session, units, onClose }: { session: TrackedSession; un
   const card = useRef<ActivityShareCardRef>(null);
   const layout = useRef({ width: 0, height: 0 });
   const busy = useRef(false);
-  const visibleRoute = useMemo(() => !includeRoute ? [] : hideEndpoints ? privateRoute(session.route) : (session.route ?? []), [includeRoute, hideEndpoints, session.route]);
+  // Already in memory from the detail screen; the endpoint privacy below is applied to the loaded route.
+  const { route: savedRoute, status: routeStatus } = useActivityRoute(session);
+  const visibleRoute = useMemo(() => !includeRoute ? [] : hideEndpoints ? privateRoute(savedRoute) : savedRoute, [includeRoute, hideEndpoints, savedRoute]);
   const tint = theme === 'signal' ? '#63BBFF' : activityAccent(session.type);
 
   const share = async () => {
@@ -97,10 +103,10 @@ function SharePreview({ session, units, onClose }: { session: TrackedSession; un
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, paddingBottom: 24, alignItems: 'center' }}>
       <Text variant="callout" tone="secondary" align="center" style={{ maxWidth: 360, marginBottom: 20 }}>A field note worth keeping. Preview exactly what you’ll share.</Text>
       <View ref={cardView} collapsable={false} onLayout={(event) => { layout.current = event.nativeEvent.layout; }}>
-        <ActivityShareCard key={`${session.id}-${hideEndpoints}-${includeRoute}-${theme}`} ref={card} session={session} route={visibleRoute} units={units} tint={tint} width={Math.min(width - 32, 420)} theme={theme} endpointsHidden={hideEndpoints} routeIncluded={includeRoute} />
+        <ActivityShareCard key={`${session.id}-${hideEndpoints}-${includeRoute}-${theme}-${routeStatus}`} ref={card} session={session} route={visibleRoute} routeRecorded={savedRoute.length > 0} units={units} tint={tint} width={Math.min(width - 32, 420)} theme={theme} endpointsHidden={hideEndpoints} routeIncluded={includeRoute} />
       </View>
       <View style={styles.themeRow}><Chip label="Field" active={theme === 'field'} onPress={() => { if (!busy.current) setTheme('field'); }} /><Chip label="Signal" active={theme === 'signal'} onPress={() => { if (!busy.current) setTheme('signal'); }} /></View>
-      {session.route?.length ? <View style={styles.privacy}>
+      {savedRoute.length ? <View style={styles.privacy}>
         <View style={styles.toggleRow}><Text variant="headline" style={{ flex: 1 }}>Include route</Text><Switch accessibilityLabel="Include route on share card" value={includeRoute} disabled={sharing} onValueChange={setIncludeRoute} trackColor={{ true: color.accent }} /></View>
         {includeRoute ? <>
           <View style={styles.toggleRow}><Text variant="headline" style={{ flex: 1 }}>Hide start & end</Text><Switch accessibilityLabel="Hide locations within 200 meters of start and end" value={hideEndpoints} disabled={sharing} onValueChange={(value) => {
@@ -111,7 +117,7 @@ function SharePreview({ session, units, onClose }: { session: TrackedSession; un
         </> : <Text variant="footnote" tone="secondary">Your card will share the activity stats without a route.</Text>}
       </View> : null}
     </ScrollView>
-    <View style={[styles.shareFooter, { paddingBottom: insets.bottom + 12 }]}><Button title="Share image" icon="share" loading={sharing} onPress={() => { void share(); }} /><Text variant="caption" tone="secondary" align="center" style={{ marginTop: 10 }}>Opens your device’s share sheet. Nothing is posted automatically.</Text></View>
+    <View style={[styles.shareFooter, { paddingBottom: insets.bottom + 12 }]}><Button title="Share image" icon="share" loading={sharing || routeStatus === 'loading'} onPress={() => { void share(); }} /><Text variant="caption" tone="secondary" align="center" style={{ marginTop: 10 }}>Opens your device’s share sheet. Nothing is posted automatically.</Text></View>
   </View>;
 }
 
@@ -119,6 +125,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: color.bg },
   heroDistance: { flexDirection: 'row', alignItems: 'flex-end', gap: 12, marginVertical: 20 },
   distance: { fontFamily: font.black, fontSize: 68, lineHeight: 76, letterSpacing: -2.5 },
+  routeLoading: { height: 320, borderRadius: 20, backgroundColor: color.surface, alignItems: 'center', justifyContent: 'center' },
   legacy: { backgroundColor: color.surface, borderRadius: 20, padding: 20, flexDirection: 'row', gap: 14, alignItems: 'center' },
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingVertical: 22 },
   stat: { flexBasis: '46%', flexGrow: 1, padding: 16, backgroundColor: color.bgRaised, borderRadius: 16 },
