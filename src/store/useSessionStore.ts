@@ -415,11 +415,16 @@ export const useSessionStore = create<SessionState>()(
             // otherwise they would be stranded on a half-typed number and stop following.
             const carries = !!edited && 'weight' in patch && patch.weight !== edited.weight;
             const carry = typeof patch.weight === 'number' && patch.weight > 0 ? patch.weight : undefined;
+            // Reps carry the same way, but only a real number does: a prescribed pyramid
+            // (10, 8, 6) has different values per set, so it is never flattened.
+            const reps = edited && typeof patch.reps === 'number' && patch.reps > 0 && patch.reps !== edited.reps ? patch.reps : undefined;
             return { ...e, sets: e.sets.map((st, i) => {
               if (st.id !== setId) {
-                const follows = carries && i > at && !st.done && !!st.warmup === !!edited.warmup
-                  && (st.weight == null || st.weight === edited.weight);
-                return follows ? { ...st, weight: carry } : st;
+                if (i <= at || st.done || !!st.warmup !== !!edited.warmup) return st;
+                const weightFollows = carries && (st.weight == null || st.weight === edited.weight);
+                const repsFollow = reps !== undefined && (st.reps == null || st.reps === edited.reps);
+                if (!weightFollows && !repsFollow) return st;
+                return { ...st, ...(weightFollows ? { weight: carry } : null), ...(repsFollow ? { reps } : null) };
               }
               const next = { ...st, ...patch };
               return next.done && !hasSetResult(e.kind, next) ? { ...next, done: false } : next;

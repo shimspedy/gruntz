@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     left: space.md,
     height: 28,
     paddingHorizontal: 12,
-    borderRadius: 9,
+    borderRadius: radius.xs,
     backgroundColor: color.accent,
     justifyContent: 'center',
   },

@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     left: space.lg,
     height: 30,
     paddingHorizontal: 12,
-    borderRadius: 9,
+    borderRadius: radius.xs,
     backgroundColor: '#2676D7',
     justifyContent: 'center',
   },

@@ -259,13 +259,21 @@ function MiniStat({ label, value }: { label: string; value: number }) {
   );
 }
 
+const BAR_MAX = 180;
+
 function ChartBar({ ratio, index, highlight }: { ratio: number; index: number; highlight: boolean }) {
   const h = useSharedValue(0);
   React.useEffect(() => {
     h.set(withDelay(index * 40, withTiming(ratio, { duration: 600, easing: motion.easeOut })));
   }, [ratio, index, h]);
-  const style = useAnimatedStyle(() => ({ height: 4 + h.get() * 176 }));
-  return <Animated.View style={[styles.bar, { backgroundColor: highlight ? color.accent : '#1F5FAF' }, style]} />;
+  // A full-height bar slid up inside a clip, not an animated height: eight bars changing
+  // height re-ran layout on every frame of the entrance.
+  const style = useAnimatedStyle(() => ({ transform: [{ translateY: BAR_MAX - (4 + h.get() * (BAR_MAX - 4)) }] }));
+  return (
+    <View style={styles.barClip}>
+      <Animated.View style={[styles.bar, { backgroundColor: highlight ? color.accent : '#1F5FAF' }, style]} />
+    </View>
+  );
 }
 
 function Tile({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
@@ -290,7 +298,7 @@ const styles = StyleSheet.create({
   chartHead: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: space.gutter + 4, marginTop: space.xxl },
   valueRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4, marginBottom: 4 },
   value: { fontFamily: font.bold, fontSize: 22, color: color.text },
-  delta: { paddingHorizontal: 8, height: 28, borderRadius: 7, backgroundColor: color.surface, justifyContent: 'center' },
+  delta: { paddingHorizontal: 8, height: 28, borderRadius: radius.xs, backgroundColor: color.surface, justifyContent: 'center' },
   chart: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -304,7 +312,8 @@ const styles = StyleSheet.create({
   },
   col: { flex: 1, alignItems: 'center', justifyContent: 'flex-end' },
   chartEmpty: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.xl, paddingBottom: space.xl },
-  bar: { width: 22, borderRadius: 6 },
+  barClip: { width: 22, height: BAR_MAX, borderRadius: 6, overflow: 'hidden' },
+  bar: { width: 22, height: BAR_MAX, borderRadius: 6 },
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingHorizontal: space.md, marginTop: space.xl },
   tile: {
     flexBasis: '46%', flexGrow: 1,

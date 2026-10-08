@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
   totals: { flexDirection: 'row', padding: 18, gap: 14, backgroundColor: color.bgRaised, borderRadius: 20, borderWidth: StyleSheet.hairlineWidth, borderColor: color.line },
   totalNumber: { fontFamily: font.bold, fontSize: 27, letterSpacing: -0.6, marginTop: 8 },
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, paddingVertical: 22 },
-  card: { backgroundColor: color.bgRaised, borderRadius: 22, borderWidth: StyleSheet.hairlineWidth, borderColor: color.line, padding: 18 },
+  card: { backgroundColor: color.bgRaised, borderRadius: 20, borderWidth: StyleSheet.hairlineWidth, borderColor: color.line, padding: 18 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   typeBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 12, paddingHorizontal: 9, paddingVertical: 6 },
   cardBody: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 14 },

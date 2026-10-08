@@ -5,6 +5,7 @@ import {
   formatStrongDate,
   parseStrongCsv,
   parseStrongDate,
+  strongWallClock,
   toStrongCsv,
   type ParsedStrongWorkout,
   type StrongRow,
@@ -310,6 +311,7 @@ export function applyImport(plan: ImportPlan, unit: Unit): ImportResult {
   for (const workout of plan.parsed) {
     const at = parseStrongDate(workout.startedAt);
     if (!at) continue;
+    const wallClock = strongWallClock(workout.startedAt);
 
     for (const exercise of workout.exercises) {
       const key = keyByName.get(exercise.name);
@@ -331,6 +333,7 @@ export function applyImport(plan: ImportPlan, unit: Unit): ImportResult {
         // workout, so this matches its own grouping.
         id: `strong:${at}:${workout.name}:${key}`,
         at,
+        ...(wallClock ? { source: `strong:${wallClock}:${workout.name}:${key}` } : null),
         workoutTitle: workout.name || 'Imported workout',
         unit,
         sets: exercise.sets.map((set) => ({

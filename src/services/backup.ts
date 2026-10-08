@@ -378,6 +378,11 @@ export async function deleteAccount(): Promise<'deleted' | 'signed-out' | 'unava
     const { data } = await supabase.auth.getSession();
     if (!data.session?.user.id) return 'signed-out';
 
+    // Leave any team first. Deleting the account cascades, and a leader's team would go
+    // with it; leaving hands the team to the next member instead. Best effort: someone
+    // who is not in a team, or a failed call, must not block deleting the account.
+    await supabase.rpc('leave_team').then(() => undefined, () => undefined);
+
     const { data: result, error } = await supabase.functions.invoke('delete-account', { method: 'POST' });
     if (error || result?.ok !== true) {
       if (__DEV__) console.warn('[backup] deleteAccount failed', error);

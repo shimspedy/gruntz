@@ -50,6 +50,7 @@ description: "Build React Native Expo screens, components, and navigation. Use w
 - Don't use `react-native-cli` patterns — this is Expo managed
 - Don't install native modules that aren't Expo-compatible
 - Don't use `Dimensions.get()` — use `useWindowDimensions()` hook
+- Don't pick layout from `Platform.isPad` / device model / orientation — use width from `useWindowDimensions()` and size classes; the window resizes mid-session on iPhone Duo (see AGENTS.md)
 - Don't nest ScrollViews
 - Don't use absolute positioning for layout (use flexbox)
 

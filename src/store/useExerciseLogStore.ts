@@ -18,6 +18,12 @@ export interface ExerciseLogEntry {
   workoutTitle: string;
   unit: 'lb' | 'kg';
   sets: LoggedSet[];
+  /**
+   * For an imported session: the source file's own date text and workout name. `at` is an
+   * instant, so the same file read in another timezone produces a different `at` and a
+   * different id; this does not move, which is what stops that re-import duplicating.
+   */
+  source?: string;
 }
 
 export const MAX_ENTRIES_PER_EXERCISE = 300;
@@ -76,20 +82,28 @@ export function mergeLogs(
     // same instant with the same sets is the same session whatever it is called.
     const content = (e: ExerciseLogEntry) => `${Date.parse(e.at)}|${JSON.stringify(e.sets.map((st) => [st.reps ?? null, st.weight ?? null, st.seconds ?? null, st.distance ?? null]))}`;
     const seenContent = new Set(existing.map(content));
+    const seenSource = new Set(existing.map((e) => e.source).filter((source): source is string => !!source));
+    // Sessions imported before `source` existed pick it up the next time the same file
+    // is read, so they are covered from then on as well.
+    const backfill = new Map<string, string>();
+    for (const entry of entries) if (entry.source && seen.has(entry.id) && !seenSource.has(entry.source)) backfill.set(entry.id, entry.source);
+    const known = backfill.size ? existing.map((e) => (!e.source && backfill.has(e.id) ? { ...e, source: backfill.get(e.id) } : e)) : existing;
+    if (backfill.size) logs[key] = known;
     const fresh: ExerciseLogEntry[] = [];
     for (const entry of entries) {
       // Deduped against the batch as well as against storage: two source workouts
       // can normalise onto one instant (a CSV whose dates lost their clock time),
       // and writing both would store one entry twice under a single id, which
       // `removeEntry` would then delete in pairs.
-      if (seen.has(entry.id) || seenContent.has(content(entry))) continue;
+      if (seen.has(entry.id) || seenContent.has(content(entry)) || (entry.source && seenSource.has(entry.source))) continue;
       seen.add(entry.id);
       seenContent.add(content(entry));
+      if (entry.source) seenSource.add(entry.source);
       fresh.push(entry);
     }
     if (!fresh.length) continue;
     freshIds.set(key, new Set(fresh.map((e) => e.id)));
-    logs[key] = [...existing, ...fresh]
+    logs[key] = [...known, ...fresh]
       .sort((a, b) => a.at.localeCompare(b.at))
       .slice(-MAX_ENTRIES_PER_EXERCISE);
   }

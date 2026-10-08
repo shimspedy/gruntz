@@ -229,3 +229,22 @@ test('sets below follow a weight keystroke by keystroke, including through a cle
   env.session.getState().updateSet(key, first, { reps: 8 });
   assert.deepEqual(weights(), [50, 50, 50]);
 });
+
+test('typed reps carry to matching sets below, and a pyramid keeps its own numbers', () => {
+  const env = createWorkoutEnv();
+  env.session.getState().start(env.day(), DATE);
+  const key = env.session.getState().exercises[0].key;
+  const sets = () => env.session.getState().exercises[0].sets;
+  const reps = () => sets().slice(0, 3).map((set) => set.reps);
+  const [first, second, third] = sets().map((set) => set.id);
+  env.session.getState().updateSet(key, second, { reps: sets()[0].reps });
+  env.session.getState().updateSet(key, third, { reps: sets()[0].reps });
+  for (const typed of [1, 12]) env.session.getState().updateSet(key, first, { reps: typed });
+  assert.deepEqual(reps(), [12, 12, 12]);
+  env.session.getState().updateSet(key, third, { reps: 6 });
+  env.session.getState().updateSet(key, first, { reps: 10 });
+  assert.deepEqual(reps(), [10, 10, 6]);
+  env.session.getState().toggleSet(key, second);
+  env.session.getState().updateSet(key, first, { reps: 8 });
+  assert.deepEqual(reps(), [8, 10, 6]);
+});

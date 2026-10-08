@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { ExerciseCharts, ExerciseHistory, ExerciseRecords, useExerciseSessions } from '../ExerciseProgress';
 import { MuscleBodyMap } from '../MuscleBodyMap';
@@ -72,19 +72,17 @@ export function ExerciseInsights({
 
   const [tab, setTab] = useState<Tab>('about');
   const savedNote = useExerciseNotesStore((n) => (logKey ? n.notes[logKey] : undefined)) ?? '';
-  const [note, setNote] = useState(savedNote);
-  // Re-seed when the exercise changes underneath us. The pager's item key is the
-  // session slot, not the exercise id, so a swap does NOT remount this component:
-  // `note` kept the previous movement's text, and the first keystroke persisted it
-  // under the new exercise's key, overwriting whatever was saved there.
-  useEffect(() => {
-    setNote(logKey ? useExerciseNotesStore.getState().notes[logKey] ?? '' : '');
-  }, [logKey]);
+  // The draft remembers which exercise it belongs to. The pager's item key is the session
+  // slot, not the exercise id, so a swap does NOT remount this component: a plain draft
+  // kept the previous movement's text (and re-seeding it in an effect still showed that
+  // text for a frame). A draft for another exercise is simply not this one's.
+  const [draft, setDraft] = useState({ key: logKey, text: savedNote });
+  const note = draft.key === logKey ? draft.text : savedNote;
   // Saving only on blur lost whatever was typed when the pager unmounted the page,
   // the app was minimised, or the sheet was swiped away. The store is the draft.
   const saveNote = useCallback(
     (next: string) => {
-      setNote(next);
+      setDraft({ key: logKey, text: next });
       if (logKey) useExerciseNotesStore.getState().setNote(logKey, next);
     },
     [logKey],

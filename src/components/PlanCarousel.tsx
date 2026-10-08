@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     left: space.lg,
     height: 32,
     paddingHorizontal: 12,
-    borderRadius: 9,
+    borderRadius: radius.xs,
     backgroundColor: 'rgba(60,60,64,0.72)',
     justifyContent: 'center',
   },

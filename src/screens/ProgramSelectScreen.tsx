@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
     left: space.lg,
     height: 30,
     paddingHorizontal: 12,
-    borderRadius: 9,
+    borderRadius: radius.xs,
     backgroundColor: color.accent,
     justifyContent: 'center',
   },

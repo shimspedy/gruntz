@@ -49,3 +49,7 @@ secrets/
 
 # Local Netlify folder
 .netlify
+
+# editor swap files and Supabase CLI state
+*.swp
+supabase/.temp/

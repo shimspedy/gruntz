@@ -77,6 +77,20 @@ function csvRecords(text: string): { cells: string[]; line: number; malformed: b
   return records;
 }
 
+/**
+ * The date exactly as the file states it, normalised (`2026-09-22T09:05`), or null for a
+ * timestamp with an explicit offset. Unlike `parseStrongDate` this never depends on the
+ * device's timezone, so it identifies a session the same way wherever the file is read.
+ */
+export function strongWallClock(value: string): string | null {
+  const text = value.trim();
+  const local = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::\d{2})?)?$/.exec(text);
+  if (local) return `${local[1]}-${local[2]}-${local[3]}T${local[4] ?? '00'}:${local[5] ?? '00'}`;
+  const spreadsheetDate = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(text);
+  if (spreadsheetDate) return `${spreadsheetDate[3]}-${spreadsheetDate[1].padStart(2, '0')}-${spreadsheetDate[2].padStart(2, '0')}T00:00`;
+  return null;
+}
+
 /** Strong uses local timestamps; ISO exports with explicit offsets retain theirs. */
 export function parseStrongDate(value: string): string | null {
   const text = value.trim();

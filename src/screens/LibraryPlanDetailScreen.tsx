@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     height: 28,
     paddingHorizontal: 12,
-    borderRadius: 9,
+    borderRadius: radius.xs,
     backgroundColor: color.accent,
     justifyContent: 'center',
     marginBottom: space.sm,

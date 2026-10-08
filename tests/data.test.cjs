@@ -246,6 +246,49 @@ test('multiple Strong aliases resolving to one library exercise keep all their s
   assert.equal(report.sets, 2);
 });
 
+test('re-importing the same file in another timezone does not duplicate its sessions', () => {
+  const originalZone = process.env.TZ;
+  const importIn = (zone) => {
+    process.env.TZ = zone;
+    let received;
+    const service = load('src/services/workoutTransfer.ts', {
+      'expo-file-system': {}, 'expo-sharing': {},
+      '../features/exerciseMatch': { matchExercise: () => ({ key: 'bench', name: 'Bench Press' }) },
+      '../data/exerciseLibrary': { getLibraryItem: () => undefined },
+      '../store/useExerciseLogStore': {
+        MAX_ENTRIES_PER_EXERCISE: 300, MAX_TRACKED_EXERCISES: 400,
+        useExerciseLogStore: { getState: () => ({ logs: {}, mergeEntries: (incoming) => { received = incoming; return { entries: 1, sets: 1, exercises: 1, evictedEntries: 0, evictedExercises: 0 }; } }) },
+      },
+      '../store/useExerciseNotesStore': { useExerciseNotesStore: { getState: () => ({ notes: {} }) } },
+      './backup': { scheduleBackup() {} },
+    });
+    const zoned = load('src/features/strongCsv.ts');
+    const { workouts } = zoned.parseStrongCsv(zoned.toStrongCsv([row()]));
+    service.applyImport(service.buildPlan('workout.csv', workouts, 0), 'lb');
+    return received;
+  };
+  try {
+    const home = importIn('America/New_York');
+    const away = importIn('Asia/Tokyo');
+    assert.notEqual(home.bench[0].at, away.bench[0].at);
+    assert.equal(home.bench[0].source, away.bench[0].source);
+    const { mergeLogs } = load('src/store/useExerciseLogStore.ts', {
+      '@react-native-async-storage/async-storage': {}, zustand: { create: () => () => ({}) },
+      'zustand/middleware': { createJSONStorage: () => ({}), persist: (initializer) => initializer },
+    });
+    const first = mergeLogs({}, home);
+    assert.equal(first.logs.bench.length, 1);
+    assert.equal(mergeLogs(first.logs, away).logs.bench.length, 1);
+    // A session imported before `source` existed is covered once the file is read again at home.
+    const legacy = { bench: [{ ...home.bench[0], source: undefined }] };
+    const healed = mergeLogs(legacy, home).logs;
+    assert.equal(healed.bench[0].source, home.bench[0].source);
+    assert.equal(mergeLogs(healed, away).logs.bench.length, 1);
+  } finally {
+    if (originalZone === undefined) delete process.env.TZ; else process.env.TZ = originalZone;
+  }
+});
+
 test('restoring replaces live state including absent stores, preserves actions and runs migrations', async () => {
   const exports = ['useUserStore', 'useExerciseLogStore', 'useExerciseNotesStore', 'useReadinessStore',
     'usePlanLibraryStore', 'useProgramStore', 'useRoutineStore', 'useChallengeStore', 'useSessionStore'];

@@ -269,7 +269,14 @@ function SetRow({
         <TextInput
           maxFontSizeMultiplier={1.4}
           value={value}
-          onChangeText={setValueDraft}
+          // Reps are stored as typed so the sets below follow; an empty field waits for
+          // blur, because clearing a logged set's reps mid-edit would untick it.
+          onChangeText={(t) => {
+            setValueDraft(t);
+            if (exercise.kind !== 'reps') return;
+            const n = Number(t.replace(/[^0-9]/g, ''));
+            if (t.trim() && Number.isFinite(n) && n > 0) onChange({ reps: Math.min(n, MAX_REPS) });
+          }}
           onBlur={() => commitValue(value)}
           onSubmitEditing={() => commitValue(value)}
           maxLength={exercise.kind === 'distance' ? 24 : exercise.kind === 'reps' ? 4 : 7}
@@ -320,7 +327,7 @@ const styles = StyleSheet.create({
   colCheck: { width: 40, alignItems: 'flex-end' },
   setBadge: {
     height: 40,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     borderCurve: 'continuous',
     backgroundColor: color.surface,
     alignItems: 'center',
