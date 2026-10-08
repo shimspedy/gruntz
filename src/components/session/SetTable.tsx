@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { InputAccessoryView, Keyboard, Platform, StyleSheet, TextInput, View } from 'react-native';
+import { ActionSheetIOS, Alert, InputAccessoryView, Keyboard, Platform, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { FadeInDown, interpolateColor, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import type { PreviousSet, SessionExercise, SessionSet } from '../../store/useSessionStore';
 import { Icon } from '../../ui/Icon';
@@ -15,6 +15,7 @@ interface Props {
   onChange: (setId: string, patch: Partial<SessionSet>) => void;
   onToggle: (setId: string) => void;
   onAdd: () => void;
+  onRemove: (setId: string) => void;
 }
 
 const MAX_WEIGHT = 2000;
@@ -110,7 +111,9 @@ export function SetInputAccessory() {
   );
 }
 
-export function SetTable({ exercise, previous, units, onChange, onToggle, onAdd }: Props) {
+export function SetTable({ exercise, previous, units, onChange, onToggle, onAdd, onRemove }: Props) {
+  // The last working set stays: an exercise with no sets has nothing to log or complete.
+  const workingSets = exercise.sets.filter((st) => !st.warmup).length;
   const unit = units === 'metric' ? 'kg' : 'lb';
   const valueHeader = exercise.kind === 'time' ? 'TIME' : exercise.kind === 'distance' ? 'DIST' : 'REPS';
 
@@ -148,6 +151,7 @@ export function SetTable({ exercise, previous, units, onChange, onToggle, onAdd 
           prev={prevLabel(set.warmup ? undefined : previous?.[workingIndex(exercise, i)], exercise, unit)}
           onChange={(patch) => onChange(set.id, patch)}
           onToggle={() => onToggle(set.id)}
+          onRemove={set.warmup || workingSets > 1 ? () => onRemove(set.id) : undefined}
         />
       ))}
       <Tap onPress={onAdd} hapticOnPress="light" style={styles.addSet} accessibilityLabel="Add set">
@@ -167,6 +171,7 @@ function SetRow({
   prev,
   onChange,
   onToggle,
+  onRemove,
 }: {
   index: number;
   /** Row label: the working-set number, or W for a warm-up. */
@@ -178,6 +183,8 @@ function SetRow({
   prev: string;
   onChange: (patch: Partial<SessionSet>) => void;
   onToggle: () => void;
+  /** Absent for the last working set, which cannot be removed. */
+  onRemove?: () => void;
 }) {
   const done = useSharedValue(set.done ? 1 : 0);
   const pop = useSharedValue(1);
@@ -216,6 +223,29 @@ function SetRow({
   const value = valueDraft ?? stored;
   const weightValue = weightDraft ?? storedWeight;
 
+  const openOptions = () => {
+    if (!onRemove) return;
+    haptic.light();
+    const remove = () => {
+      haptic.warning();
+      onRemove();
+    };
+    const message = set.done ? 'This set is logged. Removing it takes it out of today’s workout.' : undefined;
+    if (process.env.EXPO_OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { title: spokenLabel, message, options: ['Remove set', 'Cancel'], destructiveButtonIndex: 0, cancelButtonIndex: 1, userInterfaceStyle: 'dark' },
+        (i) => {
+          if (i === 0) remove();
+        },
+      );
+      return;
+    }
+    Alert.alert(spokenLabel, message, [
+      { text: 'Remove set', style: 'destructive', onPress: remove },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
   const commitWeight = (t: string) => {
     setWeightDraft(null);
     onChange({ weight: parseWeight(t) });
@@ -232,11 +262,20 @@ function SetRow({
 
   return (
     <Animated.View entering={index > 0 ? FadeInDown.duration(220) : undefined} style={[styles.row, rowStyle]}>
-      <View style={[styles.colSet, styles.setBadge, set.warmup && styles.setBadgeWarmup]}>
+      {/* The set number is the row's handle, as in other lifting logs: tap it to remove the set. */}
+      <Tap
+        feedback="opacity"
+        disabled={!onRemove}
+        onPress={openOptions}
+        hitSlop={{ top: 6, bottom: 6, left: 10, right: 4 }}
+        style={[styles.colSet, styles.setBadge, set.warmup && styles.setBadgeWarmup]}
+        accessibilityLabel={onRemove ? `${spokenLabel} options` : spokenLabel}
+        accessibilityHint={onRemove ? 'Remove this set' : undefined}
+      >
         <Text variant="headline" tone={set.warmup ? 'secondary' : 'primary'} tabular>
           {label}
         </Text>
-      </View>
+      </Tap>
       <Text variant="callout" tone="tertiary" numberOfLines={1} style={styles.colPrev}>
         {prev}
       </Text>

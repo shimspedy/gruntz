@@ -467,6 +467,7 @@ const ExercisePage = React.memo(function ExercisePage({
   const rest = useSessionStore((st) => st.restOverrides[exercise.exerciseId] ?? st.restPrescribed[exercise.key] ?? ex?.rest_seconds ?? 0);
   const updateSet = useSessionStore((st) => st.updateSet);
   const addSet = useSessionStore((st) => st.addSet);
+  const removeSet = useSessionStore((st) => st.removeSet);
   const removeExercise = useSessionStore((st) => st.removeExercise);
   const replaceExercise = useSessionStore((st) => st.replaceExercise);
   const alternative = ex?.gym_alternative_id ? getExerciseById(ex.gym_alternative_id) : undefined;
@@ -589,6 +590,7 @@ const ExercisePage = React.memo(function ExercisePage({
         onChange={(setId, patch) => updateSet(exercise.key, setId, patch)}
         onToggle={(setId) => onToggle(exercise, setId)}
         onAdd={() => addSet(exercise.key)}
+        onRemove={(setId) => removeSet(exercise.key, setId)}
       />
 
       <ExerciseInsights exercise={ex} exerciseKey={exercise.key} unit={units === 'metric' ? 'kg' : 'lb'} />
