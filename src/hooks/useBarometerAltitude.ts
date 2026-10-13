@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Barometer, BarometerMeasurement } from 'expo-sensors';
+import { FEET_PER_METER } from '../utils/units';
 
 /**
  * Barometer/Altitude Hook
@@ -28,7 +29,6 @@ const HPA_TO_ALTITUDE_METERS = (pressure: number): number => {
   // Standard barometric formula
   return 44330 * (1 - Math.pow(pressure / 1013.25, 0.1903));
 };
-const METERS_TO_FEET = 3.28084;
 
 // Minimum altitude change to register (filter noise) — 1.5 meters
 const MIN_CHANGE_METERS = 1.5;
@@ -52,19 +52,19 @@ export function useBarometerAltitude() {
 
   const handleData = useCallback((data: BarometerMeasurement) => {
     const altMeters = HPA_TO_ALTITUDE_METERS(data.pressure);
-    const altFeet = altMeters * METERS_TO_FEET;
+    const altFeet = altMeters * FEET_PER_METER;
 
     if (startAltRef.current === null) {
       startAltRef.current = altFeet;
     }
 
     if (lastAltRef.current !== null) {
-      const change = altMeters - (lastAltRef.current / METERS_TO_FEET);
+      const change = altMeters - (lastAltRef.current / FEET_PER_METER);
       if (Math.abs(change) > MIN_CHANGE_METERS) {
         if (change > 0) {
-          gainRef.current += change * METERS_TO_FEET;
+          gainRef.current += change * FEET_PER_METER;
         } else {
-          lossRef.current += Math.abs(change) * METERS_TO_FEET;
+          lossRef.current += Math.abs(change) * FEET_PER_METER;
         }
         lastAltRef.current = altFeet;
       }

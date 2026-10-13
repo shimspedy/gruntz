@@ -157,7 +157,7 @@ export function Row({
         ) : null}
       </View>
       {value ? (
-        <Text variant="callout" tone="tertiary" style={{ marginRight: 6 }}>
+        <Text variant="callout" tone="tertiary" numberOfLines={1} style={{ marginLeft: 8, marginRight: 6, flexShrink: 0 }}>
           {value}
         </Text>
       ) : null}

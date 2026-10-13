@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BACKUP_SCHEMA_VERSION } from '../config/backup';
 import { prepareStoreRestore } from './backupRestoreStores';
 import { isTrackedSession, splitTrackedSession } from '../features/activityHistory';
+import { HEALTH_ID_PREFIX } from '../features/healthSync';
 import { READINESS_STORAGE_KEY, readinessStorage } from '../store/readinessStorage';
 import { loadRoute, pruneRoutes, stageRoutes } from '../store/activityRoutes';
 import type { RoutePoint } from '../types/activity';
@@ -105,8 +106,11 @@ export async function captureSnapshot(): Promise<BackupSnapshot> {
         const activities: unknown[] = [];
         for (const activity of parsed.state.trackedSessions as unknown[]) {
           if (!isRecord(activity)) { activities.push(activity); continue; }
+          // Anything read from Apple Health or Health Connect stays on this device:
+          // an imported workout is left out, and heart rate is dropped from the rest.
+          if (typeof activity.id === 'string' && activity.id.startsWith(HEALTH_ID_PREFIX)) continue;
           // `routePoints` describes this device's route storage and never travels.
-          const { route, routePoints, ...summary } = activity;
+          const { route, routePoints, averageHeartRate: _average, maxHeartRate: _max, source: _source, ...summary } = activity;
           if (!include) { activities.push(summary); continue; }
           // A route an older build left inline, not yet migrated, is used as it is.
           if (route !== undefined) { activities.push({ ...summary, route }); continue; }

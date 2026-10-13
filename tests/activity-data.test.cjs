@@ -257,3 +257,23 @@ test('a workout done ahead of schedule keeps the streak alive on the next launch
   useUserStore.getState().updateStreak();
   assert.equal(useUserStore.getState().progress.streak_days, 1);
 });
+
+test('workouts and heart rate read from a health platform never reach a cloud backup', async () => {
+  const disk = storage();
+  const load = loader(disk);
+  const { useReadinessStore, flushReadinessPersistence, saveTrackedActivity } = load('src/store/useReadinessStore.ts');
+  const { captureSnapshot } = load('src/services/backupSnapshot.ts');
+  await tick();
+  await saveTrackedActivity(activity());
+  await saveTrackedActivity(activity({ id: 'health:watch-1', source: 'Apple Watch', averageHeartRate: 150, maxHeartRate: 172, date: '2026-10-02T15:00:00.000Z' }));
+  useReadinessStore.getState().setTrackedHeartRate('activity-1', { average: 141, max: 166 });
+  await flushReadinessPersistence();
+  const local = useReadinessStore.getState().trackedSessions;
+  assert.equal(local.length, 2);
+  assert.equal(local.find((item) => item.id === 'activity-1').averageHeartRate, 141);
+  const captured = await captureSnapshot();
+  const cloud = JSON.parse(captured.stores['@gruntz_readiness']).state.trackedSessions;
+  assert.deepEqual(cloud.map((item) => item.id), ['activity-1']);
+  assert.ok(!/HeartRate|Apple Watch|health:/.test(JSON.stringify(captured)));
+  assert.equal(cloud[0].distanceMiles, 1);
+});

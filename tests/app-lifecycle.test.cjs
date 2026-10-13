@@ -50,7 +50,7 @@ test('URL launches have priority and notification API failure does not reject st
 
 function resetHarness() {
   const events = [], stores = {};
-  const initialNames = ['useSessionStore','useRoutineStore','useChallengeStore','useReadinessStore','usePlanLibraryStore','useExerciseLogStore','useExerciseNotesStore','useOnboardingDraftStore','useChromePrefs','useUiStore','useProgramStore'];
+  const initialNames = ['useSessionStore','useRoutineStore','useChallengeStore','useReadinessStore','usePlanLibraryStore','useExerciseLogStore','useExerciseNotesStore','useOnboardingDraftStore','useChromePrefs','useHealthStore','useUiStore','useProgramStore'];
   for (const name of initialNames) {
     const initial = { data: null };
     stores[name] = {
