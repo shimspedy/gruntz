@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDisplayName</key>
+  <string>Gruntz</string>
+  <key>WKApplication</key>
+  <true/>
+  <key>WKRunsIndependentlyOfCompanionApp</key>
+  <true/>
+  <key>NSHealthShareUsageDescription</key>
+  <string>Gruntz shows your heart rate while you run, ruck or hike.</string>
+  <key>NSHealthUpdateUsageDescription</key>
+  <string>Gruntz saves the runs, rucks and hikes you record on your watch to Apple Health, so they show up in the Gruntz app on your phone.</string>
+  <key>UIBackgroundModes</key>
+  <array>
+    <string>workout-processing</string>
+  </array>
+</dict>
+</plist>

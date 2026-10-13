@@ -69,7 +69,8 @@ function appleHealth(): PlatformAdapter {
         seen.set(workout.uuid, workout);
         return {
           id: workout.uuid,
-          kind: kinds[workout.workoutActivityType] ?? 'other',
+          // The Gruntz watch app files rucks as hikes (Health has no ruck type) and tags them.
+          kind: workout.metadata?.GruntzActivity === 'ruck' ? 'ruck' : kinds[workout.workoutActivityType] ?? 'other',
           startMs: workout.startDate.getTime(),
           endMs: workout.endDate.getTime(),
           activeSeconds: workout.duration?.quantity,

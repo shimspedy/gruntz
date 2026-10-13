@@ -88,6 +88,14 @@ test('only runs and hikes from other sources are imported, and they pass history
   assert.ok([hike, run].every((item) => isTrackedSession(item)));
 });
 
+test('a ruck recorded by the Gruntz watch app comes back as a ruck, not a hike', () => {
+  const imported = importableWorkouts([workout({ id: 'w6', kind: 'ruck', startMs: NOW - 2 * HOUR, endMs: NOW - HOUR })], []);
+  assert.equal(imported.length, 1);
+  const ruck = toImportedActivity(imported[0], { source: 'Apple Watch' });
+  assert.equal(ruck.type, 'ruck');
+  assert.ok(isTrackedSession(ruck));
+});
+
 test('a workout covering the same time as a saved activity is the same outing', () => {
   const sessions = [activity()];
   const watch = workout({ startMs: NOW - 2 * HOUR + 60000, endMs: NOW - HOUR - 60000 });

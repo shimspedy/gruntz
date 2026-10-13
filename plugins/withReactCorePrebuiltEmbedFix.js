@@ -53,8 +53,10 @@ function addReactCorePrebuiltEmbedFix(contents) {
     return contents;
   }
 
+  // Not anchored to the end of the file: other targets (the watch app) append their own
+  // `target ... do` blocks after the main one.
   const postInstallPattern =
-    /(\s+react_native_post_install\([\s\S]*?\n\s+\)\n)(\s+end\nend\s*)$/;
+    /(\s+react_native_post_install\([\s\S]*?\n\s+\)\n)(\s+end\nend)/;
 
   if (!postInstallPattern.test(contents)) {
     throw new Error(

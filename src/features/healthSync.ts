@@ -13,7 +13,8 @@ const MIN_IMPORT_SECONDS = 60;
 /** A watch can deliver heart rate hours after the activity; asking again daily catches it. */
 const HEART_RATE_RECHECK_MS = DAY_MS;
 
-export type HealthWorkoutKind = 'run' | 'hike' | 'walk' | 'other';
+/** A ruck only exists as a hike in Apple Health; the Gruntz watch app tags its rucks so they come back as rucks. */
+export type HealthWorkoutKind = 'run' | 'ruck' | 'hike' | 'walk' | 'other';
 
 /** A workout read from Apple Health or Health Connect, reduced to what Gruntz keeps. */
 export interface HealthWorkout {
@@ -140,7 +141,7 @@ export function importableWorkouts(workouts: HealthWorkout[], existing: TrackedS
   const taken = existing.map(activityWindow).filter((window) => window !== null);
   const imported: HealthWorkout[] = [];
   for (const workout of [...workouts].sort((a, b) => a.endMs - b.endMs)) {
-    if (workout.fromGruntz || (workout.kind !== 'run' && workout.kind !== 'hike')) continue;
+    if (workout.fromGruntz || (workout.kind !== 'run' && workout.kind !== 'ruck' && workout.kind !== 'hike')) continue;
     if (!workout.id || !finite(workout.startMs) || !finite(workout.endMs)) continue;
     if ((workout.endMs - workout.startMs) / 1000 < MIN_IMPORT_SECONDS) continue;
     const id = `${HEALTH_ID_PREFIX}${workout.id}`;
@@ -160,7 +161,7 @@ export function toImportedActivity(workout: HealthWorkout, details: HealthWorkou
   const source = merged.source?.trim().slice(0, 100);
   return {
     id: `${HEALTH_ID_PREFIX}${merged.id}`,
-    type: merged.kind === 'run' ? 'run' : 'hike',
+    type: merged.kind === 'run' ? 'run' : merged.kind === 'ruck' ? 'ruck' : 'hike',
     date: new Date(merged.endMs).toISOString(),
     startedAt: new Date(merged.startMs).toISOString(),
     distanceMiles: Math.round((Math.max(0, finite(merged.distanceMeters) ? merged.distanceMeters : 0) / METERS_PER_MILE) * 100) / 100,

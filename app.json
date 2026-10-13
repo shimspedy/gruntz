@@ -37,7 +37,11 @@
         "android.permission.health.WRITE_EXERCISE",
         "android.permission.health.WRITE_DISTANCE",
         "android.permission.health.WRITE_ACTIVE_CALORIES_BURNED",
-        "android.permission.health.WRITE_EXERCISE_ROUTE"
+        "android.permission.health.WRITE_EXERCISE_ROUTE",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -101,7 +105,8 @@
         }
       ],
       "expo-sharing",
-      "@maplibre/maplibre-react-native"
+      "@maplibre/maplibre-react-native",
+      "@bacons/apple-targets"
     ],
     "extra": {
       "eas": {
