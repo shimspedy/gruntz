@@ -26,6 +26,7 @@ import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
 import { toast } from '../ui/Toast';
 import { color, font, radius, space } from '../ui/tokens';
+import { relativeTime } from '../utils/relativeTime';
 
 type View_ =
   | { kind: 'loading' }
@@ -46,16 +47,6 @@ const FAILURE_MESSAGE: Record<TeamFailure, string> = {
   'already-in-team': 'You are already in a team. Leave it before joining another.',
   error: 'That didn’t go through. Check your connection and try again.',
 };
-
-function updatedLabel(iso: string): string {
-  const minutes = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60000));
-  if (!Number.isFinite(minutes)) return '';
-  if (minutes < 2) return 'Just now';
-  if (minutes < 60) return `${minutes} min ago`;
-  if (minutes < 60 * 24) return `${Math.round(minutes / 60)} h ago`;
-  const days = Math.round(minutes / (60 * 24));
-  return days === 1 ? 'Yesterday' : `${days} days ago`;
-}
 
 /** Teams: create one or join with a code, then see who is training and who is ready. */
 export default function LeaderToolsScreen() {
@@ -339,7 +330,7 @@ function RosterRow({ member, last, onOptions }: { member: TeamMember; last: bool
         </Text>
         <Text variant="footnote" tone="tertiary" style={{ marginTop: 2 }} numberOfLines={1}>
           {member.role === 'leader' ? 'Leader · ' : ''}
-          {STATUS_LABEL[member.status]} · {updatedLabel(member.updatedAt)}
+          {STATUS_LABEL[member.status]} · {relativeTime(member.updatedAt)}
         </Text>
       </View>
       <View style={styles.rosterStat}>

@@ -1,10 +1,10 @@
 import type { ActivityType, RoutePoint } from '../types/activity';
+import { FEET_PER_METER } from '../utils/units';
 
 export const ACTIVE_ACTIVITY_STORAGE_KEY = '@gruntz_active_activity';
 export const DEFAULT_BODY_WEIGHT_LBS = 160;
 export const MAX_ACTIVITY_ROUTE_POINTS = 6000;
 const METERS_TO_MILES = 0.000621371;
-const METERS_TO_FEET = 3.28084;
 const MAX_GPS_GAP_MS = 120000;
 const MAX_FIX_ACCURACY_M = 35;
 const MAX_SPEED_MPS = 12;
@@ -170,7 +170,7 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
       activityType: draft.options.activityType ?? 'run', packWeightPounds: draft.options.packWeightPounds ?? 0, terrain: draft.options.terrain ?? null,
       distanceMiles: Math.round(miles * 100) / 100, durationMs: duration,
       paceMinPerMile: miles > 0.05 ? Math.round((duration / 60000 / miles) * 10) / 10 : null,
-      steps: Math.round(draft.stepsBanked + draft.stepsCurrent), elevationGainFt: Math.round(draft.elevationMeters * METERS_TO_FEET),
+      steps: Math.round(draft.stepsBanked + draft.stepsCurrent), elevationGainFt: Math.round(draft.elevationMeters * FEET_PER_METER),
       route: draft.route, backgroundEnabled: draft.backgroundEnabled, stepsLimited: draft.stepsLimited,
       caloriesEstimate: Math.round(miles * ((draft.options.loadedWeightLbs ?? DEFAULT_BODY_WEIGHT_LBS) / 1.6)),
     } : {}), ...patch };

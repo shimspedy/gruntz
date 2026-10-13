@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Linking, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
+import { Alert, Linking, Platform, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,6 +11,8 @@ import { useRunTracker, type RunTrackerState } from '../hooks/useRunTracker';
 import { discardActiveActivity, initializeActivityTracking } from '../services/activityTracking';
 import { useTrainingAccess } from '../store/useSubscriptionStore';
 import { scheduleBackup } from '../services/backup';
+import { requestNotificationPermission } from '../services/notifications';
+import { runHealthSync } from '../services/healthSync';
 import { flushReadinessPersistence, saveTrackedActivity, useReadinessStore } from '../store/useReadinessStore';
 import { KG_PER_LB } from '../store/useExerciseLogStore';
 import { DEFAULT_BODY_WEIGHT_LBS } from '../hooks/useRunTracker';
@@ -46,6 +48,9 @@ function pace(minPerMile: number | null, metric: boolean) {
   }
   return `${m}:${String(s).padStart(2, '0')}`;
 }
+
+/** What each system calls the permission level that keeps location on with the screen locked. */
+const ALWAYS_LOCATION = Platform.OS === 'android' ? '"Allow all the time"' : 'Always';
 
 export default function RunTrackerScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'RunTracker'>>();
@@ -145,6 +150,10 @@ export default function RunTrackerScreen() {
     setPending(true);
     haptic.medium();
     try {
+      // Android 13+ shows the "recording" notification only with permission. Someone who
+      // said no to reminders was never asked again, so their background recording was
+      // invisible. A refusal here is fine: recording works, the shade just stays quiet.
+      if (recordInBackground && Platform.OS === 'android') await requestNotificationPermission();
       const ok = await tracker.start({ backgroundTracking: recordInBackground });
       if (!mounted.current) return;
       if (!ok) {
@@ -166,7 +175,7 @@ export default function RunTrackerScreen() {
     promptOpen.current = true;
     const permission = await Location.getBackgroundPermissionsAsync().catch(() => null);
     if (permission?.granted) { promptOpen.current = false; return begin(true); }
-    Alert.alert('Record with your screen locked', 'Gruntz needs Always location access to save your route while the screen is locked or you use another app. Location is recorded only during an activity you start. Ending it stops recording. Force-closing the app can interrupt recording.', [
+    Alert.alert('Record with your screen locked', `Gruntz needs ${ALWAYS_LOCATION} location access to save your route while the screen is locked or you use another app. Location is recorded only during an activity you start. Ending it stops recording. Force-closing the app can interrupt recording.`, [
       { text: 'Cancel', style: 'cancel', onPress: () => { promptOpen.current = false; } },
       { text: 'Foreground only', onPress: () => { promptOpen.current = false; setBackgroundTracking(false); void begin(false); } },
       { text: 'Continue', onPress: () => { promptOpen.current = false; void begin(true); } },
@@ -186,7 +195,7 @@ export default function RunTrackerScreen() {
     }
   };
 
-  const enableBackground = () => Alert.alert('Enable background recording', 'Allow Always location access so your active route continues with the screen locked or while you use another app. Gruntz records only during this activity.', [
+  const enableBackground = () => Alert.alert('Enable background recording', `Allow ${ALWAYS_LOCATION} location access so your active route continues with the screen locked or while you use another app. Gruntz records only during this activity.`, [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Continue', onPress: () => void resume(true) },
   ]);
@@ -231,6 +240,7 @@ export default function RunTrackerScreen() {
       await Promise.all([flushReadinessPersistence(), flushUserPersistence()]);
       await tracker.clearFinished();
       scheduleBackup();
+      void runHealthSync();
       if (mounted.current) { setSavedId(id); setFinishedMetrics(final); setFinished(true); }
       haptic.success();
     } catch (error) {
@@ -348,7 +358,7 @@ export default function RunTrackerScreen() {
 
         {idle ? (
           <Text variant="footnote" tone="tertiary" align="center" style={styles.note}>
-            {batterySaver ? 'Battery saver: balanced GPS sampling.' : 'Precision GPS.'} {backgroundTracking ? 'Keep your route recording while your screen is locked. Always location access is required.' : 'Foreground recording pauses when you leave the app.'}
+            {batterySaver ? 'Battery saver: balanced GPS sampling.' : 'Precision GPS.'} {backgroundTracking ? `Keep your route recording while your screen is locked. ${ALWAYS_LOCATION} location access is required.` : 'Foreground recording pauses when you leave the app.'}
           </Text>
         ) : null}
         {tracker.sessionId && !finished ? (

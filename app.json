@@ -28,7 +28,16 @@
       "package": "com.gruntz.fitness",
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.health.READ_EXERCISE",
+        "android.permission.health.READ_HEART_RATE",
+        "android.permission.health.READ_DISTANCE",
+        "android.permission.health.READ_TOTAL_CALORIES_BURNED",
+        "android.permission.health.READ_ELEVATION_GAINED",
+        "android.permission.health.WRITE_EXERCISE",
+        "android.permission.health.WRITE_DISTANCE",
+        "android.permission.health.WRITE_ACTIVE_CALORIES_BURNED",
+        "android.permission.health.WRITE_EXERCISE_ROUTE"
       ]
     },
     "web": {
@@ -69,10 +78,20 @@
           },
           "android": {
             "compileSdkVersion": 36,
-            "targetSdkVersion": 36
+            "targetSdkVersion": 36,
+            "minSdkVersion": 26
           }
         }
       ],
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "Gruntz reads workouts and heart rate recorded by your watch or other apps so your runs, rucks and hikes show them in Activity history.",
+          "NSHealthUpdateUsageDescription": "Gruntz saves the runs, rucks and hikes you record to Apple Health, with their distance, calories and route.",
+          "background": false
+        }
+      ],
+      "react-native-health-connect",
       "expo-sharing",
       "@maplibre/maplibre-react-native"
     ],

@@ -46,6 +46,7 @@ export type RootStackParamList = {
   ServiceProfile: undefined;
   Backup: undefined;
   DataTransfer: undefined;
+  HealthSync: undefined;
   TrainingPreferences: undefined;
   LeaderTools: undefined;
   /** The route behind every `<Sheet>`; `id` names the content its owner published. */

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Alert, AppState, BackHandler, Linking, Platform, StyleSheet, View } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { startBackupLifecycle } from '../services/backup';
+import { startHealthSyncLifecycle } from '../services/healthSync';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DarkTheme, NavigationContainer, type InitialState, type NavigationState } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -38,6 +39,7 @@ import ActivityDetailScreen from '../screens/ActivityDetailScreen';
 import ServiceProfileScreen from '../screens/ServiceProfileScreen';
 import BackupScreen from '../screens/BackupScreen';
 import DataTransferScreen from '../screens/DataTransferScreen';
+import HealthSyncScreen from '../screens/HealthSyncScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import StatsScreen from '../screens/StatsScreen';
 import StreakScreen from '../screens/StreakScreen';
@@ -208,6 +210,7 @@ function AppStack() {
       <Stack.Screen name="ServiceProfile" component={ServiceProfileScreen} />
       <Stack.Screen name="Backup" component={BackupScreen} />
       <Stack.Screen name="DataTransfer" component={DataTransferScreen} />
+      <Stack.Screen name="HealthSync" component={HealthSyncScreen} />
       <Stack.Screen name="TrainingPreferences" component={TrainingPreferencesScreen} />
       <Stack.Screen name="LeaderTools" component={LeaderToolsScreen} />
       <Stack.Screen
@@ -417,6 +420,7 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   // and immediately closing does not leave that session unbacked. No-ops entirely
   // when the build has no backup keys.
   useEffect(() => startBackupLifecycle(), []);
+  useEffect(() => startHealthSyncLifecycle(), []);
   /**
    * Whether this launch came from a deep link.
    *

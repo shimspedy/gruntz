@@ -7,7 +7,7 @@ const MAX_CAPTURED_ROUTE_POINTS = 100_000;
 
 const record = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
-const finite = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
+export const finite = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
 const nonnegative = (value: unknown): value is number => finite(value) && value >= 0;
 const date = (value: unknown): value is string => typeof value === 'string' && value.length <= 64 && Number.isFinite(Date.parse(value));
 const optionalText = (value: unknown, max: number) => value === undefined || (typeof value === 'string' && value.length <= max);
@@ -33,6 +33,9 @@ export function isTrackedSession(value: unknown, maxRoutePoints = MAX_SAVED_ROUT
     || (value.steps !== undefined && (!nonnegative(value.steps) || !Number.isInteger(value.steps)))
     || (value.caloriesEstimate !== undefined && !nonnegative(value.caloriesEstimate))
     || (value.stepsLimited !== undefined && typeof value.stepsLimited !== 'boolean')
+    || (value.averageHeartRate !== undefined && !nonnegative(value.averageHeartRate))
+    || (value.maxHeartRate !== undefined && !nonnegative(value.maxHeartRate))
+    || !optionalText(value.source, 100)
     || (value.routePoints !== undefined && (!nonnegative(value.routePoints) || !Number.isInteger(value.routePoints)))) return false;
   if (value.route === undefined) return true;
   if (!Array.isArray(value.route) || value.route.length > maxRoutePoints) return false;

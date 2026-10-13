@@ -46,10 +46,13 @@ export default function ActivityDetailScreen({ route, navigation }: NativeStackS
           <Stat label="Ascent" value={activityAscent(session.elevationFeet, units)} style={styles.stat} />
           {typeof session.steps === 'number' ? <Stat label="Steps" value={Math.max(0, session.steps).toLocaleString()} style={styles.stat} /> : null}
           {typeof session.caloriesEstimate === 'number' ? <Stat label="Est. calories" value={`${Math.max(0, Math.round(session.caloriesEstimate)).toLocaleString()} kcal`} style={styles.stat} /> : null}
+          {typeof session.averageHeartRate === 'number' ? <Stat label="Avg heart rate" value={`${Math.round(session.averageHeartRate)} bpm`} style={styles.stat} /> : null}
+          {typeof session.maxHeartRate === 'number' ? <Stat label="Max heart rate" value={`${Math.round(session.maxHeartRate)} bpm`} style={styles.stat} /> : null}
           {session.packWeightPounds ? <Stat label="Pack weight" value={`${Math.round(session.packWeightPounds * (units === 'metric' ? 0.45359237 : 1))} ${units === 'metric' ? 'kg' : 'lb'}`} style={styles.stat} /> : null}
         </View>
         {session.stepsLimited ? <Text variant="footnote" tone="secondary" style={{ marginTop: 4, marginBottom: 16 }}>Step count may be incomplete while the app was in the background.</Text> : null}
         {session.terrain ? <Text variant="callout" tone="secondary" style={{ marginBottom: 12 }}>Terrain · {session.terrain}</Text> : null}
+        {session.source ? <Text variant="callout" tone="secondary" style={{ marginBottom: 12 }}>Recorded with {session.source}</Text> : null}
         {session.notes?.trim() ? <View style={styles.notes}><Text variant="overline" tone="secondary">FIELD NOTES</Text><Text variant="body" style={{ marginTop: 10 }}>{session.notes}</Text></View> : null}
         <Button title="Make a share card" icon="share" onPress={() => setShareOpen(true)} style={{ marginTop: 22 }} />
       </ScrollView>

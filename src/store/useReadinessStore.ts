@@ -45,6 +45,11 @@ export interface TrackedSession {
   caloriesEstimate?: number;
   title?: string;
   stepsLimited?: boolean;
+  /** Beats per minute, read from Apple Health or Health Connect. */
+  averageHeartRate?: number;
+  maxHeartRate?: number;
+  /** The watch or app an imported workout came from. */
+  source?: string;
 }
 
 /** An activity together with its route, as recorded, backed up or saved by an older build. */
@@ -72,6 +77,7 @@ interface ReadinessState {
    * stores the route durably first.
    */
   addTrackedSession: (session: TrackedSession) => boolean;
+  setTrackedHeartRate: (id: string, heartRate: { average: number; max: number }) => void;
   setIncludeActivityRoutesInBackup: (include: boolean) => void;
   setTeam: (name: string, code: string) => void;
 }
@@ -120,6 +126,10 @@ export const useReadinessStore = create<ReadinessState>()(
         set((state) => ({ trackedSessions: [summary, ...state.trackedSessions] }));
         return true;
       },
+      setTrackedHeartRate: (id, heartRate) => set((state) => ({
+        trackedSessions: state.trackedSessions.map((session) => session.id === id
+          ? { ...session, averageHeartRate: heartRate.average, maxHeartRate: heartRate.max } : session),
+      })),
       setIncludeActivityRoutesInBackup: (include) => set({ includeActivityRoutesInBackup: include }),
       setTeam: (teamName, teamCode) => set({ teamName, teamCode }),
     }),

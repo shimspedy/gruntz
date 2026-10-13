@@ -1,11 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useNavigation, useScrollToTop } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { getProgramById } from '../data/programs';
 import { claimedDates } from '../features/plan';
 import { useTabChromeInset } from '../navigation/TabBar';
+import { healthPlatformName } from '../services/healthSync';
+import { useHealthStore } from '../store/useHealthStore';
 import { useProgramStore } from '../store/useProgramStore';
 import { useReadinessStore } from '../store/useReadinessStore';
 import { getAccessState, getTrialDaysRemaining, useSubscriptionStore } from '../store/useSubscriptionStore';
@@ -55,6 +57,7 @@ export default function ProfileScreen() {
   const teamName = useReadinessStore((s) => s.teamName);
   const military = useUserStore((s) => !!s.profile?.goals.includes('Military Prep'));
   const program = useProgramStore((s) => s.selectedProgram);
+  const healthConnected = useHealthStore((s) => s.connected);
   const [editing, setEditing] = useState(false);
   const programInfo = program ? getProgramById(program) : undefined;
 
@@ -98,6 +101,9 @@ export default function ProfileScreen() {
         <Row icon="flag" title="Service & test profile" onPress={() => navigation.navigate('ServiceProfile')} />
         <Row icon="people" title="Leader tools" subtitle="Teams, invite codes and a shared roster" value={teamName || undefined} onPress={() => navigation.navigate('LeaderTools')} />
         <Row icon="mapPin" title="Activity history" subtitle="Runs, rucks, hikes and share cards" onPress={() => navigation.navigate('ActivityHistory')} />
+        {Platform.OS !== 'web' ? (
+          <Row icon="heart" title={healthPlatformName} subtitle="Watch workouts and heart rate" value={healthConnected ? 'Connected' : undefined} onPress={() => navigation.navigate('HealthSync')} />
+        ) : null}
         <Row icon="share" title="Share my streak" onPress={() => void shareStreak(progress.streak_days, rankTitle(progress.current_rank, military))} />
         {/* Optional, and deliberately here rather than in onboarding: nobody is asked
             to make an account before they have something worth keeping. Hidden

@@ -13,6 +13,7 @@ import { useExerciseLogStore } from '../store/useExerciseLogStore';
 import { useExerciseNotesStore } from '../store/useExerciseNotesStore';
 import { useOnboardingDraftStore } from '../store/useOnboardingDraftStore';
 import { useChromePrefs, useUiStore } from '../store/useUiStore';
+import { useHealthStore } from '../store/useHealthStore';
 
 /** Clear disk AND memory; otherwise the next store write resurrects deleted data. */
 export async function resetLocalData() {
@@ -33,6 +34,7 @@ export async function resetLocalData() {
   useExerciseNotesStore.setState(useExerciseNotesStore.getInitialState());
   useOnboardingDraftStore.setState(useOnboardingDraftStore.getInitialState());
   useChromePrefs.setState(useChromePrefs.getInitialState());
+  useHealthStore.setState(useHealthStore.getInitialState());
   useUiStore.setState(useUiStore.getInitialState());
   useProgramStore.setState({ ...useProgramStore.getInitialState(), hasHydrated: true });
   useUserStore.getState().reset();
