@@ -130,17 +130,31 @@ export function subscribeToMessages(teamId: string, onChange: (change: { kind: '
   if (__DEV__ && demoMessages) return () => undefined;
   const supabase = getSupabase();
   if (!supabase) return () => undefined;
-  let userId: string | null = null;
-  void me().then((id) => { userId = id; });
-  const channel = supabase
-    .channel(`team-chat-${teamId}`)
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_messages', filter: `team_id=eq.${teamId}` }, (payload) => {
-      onChange({ kind: 'added', message: toMessage(payload.new as Row, userId) });
-    })
-    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'team_messages' }, (payload) => {
-      const id = (payload.old as { id?: string }).id;
-      if (id) onChange({ kind: 'removed', id });
-    })
-    .subscribe();
-  return () => { void supabase.removeChannel(channel); };
+  let channel: ReturnType<typeof supabase.channel> | null = null;
+  let stopped = false;
+  void (async () => {
+    // The socket must carry this user's token before the channel opens; row-level
+    // security decides per event, and an anonymous socket is told nothing.
+    const { data } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
+    const userId = data.session?.user.id ?? null;
+    if (stopped || !userId) return;
+    await supabase.realtime.setAuth(data.session?.access_token);
+    if (stopped) return;
+    channel = supabase
+      .channel(`team-chat-${teamId}`, { config: { private: false } })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_messages', filter: `team_id=eq.${teamId}` }, (payload) => {
+        onChange({ kind: 'added', message: toMessage(payload.new as Row, userId) });
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'team_messages' }, (payload) => {
+        const id = (payload.old as { id?: string }).id;
+        if (id) onChange({ kind: 'removed', id });
+      })
+      .subscribe((status, error) => {
+        if (__DEV__ && (error || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT')) console.warn('[chat] realtime', status, error?.message);
+      });
+  })();
+  return () => {
+    stopped = true;
+    if (channel) void supabase.removeChannel(channel);
+  };
 }

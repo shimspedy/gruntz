@@ -42,13 +42,16 @@ export function TeamChatView({ team }: { team: Team }) {
 
   useEffect(() => {
     void load();
-    return subscribeToMessages(teamId, (change) => {
+    // Live events carry new lines in; a slow poll covers a socket that never came up.
+    const poll = setInterval(() => { void load(); }, 20_000);
+    const unsubscribe = subscribeToMessages(teamId, (change) => {
       setMessages((current) => {
         if (!current) return current;
         if (change.kind === 'added') return mergeMessages(current, [change.message]);
         return current.filter((message) => message.id !== change.id);
       });
     });
+    return () => { clearInterval(poll); unsubscribe(); };
   }, [load, teamId]);
 
   const older = async () => {
@@ -119,7 +122,8 @@ export function TeamChatView({ team }: { team: Team }) {
 
   return (
     <View style={styles.screen}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={insets.top + 100}>
+      {/* Both platforms pad: Android draws edge-to-edge, so the window no longer shrinks for the keyboard on its own. */}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={insets.top + 100}>
         <FlatList
           ref={list}
           data={messages ? [...messages].reverse() : []}
