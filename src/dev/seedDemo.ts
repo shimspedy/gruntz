@@ -6,7 +6,8 @@ import { useSessionStore } from '../store/useSessionStore';
 import { useUserStore } from '../store/useUserStore';
 import { getLocalDateKey } from '../utils/dateKey';
 import { getLevelForXP, getRank } from '../utils/xp';
-import { setDemoTeams } from '../services/teams';
+import { setDemoPublicTeams, setDemoTeams } from '../services/teams';
+import { setDemoMessages } from '../services/teamChat';
 import { saveRoute } from '../store/activityRoutes';
 import { useRoutineStore } from '../store/useRoutineStore';
 import type { RoutePoint } from '../types/activity';
@@ -157,6 +158,8 @@ export function seedDemo() {
       name: '2nd Platoon',
       inviteCode: 'RK7M4Q',
       isLeader: true,
+      isPublic: false,
+      description: '',
       members: [
         { userId: 'me', displayName: 'Alex', role: 'leader', sessions: claimed.size, streak: 12, status: 'green', updatedAt: minutesAgo(1), isMe: true, avatarUrl: null },
         { userId: 'a', displayName: 'Brooks', role: 'member', sessions: 52, streak: 21, status: 'green', updatedAt: minutesAgo(38), isMe: false, avatarUrl: null },
@@ -171,11 +174,26 @@ export function seedDemo() {
       name: 'Saturday crew',
       inviteCode: 'HX4N7B',
       isLeader: false,
+      isPublic: true,
+      description: 'Open run and ruck group, every Saturday at 0700.',
       members: [
         { userId: 'f', displayName: 'Priya', role: 'leader', sessions: 61, streak: 30, status: 'green', updatedAt: minutesAgo(20), isMe: false, avatarUrl: null },
         { userId: 'me', displayName: 'Alex', role: 'member', sessions: claimed.size, streak: 12, status: 'green', updatedAt: minutesAgo(1), isMe: true, avatarUrl: null },
         { userId: 'g', displayName: 'Marcus', role: 'member', sessions: 18, streak: 2, status: 'amber', updatedAt: minutesAgo(300), isMe: false, avatarUrl: null },
       ],
     },
+  ]);
+  setDemoMessages([
+    { id: 'm1', teamId: 'demo-team', userId: 'a', displayName: 'Brooks', body: 'Ruck tomorrow at 0600, 35 lb. Meet at the north gate.', createdAt: minutesAgo(130), isMe: false },
+    { id: 'm2', teamId: 'demo-team', userId: 'b', displayName: 'Dana R.', body: 'In. Bringing the extra plates.', createdAt: minutesAgo(118), isMe: false },
+    { id: 'm3', teamId: 'demo-team', userId: 'me', displayName: 'Alex', body: 'Good. Hydrate tonight, check in before you leave the house.', createdAt: minutesAgo(90), isMe: true },
+    { id: 'm4', teamId: 'demo-team', userId: 'c', displayName: 'Ortiz', body: 'Copy. Knee is holding up after the last one.', createdAt: minutesAgo(42), isMe: false },
+    { id: 'm5', teamId: 'demo-team-2', userId: 'f', displayName: 'Priya', body: 'Saturday is a 10K run then a 3 mile ruck. Pace is relaxed, nobody gets dropped.', createdAt: minutesAgo(400), isMe: false },
+  ]);
+  setDemoPublicTeams([
+    { id: 'demo-team-2', name: 'Saturday crew', description: 'Open run and ruck group, every Saturday at 0700.', memberCount: 3, isMember: true },
+    { id: 'pub-1', name: 'OCS prep 2027', description: 'Working toward the Marine PFT and CFT together. All levels.', memberCount: 41, isMember: false },
+    { id: 'pub-2', name: 'Midwest ruckers', description: 'Weekly rucks, monthly 12-milers. Grand Rapids and around.', memberCount: 18, isMember: false },
+    { id: 'pub-3', name: 'Night shift', description: 'For people who train after 2200.', memberCount: 7, isMember: false },
   ]);
 }

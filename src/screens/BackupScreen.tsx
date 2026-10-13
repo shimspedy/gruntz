@@ -326,6 +326,8 @@ export default function BackupScreen() {
                 title="Last backup"
                 value={meta ? relativeTime(meta.updatedAt) : 'Not yet'}
               />
+              {/* The only other thing an account unlocks. Nobody without one is shown it. */}
+              <Row icon="people" title="Teams and communities" subtitle="Train with a crew, chat, and find open groups" onPress={() => navigation.navigate('LeaderTools')} />
             </Group>
 
             <Text variant="callout" tone="secondary" style={styles.note}>

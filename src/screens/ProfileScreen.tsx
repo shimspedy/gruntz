@@ -11,6 +11,7 @@ import { healthPlatformName } from '../services/healthSync';
 import { changeProfilePhoto, loadProfilePhotoLocation, removeProfilePhoto, type PhotoSource } from '../services/profilePhoto';
 import { syncTeamAvatar } from '../services/teams';
 import { useChromePrefs } from '../store/useUiStore';
+import { useSignedIn } from '../hooks/useSignedIn';
 import type { Rank } from '../types';
 import { useHealthStore } from '../store/useHealthStore';
 import { useProgramStore } from '../store/useProgramStore';
@@ -60,9 +61,12 @@ export default function ProfileScreen() {
   const displayName = useUserStore((s) => s.profile?.display_name || 'Athlete');
   const progress = useUserStore((s) => s.progress);
   const teamName = useReadinessStore((s) => (s.teamCount > 1 ? `${s.teamCount} teams` : s.teamName));
+  const teamCount = useReadinessStore((s) => s.teamCount);
   const military = useUserStore((s) => !!s.profile?.goals.includes('Military Prep'));
   const program = useProgramStore((s) => s.selectedProgram);
   const healthConnected = useHealthStore((s) => s.connected);
+  // Teams exist only for people who chose an account; everyone else never sees them.
+  const signedIn = useSignedIn();
   const [editing, setEditing] = useState(false);
   const programInfo = program ? getProgramById(program) : undefined;
 
@@ -99,7 +103,9 @@ export default function ProfileScreen() {
       <Group style={styles.group}>
         <MembershipRow />
         <Row icon="flag" title="Service & test profile" onPress={() => navigation.navigate('ServiceProfile')} />
-        <Row icon="people" title="Leader tools" subtitle="Teams, invite codes and a shared roster" value={teamName || undefined} onPress={() => navigation.navigate('LeaderTools')} />
+        {signedIn || (__DEV__ && teamCount > 0) ? (
+          <Row icon="people" title="Teams" subtitle="Your teams, chat and communities" value={teamName || undefined} onPress={() => navigation.navigate('LeaderTools')} />
+        ) : null}
         <Row icon="mapPin" title="Activity history" subtitle="Runs, rucks, hikes and share cards" onPress={() => navigation.navigate('ActivityHistory')} />
         {Platform.OS !== 'web' ? (
           <Row icon="heart" title={healthPlatformName} subtitle="Watch workouts and heart rate" value={healthConnected ? 'Connected' : undefined} onPress={() => navigation.navigate('HealthSync')} />

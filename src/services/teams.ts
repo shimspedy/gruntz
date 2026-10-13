@@ -31,7 +31,19 @@ export type Team = {
   name: string;
   inviteCode: string;
   isLeader: boolean;
+  /** Listed for anyone to find and join; otherwise invite code only. */
+  isPublic: boolean;
+  description: string;
   members: TeamMember[];
+};
+
+/** A public team as a stranger sees it: no code, no roster. */
+export type PublicTeam = {
+  id: string;
+  name: string;
+  description: string;
+  memberCount: number;
+  isMember: boolean;
 };
 
 export type TeamFailure = 'signed-out' | 'unavailable' | 'not-found' | 'full' | 'already-in-team' | 'too-many-teams' | 'error';
@@ -98,7 +110,7 @@ export async function fetchMyTeams(): Promise<TeamResult<Team[]>> {
   try {
     // Row-level security returns only the caller's own teams, so no filter is needed
     // and none could widen the result.
-    const { data: teams, error: teamError } = await supabase.from('teams').select('id, name, invite_code').order('name', { ascending: true });
+    const { data: teams, error: teamError } = await supabase.from('teams').select('id, name, invite_code, is_public, description').order('name', { ascending: true });
     if (teamError) return fail('error');
     if (!teams?.length) {
       useReadinessStore.getState().setTeam('', '', 0);
@@ -129,7 +141,7 @@ export async function fetchMyTeams(): Promise<TeamResult<Team[]>> {
         isMe: row.user_id === user.value,
         avatarUrl: links.get(avatarPath(row.user_id)) ?? null,
       }));
-      return { id: team.id, name: team.name, inviteCode: team.invite_code, isLeader: members.some((m) => m.isMe && m.role === 'leader'), members };
+      return { id: team.id, name: team.name, inviteCode: team.invite_code, isLeader: members.some((m) => m.isMe && m.role === 'leader'), isPublic: team.is_public === true, description: team.description ?? '', members };
     });
     // Cached so a finished workout knows whether there is a team to update without asking the network.
     useReadinessStore.getState().setTeam(value[0].name, value[0].inviteCode, value.length);
@@ -155,6 +167,33 @@ async function call(fn: string, args?: Record<string, unknown>): Promise<TeamRes
 export const createTeam = (name: string) => call('create_team', { p_name: name.trim(), p_display_name: localTeamStatus().displayName });
 export const joinTeam = (code: string) => call('join_team', { p_code: code.trim().toUpperCase(), p_display_name: localTeamStatus().displayName });
 export const removeTeamMember = (teamId: string, userId: string) => call('remove_team_member', { p_team_id: teamId, p_user_id: userId });
+export const joinPublicTeam = (teamId: string) => call('join_public_team', { p_team_id: teamId, p_display_name: localTeamStatus().displayName });
+export const setTeamVisibility = (teamId: string, isPublic: boolean, description: string) => call('set_team_visibility', { p_team_id: teamId, p_public: isPublic, p_description: description.trim().slice(0, 200) });
+
+let demoPublicTeams: PublicTeam[] | null = null;
+export function setDemoPublicTeams(teams: PublicTeam[] | null) {
+  demoPublicTeams = teams;
+}
+
+/** Public teams matching a search, biggest first. Fifty at most; the search narrows it. */
+export async function fetchPublicTeams(query: string): Promise<TeamResult<PublicTeam[]>> {
+  if (__DEV__ && demoPublicTeams) {
+    const q = query.trim().toLowerCase();
+    return { ok: true, value: demoPublicTeams.filter((t) => !q || t.name.toLowerCase().includes(q) || t.description.toLowerCase().includes(q)) };
+  }
+  const user = await signedInUserId();
+  if (!user.ok) return user;
+  const supabase = getSupabase();
+  if (!supabase) return fail('unavailable');
+  try {
+    const { data, error } = await supabase.rpc('list_public_teams', { p_query: query.trim().slice(0, 60) });
+    if (error) return fail('error');
+    const rows = (data ?? []) as { id: string; name: string; description: string; member_count: number | string; is_member: boolean }[];
+    return { ok: true, value: rows.map((row) => ({ id: row.id, name: row.name, description: row.description ?? '', memberCount: Number(row.member_count) || 0, isMember: row.is_member === true })) };
+  } catch {
+    return fail('error');
+  }
+}
 
 export async function leaveTeam(teamId: string): Promise<TeamResult<null>> {
   // The last team to go takes the photo with it, before the row does: afterwards the

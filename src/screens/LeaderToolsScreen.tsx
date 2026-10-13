@@ -1,8 +1,9 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Image } from 'expo-image';
 import {
   createTeam,
   fetchMyTeams,
@@ -16,11 +17,13 @@ import {
 } from '../services/teams';
 import { useTrainingAccess } from '../store/useSubscriptionStore';
 import { useChromePrefs } from '../store/useUiStore';
+import { loadProfilePhotoLocation } from '../services/profilePhoto';
 import type { RootStackParamList } from '../types/navigation';
 import { Button } from '../ui/Button';
-import { Icon } from '../ui/Icon';
+import { Icon, type IconName } from '../ui/Icon';
 import { IconButton, NavHeader } from '../ui/Layout';
 import { Tap } from '../ui/Pressable';
+import { Sheet } from '../ui/Sheet';
 import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
 import { toast } from '../ui/Toast';
@@ -46,7 +49,7 @@ export const FAILURE_MESSAGE: Record<TeamFailure, string> = {
   error: 'That didn’t go through. Check your connection and try again.',
 };
 
-/** Teams: lead some, join others with a code, and open any of them to see who is training and who is ready. */
+/** Teams: the ones you are in, a way to find more, and a code or a name to start another. */
 export default function LeaderToolsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -54,6 +57,7 @@ export default function LeaderToolsScreen() {
   const [view, setView] = useState<View_>({ kind: 'loading' });
   const [busy, setBusy] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [sheet, setSheet] = useState<'join' | 'create' | null>(null);
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const alive = useRef(true);
@@ -87,6 +91,7 @@ export default function LeaderToolsScreen() {
     if (result.ok) {
       haptic.success();
       toast(done);
+      setSheet(null);
       setCode('');
       setName('');
       await load();
@@ -97,23 +102,21 @@ export default function LeaderToolsScreen() {
     if (alive.current) setBusy(false);
   };
 
-  const create = () => {
+  const openCreate = () => {
     if (!unlocked) return navigation.navigate('Paywall');
-    void run(() => createTeam(name), 'Team created');
+    setSheet('create');
   };
 
   const mine = localTeamStatus();
   const teams = view.kind === 'teams' ? view.teams : [];
+  const canAct = view.kind === 'teams';
   const atLimit = teams.length >= MAX_TEAMS;
 
   return (
     <View style={styles.screen}>
-      <NavHeader title="Leader tools" />
+      <NavHeader title="Teams" />
       <ScrollView
         contentContainerStyle={{ paddingBottom: insets.bottom + space.xxl, paddingHorizontal: space.md }}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-        automaticallyAdjustKeyboardInsets
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -140,10 +143,7 @@ export default function LeaderToolsScreen() {
           </View>
         ) : null}
 
-        <Text variant="overline" tone="secondary" style={styles.label}>
-          What you share
-        </Text>
-        <View style={styles.preview}>
+        <View style={styles.preview} accessible accessibilityLabel={`What you share: ${mine.sessions} sessions, ${mine.streak} day streak, status ${STATUS_LABEL[mine.status]}`}>
           <Metric label="Sessions" value={String(mine.sessions)} />
           <View style={styles.vr} />
           <Metric label="Streak" value={`${mine.streak}d`} />
@@ -173,8 +173,29 @@ export default function LeaderToolsScreen() {
           </Notice>
         ) : null}
 
-        {view.kind === 'teams' ? (
+        {canAct ? (
           <>
+            <Tap feedback="highlight" baseColor={color.surface} pressedColor={color.surfacePressed} onPress={() => navigation.navigate('Communities')} style={styles.discover} accessibilityRole="button" accessibilityLabel="Find communities">
+              <View style={[styles.actionIcon, { backgroundColor: color.accentSoft }]}>
+                <Icon name="globe2" size={20} color={color.accent} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text variant="headline">Find communities</Text>
+                <Text variant="footnote" tone="tertiary" style={{ marginTop: 2 }}>Open groups anyone can join. Run clubs, test prep, ruck crews.</Text>
+              </View>
+              <Icon name="chevronRight" size={15} color={color.textTertiary} weight="semibold" />
+            </Tap>
+
+            <View style={styles.actions}>
+              <ActionButton icon="plus" label="Join with code" onPress={() => setSheet('join')} disabled={atLimit} />
+              <ActionButton icon="flag" label={unlocked ? 'Create team' : 'Create team · Pro'} onPress={openCreate} disabled={atLimit} />
+            </View>
+            {atLimit ? (
+              <Text variant="footnote" tone="tertiary" style={styles.hint}>
+                You are in {MAX_TEAMS} teams, the most Gruntz allows. Leave one to join or create another.
+              </Text>
+            ) : null}
+
             {teams.length ? (
               <>
                 <Text variant="overline" tone="secondary" style={styles.label}>
@@ -182,110 +203,139 @@ export default function LeaderToolsScreen() {
                 </Text>
                 <View style={styles.list}>
                   {teams.map((team, index) => (
-                    <TeamRow key={team.id} team={team} last={index === teams.length - 1} onPress={() => navigation.navigate('Team', { teamId: team.id })} />
+                    <TeamRow key={team.id} team={team} last={index === teams.length - 1} onPress={() => navigation.navigate('Team', { teamId: team.id })} onChat={() => navigation.navigate('Team', { teamId: team.id, tab: 'chat' })} />
                   ))}
                 </View>
               </>
-            ) : null}
-
-            <Text variant="overline" tone="secondary" style={styles.label}>
-              {teams.length ? 'Join another team' : 'Join a team'}
-            </Text>
-            <View style={styles.form}>
-              <Text variant="subhead" tone="secondary">
-                Invite code from its leader
-              </Text>
-              <TextInput
-                maxFontSizeMultiplier={1.8}
-                value={code}
-                onChangeText={(text) => setCode(text.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
-                autoCapitalize="characters"
-                autoCorrect={false}
-                maxLength={6}
-                placeholder="6 characters"
-                placeholderTextColor={color.textTertiary}
-                style={[styles.input, styles.codeInput]}
-                selectionColor={color.accent}
-                returnKeyType="join"
-                onSubmitEditing={() => code.length === 6 && void run(() => joinTeam(code), 'You joined the team')}
-                accessibilityLabel="Invite code"
-                editable={!atLimit}
-              />
-              <Button title="Join team" size="md" loading={busy} disabled={code.length !== 6 || atLimit} onPress={() => void run(() => joinTeam(code), 'You joined the team')} style={{ marginTop: space.lg }} />
-            </View>
-
-            <Text variant="overline" tone="secondary" style={styles.label}>
-              {teams.length ? 'Lead another team' : 'Lead a team'}
-            </Text>
-            <View style={styles.form}>
-              <Text variant="subhead" tone="secondary">
-                Team or section name
-              </Text>
-              <TextInput
-                maxFontSizeMultiplier={1.8}
-                value={name}
-                onChangeText={setName}
-                maxLength={40}
-                placeholder="2nd Platoon, Saturday crew…"
-                placeholderTextColor={color.textTertiary}
-                style={styles.input}
-                selectionColor={color.accent}
-                returnKeyType="done"
-                accessibilityLabel="Team name"
-                editable={!atLimit}
-              />
-              <Button
-                title={unlocked ? 'Create team' : 'Unlock Gruntz Pro to lead a team'}
-                size="md"
-                variant={unlocked ? 'primary' : 'secondary'}
-                loading={busy}
-                disabled={atLimit || (unlocked && !name.trim())}
-                onPress={create}
-                style={{ marginTop: space.lg }}
-              />
-              <Text variant="footnote" tone="tertiary" style={{ marginTop: space.sm }}>
-                {atLimit
-                  ? `You are in ${MAX_TEAMS} teams, the most Gruntz allows. Leave one to join or create another.`
-                  : `Up to 50 athletes per team, and you can be in up to ${MAX_TEAMS}. Joining is free; leading is part of Gruntz Pro.`}
-              </Text>
-            </View>
+            ) : (
+              <View style={styles.emptyTeams}>
+                <Icon name="people" size={24} color={color.textSecondary} />
+                <Text variant="headline" style={{ marginTop: space.sm }}>No teams yet</Text>
+                <Text variant="subhead" tone="secondary" align="center" style={{ marginTop: 4 }}>
+                  Join a community above, enter a code from a leader, or start your own.
+                </Text>
+              </View>
+            )}
           </>
         ) : null}
       </ScrollView>
+
+      <Sheet visible={sheet === 'join'} onClose={() => setSheet(null)} title="Join with a code" avoidKeyboard>
+        <View style={styles.sheetBody}>
+          <Text variant="subhead" tone="secondary">Six characters from the team’s leader.</Text>
+          <TextInput
+            maxFontSizeMultiplier={1.8}
+            value={code}
+            onChangeText={(text) => setCode(text.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            autoFocus
+            maxLength={6}
+            placeholder="ABC123"
+            placeholderTextColor={color.textTertiary}
+            style={[styles.input, styles.codeInput]}
+            selectionColor={color.accent}
+            returnKeyType="join"
+            onSubmitEditing={() => code.length === 6 && void run(() => joinTeam(code), 'You joined the team')}
+            accessibilityLabel="Invite code"
+          />
+          <Button title="Join team" loading={busy} disabled={code.length !== 6} onPress={() => void run(() => joinTeam(code), 'You joined the team')} style={{ marginTop: space.lg }} />
+        </View>
+      </Sheet>
+
+      <Sheet visible={sheet === 'create'} onClose={() => setSheet(null)} title="Create a team" avoidKeyboard>
+        <View style={styles.sheetBody}>
+          <Text variant="subhead" tone="secondary">Up to 50 athletes. You can open it to everyone later from the team’s menu.</Text>
+          <TextInput
+            maxFontSizeMultiplier={1.8}
+            value={name}
+            onChangeText={setName}
+            autoFocus
+            maxLength={40}
+            placeholder="2nd Platoon, Saturday crew…"
+            placeholderTextColor={color.textTertiary}
+            style={styles.input}
+            selectionColor={color.accent}
+            returnKeyType="done"
+            onSubmitEditing={() => name.trim() && void run(() => createTeam(name), 'Team created')}
+            accessibilityLabel="Team name"
+          />
+          <Button title="Create team" loading={busy} disabled={!name.trim()} onPress={() => void run(() => createTeam(name), 'Team created')} style={{ marginTop: space.lg }} />
+        </View>
+      </Sheet>
     </View>
   );
 }
 
-function TeamRow({ team, last, onPress }: { team: Team; last: boolean; onPress: () => void }) {
-  const ready = team.members.filter((m) => m.status === 'green').length;
+function ActionButton({ icon, label, onPress, disabled }: { icon: IconName; label: string; onPress: () => void; disabled?: boolean }) {
   return (
-    <Tap
-      feedback="highlight"
-      baseColor={color.surface}
-      pressedColor={color.surfacePressed}
-      onPress={onPress}
-      style={[styles.teamRow, !last && styles.rosterDivider]}
-      accessibilityRole="button"
-      accessibilityLabel={`${team.name}, ${team.members.length} athletes, ${ready} ready${team.isLeader ? ', you lead it' : ''}`}
-    >
-      <View style={styles.teamIcon}>
-        <Icon name={team.isLeader ? 'flag' : 'people'} size={18} color={color.text} />
+    <Tap feedback="highlight" baseColor={color.surface} pressedColor={color.surfacePressed} onPress={onPress} disabled={disabled} style={[styles.action, disabled && { opacity: 0.45 }]} accessibilityRole="button" accessibilityLabel={label}>
+      <View style={styles.actionIcon}>
+        <Icon name={icon} size={18} color={color.text} weight="semibold" />
+      </View>
+      <Text variant="headline" numberOfLines={1} adjustsFontSizeToFit>{label}</Text>
+    </Tap>
+  );
+}
+
+/** The photo on this phone, for your own face in the row; teammates' come with the roster. */
+function useMyPhoto(): string | null {
+  const file = useChromePrefs((s) => s.profilePhotoFile);
+  const [uri, setUri] = useState<string | null>(null);
+  useEffect(() => {
+    let current = true;
+    void loadProfilePhotoLocation().then((next) => { if (current) setUri(next); });
+    return () => { current = false; };
+  }, [file]);
+  return uri;
+}
+
+/** A team at a glance: who is in it, how many are ready, and a way straight into its chat. */
+function TeamRow({ team, last, onPress, onChat }: { team: Team; last: boolean; onPress: () => void; onChat: () => void }) {
+  const myPhoto = useMyPhoto();
+  const ready = team.members.filter((m) => m.status === 'green').length;
+  const faces = team.members.slice(0, 4).map((member) => ({ ...member, avatarUrl: member.isMe ? myPhoto : member.avatarUrl }));
+  // Two separate targets side by side, so the chat button stays reachable with a screen reader.
+  return (
+    <View style={[styles.teamRow, !last && styles.divider]}>
+      <Tap
+        feedback="highlight"
+        baseColor={color.surface}
+        pressedColor={color.surfacePressed}
+        onPress={onPress}
+        style={styles.teamMain}
+        accessibilityRole="button"
+        accessibilityLabel={`${team.name}, ${team.members.length} athletes, ${ready} ready${team.isLeader ? ', you lead it' : ''}${team.isPublic ? ', public' : ''}`}
+      >
+      <View style={styles.faces}>
+        {faces.map((member, index) => (
+          <View key={member.userId} style={[styles.face, { marginLeft: index ? -10 : 0, zIndex: faces.length - index }]}>
+            {member.avatarUrl ? <Image source={{ uri: member.avatarUrl }} style={styles.faceImage} contentFit="cover" accessibilityIgnoresInvertColors />
+              : <Text style={styles.faceInitial}>{member.displayName.trim().charAt(0).toUpperCase() || '?'}</Text>}
+          </View>
+        ))}
+        {team.members.length > faces.length ? (
+          <View style={[styles.face, { marginLeft: -10, zIndex: 0 }]}><Text style={styles.faceInitial}>+{team.members.length - faces.length}</Text></View>
+        ) : null}
       </View>
       <View style={{ flex: 1 }}>
         <Text variant="headline" numberOfLines={1}>{team.name}</Text>
         <Text variant="footnote" tone="tertiary" style={{ marginTop: 2 }} numberOfLines={1}>
           {team.isLeader ? 'You lead · ' : ''}
-          {team.members.length === 1 ? '1 athlete' : `${team.members.length} athletes`} · {ready} ready
+          {team.members.length === 1 ? '1 athlete' : `${team.members.length} athletes`} · {ready} ready{team.isPublic ? ' · Public' : ''}
         </Text>
       </View>
-      <Icon name="chevronRight" size={15} color={color.textTertiary} weight="semibold" />
-    </Tap>
+      </Tap>
+      <Tap feedback="opacity" hitSlop={8} onPress={onChat} style={styles.chatButton} accessibilityRole="button" accessibilityLabel={`Chat with ${team.name}`}>
+        <Icon name="chat" size={18} color={color.accent} />
+      </Tap>
+    </View>
   );
 }
 
 function Notice({ icon, title, body, children }: { icon: 'info' | 'alert' | 'people'; title: string; body: string; children?: React.ReactNode }) {
   return (
-    <View style={[styles.form, { marginTop: space.xl }]}>
+    <View style={[styles.card, { marginTop: space.xl }]}>
       <Icon name={icon} size={22} color={color.textSecondary} />
       <Text variant="headline" style={{ marginTop: space.sm }}>
         {title}
@@ -301,10 +351,10 @@ function Notice({ icon, title, body, children }: { icon: 'info' | 'alert' | 'peo
 function Metric({ label, value, tint = color.text, small }: { label: string; value: string; tint?: string; small?: boolean }) {
   return (
     <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 4 }}>
-      <Text style={{ fontFamily: font.bold, fontSize: small ? 15 : 22, lineHeight: 28, color: tint }} tabular numberOfLines={1} adjustsFontSizeToFit>
+      <Text style={{ fontFamily: font.bold, fontSize: small ? 15 : 20, lineHeight: 26, color: tint }} tabular numberOfLines={1} adjustsFontSizeToFit>
         {value}
       </Text>
-      <Text variant="footnote" tone="tertiary" style={{ marginTop: 2 }}>
+      <Text variant="caption" tone="tertiary" style={{ marginTop: 1 }}>
         {label}
       </Text>
     </View>
@@ -315,25 +365,37 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: color.bg },
   privacy: { flexDirection: 'row', gap: 14, padding: space.md, marginTop: space.sm, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: color.accentSoft },
   privacyClose: { marginTop: -6, marginRight: -6 },
+  preview: { flexDirection: 'row', paddingVertical: space.md, marginTop: space.md, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: color.surface },
+  vr: { width: StyleSheet.hairlineWidth, backgroundColor: color.line },
   label: { marginTop: space.xl, marginBottom: 10, marginLeft: 6 },
+  hint: { marginTop: space.sm, paddingHorizontal: 6 },
   state: { marginTop: space.xxl },
-  form: { padding: space.md, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: color.surface },
+  card: { padding: space.md, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: color.surface },
+  discover: { flexDirection: 'row', alignItems: 'center', gap: space.sm, padding: space.md, marginTop: space.xl, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: color.surface },
+  actions: { flexDirection: 'row', gap: 12, marginTop: 12 },
+  action: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 60, paddingHorizontal: space.sm + 2, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: color.surface },
+  actionIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: color.surfaceHigh, alignItems: 'center', justifyContent: 'center' },
+  list: { borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: color.surface, paddingHorizontal: space.md, overflow: 'hidden' },
+  teamRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 72 },
+  teamMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: space.sm, marginLeft: -space.md, paddingLeft: space.md },
+  divider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: color.line },
+  faces: { flexDirection: 'row', alignItems: 'center' },
+  face: { width: 34, height: 34, borderRadius: 17, backgroundColor: color.surfaceHigh, borderWidth: 2, borderColor: color.surface, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  faceImage: { width: 30, height: 30, borderRadius: 15 },
+  faceInitial: { fontFamily: font.bold, fontSize: 12, color: color.text },
+  chatButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: color.accentSoft, alignItems: 'center', justifyContent: 'center' },
+  emptyTeams: { alignItems: 'center', padding: space.lg, marginTop: space.xl, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: color.surface },
+  sheetBody: { paddingHorizontal: space.gutter, paddingTop: space.md },
   input: {
-    height: 50,
-    marginTop: 8,
-    borderRadius: radius.sm,
+    height: 52,
+    marginTop: space.sm,
+    borderRadius: radius.md,
     borderCurve: 'continuous',
-    backgroundColor: color.surfaceHigh,
+    backgroundColor: color.surface,
     paddingHorizontal: space.md,
     color: color.text,
     fontFamily: font.medium,
     fontSize: 17,
   },
-  codeInput: { fontFamily: font.bold, fontSize: 20, letterSpacing: 4, fontVariant: ['tabular-nums'] },
-  preview: { flexDirection: 'row', paddingVertical: space.lg, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: color.surface },
-  vr: { width: StyleSheet.hairlineWidth, backgroundColor: color.line },
-  list: { borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: color.surface, paddingHorizontal: space.md, overflow: 'hidden' },
-  teamRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 64, paddingVertical: space.sm },
-  teamIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: color.surfaceHigh, alignItems: 'center', justifyContent: 'center' },
-  rosterDivider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: color.line },
+  codeInput: { fontFamily: font.bold, fontSize: 22, letterSpacing: 5, fontVariant: ['tabular-nums'], textAlign: 'center' },
 });
