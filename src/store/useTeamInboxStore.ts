@@ -35,12 +35,17 @@ export const useTeamInboxStore = create<TeamInboxState>()(
       markRead: (teamId, at) => set((s) => {
         const stamp = at ?? new Date().toISOString();
         const previous = s.lastReadAt[teamId];
-        const lastReadAt = previous && previous >= stamp ? s.lastReadAt : { ...s.lastReadAt, [teamId]: stamp };
+        const advanced = !(previous && previous >= stamp);
+        // Nothing to do is a no-op, not a new object: a chat polls every 20 s and the
+        // header would otherwise re-render and persist on every tick.
+        if (!advanced && !(teamId in s.unread)) return s;
+        const lastReadAt = advanced ? { ...s.lastReadAt, [teamId]: stamp } : s.lastReadAt;
         const unread = { ...s.unread };
         delete unread[teamId];
         return { lastReadAt, unread };
       }),
-      clear: () => set({ unread: {}, latestAt: {}, teamIds: [] }),
+      /** Signed out: no counts. Team ids stay; the next team fetch replaces them. */
+      clear: () => set({ unread: {}, latestAt: {} }),
     }),
     {
       name: '@gruntz_team_inbox',

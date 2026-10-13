@@ -204,6 +204,9 @@ function TeamInboxHost() {
   const signedIn = useSignedIn();
   const teamCount = useReadinessStore((s) => s.teamCount);
   useEffect(() => {
+    // Null means the session is still being read: do nothing yet, or a cold launch would
+    // wipe the persisted counts before sign-in state is known.
+    if (signedIn === null) return undefined;
     if (!(signedIn || (__DEV__ && teamCount > 0))) { useTeamInboxStore.getState().clear(); return undefined; }
     return startInboxLifecycle();
   }, [signedIn, teamCount]);

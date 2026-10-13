@@ -65,8 +65,10 @@ export function startInboxLifecycle(): () => void {
       if (stopped || !data.session) return;
       await supabase.realtime.setAuth(data.session.access_token);
       if (stopped) return;
+      // A fresh topic each time: the client hands back a channel that is still leaving
+      // when the same topic is asked for again, and subscribing to that one is a no-op.
       channel = supabase
-        .channel('team-inbox')
+        .channel(`team-inbox-${Date.now()}`)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_messages' }, () => { void refreshInbox(); })
         .subscribe();
     })();

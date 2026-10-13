@@ -27,7 +27,9 @@ export function TabHeader() {
   // Pro stays one tap away in Profile. Without an account the header stays as it always was.
   const signedIn = useSignedIn();
   const teamCount = useReadinessStore((s) => s.teamCount);
-  const inTeam = teamCount > 0 && (signedIn || __DEV__);
+  // A remembered team count means an account was signed in last time, so the icon shows
+  // at once instead of flashing PRO while the session is still being read (null).
+  const inTeam = teamCount > 0 && (signedIn !== false || __DEV__);
   const unread = useTeamInboxStore((s) => s.unread);
   const latestAt = useTeamInboxStore((s) => s.latestAt);
   const teamIds = useTeamInboxStore((s) => s.teamIds);

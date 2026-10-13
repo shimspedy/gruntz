@@ -142,7 +142,8 @@ export function subscribeToMessages(teamId: string, onChange: (change: { kind: '
     await supabase.realtime.setAuth(data.session?.access_token);
     if (stopped) return;
     channel = supabase
-      .channel(`team-chat-${teamId}`, { config: { private: false } })
+      // Suffixed so a quick close-and-reopen does not land on the channel still leaving.
+      .channel(`team-chat-${teamId}-${Date.now()}`, { config: { private: false } })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_messages', filter: `team_id=eq.${teamId}` }, (payload) => {
         onChange({ kind: 'added', message: toMessage(payload.new as Row, userId) });
       })
