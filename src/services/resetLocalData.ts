@@ -14,6 +14,7 @@ import { useExerciseNotesStore } from '../store/useExerciseNotesStore';
 import { useOnboardingDraftStore } from '../store/useOnboardingDraftStore';
 import { useChromePrefs, useUiStore } from '../store/useUiStore';
 import { useHealthStore } from '../store/useHealthStore';
+import { deleteAllProfilePhotos } from './profilePhoto';
 
 /** Clear disk AND memory; otherwise the next store write resurrects deleted data. */
 export async function resetLocalData() {
@@ -41,6 +42,7 @@ export async function resetLocalData() {
   await Promise.all([flushUserPersistence(), flushReadinessPersistence()]);
   // Also deletes every saved GPS route, which on Android are files the key sweep below cannot see.
   await clearReadinessPersistence();
+  await deleteAllProfilePhotos();
   await useSessionStore.persist.clearStorage();
   const keys = await AsyncStorage.getAllKeys();
   // Billing remains store-managed and the original trial must not restart on erase.

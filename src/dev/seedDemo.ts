@@ -6,7 +6,7 @@ import { useSessionStore } from '../store/useSessionStore';
 import { useUserStore } from '../store/useUserStore';
 import { getLocalDateKey } from '../utils/dateKey';
 import { getLevelForXP, getRank } from '../utils/xp';
-import { setDemoTeam } from '../services/teams';
+import { setDemoTeams } from '../services/teams';
 import { saveRoute } from '../store/activityRoutes';
 import { useRoutineStore } from '../store/useRoutineStore';
 import type { RoutePoint } from '../types/activity';
@@ -151,18 +151,31 @@ export function seedDemo() {
   }));
 
   const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60000).toISOString();
-  setDemoTeam({
-    id: 'demo-team',
-    name: '2nd Platoon',
-    inviteCode: 'RK7M4Q',
-    isLeader: true,
-    members: [
-      { userId: 'me', displayName: 'Alex', role: 'leader', sessions: claimed.size, streak: 12, status: 'green', updatedAt: minutesAgo(1), isMe: true },
-      { userId: 'a', displayName: 'Brooks', role: 'member', sessions: 52, streak: 21, status: 'green', updatedAt: minutesAgo(38), isMe: false },
-      { userId: 'b', displayName: 'Dana R.', role: 'member', sessions: 44, streak: 9, status: 'amber', updatedAt: minutesAgo(95), isMe: false },
-      { userId: 'c', displayName: 'Ortiz', role: 'member', sessions: 39, streak: 14, status: 'green', updatedAt: minutesAgo(180), isMe: false },
-      { userId: 'd', displayName: 'Sam K.', role: 'member', sessions: 31, streak: 3, status: 'red', updatedAt: minutesAgo(410), isMe: false },
-      { userId: 'e', displayName: 'Whitaker', role: 'member', sessions: 27, streak: 6, status: 'unknown', updatedAt: minutesAgo(1500), isMe: false },
-    ],
-  });
+  setDemoTeams([
+  {
+      id: 'demo-team',
+      name: '2nd Platoon',
+      inviteCode: 'RK7M4Q',
+      isLeader: true,
+      members: [
+        { userId: 'me', displayName: 'Alex', role: 'leader', sessions: claimed.size, streak: 12, status: 'green', updatedAt: minutesAgo(1), isMe: true, avatarUrl: null },
+        { userId: 'a', displayName: 'Brooks', role: 'member', sessions: 52, streak: 21, status: 'green', updatedAt: minutesAgo(38), isMe: false, avatarUrl: null },
+        { userId: 'b', displayName: 'Dana R.', role: 'member', sessions: 44, streak: 9, status: 'amber', updatedAt: minutesAgo(95), isMe: false, avatarUrl: null },
+        { userId: 'c', displayName: 'Ortiz', role: 'member', sessions: 39, streak: 14, status: 'green', updatedAt: minutesAgo(180), isMe: false, avatarUrl: null },
+        { userId: 'd', displayName: 'Sam K.', role: 'member', sessions: 31, streak: 3, status: 'red', updatedAt: minutesAgo(410), isMe: false, avatarUrl: null },
+        { userId: 'e', displayName: 'Whitaker', role: 'member', sessions: 27, streak: 6, status: 'unknown', updatedAt: minutesAgo(1500), isMe: false, avatarUrl: null },
+      ],
+    },
+    {
+      id: 'demo-team-2',
+      name: 'Saturday crew',
+      inviteCode: 'HX4N7B',
+      isLeader: false,
+      members: [
+        { userId: 'f', displayName: 'Priya', role: 'leader', sessions: 61, streak: 30, status: 'green', updatedAt: minutesAgo(20), isMe: false, avatarUrl: null },
+        { userId: 'me', displayName: 'Alex', role: 'member', sessions: claimed.size, streak: 12, status: 'green', updatedAt: minutesAgo(1), isMe: true, avatarUrl: null },
+        { userId: 'g', displayName: 'Marcus', role: 'member', sessions: 18, streak: 2, status: 'amber', updatedAt: minutesAgo(300), isMe: false, avatarUrl: null },
+      ],
+    },
+  ]);
 }

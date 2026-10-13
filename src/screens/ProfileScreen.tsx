@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
-import { Alert, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActionSheetIOS, Alert, Linking, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useNavigation, useScrollToTop } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
@@ -7,6 +8,10 @@ import { getProgramById } from '../data/programs';
 import { claimedDates } from '../features/plan';
 import { useTabChromeInset } from '../navigation/TabBar';
 import { healthPlatformName } from '../services/healthSync';
+import { changeProfilePhoto, loadProfilePhotoLocation, removeProfilePhoto, type PhotoSource } from '../services/profilePhoto';
+import { syncTeamAvatar } from '../services/teams';
+import { useChromePrefs } from '../store/useUiStore';
+import type { Rank } from '../types';
 import { useHealthStore } from '../store/useHealthStore';
 import { useProgramStore } from '../store/useProgramStore';
 import { useReadinessStore } from '../store/useReadinessStore';
@@ -54,7 +59,7 @@ export default function ProfileScreen() {
   useScrollToTop(ref);
   const displayName = useUserStore((s) => s.profile?.display_name || 'Athlete');
   const progress = useUserStore((s) => s.progress);
-  const teamName = useReadinessStore((s) => s.teamName);
+  const teamName = useReadinessStore((s) => (s.teamCount > 1 ? `${s.teamCount} teams` : s.teamName));
   const military = useUserStore((s) => !!s.profile?.goals.includes('Military Prep'));
   const program = useProgramStore((s) => s.selectedProgram);
   const healthConnected = useHealthStore((s) => s.connected);
@@ -69,12 +74,7 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.identity}>
-        <View style={styles.avatar}>
-          <Text style={styles.initial}>{displayName.charAt(0).toUpperCase()}</Text>
-          <View style={styles.avatarBadge}>
-            <RankBadge rank={progress.current_rank} size={38} locked={progress.current_xp === 0} />
-          </View>
-        </View>
+        <Avatar initial={displayName.charAt(0).toUpperCase()} rank={progress.current_rank} locked={progress.current_xp === 0} />
         <View style={{ flex: 1, marginLeft: space.lg }}>
           <Text variant="headline" style={{ fontSize: 21 }} numberOfLines={1}>
             {displayName}
@@ -118,6 +118,71 @@ export default function ProfileScreen() {
 
       <EditNameSheet visible={editing} onClose={() => setEditing(false)} />
     </ScrollView>
+  );
+}
+
+/** One sheet for the three ways a photo can change. */
+export function photoOptions() {
+  haptic.light();
+  const hasPhoto = !!useChromePrefs.getState().profilePhotoFile;
+  const change = async (source: PhotoSource) => {
+    const outcome = await changeProfilePhoto(source);
+    if (outcome === 'saved') { haptic.success(); toast('Profile photo updated'); void syncTeamAvatar(); return; }
+    if (outcome === 'cancelled') return;
+    if (outcome === 'denied') {
+      Alert.alert(
+        source === 'camera' ? 'Camera access is off' : 'Photo access is off',
+        `Allow it in Settings to ${source === 'camera' ? 'take' : 'choose'} a profile photo.`,
+        [{ text: 'Not now', style: 'cancel' }, { text: 'Open Settings', onPress: () => { void Linking.openSettings().catch(() => undefined); } }],
+      );
+      return;
+    }
+    toast(outcome === 'unavailable' ? 'Photos aren’t available on this device' : 'Couldn’t save that photo. Try another.', { tone: 'error', icon: 'alert' });
+  };
+  const remove = async () => { await removeProfilePhoto(); haptic.selection(); toast('Profile photo removed'); void syncTeamAvatar(); };
+  const actions: { label: string; run: () => void; destructive?: boolean }[] = [
+    { label: 'Take photo', run: () => void change('camera') },
+    { label: 'Choose from library', run: () => void change('library') },
+    ...(hasPhoto ? [{ label: 'Remove photo', run: () => void remove(), destructive: true }] : []),
+  ];
+  if (Platform.OS === 'ios') {
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        options: [...actions.map((a) => a.label), 'Cancel'],
+        destructiveButtonIndex: hasPhoto ? actions.length - 1 : undefined,
+        cancelButtonIndex: actions.length,
+        userInterfaceStyle: 'dark',
+      },
+      (i) => actions[i]?.run(),
+    );
+    return;
+  }
+  Alert.alert('Profile photo', undefined, [
+    ...actions.map((a) => ({ text: a.label, onPress: a.run, ...(a.destructive ? { style: 'destructive' as const } : {}) })),
+    { text: 'Cancel', style: 'cancel' },
+  ]);
+}
+
+function Avatar({ initial, rank, locked }: { initial: string; rank: Rank; locked: boolean }) {
+  const file = useChromePrefs((s) => s.profilePhotoFile);
+  const [uri, setUri] = useState<string | null>(null);
+  // Resolved on every change: the folder path is only known once the file module has loaded.
+  useEffect(() => {
+    let current = true;
+    void loadProfilePhotoLocation().then((next) => { if (current) setUri(next); });
+    return () => { current = false; };
+  }, [file]);
+  return (
+    <Tap onPress={photoOptions} scaleTo={0.96} style={styles.avatar} accessibilityRole="button" accessibilityLabel={uri ? 'Change profile photo' : 'Add profile photo'}>
+      {uri ? <Image source={{ uri }} style={styles.photo} contentFit="cover" transition={150} accessibilityIgnoresInvertColors />
+        : <Text style={styles.initial}>{initial}</Text>}
+      <View style={styles.cameraBadge}>
+        <Icon name="camera" size={14} color={color.text} weight="semibold" />
+      </View>
+      <View style={styles.avatarBadge}>
+        <RankBadge rank={rank} size={38} locked={locked} />
+      </View>
+    </Tap>
   );
 }
 
@@ -270,7 +335,8 @@ function EditNameSheet({ visible, onClose }: { visible: boolean; onClose: () => 
           style={styles.input}
           selectionColor={color.accent}
         />
-        <Button title="Save" style={{ marginTop: space.lg }} haptic={false} onPress={saveName} />
+        <Button title="Change photo" variant="secondary" style={{ marginTop: space.lg }} onPress={photoOptions} />
+        <Button title="Save" style={{ marginTop: space.sm }} haptic={false} onPress={saveName} />
       </View>
     </Sheet>
   );
@@ -323,7 +389,9 @@ const styles = StyleSheet.create({
   identity: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.gutter + 4, marginTop: space.xs },
   avatar: { width: 112, height: 112, borderRadius: 56, backgroundColor: color.cta, alignItems: 'center', justifyContent: 'center' },
   initial: { fontFamily: font.bold, fontSize: 48, color: '#000' },
+  photo: { width: 112, height: 112, borderRadius: 56 },
   avatarBadge: { position: 'absolute', right: -6, bottom: -4 },
+  cameraBadge: { position: 'absolute', left: -2, bottom: 2, width: 28, height: 28, borderRadius: 14, backgroundColor: color.surfaceHigh, borderWidth: 2, borderColor: color.bg, alignItems: 'center', justifyContent: 'center' },
   stats: { flexDirection: 'row', marginTop: space.md },
   chartHead: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: space.gutter + 4, marginTop: space.xxl },
   valueRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4, marginBottom: 4 },

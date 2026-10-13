@@ -65,8 +65,10 @@ interface ReadinessState {
   batterySaver: boolean;
   trackedSessions: TrackedSession[];
   includeActivityRoutesInBackup: boolean;
+  /** The first team's name and code, kept for older builds; `teamCount` says how many there are. */
   teamName: string;
   teamCode: string;
+  teamCount: number;
   saveCheckIn: (checkIn: DailyReadinessCheckIn) => void;
   setTestScore: (eventId: string, value: number) => void;
   setTargetScore: (eventId: string, value: number) => void;
@@ -79,7 +81,7 @@ interface ReadinessState {
   addTrackedSession: (session: TrackedSession) => boolean;
   setTrackedHeartRate: (id: string, heartRate: { average: number; max: number }) => void;
   setIncludeActivityRoutesInBackup: (include: boolean) => void;
-  setTeam: (name: string, code: string) => void;
+  setTeam: (name: string, code: string, count?: number) => void;
 }
 
 /** Clamp to a range, falling back when the value is missing or not a number. */
@@ -109,7 +111,7 @@ export const useReadinessStore = create<ReadinessState>()(
   persist(
     (set, get) => ({
       checkIns: [], testScores: {}, targetScores: {}, fieldMode: false, audioCues: true,
-      keepScreenAwake: true, batterySaver: false, trackedSessions: [], teamName: '', teamCode: '',
+      keepScreenAwake: true, batterySaver: false, trackedSessions: [], teamName: '', teamCode: '', teamCount: 0,
       includeActivityRoutesInBackup: false,
       saveCheckIn: (checkIn) => set((state) => ({
         checkIns: [checkIn, ...state.checkIns.filter((item) => item.date !== checkIn.date)].slice(0, MAX_CHECKINS),
@@ -131,7 +133,7 @@ export const useReadinessStore = create<ReadinessState>()(
           ? { ...session, averageHeartRate: heartRate.average, maxHeartRate: heartRate.max } : session),
       })),
       setIncludeActivityRoutesInBackup: (include) => set({ includeActivityRoutesInBackup: include }),
-      setTeam: (teamName, teamCode) => set({ teamName, teamCode }),
+      setTeam: (teamName, teamCode, count) => set({ teamName, teamCode, teamCount: count ?? (teamCode ? 1 : 0) }),
     }),
     {
       name: '@gruntz_readiness',

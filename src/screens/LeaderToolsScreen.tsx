@@ -1,71 +1,71 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { ActionSheetIOS, Alert, RefreshControl, ScrollView, Share, StyleSheet, TextInput, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   createTeam,
-  fetchMyTeam,
+  fetchMyTeams,
   joinTeam,
-  leaveTeam,
   localTeamStatus,
-  removeTeamMember,
+  MAX_TEAMS,
   syncTeamStatus,
   type Team,
   type TeamFailure,
-  type TeamMember,
   type TeamStatus,
 } from '../services/teams';
 import { useTrainingAccess } from '../store/useSubscriptionStore';
+import { useChromePrefs } from '../store/useUiStore';
 import type { RootStackParamList } from '../types/navigation';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
-import { NavHeader } from '../ui/Layout';
+import { IconButton, NavHeader } from '../ui/Layout';
 import { Tap } from '../ui/Pressable';
 import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
 import { toast } from '../ui/Toast';
 import { color, font, radius, space } from '../ui/tokens';
-import { relativeTime } from '../utils/relativeTime';
 
 type View_ =
   | { kind: 'loading' }
   | { kind: 'signed-out' }
   | { kind: 'unavailable' }
   | { kind: 'error' }
-  | { kind: 'none' }
-  | { kind: 'team'; team: Team };
+  | { kind: 'teams'; teams: Team[] };
 
-const STATUS_LABEL: Record<TeamStatus, string> = { green: 'Green', amber: 'Amber', red: 'Red', unknown: 'No check-in' };
-const STATUS_TINT: Record<TeamStatus, string> = { green: color.success, amber: color.flame, red: color.danger, unknown: color.textQuaternary };
+export const STATUS_LABEL: Record<TeamStatus, string> = { green: 'Green', amber: 'Amber', red: 'Red', unknown: 'No check-in' };
+export const STATUS_TINT: Record<TeamStatus, string> = { green: color.success, amber: color.flame, red: color.danger, unknown: color.textQuaternary };
 
-const FAILURE_MESSAGE: Record<TeamFailure, string> = {
+export const FAILURE_MESSAGE: Record<TeamFailure, string> = {
   'signed-out': 'Sign in first to use teams.',
   unavailable: 'Teams are not available in this build.',
   'not-found': 'No team uses that code. Check it with your leader.',
   full: 'That team is full.',
-  'already-in-team': 'You are already in a team. Leave it before joining another.',
+  'already-in-team': 'You are already in that team.',
+  'too-many-teams': `You can be in up to ${MAX_TEAMS} teams. Leave one to join another.`,
   error: 'That didn’t go through. Check your connection and try again.',
 };
 
-/** Teams: create one or join with a code, then see who is training and who is ready. */
+/** Teams: lead some, join others with a code, and open any of them to see who is training and who is ready. */
 export default function LeaderToolsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const unlocked = useTrainingAccess();
   const [view, setView] = useState<View_>({ kind: 'loading' });
-  const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const alive = useRef(true);
+  const privacyDismissed = useChromePrefs((s) => s.leaderPrivacyDismissed);
+  const setPrivacyDismissed = useChromePrefs((s) => s.setLeaderPrivacyDismissed);
 
   const load = useCallback(async () => {
-    // Publish first, so the roster that comes back already shows this athlete's latest numbers.
+    // Publish first, so the rosters that come back already show this athlete's latest numbers.
     await syncTeamStatus();
-    const result = await fetchMyTeam();
+    const result = await fetchMyTeams();
     if (!alive.current) return;
-    if (result.ok) setView(result.value ? { kind: 'team', team: result.value } : { kind: 'none' });
+    if (result.ok) setView({ kind: 'teams', teams: result.value });
     else setView({ kind: result.reason === 'signed-out' ? 'signed-out' : result.reason === 'unavailable' ? 'unavailable' : 'error' });
   }, []);
 
@@ -80,13 +80,15 @@ export default function LeaderToolsScreen() {
     }, [load]),
   );
 
-  const run = async (action: () => Promise<{ ok: true } | { ok: false; reason: TeamFailure }>, done?: string) => {
+  const run = async (action: () => Promise<{ ok: true } | { ok: false; reason: TeamFailure }>, done: string) => {
     if (busy) return;
     setBusy(true);
     const result = await action();
     if (result.ok) {
       haptic.success();
-      if (done) toast(done);
+      toast(done);
+      setCode('');
+      setName('');
       await load();
     } else {
       haptic.warning();
@@ -100,47 +102,9 @@ export default function LeaderToolsScreen() {
     void run(() => createTeam(name), 'Team created');
   };
 
-  const invite = (team: Team) => {
-    haptic.light();
-    void Share.share({ message: `Join ${team.name} on Gruntz. Open Profile, then Leader tools, and enter the code ${team.inviteCode}.` }).catch(() => undefined);
-  };
-
-  const confirmLeave = (team: Team) => {
-    const soleMember = team.members.length === 1;
-    Alert.alert(
-      soleMember ? 'Delete this team?' : 'Leave this team?',
-      soleMember
-        ? 'You are the only member, so leaving removes the team and its invite code.'
-        : team.isLeader
-          ? 'The longest-standing member becomes the leader. Your sessions, streak and status stop being shared.'
-          : 'Your sessions, streak and status stop being shared with this team.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: soleMember ? 'Delete team' : 'Leave team', style: 'destructive', onPress: () => void run(leaveTeam, soleMember ? 'Team deleted' : 'You left the team') },
-      ],
-    );
-  };
-
-  const memberOptions = (member: TeamMember) => {
-    haptic.light();
-    const remove = () =>
-      Alert.alert(`Remove ${member.displayName}?`, 'They can join again with the invite code.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Remove', style: 'destructive', onPress: () => void run(() => removeTeamMember(member.userId), `${member.displayName} removed`) },
-      ]);
-    if (process.env.EXPO_OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        { title: member.displayName, options: ['Remove from team', 'Cancel'], destructiveButtonIndex: 0, cancelButtonIndex: 1, userInterfaceStyle: 'dark' },
-        (i) => {
-          if (i === 0) remove();
-        },
-      );
-      return;
-    }
-    remove();
-  };
-
   const mine = localTeamStatus();
+  const teams = view.kind === 'teams' ? view.teams : [];
+  const atLimit = teams.length >= MAX_TEAMS;
 
   return (
     <View style={styles.screen}>
@@ -162,15 +126,19 @@ export default function LeaderToolsScreen() {
           />
         }
       >
-        <View style={styles.privacy}>
-          <Icon name="lock" size={20} color={color.accent} />
-          <View style={{ flex: 1 }}>
-            <Text variant="headline">Three numbers, nothing else</Text>
-            <Text variant="subhead" tone="secondary" style={{ marginTop: 4 }}>
-              A team sees your session count, your streak and a green, amber or red status from today’s check-in. Weights, sleep, limitations and test scores stay on this phone.
-            </Text>
+        {/* Shown until it has been read once; a team's menu brings it back. */}
+        {!privacyDismissed ? (
+          <View style={styles.privacy}>
+            <Icon name="lock" size={20} color={color.accent} />
+            <View style={{ flex: 1 }}>
+              <Text variant="headline">Three numbers and a photo, nothing else</Text>
+              <Text variant="subhead" tone="secondary" style={{ marginTop: 4 }}>
+                A team sees your name, your profile photo if you set one, your session count, your streak and a green, amber or red status from today’s check-in. Weights, sleep, limitations and test scores stay on this phone.
+              </Text>
+            </View>
+            <IconButton icon="close" label="Dismiss" size={18} tint={color.textSecondary} onPress={() => { haptic.selection(); setPrivacyDismissed(true); }} style={styles.privacyClose} />
           </View>
-        </View>
+        ) : null}
 
         <Text variant="overline" tone="secondary" style={styles.label}>
           What you share
@@ -185,7 +153,7 @@ export default function LeaderToolsScreen() {
 
         {view.kind === 'loading' ? (
           <Text variant="callout" tone="secondary" align="center" style={styles.state}>
-            Loading your team…
+            Loading your teams…
           </Text>
         ) : null}
 
@@ -194,7 +162,7 @@ export default function LeaderToolsScreen() {
         ) : null}
 
         {view.kind === 'error' ? (
-          <Notice icon="alert" title="Couldn’t reach your team" body="Check your connection, then try again.">
+          <Notice icon="alert" title="Couldn’t reach your teams" body="Check your connection, then try again.">
             <Button title="Try again" variant="secondary" size="md" onPress={() => { setView({ kind: 'loading' }); void load(); }} style={{ marginTop: space.md }} />
           </Notice>
         ) : null}
@@ -205,14 +173,27 @@ export default function LeaderToolsScreen() {
           </Notice>
         ) : null}
 
-        {view.kind === 'none' ? (
+        {view.kind === 'teams' ? (
           <>
+            {teams.length ? (
+              <>
+                <Text variant="overline" tone="secondary" style={styles.label}>
+                  {teams.length === 1 ? 'Your team' : `Your ${teams.length} teams`}
+                </Text>
+                <View style={styles.list}>
+                  {teams.map((team, index) => (
+                    <TeamRow key={team.id} team={team} last={index === teams.length - 1} onPress={() => navigation.navigate('Team', { teamId: team.id })} />
+                  ))}
+                </View>
+              </>
+            ) : null}
+
             <Text variant="overline" tone="secondary" style={styles.label}>
-              Join a team
+              {teams.length ? 'Join another team' : 'Join a team'}
             </Text>
             <View style={styles.form}>
               <Text variant="subhead" tone="secondary">
-                Invite code from your leader
+                Invite code from its leader
               </Text>
               <TextInput
                 maxFontSizeMultiplier={1.8}
@@ -228,12 +209,13 @@ export default function LeaderToolsScreen() {
                 returnKeyType="join"
                 onSubmitEditing={() => code.length === 6 && void run(() => joinTeam(code), 'You joined the team')}
                 accessibilityLabel="Invite code"
+                editable={!atLimit}
               />
-              <Button title="Join team" size="md" loading={busy} disabled={code.length !== 6} onPress={() => void run(() => joinTeam(code), 'You joined the team')} style={{ marginTop: space.lg }} />
+              <Button title="Join team" size="md" loading={busy} disabled={code.length !== 6 || atLimit} onPress={() => void run(() => joinTeam(code), 'You joined the team')} style={{ marginTop: space.lg }} />
             </View>
 
             <Text variant="overline" tone="secondary" style={styles.label}>
-              Lead a team
+              {teams.length ? 'Lead another team' : 'Lead a team'}
             </Text>
             <View style={styles.form}>
               <Text variant="subhead" tone="secondary">
@@ -250,64 +232,23 @@ export default function LeaderToolsScreen() {
                 selectionColor={color.accent}
                 returnKeyType="done"
                 accessibilityLabel="Team name"
+                editable={!atLimit}
               />
               <Button
                 title={unlocked ? 'Create team' : 'Unlock Gruntz Pro to lead a team'}
                 size="md"
                 variant={unlocked ? 'primary' : 'secondary'}
                 loading={busy}
-                disabled={unlocked && !name.trim()}
+                disabled={atLimit || (unlocked && !name.trim())}
                 onPress={create}
                 style={{ marginTop: space.lg }}
               />
               <Text variant="footnote" tone="tertiary" style={{ marginTop: space.sm }}>
-                Up to 50 athletes. Joining a team is free; leading one is part of Gruntz Pro.
+                {atLimit
+                  ? `You are in ${MAX_TEAMS} teams, the most Gruntz allows. Leave one to join or create another.`
+                  : `Up to 50 athletes per team, and you can be in up to ${MAX_TEAMS}. Joining is free; leading is part of Gruntz Pro.`}
               </Text>
             </View>
-          </>
-        ) : null}
-
-        {view.kind === 'team' ? (
-          <>
-            <Text variant="overline" tone="secondary" style={styles.label}>
-              {view.team.name}
-            </Text>
-            <View style={styles.inviteCard}>
-              <View style={{ flex: 1 }}>
-                <Text variant="subhead" tone="secondary">
-                  Invite code
-                </Text>
-                <Text style={styles.code} selectable accessibilityLabel={`Invite code ${view.team.inviteCode.split('').join(' ')}`}>
-                  {view.team.inviteCode}
-                </Text>
-              </View>
-              <Button title="Share" icon="share" size="md" variant="secondary" onPress={() => invite(view.team)} />
-            </View>
-
-            <Text variant="overline" tone="secondary" style={styles.label}>
-              {view.team.members.length === 1 ? '1 athlete' : `${view.team.members.length} athletes`}
-            </Text>
-            <View style={styles.roster}>
-              {view.team.members.map((member, index) => (
-                <RosterRow
-                  key={member.userId}
-                  member={member}
-                  last={index === view.team.members.length - 1}
-                  onOptions={view.team.isLeader && !member.isMe ? () => memberOptions(member) : undefined}
-                />
-              ))}
-            </View>
-            {view.team.members.length === 1 ? (
-              <Text variant="footnote" tone="tertiary" style={{ marginTop: space.md, paddingHorizontal: 6 }}>
-                Share the code and athletes appear here as they join.
-              </Text>
-            ) : null}
-
-            <Tap feedback="opacity" disabled={busy} onPress={() => confirmLeave(view.team)} style={styles.leave} accessibilityRole="button">
-              <Text variant="headline" style={{ color: color.danger }}>
-                {view.team.members.length === 1 ? 'Delete team' : 'Leave team'}
-              </Text>
-            </Tap>
           </>
         ) : null}
       </ScrollView>
@@ -315,46 +256,30 @@ export default function LeaderToolsScreen() {
   );
 }
 
-function RosterRow({ member, last, onOptions }: { member: TeamMember; last: boolean; onOptions?: () => void }) {
+function TeamRow({ team, last, onPress }: { team: Team; last: boolean; onPress: () => void }) {
+  const ready = team.members.filter((m) => m.status === 'green').length;
   return (
-    <View
-      style={[styles.rosterRow, !last && styles.rosterDivider]}
-      accessible
-      accessibilityLabel={`${member.displayName}${member.role === 'leader' ? ', leader' : ''}, ${member.sessions} sessions, ${member.streak} day streak, status ${STATUS_LABEL[member.status]}`}
+    <Tap
+      feedback="highlight"
+      baseColor={color.surface}
+      pressedColor={color.surfacePressed}
+      onPress={onPress}
+      style={[styles.teamRow, !last && styles.rosterDivider]}
+      accessibilityRole="button"
+      accessibilityLabel={`${team.name}, ${team.members.length} athletes, ${ready} ready${team.isLeader ? ', you lead it' : ''}`}
     >
-      <View style={[styles.dot, { backgroundColor: STATUS_TINT[member.status] }]} />
+      <View style={styles.teamIcon}>
+        <Icon name={team.isLeader ? 'flag' : 'people'} size={18} color={color.text} />
+      </View>
       <View style={{ flex: 1 }}>
-        <Text variant="headline" numberOfLines={1}>
-          {member.displayName}
-          {member.isMe ? <Text variant="headline" tone="tertiary">{'  You'}</Text> : null}
-        </Text>
+        <Text variant="headline" numberOfLines={1}>{team.name}</Text>
         <Text variant="footnote" tone="tertiary" style={{ marginTop: 2 }} numberOfLines={1}>
-          {member.role === 'leader' ? 'Leader · ' : ''}
-          {STATUS_LABEL[member.status]} · {relativeTime(member.updatedAt)}
+          {team.isLeader ? 'You lead · ' : ''}
+          {team.members.length === 1 ? '1 athlete' : `${team.members.length} athletes`} · {ready} ready
         </Text>
       </View>
-      <View style={styles.rosterStat}>
-        <Text variant="headline" tabular>
-          {member.sessions}
-        </Text>
-        <Text variant="caption" tone="tertiary">
-          sessions
-        </Text>
-      </View>
-      <View style={styles.rosterStat}>
-        <Text variant="headline" tabular>
-          {member.streak}d
-        </Text>
-        <Text variant="caption" tone="tertiary">
-          streak
-        </Text>
-      </View>
-      {onOptions ? (
-        <Tap feedback="opacity" hitSlop={8} onPress={onOptions} style={styles.rowMore} accessibilityLabel={`Options for ${member.displayName}`}>
-          <Icon name="more" size={20} color={color.textSecondary} weight="semibold" />
-        </Tap>
-      ) : null}
-    </View>
+      <Icon name="chevronRight" size={15} color={color.textTertiary} weight="semibold" />
+    </Tap>
   );
 }
 
@@ -389,6 +314,7 @@ function Metric({ label, value, tint = color.text, small }: { label: string; val
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: color.bg },
   privacy: { flexDirection: 'row', gap: 14, padding: space.md, marginTop: space.sm, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: color.accentSoft },
+  privacyClose: { marginTop: -6, marginRight: -6 },
   label: { marginTop: space.xl, marginBottom: 10, marginLeft: 6 },
   state: { marginTop: space.xxl },
   form: { padding: space.md, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: color.surface },
@@ -406,13 +332,8 @@ const styles = StyleSheet.create({
   codeInput: { fontFamily: font.bold, fontSize: 20, letterSpacing: 4, fontVariant: ['tabular-nums'] },
   preview: { flexDirection: 'row', paddingVertical: space.lg, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: color.surface },
   vr: { width: StyleSheet.hairlineWidth, backgroundColor: color.line },
-  inviteCard: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.md, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: color.surface },
-  code: { fontFamily: font.bold, fontSize: 28, letterSpacing: 5, color: color.text, marginTop: 2, fontVariant: ['tabular-nums'] },
-  roster: { borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: color.surface, paddingHorizontal: space.md },
-  rosterRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 64, paddingVertical: space.sm },
+  list: { borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: color.surface, paddingHorizontal: space.md, overflow: 'hidden' },
+  teamRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 64, paddingVertical: space.sm },
+  teamIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: color.surfaceHigh, alignItems: 'center', justifyContent: 'center' },
   rosterDivider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: color.line },
-  rosterStat: { alignItems: 'flex-end', minWidth: 54 },
-  rowMore: { width: 36, height: 44, alignItems: 'center', justifyContent: 'center' },
-  dot: { width: 10, height: 10, borderRadius: 5 },
-  leave: { minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: space.xl },
 });

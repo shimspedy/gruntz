@@ -64,6 +64,7 @@ const icons = {
   mail: ['envelope', 'mail-outline'],
   share: ['square.and.arrow.up', 'share-outline'],
   pencil: ['pencil', 'pencil'],
+  camera: ['camera.fill', 'camera'],
   chart: ['chart.bar', 'stats-chart-outline'],
   trophy: ['trophy', 'trophy-outline'],
   medal: ['medal', 'medal-outline'],

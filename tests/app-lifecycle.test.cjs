@@ -70,6 +70,7 @@ function resetHarness() {
     'expo-secure-store': { deleteItemAsync: async key => events.push(key) },
     './backup': { pauseAutomaticBackups: async () => events.push('backup-paused') },
     './activityTracking': { stopActiveActivityForDataChange: async () => events.push('tracking-stopped') },
+    './profilePhoto': { deleteAllProfilePhotos: async () => events.push('photos-deleted') },
     './notifications': Object.fromEntries(['cancelDailyReminder','cancelRestDone','cancelTrialEndingReminder','cancelWeeklyRecap','clearWorkoutProgress','setNotificationsEnabled'].map(name => [name, async () => {}])),
   };
   for (const [name, store] of Object.entries(stores)) mocks[`../store/${name}`] = { [name]: store };

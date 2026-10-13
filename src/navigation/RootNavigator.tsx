@@ -40,6 +40,7 @@ import ServiceProfileScreen from '../screens/ServiceProfileScreen';
 import BackupScreen from '../screens/BackupScreen';
 import DataTransferScreen from '../screens/DataTransferScreen';
 import HealthSyncScreen from '../screens/HealthSyncScreen';
+import TeamScreen from '../screens/TeamScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import StatsScreen from '../screens/StatsScreen';
 import StreakScreen from '../screens/StreakScreen';
@@ -213,6 +214,7 @@ function AppStack() {
       <Stack.Screen name="HealthSync" component={HealthSyncScreen} />
       <Stack.Screen name="TrainingPreferences" component={TrainingPreferencesScreen} />
       <Stack.Screen name="LeaderTools" component={LeaderToolsScreen} />
+      <Stack.Screen name="Team" component={TeamScreen} />
       <Stack.Screen
         name="Sheet"
         component={SheetScreen}

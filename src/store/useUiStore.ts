@@ -26,6 +26,15 @@ interface ChromePrefs {
   /** Local date key the daily-challenge pill was swiped away on. */
   challengePillHiddenOn: string | null;
   hideChallengePill: (dateKey: string | null) => void;
+  /** The "what a team sees" note on Leader tools has been read and closed. */
+  leaderPrivacyDismissed: boolean;
+  setLeaderPrivacyDismissed: (dismissed: boolean) => void;
+  /** File name of the profile photo in the documents folder; device-local, never backed up. */
+  profilePhotoFile: string | null;
+  setProfilePhotoFile: (file: string | null) => void;
+  /** The photo file name last uploaded for teammates to see; null when none is up there. */
+  teamAvatarSynced: string | null;
+  setTeamAvatarSynced: (file: string | null) => void;
 }
 
 export const useChromePrefs = create<ChromePrefs>()(
@@ -33,6 +42,12 @@ export const useChromePrefs = create<ChromePrefs>()(
     (set) => ({
       challengePillHiddenOn: null,
       hideChallengePill: (challengePillHiddenOn) => set({ challengePillHiddenOn }),
+      leaderPrivacyDismissed: false,
+      setLeaderPrivacyDismissed: (leaderPrivacyDismissed) => set({ leaderPrivacyDismissed }),
+      profilePhotoFile: null,
+      setProfilePhotoFile: (profilePhotoFile) => set({ profilePhotoFile }),
+      teamAvatarSynced: null,
+      setTeamAvatarSynced: (teamAvatarSynced) => set({ teamAvatarSynced }),
     }),
     { name: '@gruntz_chrome', storage: createJSONStorage(() => AsyncStorage) },
   ),

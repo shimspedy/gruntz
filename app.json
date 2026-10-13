@@ -92,6 +92,13 @@
         }
       ],
       "react-native-health-connect",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Gruntz uses your photo library only to set a profile photo you choose.",
+          "cameraPermission": "Gruntz uses the camera only to take a profile photo."
+        }
+      ],
       "expo-sharing",
       "@maplibre/maplibre-react-native"
     ],

@@ -49,6 +49,7 @@ export type RootStackParamList = {
   HealthSync: undefined;
   TrainingPreferences: undefined;
   LeaderTools: undefined;
+  Team: { teamId: string };
   /** The route behind every `<Sheet>`; `id` names the content its owner published. */
   Sheet: { id: string; scroll?: boolean };
   Paywall: undefined;
