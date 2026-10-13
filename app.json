@@ -46,6 +46,7 @@
     "plugins": [
       "./plugins/withReactCorePrebuiltEmbedFix",
       "./plugins/withSceneLifecycle",
+      "./plugins/withOptionalCamera",
       [
         "expo-splash-screen",
         {
