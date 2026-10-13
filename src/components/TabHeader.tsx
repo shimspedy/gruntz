@@ -3,7 +3,11 @@ import { StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring } from 'react-native-reanimated';
+import { badgeLabel, pickInboxTarget, totalUnread } from '../features/teamInbox';
+import { useSignedIn } from '../hooks/useSignedIn';
+import { useReadinessStore } from '../store/useReadinessStore';
 import { getAccessState, useSubscriptionStore } from '../store/useSubscriptionStore';
+import { useTeamInboxStore } from '../store/useTeamInboxStore';
 import { useUserStore } from '../store/useUserStore';
 import { Icon } from '../ui/Icon';
 import { Wordmark } from '../ui/Logo';
@@ -12,13 +16,28 @@ import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
 import { color, font, motion, radius, space } from '../ui/tokens';
 
-/** Tab-root header: wordmark left; PRO, streak and settings right. */
+/** Tab-root header: wordmark left; PRO (or team messages, once in a team), streak and settings right. */
 export function TabHeader() {
   const navigation = useNavigation();
   const streak = useUserStore((s) => s.progress.streak_days);
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
   const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
   const isPro = getAccessState({ trialStartedAt, entitlementActive }) === 'subscriber';
+  // In a team, the PRO pill gives way to team messages: the thing a member comes back for.
+  // Pro stays one tap away in Profile. Without an account the header stays as it always was.
+  const signedIn = useSignedIn();
+  const teamCount = useReadinessStore((s) => s.teamCount);
+  const inTeam = teamCount > 0 && (signedIn || __DEV__);
+  const unread = useTeamInboxStore((s) => s.unread);
+  const latestAt = useTeamInboxStore((s) => s.latestAt);
+  const teamIds = useTeamInboxStore((s) => s.teamIds);
+  const unreadCount = totalUnread(unread);
+  const openMessages = () => {
+    haptic.light();
+    const target = pickInboxTarget(teamIds, { unread, latestAt });
+    if (target.kind === 'chat') navigation.navigate('Team', { teamId: target.teamId, tab: 'chat' });
+    else navigation.navigate('LeaderTools');
+  };
 
   // The flame bumps when the streak grows.
   const bump = useSharedValue(1);
@@ -33,6 +52,23 @@ export function TabHeader() {
     <View style={styles.row}>
       <Wordmark height={34} />
       <View style={styles.actions}>
+        {inTeam ? (
+          <Tap
+            feedback="opacity"
+            hitSlop={8}
+            onPress={openMessages}
+            accessibilityLabel={unreadCount ? `Team messages, ${unreadCount} unread` : 'Team messages'}
+            accessibilityRole="button"
+            style={styles.messages}
+          >
+            <Icon name="send" size={25} color={color.text} />
+            {unreadCount ? (
+              <View style={styles.badge} accessibilityElementsHidden>
+                <Text style={styles.badgeText} tabular>{badgeLabel(unreadCount)}</Text>
+              </View>
+            ) : null}
+          </Tap>
+        ) : (
         <Tap
           scaleTo={0.94}
           onPress={() => {
@@ -53,6 +89,7 @@ export function TabHeader() {
             </View>
           )}
         </Tap>
+        )}
         <Tap
           feedback="opacity"
           hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
@@ -103,4 +140,10 @@ const styles = StyleSheet.create({
   streak: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   streakText: { fontFamily: font.semibold, fontSize: 19, color: color.text },
   gear: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
+  messages: { width: 36, height: 34, alignItems: 'center', justifyContent: 'center' },
+  badge: {
+    position: 'absolute', top: -4, right: -6, minWidth: 18, height: 18, paddingHorizontal: 5, borderRadius: 9,
+    backgroundColor: color.accent, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: color.bg,
+  },
+  badgeText: { fontFamily: font.bold, fontSize: 11, lineHeight: 13, color: '#fff' },
 });

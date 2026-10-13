@@ -71,6 +71,9 @@ import { usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { useExerciseLogStore } from '../store/useExerciseLogStore';
 import { useExerciseNotesStore } from '../store/useExerciseNotesStore';
 import { useReadinessStore } from '../store/useReadinessStore';
+import { useTeamInboxStore } from '../store/useTeamInboxStore';
+import { useSignedIn } from '../hooks/useSignedIn';
+import { startInboxLifecycle } from '../services/teamInbox';
 
 /** Coalesce navigation-state writes; a tab tap should not cost a disk write. */
 const NAV_SAVE_DEBOUNCE_MS = 600;
@@ -195,6 +198,17 @@ function ModalInsets({ children }: { children: React.ReactNode }) {
 const modalLayout = ({ children }: { children: React.ReactNode }) => <ModalInsets>{children}</ModalInsets>;
 /** The exercise library is only a modal when it opens as a picker. */
 const pickerLayout = ({ route, children }: { route: { params?: { pick?: unknown } }; children: React.ReactNode }) => (route.params?.pick ? <ModalInsets>{children}</ModalInsets> : <>{children}</>);
+
+/** Counts unread team chat for the header badge, only while an account is signed in. */
+function TeamInboxHost() {
+  const signedIn = useSignedIn();
+  const teamCount = useReadinessStore((s) => s.teamCount);
+  useEffect(() => {
+    if (!(signedIn || (__DEV__ && teamCount > 0))) { useTeamInboxStore.getState().clear(); return undefined; }
+    return startInboxLifecycle();
+  }, [signedIn, teamCount]);
+  return null;
+}
 
 function AppStack() {
   return (
@@ -596,6 +610,7 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
           <WorkoutSessionHost />
           <ChallengeSheet />
           <ReadinessSheet />
+          <TeamInboxHost />
         </>
       ) : null}
     </View>

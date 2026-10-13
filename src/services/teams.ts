@@ -1,4 +1,5 @@
 import { calculateDailyReadiness, getTodaysCheckIn, useReadinessStore } from '../store/useReadinessStore';
+import { useTeamInboxStore } from '../store/useTeamInboxStore';
 import { useUserStore } from '../store/useUserStore';
 import { getSupabase } from './supabaseClient';
 import { useChromePrefs } from '../store/useUiStore';
@@ -98,6 +99,7 @@ let demoTeams: Team[] | null = null;
 export function setDemoTeams(teams: Team[] | null) {
   demoTeams = teams;
   useReadinessStore.getState().setTeam(teams?.[0]?.name ?? '', teams?.[0]?.inviteCode ?? '', teams?.length ?? 0);
+  useTeamInboxStore.getState().setTeamIds(teams?.map((team) => team.id) ?? []);
 }
 
 /** The caller's team and roster, or `null` when they are not in one. */
@@ -114,6 +116,7 @@ export async function fetchMyTeams(): Promise<TeamResult<Team[]>> {
     if (teamError) return fail('error');
     if (!teams?.length) {
       useReadinessStore.getState().setTeam('', '', 0);
+      useTeamInboxStore.getState().setTeamIds([]);
       return { ok: true, value: [] };
     }
     const { data: rows, error: rosterError } = await supabase
@@ -145,6 +148,7 @@ export async function fetchMyTeams(): Promise<TeamResult<Team[]>> {
     });
     // Cached so a finished workout knows whether there is a team to update without asking the network.
     useReadinessStore.getState().setTeam(value[0].name, value[0].inviteCode, value.length);
+    useTeamInboxStore.getState().setTeamIds(value.map((team) => team.id));
     return { ok: true, value };
   } catch {
     return fail('error');
@@ -203,6 +207,7 @@ export async function leaveTeam(teamId: string): Promise<TeamResult<null>> {
   if (result.ok) {
     const { teamCount } = useReadinessStore.getState();
     if (teamCount <= 1) useReadinessStore.getState().setTeam('', '', 0);
+    useTeamInboxStore.getState().setTeamIds(useTeamInboxStore.getState().teamIds.filter((id) => id !== teamId));
   }
   return result;
 }

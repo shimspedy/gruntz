@@ -5,6 +5,7 @@ import {
   cleanMessage, deleteMessage, fetchMessages, MAX_MESSAGE_LENGTH, mergeMessages, reportMessage, sendMessage, subscribeToMessages, type TeamMessage,
 } from '../services/teamChat';
 import type { Team } from '../services/teams';
+import { useTeamInboxStore } from '../store/useTeamInboxStore';
 import { Image } from 'expo-image';
 import { Icon } from '../ui/Icon';
 import { Tap } from '../ui/Pressable';
@@ -39,6 +40,12 @@ export function TeamChatView({ team }: { team: Team }) {
     setFailed(false);
     setMessages((current) => mergeMessages(current ?? [], page.value));
   }, [teamId]);
+
+  // Whatever is on screen has been read: the header badge for this team clears.
+  const newest = messages?.length ? messages[messages.length - 1].createdAt : null;
+  useEffect(() => {
+    if (messages) useTeamInboxStore.getState().markRead(teamId, newest ?? undefined);
+  }, [teamId, messages, newest]);
 
   useEffect(() => {
     void load();

@@ -305,7 +305,7 @@ function TeamRow({ team, last, onPress, onChat }: { team: Team; last: boolean; o
         onPress={onPress}
         style={styles.teamMain}
         accessibilityRole="button"
-        accessibilityLabel={`${team.name}, ${team.members.length} athletes, ${ready} ready${team.isLeader ? ', you lead it' : ''}${team.isPublic ? ', public' : ''}`}
+        accessibilityLabel={`${team.name}, ${team.members.length === 1 ? '1 athlete' : `${team.members.length} athletes`}, ${ready} ready${team.isLeader ? ', you lead it' : ''}${team.isPublic ? ', public' : ''}`}
       >
       <View style={styles.faces}>
         {faces.map((member, index) => (

@@ -51,6 +51,7 @@ let demoMessages: TeamMessage[] | null = null;
 export function setDemoMessages(messages: TeamMessage[] | null) {
   demoMessages = messages;
 }
+export const getDemoMessages = (): TeamMessage[] | null => (__DEV__ ? demoMessages : null);
 
 /** The latest page, or the page before `before` (a message's createdAt). */
 export async function fetchMessages(teamId: string, before?: string): Promise<TeamResult<TeamMessage[]>> {

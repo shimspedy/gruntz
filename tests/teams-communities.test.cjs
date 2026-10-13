@@ -22,6 +22,7 @@ function load(supabase, teamCount = 1) {
     '../store/useUiStore': { useChromePrefs: { getState: () => ({ profilePhotoFile: null, teamAvatarSynced: null, setTeamAvatarSynced() {} }) } },
     '../store/useReadinessStore': { useReadinessStore: { getState: () => store }, calculateDailyReadiness: () => 70, getTodaysCheckIn: () => undefined },
     '../store/useUserStore': { useUserStore: { getState: () => ({ progress: { workouts_completed: 3, streak_days: 2 }, profile: { display_name: 'Alex' } }) } },
+    '../store/useTeamInboxStore': { useTeamInboxStore: { getState: () => ({ teamIds: [], setTeamIds() {} }) } },
   })('src/services/teams.ts');
 }
 
