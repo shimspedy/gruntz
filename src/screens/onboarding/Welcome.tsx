@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, ScrollView, StyleSheet, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { AccessibilityInfo, ScrollView, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import Animated, { interpolate, useAnimatedStyle, useSharedValue, withDelay, withTiming, type SharedValue } from 'react-native-reanimated';
@@ -7,6 +7,7 @@ import { Button } from '../../ui/Button';
 import { LogoMark } from '../../ui/Logo';
 import { Text } from '../../ui/Text';
 import { color, motion, space } from '../../ui/tokens';
+import { useContentSize } from '../../ui/useContentSize';
 
 // Shown before anyone has picked a goal, so the copy cannot assume a military one.
 const SLIDES = [
@@ -16,7 +17,7 @@ const SLIDES = [
 ];
 
 export function Welcome({ onStart }: { onStart: () => void }) {
-  const { width, height } = useWindowDimensions();
+  const { width, height } = useContentSize();
   // The phone takes the space between the copy and the footer, capped so it never crowds small screens.
   const phoneHeight = Math.min(500, Math.round(height * 0.5));
   const insets = useSafeAreaInsets();

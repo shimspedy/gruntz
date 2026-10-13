@@ -94,7 +94,7 @@ export function ToastHost() {
     <Animated.View
       pointerEvents={action ? 'box-none' : 'none'}
       accessibilityLiveRegion="polite"
-      style={[styles.toast, { paddingTop: insets.top + (sessionOpen ? 62 : 6), backgroundColor: tones[tone] }, style]}
+      style={[styles.toast, { paddingTop: insets.top + (sessionOpen ? 62 : 6), paddingLeft: insets.left + space.gutter, paddingRight: insets.right + space.gutter, backgroundColor: tones[tone] }, style]}
     >
       <View style={styles.row}>
         <View style={styles.check}>

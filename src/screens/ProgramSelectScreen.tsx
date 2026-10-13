@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,13 +15,14 @@ import { NavHeader } from '../ui/Layout';
 import { Tap } from '../ui/Pressable';
 import { Text } from '../ui/Text';
 import { color, motion, radius, space } from '../ui/tokens';
+import { useContentSize } from '../ui/useContentSize';
 
 export const PROGRAM_ART: Record<ProgramId, string> = { basecamp: 'goblet_squat', raider: 'deadlift', recon: 'pullups' };
 
 export default function ProgramSelectScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width } = useContentSize();
   const profile = useUserStore((s) => s.profile);
   const current = useProgramStore((s) => s.selectedProgram);
   const rec = useMemo(() => (profile ? recommendProgramForProfile(profile) : null), [profile]);

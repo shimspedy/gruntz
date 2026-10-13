@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, PixelRatio, Platform, ScrollView, StyleSheet, Switch, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, PixelRatio, Platform, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Sharing from 'expo-sharing';
@@ -18,6 +18,7 @@ import { Chip, EmptyState, IconButton, NavHeader, Stat } from '../ui/Layout';
 import { Icon } from '../ui/Icon';
 import { Text } from '../ui/Text';
 import { color, font, space } from '../ui/tokens';
+import { useContentSize } from '../ui/useContentSize';
 
 export default function ActivityDetailScreen({ route, navigation }: NativeStackScreenProps<RootStackParamList, 'ActivityDetail'>) {
   const insets = useSafeAreaInsets();
@@ -57,7 +58,8 @@ export default function ActivityDetailScreen({ route, navigation }: NativeStackS
         <Button title="Make a share card" icon="share" onPress={() => setShareOpen(true)} style={{ marginTop: 22 }} />
       </ScrollView>
       <Modal visible={shareOpen} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setShareOpen(false)}>
-        {shareOpen ? <SharePreview session={session} units={units} onClose={() => setShareOpen(false)} /> : null}
+        {/* A full-screen Modal sits outside the app shell, so it clears the side safe areas itself. */}
+        {shareOpen ? <View style={{ flex: 1, paddingLeft: insets.left, paddingRight: insets.right, backgroundColor: color.bg }}><SharePreview session={session} units={units} onClose={() => setShareOpen(false)} /></View> : null}
       </Modal>
     </View>
   );
@@ -65,7 +67,7 @@ export default function ActivityDetailScreen({ route, navigation }: NativeStackS
 
 function SharePreview({ session, units, onClose }: { session: TrackedSession; units: ActivityUnits; onClose: () => void }) {
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width } = useContentSize();
   const [theme, setTheme] = useState<ActivityCardTheme>('field');
   const [hideEndpoints, setHideEndpoints] = useState(true);
   const [includeRoute, setIncludeRoute] = useState(true);

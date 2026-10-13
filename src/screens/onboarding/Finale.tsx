@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
   FadeIn,
@@ -25,6 +25,7 @@ import { Text } from '../../ui/Text';
 import { haptic } from '../../ui/haptics';
 import { color, font, motion, radius, space } from '../../ui/tokens';
 import { getExerciseById } from '../../data/exercises';
+import { useContentSize } from '../../ui/useContentSize';
 
 const STEPS = ['Reading your answers…', 'Matching plans to your goals…', 'Building week one…'];
 const MILITARY_STEPS = ['Reading your answers…', 'Matching your branch standard…', 'Building week one…'];
@@ -102,7 +103,7 @@ export function PlanReady({
   recommendation: ProgramRecommendation;
   daysPerWeek: number;
 }) {
-  const { width } = useWindowDimensions();
+  const { width } = useContentSize();
   const finish = new Date();
   finish.setDate(finish.getDate() + (program?.duration_weeks ?? 8) * 7);
   const hero = getExerciseById(program?.id === 'recon' ? 'pullups' : program?.id === 'raider' ? 'deadlift' : 'goblet_squat');
@@ -160,21 +161,30 @@ export function PlanReady({
 
 /** "Make a promise with yourself": lines resolve one by one, then press and hold to sign. */
 export function Commit({ days, onSigned }: { days: number; onSigned: () => void }) {
-  const { width, height } = useWindowDimensions();
+  const { width, height } = useContentSize();
   const hold = useSharedValue(0);
   const flood = useSharedValue(0);
   const [signed, setSigned] = useState(false);
 
+  // Leaving the screen while the finger is still down strands that touch on the next
+  // one (its first taps go nowhere), so a hold that signs waits for the release.
+  const pressed = useRef(false);
+  const leaveWhenReleased = useRef(false);
+  const leave = () => {
+    if (pressed.current) leaveWhenReleased.current = true;
+    else onSigned();
+  };
   const finish = () => {
     setSigned(true);
     haptic.success();
-    flood.set(withTiming(1, { duration: 650, easing: Easing.bezier(0.65, 0, 0.35, 1) }, (ok) => ok && scheduleOnRN(onSigned)));
+    flood.set(withTiming(1, { duration: 650, easing: Easing.bezier(0.65, 0, 0.35, 1) }, (ok) => ok && scheduleOnRN(leave)));
   };
 
   // The fill itself is the timer: reaching 100% signs; letting go early drains it.
   const signedRef = useRef(false);
   const lastTap = useRef(0);
   const pressIn = () => {
+    pressed.current = true;
     if (signedRef.current) return;
     haptic.soft();
     hold.set(
@@ -184,6 +194,8 @@ export function Commit({ days, onSigned }: { days: number; onSigned: () => void 
     );
   };
   const pressOut = () => {
+    pressed.current = false;
+    if (leaveWhenReleased.current) { leaveWhenReleased.current = false; onSigned(); return; }
     if (signedRef.current) return;
     cancelAnimation(hold);
     hold.set(withTiming(0, { duration: 250 }));

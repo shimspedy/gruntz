@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { FadeIn, interpolate, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
@@ -16,6 +16,7 @@ import { Tap } from '../ui/Pressable';
 import { Sheet } from '../ui/Sheet';
 import { Text } from '../ui/Text';
 import { color, font, motion, radius, space } from '../ui/tokens';
+import { useContentSize } from '../ui/useContentSize';
 
 const DISMISS_DISTANCE = 96;
 const DISMISS_VELOCITY = 800;
@@ -31,7 +32,7 @@ export function useChallengePillVisible() {
 export function ChallengePill() {
   const { challenge, ratio, done, progress } = useDailyChallenge();
   const open = useUiStore((s) => s.setChallenge);
-  const { width } = useWindowDimensions();
+  const { width } = useContentSize();
   const x = useSharedValue(0);
   const subtitle = done ? `Complete · +${challenge.xpReward} XP earned` : progress > 0 ? `${formatAmount(progress, challenge)} logged` : `Earn ${challenge.xpReward} XP today`;
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,11 +21,12 @@ import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
 import { toast } from '../ui/Toast';
 import { color, radius, space } from '../ui/tokens';
+import { useContentSize } from '../ui/useContentSize';
 
 export default function LibraryPlanDetailScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width } = useContentSize();
   const { params } = useRoute<RouteProp<RootStackParamList, 'LibraryPlanDetail'>>();
   const plan = getWorkoutPlan(params.planId);
   const activeId = usePlanLibraryStore((s) => s.activePlanId);

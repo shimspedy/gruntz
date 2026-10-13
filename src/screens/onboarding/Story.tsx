@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeIn, FadeInDown, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Text } from '../../ui/Text';
 import { color, motion, space } from '../../ui/tokens';
+import { useSideBleed } from '../../ui/SideBleed';
+import { useContentSize } from '../../ui/useContentSize';
 
 const ART = {
   crimson: require('../../../assets/story/crimson.jpg'),
@@ -16,13 +18,14 @@ export const STORY_BG = { crimson: color.storyCrimson, blue: color.storyBlue, sk
 
 /** Full-bleed editorial page: duotone render, one headline, one line of copy. */
 export function Story({ tone, title, body }: { tone: keyof typeof ART; title: string; body: string }) {
-  const { width, height } = useWindowDimensions();
+  const { width, height } = useContentSize();
   const drift = useSharedValue(0);
   useEffect(() => {
     drift.set(withTiming(1, { duration: 6000, easing: motion.easeOut }));
   }, [drift]);
   const art = useAnimatedStyle(() => ({ transform: [{ scale: 1.06 - drift.get() * 0.06 }] }));
   const bg = STORY_BG[tone];
+  useSideBleed(bg);
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: bg }]}>
       <Animated.View entering={FadeIn.duration(500)} style={[{ position: 'absolute', top: height * 0.1, width, height: height * 0.62 }, art]}>

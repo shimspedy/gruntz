@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActionSheetIOS, Alert, AppState, FlatList, ScrollView, StyleSheet, View, useWindowDimensions, type ViewToken } from 'react-native';
+import { ActionSheetIOS, Alert, AppState, FlatList, ScrollView, StyleSheet, View, type ViewToken } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   Extrapolation,
@@ -34,6 +34,7 @@ import { RestSheet } from './RestSheet';
 import { SessionSummary } from './SessionSummary';
 import { ExerciseInsights } from './ExerciseInsights';
 import { SetInputAccessory, SetTable } from './SetTable';
+import { useContentSize } from '../../ui/useContentSize';
 
 const BUBBLE = 68;
 const BUBBLE_STEP = BUBBLE + 14;
@@ -48,7 +49,7 @@ export function WorkoutSessionHost() {
   const active = useSessionStore((s) => s.active);
   const minimized = useSessionStore((s) => s.minimized);
   const minimize = useSessionStore((s) => s.minimize);
-  const { height } = useWindowDimensions();
+  const { height } = useContentSize();
   const y = useSharedValue(height);
   const [mounted, setMounted] = useState(active);
   const keepAwake = useReadinessStore((s) => s.keepScreenAwake);
@@ -109,7 +110,7 @@ export function WorkoutSessionHost() {
 
 function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Gesture.Pan>; visible: boolean }) {
   const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
+  const { width, height } = useContentSize();
   // Granular selectors, not the whole store: `restEndsAt` ticks every second and
   // `previous`/`restOverrides` change on every swap, and subscribing to all of it
   // re-rendered the pager, carousel and clock on each one.

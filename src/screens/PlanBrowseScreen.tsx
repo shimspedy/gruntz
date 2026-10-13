@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { FlatList, ScrollView, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
+import { FlatList, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useNavigation, useRoute, useScrollToTop } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PlanCard, PlanRow } from '../components/PlanCards';
@@ -17,6 +17,7 @@ import { Tap } from '../ui/Pressable';
 import { Segmented } from '../ui/Segmented';
 import { Text } from '../ui/Text';
 import { color, radius, space } from '../ui/tokens';
+import { useContentSize } from '../ui/useContentSize';
 
 const LEVEL_FILTERS: (string | null)[] = [null, 'beginner', 'intermediate', 'advanced'];
 const GEAR_FILTERS: (WorkoutPlan['match']['equipment_access'] | null)[] = [null, 'none', 'minimal'];
@@ -51,7 +52,7 @@ const DAY_FILTERS = [0, 2, 3, 4, 5, 6] as const;
 export default function PlanBrowseScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width } = useContentSize();
   // The same screen is a tab root (non-military) and a pushed screen. As a tab it has
   // nothing to go back to, and its list has to clear the floating tab bar.
   const isTab = useRoute().name === 'Plans';

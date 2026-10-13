@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   Extrapolation,
@@ -16,6 +16,7 @@ import { Icon } from '../ui/Icon';
 import { Tap } from '../ui/Pressable';
 import { Text } from '../ui/Text';
 import { color, font, radius, space } from '../ui/tokens';
+import { useContentSize } from '../ui/useContentSize';
 
 interface Props {
   days: PlanDay[];
@@ -29,7 +30,7 @@ interface Props {
 export const HERO_MAX_WIDTH = 380;
 
 export function PlanCarousel({ days, onOpen }: Props) {
-  const { width } = useWindowDimensions();
+  const { width } = useContentSize();
   // Capped: on an iPad or an unfolded Duo 80% of the window made the card taller than the screen.
   const cardW = Math.round(Math.min(width * 0.8, HERO_MAX_WIDTH));
   const gap = 14;

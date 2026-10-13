@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getExerciseById } from '../../data/exercises';
@@ -12,6 +12,7 @@ import { Icon } from '../../ui/Icon';
 import { Tap } from '../../ui/Pressable';
 import { Text } from '../../ui/Text';
 import { color, motion, radius, space } from '../../ui/tokens';
+import { useContentSize } from '../../ui/useContentSize';
 
 /** Selection key: a library plan id, or `builtin:<programId>` for a Gruntz program. */
 export const builtinKey = (programId: string) => `builtin:${programId}`;
@@ -40,7 +41,7 @@ export function PlanMatches({
   selected: string;
   onSelect: (key: string) => void;
 }) {
-  const { width } = useWindowDimensions();
+  const { width } = useContentSize();
   const options: Option[] = matches.map((m) => ({
     key: m.plan.id,
     title: m.plan.title,

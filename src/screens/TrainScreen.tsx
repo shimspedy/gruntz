@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation, useScrollToTop } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
@@ -29,6 +29,7 @@ import { Chip, SectionTitle } from '../ui/Layout';
 import { Tap } from '../ui/Pressable';
 import { Text } from '../ui/Text';
 import { color, radius, space } from '../ui/tokens';
+import { useContentSize } from '../ui/useContentSize';
 
 const CATEGORIES: { id: MovementCard['category']; label: string }[] = [
   { id: 'total_body', label: 'Total body' },
@@ -188,13 +189,13 @@ function ToolRow({ icon, title, subtitle, onPress }: { icon: IconName; title: st
 
 /** Holds the plan card's exact footprint for the frame before the plan is read, so nothing below it jumps. */
 function PlanCardPlaceholder() {
-  const { width } = useWindowDimensions();
+  const { width } = useContentSize();
   const w = Math.round(Math.min(width * 0.8, HERO_MAX_WIDTH));
   return <View style={[styles.emptyCard, { width: w, height: Math.round(w * 1.1) }]} accessibilityLabel="Loading your plan" />;
 }
 
 function ChooseProgram({ onPress }: { onPress: () => void }) {
-  const { width } = useWindowDimensions();
+  const { width } = useContentSize();
   const w = Math.round(Math.min(width * 0.8, HERO_MAX_WIDTH));
   return (
     <View style={[styles.emptyCard, { width: w, height: Math.round(w * 1.1) }]}>
@@ -213,7 +214,7 @@ function ChooseProgram({ onPress }: { onPress: () => void }) {
 
 /** The followed library plan: its next day as a hero card. */
 function ActivePlanCard({ plan, onOpen, onOpenPlan }: { plan: WorkoutPlan; onOpen: (dayId: string) => void; onOpenPlan: () => void }) {
-  const { width } = useWindowDimensions();
+  const { width } = useContentSize();
   const completed = usePlanLibraryStore((s) => s.completedDayIds);
   const cycle = usePlanLibraryStore((s) => s.cycle);
   const day = nextPlanDay(plan, completed);

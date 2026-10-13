@@ -350,8 +350,9 @@ function EditNameSheet({ visible, onClose }: { visible: boolean; onClose: () => 
 
 function MiniStat({ label, value }: { label: string; value: number }) {
   return (
-    <View style={{ flex: 1 }}>
-      <Text variant="callout" tone="secondary">
+    <View style={{ flex: 1, paddingRight: 6 }}>
+      {/* Three cells share the space beside the avatar; on a narrow window the longest label must shrink, not run into its neighbour. */}
+      <Text variant="callout" tone="secondary" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
         {label}
       </Text>
       <Text variant="headline" tabular style={{ marginTop: 4, fontSize: 19 }}>

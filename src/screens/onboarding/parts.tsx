@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { ScrollView, StyleSheet, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { ScrollView, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import Animated, {
   FadeInDown,
   interpolateColor,
@@ -12,6 +12,7 @@ import { Tap } from '../../ui/Pressable';
 import { Text } from '../../ui/Text';
 import { haptic } from '../../ui/haptics';
 import { color, font, motion, radius, space } from '../../ui/tokens';
+import { useContentSize } from '../../ui/useContentSize';
 
 /** Onboarding choice row: dark surface; selected flips to white with black ink. */
 export function OptionRow({
@@ -130,7 +131,7 @@ export function Ruler({
   onChange: (v: number) => void;
   majorEvery?: number;
 }) {
-  const { width } = useWindowDimensions();
+  const { width } = useContentSize();
   const step = 18;
   const ref = useRef<ScrollView>(null);
   const last = useRef(value);

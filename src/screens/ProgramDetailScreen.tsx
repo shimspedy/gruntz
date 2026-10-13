@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { StackActions, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,12 +21,13 @@ import { haptic } from '../ui/haptics';
 import { toast } from '../ui/Toast';
 import { color, radius, space } from '../ui/tokens';
 import { PROGRAM_ART } from './ProgramSelectScreen';
+import { useContentSize } from '../ui/useContentSize';
 
 export default function ProgramDetailScreen() {
   const navigation = useNavigation();
   const { params } = useRoute<RouteProp<RootStackParamList, 'ProgramDetail'>>();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width } = useContentSize();
   const current = useProgramStore((s) => s.selectedProgram);
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
   const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);

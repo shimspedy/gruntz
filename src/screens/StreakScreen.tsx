@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
@@ -13,6 +13,7 @@ import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
 import { color, font, motion, radius, space } from '../ui/tokens';
 import { getLocalDateKey } from '../utils/dateKey';
+import { useContentSize } from '../ui/useContentSize';
 
 const DOW = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -33,7 +34,7 @@ function longestStreak(dates: Set<string>, graceDays: number) {
 
 export default function StreakScreen() {
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width } = useContentSize();
   const progress = useUserStore((s) => s.progress);
   const profile = useUserStore((s) => s.profile);
   const dates = useMemo(() => claimedDates(progress.claimed_missions), [progress.claimed_missions]);

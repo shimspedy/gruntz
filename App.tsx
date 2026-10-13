@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Linking, LogBox, StyleSheet } from 'react-native';
+import { Linking, LogBox, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   useFonts,
   DMSans_400Regular,
@@ -18,6 +18,7 @@ import { RootNavigator } from './src/navigation/RootNavigator';
 import { setupNotificationChannels } from './src/services/notifications';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { ToastHost } from './src/ui/Toast';
+import { useShellSideColor } from './src/ui/SideBleed';
 import { color } from './src/ui/tokens';
 import { initializeActivityTracking } from './src/services/activityTracking';
 
@@ -91,12 +92,23 @@ export default function App() {
       <SafeAreaProvider>
         <ErrorBoundary>
           <StatusBar style="light" />
-          <RootNavigator fontsReady={fontsReady} />
-          <ToastHost />
+          {/* Side safe areas are cleared once, here: iPhone Duo folded shut puts the status bar in a
+              vertical strip beside the content, and screens only ever pad top and bottom themselves. */}
+          <SideInsets>
+            <RootNavigator fontsReady={fontsReady} />
+            <ToastHost />
+          </SideInsets>
         </ErrorBoundary>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
+}
+
+/** Keeps content out of the side safe areas and paints them in the colour the current screen asks for. */
+function SideInsets({ children }: { children: React.ReactNode }) {
+  const insets = useSafeAreaInsets();
+  const side = useShellSideColor();
+  return <View style={[styles.root, { paddingLeft: insets.left, paddingRight: insets.right, backgroundColor: side }]}>{children}</View>;
 }
 
 const styles = StyleSheet.create({

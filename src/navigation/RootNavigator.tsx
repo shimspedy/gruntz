@@ -182,6 +182,20 @@ function MainTabs() {
   );
 }
 
+/**
+ * iOS presents modal, form-sheet and full-screen-modal screens outside the app shell,
+ * so the shell's side safe-area padding (see App.tsx) does not reach them. This wraps
+ * those screens the same way. Android keeps modals inside the shell, so it needs nothing.
+ */
+function ModalInsets({ children }: { children: React.ReactNode }) {
+  const insets = useSafeAreaInsets();
+  if (Platform.OS !== 'ios') return <>{children}</>;
+  return <View style={[styles.fill, { paddingLeft: insets.left, paddingRight: insets.right, backgroundColor: 'transparent' }]}>{children}</View>;
+}
+const modalLayout = ({ children }: { children: React.ReactNode }) => <ModalInsets>{children}</ModalInsets>;
+/** The exercise library is only a modal when it opens as a picker. */
+const pickerLayout = ({ route, children }: { route: { params?: { pick?: unknown } }; children: React.ReactNode }) => (route.params?.pick ? <ModalInsets>{children}</ModalInsets> : <>{children}</>);
+
 function AppStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: color.bg } }}>
@@ -200,9 +214,10 @@ function AppStack() {
         name="ExerciseLibrary"
         component={ExerciseLibraryScreen}
         options={({ route }) => (route.params?.pick ? { presentation: 'modal', contentStyle: { backgroundColor: color.bg } } : {})}
+        layout={pickerLayout}
       />
       <Stack.Screen name="RoutineDetail" component={RoutineDetailScreen} />
-      <Stack.Screen name="RoutineEditor" component={RoutineEditorScreen} options={{ presentation: 'modal', contentStyle: { backgroundColor: color.bgRaised } }} />
+      <Stack.Screen name="RoutineEditor" component={RoutineEditorScreen} layout={modalLayout} options={{ presentation: 'modal', contentStyle: { backgroundColor: color.bgRaised } }} />
       <Stack.Screen name="Achievements" component={AchievementsScreen} />
       <Stack.Screen name="Streak" component={StreakScreen} />
       <Stack.Screen name="Stats" component={StatsScreen} />
@@ -220,6 +235,7 @@ function AppStack() {
       <Stack.Screen
         name="Sheet"
         component={SheetScreen}
+        layout={modalLayout}
         options={({ route }) => ({
           presentation: 'formSheet',
           // Sized to its content; a body that may not fit opens tall and scrolls instead.
@@ -229,11 +245,11 @@ function AppStack() {
           contentStyle: { backgroundColor: color.bgRaised },
         })}
       />
-      <Stack.Group screenOptions={{ presentation: 'fullScreenModal', gestureEnabled: false }}>
+      <Stack.Group screenOptions={{ presentation: 'fullScreenModal', gestureEnabled: false }} screenLayout={modalLayout}>
         <Stack.Screen name="Paywall" component={PaywallScreen} />
         <Stack.Screen name="RunTracker" component={RunTrackerScreen} />
       </Stack.Group>
-      <Stack.Screen name="Celebration" component={CelebrationScreen} options={{ presentation: 'fullScreenModal', animation: 'fade', gestureEnabled: false }} />
+      <Stack.Screen name="Celebration" component={CelebrationScreen} layout={modalLayout} options={{ presentation: 'fullScreenModal', animation: 'fade', gestureEnabled: false }} />
     </Stack.Navigator>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Platform, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Alert, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
@@ -16,6 +16,7 @@ import { haptic } from '../ui/haptics';
 import { toast } from '../ui/Toast';
 import { color, font, motion, radius, space } from '../ui/tokens';
 import { openExternalUrl } from '../utils/externalLinks';
+import { useContentSize } from '../ui/useContentSize';
 
 /** "$3.74/month" or "$3.74" → "$3.74 / month" */
 const perMonth = (p: string) => `${p.replace(/\s*\/\s*(mo|month)\.?$/i, '')} / month`;
@@ -32,7 +33,7 @@ export default function PaywallScreen() {
   const route = useRoute();
   const inOnboarding = route.name === 'OnboardingPaywall';
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width } = useContentSize();
 
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
   const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);

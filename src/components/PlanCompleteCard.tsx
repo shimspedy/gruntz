@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getWorkoutPlan } from '../data/workoutPlans';
@@ -13,6 +13,7 @@ import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
 import { toast } from '../ui/Toast';
 import { color, radius, space } from '../ui/tokens';
+import { useContentSize } from '../ui/useContentSize';
 
 /**
  * Shown on Train the first time a followed plan's last day is finished: the moment is worth
@@ -20,7 +21,7 @@ import { color, radius, space } from '../ui/tokens';
  */
 export function PlanCompleteCard() {
   const navigation = useNavigation();
-  const { width } = useWindowDimensions();
+  const { width } = useContentSize();
   const planId = usePlanLibraryStore((s) => s.justCompleted);
   const cycle = usePlanLibraryStore((s) => s.cycle);
   const profile = useUserStore((s) => s.profile);

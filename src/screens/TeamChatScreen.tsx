@@ -120,10 +120,17 @@ export function TeamChatView({ team }: { team: Team }) {
   const photoFor = (message: TeamMessage) => team.members.find((member) => member.userId === message.userId)?.avatarUrl ?? null;
   const canSend = !!cleanMessage(draft) && !sending;
 
+  // Where this view starts, measured, not assumed: the header above it is taller with a
+  // status bar on top and shorter with one beside the content (iPhone Duo folded shut).
+  // The team screen fills the window from the top, so this view's offset in it is the offset in the window.
+  const [top, setTop] = useState(0);
+
   return (
-    <View style={styles.screen}>
-      {/* Both platforms pad: Android draws edge-to-edge, so the window no longer shrinks for the keyboard on its own. */}
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={insets.top + 100}>
+    <View onLayout={(e) => setTop(Math.round(e.nativeEvent.layout.y))} style={styles.screen}>
+      {/* Both platforms pad: Android draws edge-to-edge, so the window no longer shrinks for the keyboard on its own.
+          A smaller offset means less padding: the composer's own safe-area padding tucks under the keyboard
+          instead of floating above it. */}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={top - Math.max(insets.bottom - space.sm, 0)}>
         <FlatList
           ref={list}
           data={messages ? [...messages].reverse() : []}
