@@ -50,55 +50,18 @@ export default function ProfileScreen() {
   const bottom = useTabChromeInset();
   const ref = React.useRef<ScrollView>(null);
   useScrollToTop(ref);
-  const profile = useUserStore((s) => s.profile);
-  const setProfile = useUserStore((s) => s.setProfile);
+  const displayName = useUserStore((s) => s.profile?.display_name || 'Athlete');
   const progress = useUserStore((s) => s.progress);
   const teamName = useReadinessStore((s) => s.teamName);
   const military = useUserStore((s) => !!s.profile?.goals.includes('Military Prep'));
   const program = useProgramStore((s) => s.selectedProgram);
-  const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
-  const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
-  const openCustomerCenter = useSubscriptionStore((s) => s.openCustomerCenter);
-  const access = getAccessState({ trialStartedAt, entitlementActive });
   const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(profile?.display_name ?? '');
-  const saveName = () => {
-    const next = name.trim() || 'Athlete';
-    const changed = next !== (profile?.display_name ?? '');
-    if (profile && changed) setProfile({ ...profile, display_name: next });
-    haptic.success();
-    setEditing(false);
-    // Saying "updated" when nothing changed teaches people the toast is noise.
-    if (changed) toast('Profile updated');
-  };
-
-  const weeks = useMemo(() => weeklyMissions(claimedDates(progress.claimed_missions)), [progress.claimed_missions]);
-  const thisWeek = weeks[WEEKS - 1].count;
-  const lastWeek = weeks[WEEKS - 2].count;
-  // Percentages off one or two workouts swing wildly ('+100%'), so compare counts instead.
-  const delta = thisWeek - lastWeek;
-  const max = Math.max(3, ...weeks.map((w) => w.count));
-  const fmt = (d: Date) => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  const rangeEnd = new Date(weeks[WEEKS - 1].start);
-  rangeEnd.setDate(rangeEnd.getDate() + 6);
   const programInfo = program ? getProgramById(program) : undefined;
-  const displayName = profile?.display_name || 'Athlete';
-
-  const membership = async () => {
-    if (access === 'subscriber') {
-      const r = await openCustomerCenter();
-      if (r !== 'presented') {
-        Alert.alert('Management unavailable', 'Open your subscription settings in the App Store or Google Play to manage your membership.');
-      }
-      return;
-    }
-    navigation.navigate('Paywall');
-  };
 
   return (
     <ScrollView ref={ref} style={styles.screen} contentContainerStyle={{ paddingTop: insets.top, paddingBottom: bottom }} showsVerticalScrollIndicator={false}>
       <View style={styles.topBar}>
-        <IconButton icon="pencil" label="Edit profile" onPress={() => { setName(profile?.display_name ?? ''); setEditing(true); }} />
+        <IconButton icon="pencil" label="Edit profile" onPress={() => setEditing(true)} />
         <IconButton icon="gear" label="Settings" size={26} onPress={() => navigation.navigate('Settings')} />
       </View>
 
@@ -121,6 +84,50 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      <WeeklyChart claimed={progress.claimed_missions} />
+
+      <View style={styles.tiles}>
+        <Tile icon="flame" label="Streak" onPress={() => navigation.navigate('Streak')} />
+        <Tile icon="trophy" label="Trophies" onPress={() => navigation.navigate('Achievements')} />
+        <Tile icon="calendar" label={programInfo?.name ?? 'Program'} onPress={() => navigation.navigate('ProgramSelect')} />
+        <Tile icon="chart" label="Stats" onPress={() => navigation.navigate('Stats')} />
+      </View>
+
+      <Group style={styles.group}>
+        <MembershipRow />
+        <Row icon="flag" title="Service & test profile" onPress={() => navigation.navigate('ServiceProfile')} />
+        <Row icon="people" title="Leader tools" subtitle="Teams, invite codes and a shared roster" value={teamName || undefined} onPress={() => navigation.navigate('LeaderTools')} />
+        <Row icon="mapPin" title="Activity history" subtitle="Runs, rucks, hikes and share cards" onPress={() => navigation.navigate('ActivityHistory')} />
+        <Row icon="share" title="Share my streak" onPress={() => void shareStreak(progress.streak_days, rankTitle(progress.current_rank, military))} />
+        {/* Optional, and deliberately here rather than in onboarding: nobody is asked
+            to make an account before they have something worth keeping. Hidden
+            entirely when the build has no backup keys. */}
+        {isBackupAvailable() ? (
+          <Row icon="restart" title="Back up progress" onPress={() => navigation.navigate('Backup')} />
+        ) : null}
+        {/* Separate from backup on purpose: backup is Gruntz keeping a copy for you,
+            this is your history leaving or arriving in a format other apps read. */}
+        <Row icon="swap" title="Import & export" onPress={() => navigation.navigate('DataTransfer')} />
+      </Group>
+
+      <EditNameSheet visible={editing} onClose={() => setEditing(false)} />
+    </ScrollView>
+  );
+}
+
+function WeeklyChart({ claimed }: { claimed: Parameters<typeof claimedDates>[0] }) {
+  const weeks = useMemo(() => weeklyMissions(claimedDates(claimed)), [claimed]);
+  const thisWeek = weeks[WEEKS - 1].count;
+  const lastWeek = weeks[WEEKS - 2].count;
+  // Percentages off one or two workouts swing wildly ('+100%'), so compare counts instead.
+  const delta = thisWeek - lastWeek;
+  const max = Math.max(3, ...weeks.map((w) => w.count));
+  const fmt = (d: Date) => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const rangeEnd = new Date(weeks[WEEKS - 1].start);
+  rangeEnd.setDate(rangeEnd.getDate() + 6);
+
+  return (
+    <>
       <View style={styles.chartHead}>
         <View>
           <Text variant="callout" tone="secondary">
@@ -167,82 +174,99 @@ export default function ProfileScreen() {
           </View>
         ) : null}
       </View>
+    </>
+  );
+}
 
-      <View style={styles.tiles}>
-        <Tile icon="flame" label="Streak" onPress={() => navigation.navigate('Streak')} />
-        <Tile icon="trophy" label="Trophies" onPress={() => navigation.navigate('Achievements')} />
-        <Tile icon="calendar" label={programInfo?.name ?? 'Program'} onPress={() => navigation.navigate('ProgramSelect')} />
-        <Tile icon="chart" label="Stats" onPress={() => navigation.navigate('Stats')} />
-      </View>
+function MembershipRow() {
+  const navigation = useNavigation();
+  const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
+  const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
+  const openCustomerCenter = useSubscriptionStore((s) => s.openCustomerCenter);
+  const access = getAccessState({ trialStartedAt, entitlementActive });
 
-      <Group style={styles.group}>
-        <Row
-          icon="starFill"
-          title={access === 'subscriber' ? 'Manage Gruntz Pro' : access === 'trial' ? 'Gruntz Pro' : 'Upgrade to Pro'}
-          value={access === 'trial' ? `${getTrialDaysRemaining(trialStartedAt)} days left` : access === 'subscriber' ? 'Active' : undefined}
-          onPress={membership}
+  const membership = async () => {
+    if (access === 'subscriber') {
+      const r = await openCustomerCenter();
+      if (r !== 'presented') {
+        Alert.alert('Management unavailable', 'Open your subscription settings in the App Store or Google Play to manage your membership.');
+      }
+      return;
+    }
+    navigation.navigate('Paywall');
+  };
+
+  return (
+    <Row
+      icon="starFill"
+      title={access === 'subscriber' ? 'Manage Gruntz Pro' : access === 'trial' ? 'Gruntz Pro' : 'Upgrade to Pro'}
+      value={access === 'trial' ? `${getTrialDaysRemaining(trialStartedAt)} days left` : access === 'subscriber' ? 'Active' : undefined}
+      onPress={membership}
+    />
+  );
+}
+
+function EditNameSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const profile = useUserStore((s) => s.profile);
+  const setProfile = useUserStore((s) => s.setProfile);
+  const saved = profile?.display_name ?? '';
+  const [name, setName] = useState(saved);
+  // Each open starts from the saved name, not whatever was abandoned last time. Reset
+  // during render rather than in an effect so the field never shows the stale draft.
+  const [wasVisible, setWasVisible] = useState(visible);
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
+    if (visible) setName(saved);
+  }
+
+  const saveName = () => {
+    const next = name.trim() || 'Athlete';
+    const changed = next !== saved;
+    if (profile && changed) setProfile({ ...profile, display_name: next });
+    haptic.success();
+    onClose();
+    // Saying "updated" when nothing changed teaches people the toast is noise.
+    if (changed) toast('Profile updated');
+  };
+
+  // Closing used to discard whatever had been typed without a word. A name that
+  // is actually different is confirmed first.
+  const dismiss = () => {
+    const typed = name.trim();
+    if (typed && typed !== saved) {
+      Alert.alert('Discard changes?', 'Your new name has not been saved.', [
+        { text: 'Keep editing', style: 'cancel' },
+        { text: 'Discard', style: 'destructive', onPress: onClose },
+      ]);
+      return;
+    }
+    onClose();
+  };
+
+  return (
+    <Sheet visible={visible} onClose={dismiss} title="Edit profile" avoidKeyboard>
+      <View style={{ paddingHorizontal: space.gutter, paddingTop: space.md }}>
+        <Text variant="subhead" tone="secondary" style={{ marginBottom: 8 }}>
+          Name
+        </Text>
+        <TextInput
+          maxFontSizeMultiplier={1.8}
+          value={name}
+          onChangeText={setName}
+          placeholder="Your name"
+          placeholderTextColor={color.textTertiary}
+          maxLength={40}
+          autoFocus
+          autoCapitalize="words"
+          autoCorrect={false}
+          returnKeyType="done"
+          onSubmitEditing={saveName}
+          style={styles.input}
+          selectionColor={color.accent}
         />
-        <Row icon="flag" title="Service & test profile" onPress={() => navigation.navigate('ServiceProfile')} />
-        <Row icon="people" title="Leader tools" subtitle="Teams, invite codes and a shared roster" value={teamName || undefined} onPress={() => navigation.navigate('LeaderTools')} />
-        <Row icon="mapPin" title="Activity history" subtitle="Runs, rucks, hikes and share cards" onPress={() => navigation.navigate('ActivityHistory')} />
-        <Row icon="share" title="Share my streak" onPress={() => void shareStreak(progress.streak_days, rankTitle(progress.current_rank, military))} />
-        {/* Optional, and deliberately here rather than in onboarding: nobody is asked
-            to make an account before they have something worth keeping. Hidden
-            entirely when the build has no backup keys. */}
-        {isBackupAvailable() ? (
-          <Row icon="restart" title="Back up progress" onPress={() => navigation.navigate('Backup')} />
-        ) : null}
-        {/* Separate from backup on purpose: backup is Gruntz keeping a copy for you,
-            this is your history leaving or arriving in a format other apps read. */}
-        <Row icon="swap" title="Import & export" onPress={() => navigation.navigate('DataTransfer')} />
-      </Group>
-
-      {/* Closing used to discard whatever had been typed without a word. A name that
-          is actually different is confirmed first. */}
-      <Sheet
-        visible={editing}
-        onClose={() => {
-          const typed = name.trim();
-          if (typed && typed !== (profile?.display_name ?? '')) {
-            Alert.alert('Discard changes?', 'Your new name has not been saved.', [
-              { text: 'Keep editing', style: 'cancel' },
-              { text: 'Discard', style: 'destructive', onPress: () => setEditing(false) },
-            ]);
-            return;
-          }
-          setEditing(false);
-        }}
-        title="Edit profile"
-        avoidKeyboard
-      >
-        <View style={{ paddingHorizontal: space.gutter, paddingTop: space.md }}>
-          <Text variant="subhead" tone="secondary" style={{ marginBottom: 8 }}>
-            Name
-          </Text>
-          <TextInput
-            maxFontSizeMultiplier={1.8}
-            value={name}
-            onChangeText={setName}
-            placeholder="Your name"
-            placeholderTextColor={color.textTertiary}
-            maxLength={40}
-            autoFocus
-            autoCapitalize="words"
-            autoCorrect={false}
-            returnKeyType="done"
-            onSubmitEditing={saveName}
-            style={styles.input}
-            selectionColor={color.accent}
-          />
-          <Button
-            title="Save"
-            style={{ marginTop: space.lg }}
-            haptic={false}
-            onPress={saveName}
-          />
-        </View>
-      </Sheet>
-    </ScrollView>
+        <Button title="Save" style={{ marginTop: space.lg }} haptic={false} onPress={saveName} />
+      </View>
+    </Sheet>
   );
 }
 
