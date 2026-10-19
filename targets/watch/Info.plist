@@ -12,7 +12,7 @@
   <string>Gruntz shows your heart rate while you run, ruck or hike.</string>
   <key>NSHealthUpdateUsageDescription</key>
   <string>Gruntz saves the runs, rucks and hikes you record on your watch to Apple Health, so they show up in the Gruntz app on your phone.</string>
-  <key>UIBackgroundModes</key>
+  <key>WKBackgroundModes</key>
   <array>
     <string>workout-processing</string>
   </array>
