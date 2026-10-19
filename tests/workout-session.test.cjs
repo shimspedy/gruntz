@@ -50,7 +50,7 @@ test('finishing early preserves every performed set in mission totals and exerci
   assert.equal(mission.exercises[0].xp_earned, 0);
   assert.equal(mission.is_perfect, false);
   env.session.getState().finish();
-  const key = env.getExerciseById(ex.exerciseId).media_key ?? ex.exerciseId;
+  const key = env.exerciseLogKey(env.getExerciseById(ex.exerciseId));
   assert.equal(env.log.getState().logs[key].length, 1);
   assert.equal(env.log.getState().logs[key][0].sets[0].reps, 7);
   env.session.getState().finish();

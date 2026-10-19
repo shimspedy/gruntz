@@ -46,7 +46,7 @@
       "Letting the pelvis lift or rock so the switch becomes a sit-up instead of a hip rotation.",
       "Straightening one knee to cheat the range instead of keeping both joints at 90 degrees.",
       "Collapsing the chest or rounding the lower back as the legs change sides.",
-      "Planting the hands on the floor when the clip shows them clasped at the chest."
+      "Planting the hands on the floor instead of keeping them clasped at the chest."
     ],
     "shortDescription": "A seated hip-mobility drill that rolls both knees from one 90/90 position to the mirrored side with the pelvis grounded.",
     "longDescription": "The 90/90 hip switch is a floor mobility drill that starts in a seated 90/90: one hip externally rotated in front, the other internally rotated behind, both knees bent about 90 degrees. From there both knees roll together to the opposite 90/90 while the sit bones stay down. One hip is opening into external rotation while the other is opening into internal rotation, which is why the glutes and deep rotators do most of the work as the pelvis stays grounded.\n\nHands stay clasped at the chest in the approved clip, so the torso has to stay tall without planting on the floor. For a catalog this is the active 90/90 entry for hip-mobility warm-ups, squat-prep blocks, and rotation collections that need a seated switch rather than a static hold.",
@@ -430,7 +430,7 @@
       "Turning onto the back so the drill becomes an ordinary incline press.",
       "Letting the torso lift off the pad or the feet leave the floor.",
       "Flaring the elbows wide and shrugging the shoulders toward the ears.",
-      "Using a single bar in place of two dumbbells, which the clip does not show."
+      "Swapping the two dumbbells for a single bar, which changes the press."
     ],
     "shortDescription": "A chest-supported dumbbell press performed face down on an incline bench, extending both arms forward before returning.",
     "longDescription": "The anti-gravity press uses a face-down position on an incline bench. With the torso supported and feet planted, the lifter moves two dumbbells from bent elbows beside the upper chest to an extended position in front of the head. The hands then return along the same path while the body stays settled against the pad.\n\nThe movement combines shoulder control with elbow extension, with the triceps assisting the press. Dumbbells allow each arm to carry its own weight. This version provides a distinct chest-supported shoulder movement for exercise libraries, alongside seated and standing presses, without changing the implement or adding a machine.",
@@ -2306,7 +2306,7 @@
   {
     "slug": "band-wood-chopper",
     "aliases": [],
-    "name": "Band Wood Chopper",
+    "name": "Band Horizontal Wood Chop",
     "primaryMuscles": [
       "Core"
     ],
@@ -2339,20 +2339,20 @@
       "Sport-specific power content for serious athletes"
     ],
     "instructions": [
-      "Anchor a band at shoulder height or slightly above on your left side and stand perpendicular to the anchor.",
-      "Grip the handle with both hands and step away until the band has tension across your body.",
-      "Pull the handle down and across your body toward your right hip, rotating through the torso.",
-      "Pivot your left foot as you rotate, fully turning the trunk to load the obliques explosively.",
-      "Slowly return to the starting position over 2 to 3 seconds, fighting the band's pull the whole way.",
-      "Complete 8 to 12 reps per side, then switch the anchor and work the opposite direction."
+      "Anchor a band at chest height and stand facing the anchor, feet shoulder-width apart.",
+      "Hold the band with both hands, arms straight out in front of your chest.",
+      "Step back until the band has tension, then brace your trunk.",
+      "Rotate your torso to one side, keeping the arms straight and the hands at chest height.",
+      "Return under control to the center, fighting the band the whole way.",
+      "Rotate to the other side and keep alternating."
     ],
     "commonMistakes": [
-      "Pulling with the arms instead of rotating through the trunk — turns the move into a one-arm row.",
-      "Skipping the foot pivot, which limits the rotation range and stresses the lower back.",
+      "Pulling with the arms instead of rotating through the trunk.",
+      "Letting the hips swing with the arms, which removes the core from the rotation.",
       "Going too heavy and breaking form — the chop should look athletic and controlled, not rushed.",
       "Forgetting to work both sides equally, leaving the trunk imbalanced for rotational sport."
     ],
-    "shortDescription": "A diagonal band chop that trains rotational power through the obliques and the entire core — sport-ready strength.",
+    "shortDescription": "A standing band rotation at chest height, turning the trunk side to side with straight arms to train the obliques.",
     "longDescription": "The band wood chopper is a rotational power exercise that mimics the motion of swinging an axe — pulling a band from high on one side down across the body to the opposite hip. It trains the obliques to produce force across the trunk, which transfers directly to sports like golf, tennis, baseball, and combat.\n\nFor app and content use, this clip is essential inventory for any rotational sport program in your library. It also fits well in advanced core blocks for general fitness users who've outgrown crunches and need a more athletic challenge.",
     "posterFile": "posters/band-wood-chopper.png",
     "videoFile": "band-wood-chopper.mp4"
@@ -4767,15 +4767,15 @@
       "Forearm specialization tracks in bodybuilding platforms"
     ],
     "instructions": [
-      "Sit on a bench and rest your forearms on your thighs with your wrists hanging just past the knees.",
+      "Kneel behind a preacher or flat bench and lay your forearms on the pad with your wrists just past the edge.",
       "Hold the bar with an underhand grip, hands shoulder-width apart, and let it roll into your fingertips.",
-      "Curl the bar up by closing your fingers and flexing your wrists, keeping the forearms pinned to your thighs.",
+      "Curl the bar up by closing your fingers and flexing your wrists, keeping the forearms pinned to the pad.",
       "Squeeze hard at the top with the wrists fully flexed and feel the forearms contract.",
       "Lower the bar back down under control, letting it roll out toward the fingertips at the bottom.",
       "Repeat for high reps, focusing on a slow tempo and a full range from fingertips to top squeeze."
     ],
     "commonMistakes": [
-      "Lifting the forearms off the thighs, which lets the biceps take over instead of isolating the forearms.",
+      "Lifting the forearms off the pad, which lets the biceps take over instead of isolating the forearms.",
       "Using too much weight and shortening the range so the bar barely moves at the wrist.",
       "Skipping the fingertip roll at the bottom, which cuts out half the forearm and grip work.",
       "Rushing the tempo and bouncing the reps, which removes the time-under-tension that builds the forearms."
@@ -5723,7 +5723,7 @@
     ],
     "instructions": [
       "Stand upright with your feet close together and your weight balanced.",
-      "Bring your hands together in front of your chest, as shown in the clip.",
+      "Bring your hands together in front of your chest.",
       "Shift your weight onto one leg without leaning the torso sideways.",
       "Keep the other knee straight and lift that leg out to the side.",
       "Keep your toes facing forward and stop before the pelvis hikes or turns.",
@@ -6809,7 +6809,7 @@
   {
     "slug": "cable-bench-chest-fly",
     "aliases": [],
-    "name": "Cable Bench Chest Fly",
+    "name": "Seated Cable Chest Fly",
     "primaryMuscles": [
       "Chest"
     ],
@@ -6842,20 +6842,20 @@
       "Aesthetic-focused content for chest-development tracks"
     ],
     "instructions": [
-      "Position a flat bench between two cable stations and set both pulleys to the lowest position with single handles.",
-      "Lie back on the bench and press both handles up over your chest with a slight bend in your elbows.",
-      "Lower the handles out to your sides in a wide arc, keeping the elbow angle locked the whole way down.",
-      "Stop when your hands are roughly level with your shoulders and you feel a deep stretch across the chest.",
-      "Bring the handles back together in the same arc by squeezing the chest, finishing with the hands meeting above you.",
-      "Pause at the top with a hard chest squeeze, then repeat for 10 to 15 controlled reps."
+      "Place a flat bench between two cable towers with the pulleys at shoulder height.",
+      "Sit tall on the bench holding a handle in each hand, arms out to the sides with a slight elbow bend.",
+      "Brace your trunk and keep the chest up.",
+      "Sweep the handles forward in a wide arc until they meet in front of your chest.",
+      "Squeeze the chest hard with the elbow angle unchanged.",
+      "Open the arms back out under control until you feel a stretch across the chest, then repeat."
     ],
     "commonMistakes": [
       "Bending the elbows mid-rep, which turns the fly into a sloppy press and shifts load off the chest.",
-      "Dropping the hands too far below shoulder level, overstretching the front shoulders and risking joint strain.",
+      "Letting the hands drift behind the body at the open position, which overstretches the front shoulders.",
       "Rushing the lowering phase, where most of the chest-building tension lives.",
-      "Letting the shoulders roll forward off the bench, losing the stable platform that keeps the chest loaded."
+      "Rounding the shoulders forward as the hands meet, which loses the chest squeeze."
     ],
-    "shortDescription": "A bench-supported cable fly that puts the chest under deep stretch with constant tension top to bottom.",
+    "shortDescription": "A seated cable fly between two towers, sweeping the handles together at shoulder height under constant tension.",
     "longDescription": "The cable bench chest fly is a single-joint chest exercise performed lying on a flat bench between two cable pulleys. By hugging the arms together in an arc, it isolates the chest with constant cable tension — and unlike a dumbbell fly, the resistance doesn't fall off as the hands meet at the top. The bench keeps the upper back stable so the chest can do all the work.\n\nFor app and content use, this clip is a strong fit for hypertrophy chest blocks, dedicated push days, and accessory work after heavy pressing. It's also a clean teaching piece for showing how to feel the chest contracting in isolation, which makes it valuable in beginner mind-muscle education modules and trainer-led content.",
     "posterFile": "posters/cable-bench-chest-fly.png",
     "videoFile": "cable-bench-chest-fly.mp4"
@@ -6863,7 +6863,7 @@
   {
     "slug": "cable-bench-press",
     "aliases": [],
-    "name": "Cable Bench Press",
+    "name": "Seated Cable Chest Press",
     "primaryMuscles": [
       "Chest"
     ],
@@ -6898,20 +6898,20 @@
       "Alternative pressing modules in beginner-friendly tracks"
     ],
     "instructions": [
-      "Place a flat bench between two cable stations and set both pulleys to the lowest position with single handles.",
-      "Lie back on the bench and press both handles up so your arms are extended directly over your chest.",
-      "Lower the handles to chest level with the elbows tracking at about 60 to 75 degrees from your torso.",
-      "Pause briefly at the bottom with a deep chest stretch and a tight upper back pressed into the bench.",
-      "Press both handles back up in a slight arc until they meet above your chest at full arm extension.",
-      "Squeeze the chest at the top and repeat for 8 to 12 controlled reps."
+      "Set the bench upright in the cable station with the pulleys at about chest height.",
+      "Sit with your back against the pad and take a handle in each hand at chest level.",
+      "Set your feet and keep your shoulder blades pulled back into the pad.",
+      "Press both handles forward until the arms are straight in front of your chest.",
+      "Squeeze the chest at full extension without letting the shoulders round forward.",
+      "Return the handles to chest level under control and repeat."
     ],
     "commonMistakes": [
       "Letting the elbows flare wide to 90 degrees, which strains the front shoulders and reduces chest engagement.",
       "Pressing the handles in different paths, causing one side to dominate and creating uneven loading.",
       "Cutting the lockout short, missing the chest-squeeze position at the top of the press.",
-      "Lifting the head or hips off the bench for leverage, which destabilizes the press."
+      "Peeling the back off the pad for leverage, which destabilizes the press."
     ],
-    "shortDescription": "A bench-supported cable press that trains the chest and triceps with smooth, constant tension through the full press.",
+    "shortDescription": "A seated, back-supported cable press that drives the handles forward from chest height with constant tension.",
     "longDescription": "The cable bench press is a horizontal pressing exercise performed lying on a flat bench between two low cable pulleys. It trains the chest and triceps in the same pattern as a barbell or dumbbell bench press, but with a key difference — cable tension stays steady through the entire range, with no dead spot at the lockout. That makes it a strong hypertrophy variation for lifters who want a different stimulus than a barbell or dumbbell press.\n\nFor app and content use, this clip fits cleanly into any push-day program and gives a clear alternative to barbell pressing for users who train at cable-heavy commercial gyms. It pairs well with cable fly clips inside a chest-focused hypertrophy block and gives coaches a fresh angle for variety in long-running programs.",
     "posterFile": "posters/cable-bench-press.png",
     "videoFile": "cable-bench-press.mp4"
@@ -7086,7 +7086,7 @@
   {
     "slug": "cable-decline-bench-press",
     "aliases": [],
-    "name": "Cable Decline Bench Press",
+    "name": "Seated Cable Chest Press (Low Line)",
     "primaryMuscles": [
       "Chest"
     ],
@@ -7121,20 +7121,20 @@
       "Cable-machine programs for commercial-gym users"
     ],
     "instructions": [
-      "Set a decline bench between two cable stations with both pulleys at the lowest position and single handles attached.",
-      "Lock your feet under the pads and lie back, then press both handles up over your lower chest.",
-      "Lower the handles to chest level with the elbows tracking at about 60 to 75 degrees from your torso.",
-      "Pause briefly at the bottom with a deep chest stretch, keeping the upper back tight against the bench.",
-      "Press the handles back up in a slight arc until they meet above the lower chest at full extension.",
-      "Squeeze the chest hard at the top and repeat for 8 to 12 reps with controlled tempo."
+      "Set the bench upright in the cable station with the pulleys a little above chest height.",
+      "Sit with your back against the pad and feet planted, a handle in each hand at chest level.",
+      "Pull the shoulder blades back into the pad and brace your trunk.",
+      "Press the handles forward and slightly down until the arms are straight.",
+      "Squeeze the lower chest at full extension.",
+      "Return the handles to chest level under control and repeat."
     ],
     "commonMistakes": [
       "Letting the elbows flare wide, which strains the front shoulders and pulls focus off the lower chest.",
       "Rushing the descent and missing the deep chest stretch that drives hypertrophy.",
       "Pressing the handles unevenly, creating side-to-side imbalances over time.",
-      "Lifting the hips off the bench for leverage, which destabilizes the press and risks back strain."
+      "Peeling the back off the pad for leverage, which destabilizes the press."
     ],
-    "shortDescription": "A decline cable press performed on a bench that targets the lower chest with smooth constant tension.",
+    "shortDescription": "A seated cable press that drives the handles forward and slightly down, biasing the lower chest.",
     "longDescription": "The cable decline bench press is a horizontal pressing exercise performed on a decline bench between two low cable pulleys. The decline angle shifts the load onto the lower portion of the chest, and the cables keep tension constant from stretch to lockout. It's a strong variation for lifters chasing balanced chest development and a thicker lower-chest line.\n\nFor app and content use, this clip fits cleanly into hypertrophy-focused chest blocks and aesthetic-driven push-day programs. It's also a useful inclusion for cable-heavy commercial-gym programs where a barbell decline isn't available. Pair it with cable incline press clips in your library to round out a full-chest hypertrophy module.",
     "posterFile": "posters/cable-decline-bench-press.png",
     "videoFile": "cable-decline-bench-press.mp4"
@@ -8542,7 +8542,7 @@
   {
     "slug": "cable-single-leg-laying-leg-curl",
     "aliases": [],
-    "name": "Cable Single Leg Laying Leg Curl",
+    "name": "Machine Single-Leg Lying Leg Curl",
     "primaryMuscles": [
       "Hamstrings"
     ],
@@ -8550,7 +8550,7 @@
       "Calves"
     ],
     "equipment": [
-      "Cable Machine"
+      "Machine"
     ],
     "movementPattern": [
       "Isolation"
@@ -8577,20 +8577,20 @@
       "Hamstring options for facilities that have a cable stack but no dedicated leg curl station."
     ],
     "instructions": [
-      "Attach an ankle cuff to a low pulley and fasten it to one ankle.",
-      "Lie face down on a bench set in front of the stack with your knees at the edge.",
-      "Extend both legs and grip the bench for stability.",
-      "Brace your abs and press your hips into the bench.",
+      "Lie face down on the leg-curl machine with your knees just past the edge of the pad.",
+      "Hook one ankle under the roller pad and let the other leg rest.",
+      "Grip the handles and press your hips into the pad.",
       "Curl the working heel toward your glutes by bending only at the knee.",
-      "Pause at the top, lower under control, then finish the set and swap legs."
+      "Pause at the top, lower under control, then finish the set and swap legs.",
+      "Keep the hips down for the whole set."
     ],
     "commonMistakes": [
-      "Lifting the hips off the bench, which adds hip flexion and hides a short range.",
-      "Letting the cuffed leg drop back down, which throws away the eccentric.",
+      "Lifting the hips off the pad, which adds hip flexion and hides a short range.",
+      "Letting the pad drop back down, which throws away the eccentric.",
       "Loading heavy enough to twist the pelvis, so the trunk rotates instead of the knee bending.",
-      "Setting the pulley too high, which drags the cuff up the shin and changes the line of pull."
+      "Setting the roller too high on the calf, which changes the line of pull."
     ],
-    "shortDescription": "Prone single leg curl with an ankle cuff on a low cable that isolates one hamstring at a time.",
+    "shortDescription": "A prone leg curl on a lying leg-curl machine, one leg at a time, isolating each hamstring.",
     "longDescription": "The cable single leg laying leg curl runs an ankle cuff from a low pulley to one ankle while you lie face down with your knees at the edge of a bench. Working one leg at a time stops the stronger side taking over, and the cable keeps pulling the heel away from the glutes through the whole range instead of letting the load fade at the top. The thigh stays flat and only the knee bends, so the hamstrings do the work with the calf assisting at the ankle. Keeping the abs braced stops the hips lifting, which is the usual way a short range gets disguised.\n\nIn a library this is the unilateral hamstring clip for cable equipped gyms. It suits return to running and post injury symmetry work, accessory blocks after hinges, and single leg audits inside app-delivered lower body sessions.",
     "posterFile": "posters/cable-single-leg-laying-leg-curl.png",
     "videoFile": "cable-single-leg-laying-leg-curl.mp4"
@@ -8873,7 +8873,7 @@
   {
     "slug": "cable-wrist-curl",
     "aliases": [],
-    "name": "Cable Wrist Curl",
+    "name": "Cable Standing Wrist Curl",
     "primaryMuscles": [
       "Forearms"
     ],
@@ -8907,19 +8907,19 @@
     ],
     "instructions": [
       "Attach a straight bar to a low pulley and set a light weight.",
-      "Sit on a bench facing the stack with your feet about shoulder width apart.",
-      "Grip the bar underhand at shoulder width and rest your elbows on your inner thighs.",
+      "Stand facing the stack with your feet hip-width apart.",
+      "Grip the bar underhand at shoulder width and let the arms hang long, bar at the thighs.",
       "Let the bar drop by bending only at the wrists, allowing it to roll toward your fingers.",
       "Close your grip and curl your wrists upward, squeezing the forearms at the top.",
       "Pause briefly, then lower under control and repeat for reps."
     ],
     "commonMistakes": [
       "Loading too heavy, which turns the rep into an elbow curl and hides the wrist range.",
-      "Lifting the elbows off the thighs, so the forearms move and the wrists stay locked.",
+      "Bending the elbows to help, so the forearms move and the wrists stay locked.",
       "Skipping the roll to the fingers, which leaves out the grip closing part of the movement.",
       "Bouncing at the bottom, which loads the wrist joint rather than the flexors."
     ],
-    "shortDescription": "Seated cable wrist curl with the forearms braced that isolates wrist flexion and builds grip strength.",
+    "shortDescription": "A standing cable wrist curl with the arms long at the thighs, isolating wrist flexion and building grip.",
     "longDescription": "The cable wrist curl braces the forearms against the thighs or a bench with a bar held underhand from a low pulley, so the only joint that moves is the wrist. Letting the bar roll toward the fingertips at the bottom and then closing the hand and flexing the wrist trains the forearm flexors that both bend the wrist and shut the grip. The cable holds a steady pull at every point in that short travel, which matters because the range itself is only a few inches. Light weight and a deliberate pause at the top do far more here than heavy loading.\n\nFor a library this is the dedicated forearm clip most catalogs skip. It fits grip and forearm accessory blocks, climbing and racket sport programs, and elbow rehab content where controlled wrist flexion is the whole point.",
     "posterFile": "posters/cable-wrist-curl.png",
     "videoFile": "cable-wrist-curl.mp4"
@@ -9712,35 +9712,33 @@
   {
     "slug": "cycling-cooldown",
     "aliases": [],
-    "name": "Cycling Cooldown",
+    "name": "Straddle Stretch with Reach",
     "primaryMuscles": [
-      "Quadriceps"
+      "Adductors"
     ],
     "secondaryMuscles": [
       "Hamstrings",
-      "Calves",
-      "Glutes"
+      "Lower Back"
     ],
     "equipment": [
-      "Bicycle"
+      "Bodyweight"
     ],
     "movementPattern": [
-      "Cardio"
+      "Stretch"
     ],
     "difficulty": "beginner",
     "durationSeconds": 7.466666666666667,
     "tags": [
-      "cycling",
+      "straddle stretch",
+      "adductors",
+      "hamstrings",
       "cooldown",
-      "bicycle",
-      "seated pedalling",
-      "quadriceps",
-      "cardio"
+      "flexibility"
     ],
     "benefits": [
-      "Demonstrates the seated pedalling pattern used in cycling.",
-      "Provides an on-bike movement for the end of a cycling session.",
-      "Shows coordinated lower-body movement through repeated pedal strokes."
+      "Lengthens the inner thighs and hamstrings in one position.",
+      "An easy cooldown that needs only floor space.",
+      "Improves the hip range used in squats and lateral lunges."
     ],
     "useCases": [
       "Cycling cooldown sequences in fitness apps",
@@ -9749,20 +9747,20 @@
       "Post-work-interval recovery blocks"
     ],
     "instructions": [
-      "Sit on the bicycle saddle with both feet positioned on the pedals.",
-      "Place both hands on the handlebars and settle into a steady riding posture.",
-      "Continue pedalling smoothly while remaining seated.",
-      "Reduce the workload gradually toward an easy effort.",
-      "Keep the shoulders relaxed and avoid excessive side-to-side rocking.",
-      "Follow the cooldown duration specified for the cycling session."
+      "Sit tall on the floor with your legs straight and spread wide.",
+      "Reach both arms overhead and lengthen through the spine.",
+      "Hinge forward from the hips, walking the hands out between the legs.",
+      "Fold as far as is comfortable without rounding hard through the back.",
+      "Breathe and hold, then walk the hands back and sit tall.",
+      "Repeat for the prescribed time."
     ],
     "commonMistakes": [
-      "Maintaining the hard work interval throughout the cooldown.",
-      "Rocking the hips from side to side while pedalling.",
-      "Gripping the handlebars with unnecessarily tense shoulders.",
-      "Using a gear that makes the pedal stroke uneven."
+      "Bending the knees to fold lower.",
+      "Rounding the back instead of hinging from the hips.",
+      "Bouncing into the stretch.",
+      "Rolling the knees inward so the stretch moves off the inner thighs."
     ],
-    "shortDescription": "Seated bicycle pedalling shown as a cycling cooldown, with the hands on the handlebars and the legs moving through continuous pedal strokes.",
+    "shortDescription": "A seated wide-straddle stretch that reaches the arms overhead, then folds forward between the legs.",
     "longDescription": "Cycling cooldown shows continuous seated pedalling on a road-style bicycle. Both hands stay on the handlebars while the legs complete alternating pedal strokes. The side view makes the bicycle, lower-body motion and muscle highlights visible throughout the loop.\n\nThis clip fits the closing phase of a cycling session, when the workout can guide the rider toward an easier effort. It demonstrates on-bike pedalling for cooldown sequences and recovery blocks. Pair the animation with the planned intensity cues, since the clip itself does not display resistance, power or a heart-rate target.",
     "posterFile": "posters/cycling-cooldown.png",
     "videoFile": "cycling-cooldown.mp4"
@@ -9886,7 +9884,7 @@
   {
     "slug": "cycling-warmup",
     "aliases": [],
-    "name": "Cycling Warmup",
+    "name": "Marching Walk",
     "primaryMuscles": [
       "Quadriceps"
     ],
@@ -9896,7 +9894,7 @@
       "Glutes"
     ],
     "equipment": [
-      "Bicycle"
+      "Bodyweight"
     ],
     "movementPattern": [
       "Cardio"
@@ -9904,17 +9902,16 @@
     "difficulty": "beginner",
     "durationSeconds": 6.233333333333333,
     "tags": [
-      "cycling",
+      "march",
+      "walk",
       "warm-up",
-      "bicycle",
-      "seated pedalling",
-      "quadriceps",
+      "low impact",
       "cardio"
     ],
     "benefits": [
-      "Demonstrates the seated pedalling pattern used in cycling.",
-      "Provides a cycling-specific opening movement for a warm-up sequence.",
-      "Shows coordinated lower-body movement through repeated pedal strokes."
+      "Raises the heart rate gently with no impact.",
+      "Fits any space, indoors or out.",
+      "A safe first warm-up for beginners and recovery days."
     ],
     "useCases": [
       "Cycling warm-up sequences in fitness apps",
@@ -9923,20 +9920,20 @@
       "Pre-ride workout introductions"
     ],
     "instructions": [
-      "Sit on the bicycle saddle with both feet positioned on the pedals.",
-      "Place both hands on the handlebars and settle into a steady riding posture.",
-      "Begin pedalling smoothly while remaining seated.",
-      "Start with an easy effort before increasing the workload gradually.",
-      "Keep the shoulders relaxed and avoid excessive side-to-side rocking.",
-      "Follow the warm-up progression specified for the cycling session."
+      "Stand tall with your shoulders relaxed and your arms by your sides.",
+      "Start walking or marching in place at an easy pace.",
+      "Lift each knee a little higher than a normal step.",
+      "Swing the opposite arm forward with each step.",
+      "Keep your breathing steady and conversational.",
+      "Continue for the prescribed time."
     ],
     "commonMistakes": [
-      "Beginning with a hard effort before easing into the ride.",
-      "Rocking the hips from side to side while pedalling.",
-      "Gripping the handlebars with unnecessarily tense shoulders.",
-      "Using a gear that makes the pedal stroke uneven."
+      "Starting too fast for a warm-up.",
+      "Slouching forward instead of walking tall.",
+      "Holding the arms stiff instead of letting them swing.",
+      "Stamping the feet instead of stepping softly."
     ],
-    "shortDescription": "Seated bicycle pedalling shown as a cycling warm-up, with the hands on the handlebars and the legs moving through continuous pedal strokes.",
+    "shortDescription": "An easy marching walk with a natural arm swing, raising the heart rate gently before training.",
     "longDescription": "Cycling warmup shows seated pedalling on a road-style bicycle. The rider keeps both hands on the handlebars while the hips, knees and ankles move through repeated pedal strokes. The animation highlights the quadriceps and surrounding lower-body muscles, making the cycling action clear from the side.\n\nUse this clip for the opening phase of a cycling session, when riders begin with an easy effort before building toward the main work. The visible action is continuous on-bike pedalling. Effort and resistance should be set by the accompanying workout instructions, since the animation does not display a power target or heart-rate zone.",
     "posterFile": "posters/cycling-warmup.png",
     "videoFile": "cycling-warmup.mp4"
@@ -11113,7 +11110,7 @@
       "Progression pairing with the bodyweight Cossack squat clip."
     ],
     "instructions": [
-      "Hold one dumbbell at chest height with both hands under the top plate.",
+      "Hold a dumbbell in each hand, arms hanging straight down between your legs.",
       "Stand with your feet well outside shoulder width and toes pointing forward.",
       "Brace your abdominals and keep your ribs pulled down.",
       "Shift your weight over one leg and sit the hips back and down over that foot.",
@@ -11121,12 +11118,12 @@
       "Push through the bent leg to return to center, then repeat on the other side."
     ],
     "commonMistakes": [
-      "Letting the dumbbell pull the chest down, which rounds the upper back at depth.",
+      "Letting the dumbbells pull the chest down, which rounds the upper back at depth.",
       "Arching the lower back to reach depth instead of respecting available hip range.",
       "Lifting the heel of the squatting leg, which signals an ankle mobility limit.",
       "Bending the extended leg, which removes the adductor and hamstring stretch."
     ],
-    "shortDescription": "A deep sideways squat on one leg holding a dumbbell at the chest as a counterbalance and a load.",
+    "shortDescription": "A deep sideways squat on one leg holding a dumbbell in each hand at arm's length.",
     "longDescription": "The dumbbell Cossack squat is the loaded version of the wide stance lateral squat. Holding a dumbbell at chest height adds resistance and acts as a counterweight that lets you sit further back into the hip without falling backward. One leg takes deep hip, knee and ankle flexion while the other stays straight with the foot rolled onto its heel, loading the inner thigh and hamstring of the extended side. The abdominals hold the ribs down so the extra front load does not pull the lower back into extension.\n\nFor an asset library this is the loaded frontal plane clip that pairs with the bodyweight Cossack squat as its progression. It fits dumbbell filters, athletic prep and mobility blocks, and content showing how a counterbalance improves depth in a lateral squat.",
     "posterFile": "posters/dumbbell-cossack-squat.png",
     "videoFile": "dumbbell-cossack-squat.mp4"
@@ -11471,7 +11468,7 @@
   {
     "slug": "dumbbell-decline-skullcrusher",
     "aliases": [],
-    "name": "Dumbbell Decline Skullcrusher",
+    "name": "Dumbbell Single-Arm Skullcrusher",
     "primaryMuscles": [
       "Triceps"
     ],
@@ -11504,20 +11501,20 @@
       "Arm-day content for trainer Reels and TikToks"
     ],
     "instructions": [
-      "Set the bench to a slight decline and lock your feet under the foot pads.",
-      "Lie back with a dumbbell in each hand and press them up over your chest with palms facing each other.",
-      "Tilt your upper arms slightly back toward your head so the dumbbells sit just past vertical.",
-      "Bend at the elbows to lower the dumbbells slowly toward the sides of your head.",
-      "Stop when you feel a strong stretch across the back of the upper arms, with the elbows still pointed up.",
-      "Extend the arms back to the start by driving through the triceps, keeping the upper arms in place."
+      "Lie back on a flat bench with a dumbbell in one hand, pressed up over your shoulder.",
+      "Tilt the upper arm slightly back toward your head so the dumbbell sits just past vertical.",
+      "Rest the free hand on your body or support the working elbow.",
+      "Bend at the elbow to lower the dumbbell slowly beside your head.",
+      "Stop when you feel a strong stretch across the back of the upper arm, elbow still pointed up.",
+      "Extend back to the start, then finish the set and switch arms."
     ],
     "commonMistakes": [
       "Letting the upper arms swing forward on the way up so the lift turns into a press.",
-      "Flaring the elbows out wide, which trades triceps work for shoulder strain.",
+      "Letting the elbow drift out to the side, which trades triceps work for shoulder strain.",
       "Cutting the range short at the bottom and skipping the deep stretch where the long head loads up.",
-      "Going too heavy and crashing the dumbbells toward the head instead of lowering under control."
+      "Going too heavy and crashing the dumbbell toward the head instead of lowering under control."
     ],
-    "shortDescription": "A decline-bench dumbbell triceps extension that biases the long head through a deep, stretched range.",
+    "shortDescription": "A flat-bench one-arm dumbbell triceps extension, lowering the bell beside the head into a deep stretch.",
     "longDescription": "The dumbbell decline skullcrusher is a triceps extension performed on a decline bench with the upper arms angled back over the head. That angle puts the long head of the triceps under a deep stretch at the bottom of every rep, which is one of the strongest drivers of triceps growth.\n\nFor hypertrophy programs in fitness apps, this clip is a high-value triceps accessory. It fits arm-day blocks and push-day finishers, and it gives intermediate users a long-head stretch that flat-bench skullcrushers can't quite hit. A 3D angle helps users see the bar path and elbow position, which photos consistently misrepresent.",
     "posterFile": "posters/dumbbell-decline-skullcrusher.png",
     "videoFile": "dumbbell-decline-skullcrusher.mp4"
@@ -12582,7 +12579,7 @@
   {
     "slug": "dumbbell-incline-front-raise",
     "aliases": [],
-    "name": "Dumbbell Incline Front Raise",
+    "name": "Dumbbell Seated Incline Front Raise",
     "primaryMuscles": [
       "Shoulders"
     ],
@@ -12615,20 +12612,20 @@
       "Form-correction modules for users who cheat standing raises"
     ],
     "instructions": [
-      "Set a bench to about a 45 degree incline and lie face-down on it with a dumbbell in each hand.",
-      "Let the arms hang straight toward the floor, palms facing each other, with a slight bend in the elbows.",
-      "Brace the core, plant the toes on the floor, and pull the shoulder blades back and down.",
-      "Raise both dumbbells out in front of you in a controlled arc until the arms reach about shoulder height.",
-      "Pause briefly at the top with the front delts engaged and the wrists in line with the forearms.",
-      "Lower the dumbbells under control over 2 to 3 seconds back to the hanging start position."
+      "Set a bench to a steep incline and sit with your back against the pad, a dumbbell in each hand.",
+      "Let the arms hang by your sides with a slight bend in the elbows.",
+      "Brace your core and keep your head and shoulders against the pad.",
+      "Raise one dumbbell forward in a controlled arc to about shoulder height.",
+      "Pause briefly, then lower under control.",
+      "Alternate arms for the set."
     ],
     "commonMistakes": [
       "Lifting the dumbbells too high and letting the traps take over the lift.",
       "Bending and straightening the elbows mid-rep, which sneaks the biceps into the work.",
       "Rushing the lower portion and dropping the dumbbells back to the start, missing most of the muscle tension.",
-      "Going too heavy, which forces swinging and removes the isolation the bench is designed to enforce."
+      "Going too heavy, which forces you to rock off the pad and swing."
     ],
-    "shortDescription": "A front raise performed face-down on an incline bench — isolates the front shoulders through a fuller range than the standing version.",
+    "shortDescription": "A front raise seated back-supported on an incline bench, alternating arms to isolate the front shoulders.",
     "longDescription": "The dumbbell incline front raise is a front raise done lying chest-down on an incline bench, with the arms hanging straight toward the floor. The bench takes momentum out of the lift and lets the front shoulders work through a longer range than a standing front raise, which makes it a stronger isolation for the front delt specifically.\n\nFor app builders, this is a clean specialty accessory for any shoulder hypertrophy program. Ship it in push-day flows, dedicated shoulder-day blocks, and aesthetic-focused tracks targeting front-delt development. The chest-supported position also makes it a great pick for users who tend to swing standing raises — the bench enforces strict form automatically.",
     "posterFile": "posters/dumbbell-incline-front-raise.png",
     "videoFile": "dumbbell-incline-front-raise.mp4"
@@ -14090,7 +14087,7 @@
   {
     "slug": "dumbbell-side-plank",
     "aliases": [],
-    "name": "Dumbbell Side Plank",
+    "name": "Dumbbell Side Plank Reach",
     "primaryMuscles": [
       "Core"
     ],
@@ -14126,20 +14123,20 @@
       "Coaching clips on hip stacking and sag."
     ],
     "instructions": [
-      "Lie on your side with the feet stacked and the bottom elbow under the shoulder.",
-      "Hold one dumbbell in the top hand in front of the torso.",
-      "Brace the abs and glutes, then lift the hips until the body forms a straight line.",
-      "Keep the shoulders and hips stacked without rotating forward or back.",
-      "Hold the line, breathing steadily, without letting the hips drop.",
-      "Lower under control, switch sides, and repeat."
+      "Set up on your side with the bottom hand under the shoulder, arm straight, and feet stacked.",
+      "Hold one dumbbell in the top hand at the chest.",
+      "Brace the abs and glutes and lift the hips into a straight line.",
+      "Press the dumbbell up until the top arm is vertical over the shoulder.",
+      "Lower it back to the chest under control, keeping the hips high.",
+      "Finish the set, then switch sides."
     ],
     "commonMistakes": [
       "Letting the hips sag toward the floor, which dumps the load out of the obliques.",
       "Rotating the torso forward or back so the stack collapses.",
-      "Setting the elbow in front of or behind the shoulder.",
+      "Letting the support hand drift ahead of the shoulder.",
       "Holding the breath instead of bracing with a steady exhale."
     ],
-    "shortDescription": "A forearm side plank with one dumbbell in the top hand, training the obliques to resist side bending under load.",
+    "shortDescription": "A straight-arm side plank that raises a dumbbell from the chest to straight overhead, training the obliques and shoulder stability.",
     "longDescription": "The dumbbell side plank is a loaded anti-lateral-flexion hold. You stack the body on one forearm with the elbow under the shoulder, lift the hips into a straight line from head to heels, and hold a dumbbell in the top hand. The obliques and quadratus lumborum keep the hips from sagging, while the supporting shoulder and glutes lock the stack. A loaded side plank is a progression of the bodyweight hold: the extra offset weight raises the demand without changing the joint action.\n\nFor catalogs this is the weighted side-plank clip, not a bodyweight-only hold and not a side bend. It fits core filters, anti-lateral-flexion blocks, and progression pages that sit above a plain side plank.",
     "posterFile": "posters/dumbbell-side-plank.png",
     "videoFile": "dumbbell-side-plank.mp4"
@@ -14598,7 +14595,7 @@
   {
     "slug": "dumbbell-situp",
     "aliases": [],
-    "name": "Dumbbell Situp",
+    "name": "Dumbbell Straight-Arm Sit-Up",
     "primaryMuscles": [
       "Core"
     ],
@@ -14631,20 +14628,20 @@
       "Home and travel core workouts in fitness apps"
     ],
     "instructions": [
-      "Lie on your back with knees bent at 90 degrees and feet flat on the floor or anchored under a pad.",
-      "Hold a dumbbell against your chest with both hands, hugging it close to your sternum.",
-      "Brace your core and tuck your chin slightly toward your chest before starting the rep.",
-      "Sit all the way up by curling your torso forward until your elbows pass over your knees.",
-      "Pause briefly at the top, keeping the dumbbell tight against your chest the whole time.",
-      "Lower yourself back down slowly under control until your shoulder blades touch the floor."
+      "Sit on the floor with your legs straight and lie back with control.",
+      "Hold one dumbbell with both hands at arm's length above your chest.",
+      "Brace your core and tuck your chin slightly before starting the rep.",
+      "Curl your torso up, keeping the dumbbell pointed at the ceiling.",
+      "Pause at the top with the arms still straight.",
+      "Lower back down slowly until your shoulder blades touch the floor."
     ],
     "commonMistakes": [
       "Yanking the head and neck forward to start the rep, which strains the neck instead of the abs.",
       "Dropping back down quickly and bouncing off the floor instead of controlling the lowering phase.",
-      "Holding the dumbbell out in front of the chest, which loads the shoulders instead of the abs.",
-      "Hooking the feet too aggressively under a pad, which lets the hip flexors do most of the work."
+      "Letting the dumbbell drift forward over the legs, which turns it into a shoulder raise.",
+      "Lifting the legs off the floor to counterbalance the weight."
     ],
-    "shortDescription": "The classic situp loaded with a dumbbell on the chest — a simple way to add resistance to bodyweight ab work.",
+    "shortDescription": "A legs-straight sit-up holding one dumbbell at arm's length over the chest, adding load to bodyweight ab work.",
     "longDescription": "The dumbbell situp adds external load to the bodyweight situp by holding a dumbbell against the chest. The added weight makes every rep harder for the abs and gives the trunk a real strength stimulus instead of just an endurance one — useful for users who can already do high-rep bodyweight situps.\n\nThis clip slots into intermediate ab blocks in any fitness app and into hypertrophy programs that include a weighted core finisher. It also pairs well in a coaching platform's strength education modules — a clean way to show progression from bodyweight situps into loaded core work without jumping straight to cable crunches or weighted decline situps.",
     "posterFile": "posters/dumbbell-situp.png",
     "videoFile": "dumbbell-situp.mp4"
@@ -15294,7 +15291,7 @@
     "benefits": [
       "Loads the tibialis anterior through a full dorsiflexion range with a simple dumbbell.",
       "Gives running and shin-prehab programs a weighted option when a tib bar is not available.",
-      "Keeps the work isolated to the ankle so the clip can sit in lower-leg accessory blocks."
+      "Keeps the work isolated to the ankle, so it slots into lower-leg accessory blocks."
     ],
     "useCases": [
       "Lower-leg accessory blocks in running and field-sport apps.",
@@ -15754,10 +15751,10 @@
       "Bodyweight libraries that already include standing calf raises."
     ],
     "instructions": [
-      "Stand on a stable step with the balls of both feet on the edge and the heels free.",
+      "Stand tall beside a rail or rack. A step edge adds range once the flat version is easy.",
       "Hold a rail or similar support lightly for balance.",
       "Rise onto the balls of both feet until the ankles are fully plantarflexed.",
-      "Slowly lower the heels below the level of the step, keeping the knees nearly straight.",
+      "Slowly lower the heels back to the floor, or below the step, keeping the knees nearly straight.",
       "Pause at the bottom stretch, then rise again with both legs.",
       "Keep the torso upright and do not bounce out of the bottom."
     ],
@@ -15774,8 +15771,11 @@
   },
   {
     "slug": "elbow-side-plank",
-    "aliases": [],
-    "name": "Elbow Side Plank",
+    "aliases": [
+      "side plank",
+      "high side plank"
+    ],
+    "name": "Side Plank (Straight Arm)",
     "primaryMuscles": [
       "Core"
     ],
@@ -15808,7 +15808,7 @@
       "Warmup and brace-prep modules in strength platforms"
     ],
     "instructions": [
-      "Lie on your side with your forearm flat on the floor and your elbow stacked directly under your shoulder.",
+      "Lie on your side with your bottom hand on the floor directly under your shoulder, arm straight.",
       "Stack your feet on top of each other and engage your core to create tension through your whole body.",
       "Lift your hips off the floor until your body forms a straight line from your head to your feet.",
       "Brace your top hand on your hip or extend it straight up toward the ceiling for balance.",
@@ -15818,10 +15818,10 @@
     "commonMistakes": [
       "Letting the hips sag toward the floor mid-hold, which removes the obliques from the work and loads the shoulder.",
       "Rotating the chest toward the floor instead of keeping the torso stacked and squared up.",
-      "Placing the supporting elbow ahead of or behind the shoulder, which strains the shoulder joint.",
+      "Placing the support hand ahead of or behind the shoulder, which strains the shoulder joint.",
       "Holding your breath through the set instead of breathing steadily, which cuts hold time short."
     ],
-    "shortDescription": "An isometric side hold on the forearm that trains the obliques and lateral core — the foundation of side-plank progressions.",
+    "shortDescription": "An isometric side hold on a straight arm that trains the obliques and lateral core.",
     "longDescription": "The elbow side plank is one of the cleanest ways to train the obliques and the muscles along the side of the torso. Bracing on one forearm with hips lifted, the entire side body has to fire to hold a straight line. It's an isometric movement, so the work is in the hold — keeping the hips up and the body stacked from heel to head.\n\nFor an app or course, this clip slots into core work, beginner onboarding flows, and posture-focused mobility blocks. It's an easy teaching piece because the failure point is visual — when the hips drop, the user can see it. Ship it as the entry point for a full side-plank progression library and as a staple in any home or bodyweight track.",
     "posterFile": "posters/elbow-side-plank.png",
     "videoFile": "elbow-side-plank.mp4"
@@ -16050,8 +16050,11 @@
   },
   {
     "slug": "fire-hydrants",
-    "aliases": [],
-    "name": "Fire Hydrants",
+    "aliases": [
+      "donkey kick",
+      "glute kickback"
+    ],
+    "name": "Quadruped Kickback",
     "primaryMuscles": [
       "Glutes"
     ],
@@ -16062,7 +16065,7 @@
       "Bodyweight"
     ],
     "movementPattern": [
-      "Hip Abduction"
+      "Hip Extension"
     ],
     "difficulty": "beginner",
     "durationSeconds": 6.93,
@@ -16088,18 +16091,18 @@
     "instructions": [
       "Start on all fours with the hands under the shoulders and the knees under the hips.",
       "Brace the trunk so the back stays flat and the pelvis stays level.",
-      "Keep one knee bent at about 90 degrees and lift that knee out to the side.",
-      "Stop before the hips rotate or the supporting knee slides inward.",
-      "Pause at the top, then lower the knee back under the hip.",
+      "Extend one leg back and lift it to about hip height.",
+      "Squeeze the glute at the top without arching the lower back.",
+      "Lower the knee back under the hip with control.",
       "Finish the set on one side before switching legs."
     ],
     "commonMistakes": [
-      "Twisting the pelvis so the lower back, not the hip, creates the height.",
-      "Kicking the thigh backward instead of abducting it out to the side.",
-      "Letting the supporting elbow or knee collapse as the working hip opens.",
-      "Chasing a high range that dumps the trunk toward the floor."
+      "Arching the lower back to lift the leg higher.",
+      "Twisting the pelvis open toward the working side.",
+      "Letting the supporting arms or knee collapse.",
+      "Swinging the leg instead of lifting it with the glute."
     ],
-    "shortDescription": "Quadruped hip abduction that lifts a bent knee out to the side without rotating the pelvis.",
+    "shortDescription": "An all-fours glute drill that extends one leg back and up behind the hip without arching the lower back.",
     "longDescription": "Fire hydrants start on all fours and lift one bent knee out to the side. They are a bodyweight glute drill that combines hip abduction, extension, and external rotation, with the pelvis staying still. The same quadruped lift cues a long spine and a braced trunk so the hip, not the lower back, does the work. The approved clip starts with both knees down, then abducts the near knee toward camera.\n\nFor a catalog this is the bodyweight fire hydrant, not a banded or standing version. It fills hip-abduction filters, glute-activation warm-ups, and rehab-adjacent hip pages that need a floor drill with no kit.",
     "posterFile": "posters/fire-hydrants.png",
     "videoFile": "fire-hydrants.mp4"
@@ -18564,10 +18567,10 @@
     ],
     "instructions": [
       "Stand a few feet in front of a bench and place the top of one foot back on the bench behind you.",
-      "Hold a light kettlebell at chest height with both hands cupping the horns in a goblet grip.",
+      "Hold a sturdy post or rack upright with one hand and let a kettlebell hang at arm's length in the other.",
       "Brace your core and check that your front foot is far enough forward for the knee to bend cleanly.",
       "Lower straight down by bending both legs until your back knee almost touches the floor.",
-      "Keep the kettlebell tight to your chest and your torso upright through the full descent.",
+      "Keep the kettlebell hanging straight down and your torso upright through the full descent.",
       "Drive through the front heel to stand back up to the starting position and reset for the next rep."
     ],
     "commonMistakes": [
@@ -18576,7 +18579,7 @@
       "Leaning forward over the front leg, loading the lower back instead of the working leg.",
       "Pushing off the back foot for help, which removes the single-leg challenge from the rep."
     ],
-    "shortDescription": "A Bulgarian split squat performed with a kettlebell as a counterweight — easier balance, deeper range, real glute and quad work.",
+    "shortDescription": "A Bulgarian split squat holding a post for balance with a kettlebell hanging in the other hand.",
     "longDescription": "The kettlebell assisted Bulgarian split squat uses the kettlebell as a counterweight rather than added load. Holding the kettlebell at chest height shifts the center of mass forward, which makes the balance challenge of a Bulgarian split squat much more manageable for users learning the pattern. The result is a deeper, cleaner squat that still trains the front-leg glutes and quads.\n\nFor app and coaching content, this is a smart bridge piece between regular split squats and full-load Bulgarian split squats. It belongs in beginner-to-intermediate single-leg blocks, return-from-injury tracks, and any program teaching balance progressions. Drop it in your unilateral library as the on-ramp to the loaded Bulgarian split squat and pair with reverse lunges for a complete teaching set.",
     "posterFile": "posters/kettlebell-assisted-bulgarian-split-squat.png",
     "videoFile": "kettlebell-assisted-bulgarian-split-squat.mp4"
@@ -19194,7 +19197,7 @@
   {
     "slug": "kettlebell-push-press",
     "aliases": [],
-    "name": "Kettlebell Push Press",
+    "name": "Double Kettlebell Push Press",
     "primaryMuscles": [
       "Shoulders"
     ],
@@ -19229,11 +19232,11 @@
       "CrossFit-style training content for coach creators"
     ],
     "instructions": [
-      "Stand with feet shoulder-width apart and clean a kettlebell to the rack position at your shoulder.",
+      "Stand with feet shoulder-width apart and clean two kettlebells to the rack position at your shoulders.",
       "Brace your core and dip slightly at the knees and hips, keeping your torso vertical.",
-      "Drive explosively through your heels to extend the legs and launch the kettlebell upward.",
-      "Press the bell to full lockout overhead with the bicep alongside your ear and the wrist stacked.",
-      "Lower the kettlebell back to the rack position under control, absorbing with a soft knee bend.",
+      "Drive explosively through your heels to extend the legs and launch both kettlebells upward.",
+      "Press both bells to full lockout overhead with the biceps alongside the ears and the wrists stacked.",
+      "Lower the kettlebells back to the rack under control, absorbing with a soft knee bend.",
       "Reset your stance and brace, then dip and drive again for the next rep."
     ],
     "commonMistakes": [
@@ -19242,7 +19245,7 @@
       "Letting the wrist bend backward at lockout, which loads the joint instead of the shoulder.",
       "Leaning back into the lower spine to finish the press instead of pressing straight up overhead."
     ],
-    "shortDescription": "A leg-driven overhead press with the kettlebell racked at the shoulder, training the shoulders and triceps with athletic power.",
+    "shortDescription": "A leg-driven overhead press with a kettlebell racked at each shoulder, training the shoulders and triceps with athletic power.",
     "longDescription": "The kettlebell push press is an overhead press that uses a short dip and drive from the legs to launch the bell overhead. The leg drive lets you move heavier loads than a strict press, while the lockout and lowering phase still hammer the shoulders and triceps. The bell sits in the rack position against the forearm, which keeps the wrist neutral and the elbow tucked.\n\nThis clip is a staple in any kettlebell library and a workhorse for HIIT, conditioning, and CrossFit-style content. Drop it into push-day kettlebell flows, athletic conditioning blocks, and intermediate technique modules where teaching the dip-and-drive timing is the core lesson.",
     "posterFile": "posters/kettlebell-push-press.png",
     "videoFile": "kettlebell-push-press.mp4"
@@ -19250,7 +19253,7 @@
   {
     "slug": "kettlebell-renegade-rows",
     "aliases": [],
-    "name": "Kettlebell Renegade Rows",
+    "name": "Kettlebell Supported Row (Staggered Stance)",
     "primaryMuscles": [
       "Back"
     ],
@@ -19276,8 +19279,8 @@
       "pull"
     ],
     "benefits": [
-      "Rows the lats and upper back while the plank trains anti-rotation.",
-      "Kettlebell handles raise the support and challenge wrist and shoulder stability.",
+      "Rows the lats and upper back one side at a time.",
+      "The braced hand keeps the back supported without a bench.",
       "Works left and right independently, so side-to-side differences show up fast."
     ],
     "useCases": [
@@ -19287,20 +19290,20 @@
       "Intermediate compound rows in full-body app templates."
     ],
     "instructions": [
-      "Set two kettlebells on the floor about shoulder width apart and grip the handles.",
-      "Walk the feet back and wide into a rigid high plank, wrists stacked under the shoulders.",
-      "Brace the trunk so the hips stay level and do not pike or sag.",
-      "Row one kettlebell to the lower ribs without rotating the pelvis.",
-      "Lower that bell under control, then row the other side.",
-      "Keep the supporting arm straight and the head looking slightly ahead of the bells."
+      "Set two kettlebells on the floor and step into a long staggered stance beside them.",
+      "Hinge forward with a flat back and brace one hand on the handle of the near kettlebell.",
+      "Grip the second kettlebell with the working hand, arm hanging straight.",
+      "Brace the trunk so the hips and shoulders stay square to the floor.",
+      "Row the bell to the lower ribs, leading with the elbow.",
+      "Lower under control, finish the set, then switch stance and arms."
     ],
     "commonMistakes": [
-      "Letting the hips swivel toward the working arm, which dumps the anti-rotation work.",
-      "Sagging or piking the plank so the row becomes a shrug.",
-      "Yanking the bell with momentum instead of a controlled elbow path.",
-      "Setting the feet too narrow, which makes the bells tip and the trunk twist."
+      "Twisting the torso open to swing the bell up.",
+      "Rounding the back as the bell lowers toward the floor.",
+      "Leaning hard on the support bell, which shifts weight off the legs and trunk.",
+      "Yanking the bell with momentum instead of a controlled elbow path."
     ],
-    "shortDescription": "A high-plank row from two kettlebells, pulling one bell at a time while the trunk fights rotation.",
+    "shortDescription": "A bent-over staggered-stance row: one hand braces on a kettlebell on the floor while the other rows a second bell.",
     "longDescription": "Kettlebell renegade rows are a plank row. You support a rigid high plank on two upright kettlebells, feet wide, then row one bell to the ribcage without letting the hips twist. The lats and upper back do the pull; the trunk has to fight rotation as one arm leaves the floor. Kettlebell handles sit higher and less stable than hex dumbbells, so the supporting wrist and the anti-rotation demand both go up. The approved clip starts with both bells on the floor and both arms straight, which is the true start of the first rep.\n\nFor a catalog this is a combined pull-and-core clip. It belongs in kettlebell filters, anti-rotation blocks, and back pages that need a plank-based row rather than a hinged row.",
     "posterFile": "posters/kettlebell-renegade-rows.png",
     "videoFile": "kettlebell-renegade-rows.mp4"
@@ -19421,10 +19424,10 @@
   {
     "slug": "kettlebell-row-single",
     "aliases": [],
-    "name": "Kettlebell Row (Single)",
+    "name": "Kettlebell Two-Hand Row",
     "primaryMuscles": [
-      "Trapezius",
-      "Back"
+      "Back",
+      "Trapezius"
     ],
     "secondaryMuscles": [
       "Biceps"
@@ -19438,17 +19441,16 @@
     "difficulty": "beginner",
     "durationSeconds": 5.07,
     "tags": [
-      "single kettlebell row",
+      "kettlebell row",
+      "two hand row",
       "back exercise",
-      "lats",
-      "mid back",
-      "kettlebell",
-      "unilateral"
+      "upper back",
+      "kettlebell"
     ],
     "benefits": [
-      "Builds mid-back and lat size one side at a time, exposing weak sides.",
-      "Trains anti-rotation strength through the trunk on every rep.",
-      "Requires only one kettlebell, making it ideal for minimal-equipment setups."
+      "Loads the whole upper back with one kettlebell.",
+      "An easy row to learn: both hands, both feet, no balance demand.",
+      "Needs only one bell and a little floor space."
     ],
     "useCases": [
       "Home and travel back workouts in kettlebell apps",
@@ -19457,20 +19459,20 @@
       "Pull-day programming for minimal-equipment training tracks"
     ],
     "instructions": [
-      "Stand with one foot forward in a short stagger and a kettlebell on the floor next to the back leg.",
-      "Hinge at the hips and rest your non-working hand on the front thigh for support, keeping a flat back.",
-      "Grip the kettlebell with the working hand and let the arm hang straight down with the bell loaded.",
-      "Brace your core and row the kettlebell up to your hip, leading with the elbow close to the ribs.",
-      "Squeeze your mid-back at the top, then lower the bell slowly back toward the floor under control.",
-      "Finish all reps on one side, then switch stance and arms and repeat on the other side."
+      "Stand with your feet wider than shoulder width and a kettlebell on the floor between them.",
+      "Hinge at the hips with a flat back and grip the handle with both hands.",
+      "Brace your core and let the arms hang straight with the bell just off the floor.",
+      "Row the kettlebell up toward your lower chest, driving the elbows up and out.",
+      "Squeeze the upper back at the top, then lower the bell under control.",
+      "Keep the hinge angle fixed for the whole set."
     ],
     "commonMistakes": [
-      "Twisting the torso open to throw the kettlebell up instead of staying square to the floor.",
-      "Letting the elbow flare wide, which loads the rear shoulder instead of the mid-back and lats.",
-      "Rounding the lower back when the bell is on the floor, which strains the spine.",
-      "Pulling with the biceps only and skipping the shoulder-blade squeeze at the top of the rep."
+      "Standing up as you pull, which turns the row into a shrug.",
+      "Rounding the lower back while the bell hangs.",
+      "Jerking the bell up with the legs instead of the back.",
+      "Shortening the bottom of the rep so the arms never straighten."
     ],
-    "shortDescription": "A staggered-stance kettlebell row that loads the mid-back, lats, and biceps one side at a time.",
+    "shortDescription": "A wide-stance bent-over row pulling one kettlebell with both hands, loading the upper back and traps.",
     "longDescription": "The single kettlebell row is a one-handed bent-over row performed from a staggered stance. With one foot forward and the non-working hand resting on the front thigh for support, the lifter hinges forward and rows the kettlebell to the hip with the working side. Working unilaterally lets each side move through a full range and exposes any left-right strength gap.\n\nThis variation is a staple in any kettlebell library because it requires only one bell and minimal space. Use it in home and travel kettlebell programs, unilateral training blocks, and beginner pull-day flows where the staggered stance is easier to coach than a fully bent-over row.",
     "posterFile": "posters/kettlebell-row-single.png",
     "videoFile": "kettlebell-row-single.mp4"
@@ -19612,9 +19614,9 @@
       "pull day"
     ],
     "benefits": [
-      "Builds lat and biceps size one side at a time for balanced back development.",
-      "Allows a deeper range of motion than a standing or two-arm row.",
-      "Spares the lower back by using a bench for support under load."
+      "Builds mid-back and lat size one side at a time, exposing weak sides.",
+      "Trains anti-rotation strength through the trunk on every rep.",
+      "Requires only one kettlebell, making it ideal for minimal-equipment setups."
     ],
     "useCases": [
       "Pull-day programming in strength training apps",
@@ -19623,20 +19625,20 @@
       "Coach Reels and TikToks for back-building content"
     ],
     "instructions": [
-      "Place one knee and same-side hand on a flat bench with the opposite foot planted on the floor.",
-      "Reach down and grip a kettlebell with the working hand, letting the arm hang straight from the shoulder.",
-      "Brace your core and keep your back flat and parallel to the floor.",
-      "Row the kettlebell up to your hip, leading with the elbow and keeping it close to your ribs.",
-      "Squeeze your shoulder blade in toward the spine at the top, then lower the bell slowly back down.",
-      "Finish all reps on one side before switching positions and repeating on the other arm."
+      "Stand with one foot forward in a short stagger and a kettlebell on the floor next to the back leg.",
+      "Hinge at the hips and rest your non-working hand on the front thigh for support, keeping a flat back.",
+      "Grip the kettlebell with the working hand and let the arm hang straight down with the bell loaded.",
+      "Brace your core and row the kettlebell up to your hip, leading with the elbow close to the ribs.",
+      "Squeeze your mid-back at the top, then lower the bell slowly back toward the floor under control.",
+      "Finish all reps on one side, then switch stance and arms and repeat on the other side."
     ],
     "commonMistakes": [
-      "Twisting the torso open to throw the kettlebell up instead of pulling cleanly with the lat.",
-      "Letting the elbow flare wide, which loads the rear shoulder instead of the back.",
-      "Letting the shoulder shrug up at the top, swapping back work for trap involvement.",
-      "Cutting the bottom of the rep short and losing the long stretch on the lat."
+      "Twisting the torso open to throw the kettlebell up instead of staying square to the floor.",
+      "Letting the elbow flare wide, which loads the rear shoulder instead of the mid-back and lats.",
+      "Rounding the lower back when the bell is on the floor, which strains the spine.",
+      "Pulling with the biceps only and skipping the shoulder-blade squeeze at the top of the rep."
     ],
-    "shortDescription": "A bench-supported one-arm kettlebell row that isolates the lats and biceps with a clean, full range.",
+    "shortDescription": "A staggered-stance kettlebell row that loads the mid-back, lats, and biceps one side at a time.",
     "longDescription": "The kettlebell single arm row is a bench-supported, one-handed row that isolates the back one side at a time. With one knee and one hand on a bench for support, the lifter pulls a kettlebell from a long, loaded stretch up to the hip. The supported position takes the lower back out of the equation and lets the working side move through a deeper range than an unsupported row.\n\nThis is one of the most search-friendly back exercises in any library and a workhorse for coaches and creators. Use it in pull-day flows, beginner back-building tracks, and unilateral programming blocks aimed at fixing left-right imbalances or rebuilding strength after a layoff.",
     "posterFile": "posters/kettlebell-single-arm-row.png",
     "videoFile": "kettlebell-single-arm-row.mp4"
@@ -19677,7 +19679,7 @@
       "Spinal-health content for coach creators and educators"
     ],
     "instructions": [
-      "Stand on a sturdy box or bench holding a light kettlebell with both hands in front of your thighs.",
+      "Stand tall holding a light kettlebell with both hands in front of your thighs. A box adds range once you can reach the floor.",
       "Tuck your chin to your chest and begin rolling your spine down one vertebra at a time.",
       "Let the kettlebell travel down toward the floor as the spine flexes through its full range.",
       "Reach the deepest comfortable stretch with knees mostly straight, not locked out.",
@@ -20253,10 +20255,10 @@
     "instructions": [
       "Wedge one end of a barbell into a landmine sleeve or a padded corner.",
       "Load the free end and stand facing it with your feet hip-width apart.",
-      "Cup the loaded end with both hands and bring it to chest height.",
+      "Hold the loaded end in one hand at shoulder height, elbow tucked in front of the body.",
       "Brace your core, squeeze your glutes and hinge very slightly at the hips.",
-      "Press the bar up and away along its arc until both arms are straight.",
-      "Hold briefly, then lower the bar back to your chest under control."
+      "Press the bar up and away along its arc until the arm is straight.",
+      "Hold briefly, lower to the shoulder under control, then finish the set and switch arms."
     ],
     "commonMistakes": [
       "Pressing straight up instead of following the bar's arc, which fights the anchor and stalls the rep.",
@@ -20264,7 +20266,7 @@
       "Holding the bar loosely so it slides in the hands, which ends the set on grip rather than shoulders.",
       "Using an unsecured corner setup, which lets the bar skate sideways under load."
     ],
-    "shortDescription": "A standing two-handed press of a barbell anchored at one end, driving the bar up and away along a fixed arc.",
+    "shortDescription": "A standing one-arm press of a barbell anchored at one end, driving the bar up and away along a fixed arc.",
     "longDescription": "A landmine is a barbell with one end pinned to the floor, so the loaded end travels through an arc instead of a straight vertical line. For the standing press you cup that end with both hands at chest height, brace the core and glutes, hinge slightly at the hips and press up and away until both arms are straight. The deltoids lead the press with the chest, triceps, core and glutes supporting, and the fixed arc keeps the work in front of the body, which suits lifters who cannot get comfortably overhead.\n\nFor a catalog this is the shoulder press that survives limited overhead range, which makes it a useful substitution rule in a programming engine. It fits barbell equipment filters, restricted-mobility templates, and explainer content on the pressing arc.",
     "posterFile": "posters/landmine-press.png",
     "videoFile": "landmine-press.mp4"
@@ -20889,7 +20891,7 @@
   {
     "slug": "lunge-sprint",
     "aliases": [],
-    "name": "Lunge Sprint",
+    "name": "Lunge to Knee Drive",
     "primaryMuscles": [
       "Quadriceps"
     ],
@@ -20915,9 +20917,9 @@
       "athletic"
     ],
     "benefits": [
-      "Loads the front quad and glute in a split that looks like a sprint start.",
-      "Opposite-arm drive ties the upper body to the lunge without extra load.",
-      "Needs no equipment, so it fits field warm-ups and app athletic blocks."
+      "Rehearses the sprint drive position under control.",
+      "Builds single-leg strength and balance in one drill.",
+      "Needs no equipment, so it fits field warm-ups and athletic blocks."
     ],
     "useCases": [
       "Acceleration-posture clips in speed and agility warm-ups.",
@@ -20926,20 +20928,20 @@
       "Coaching pages that contrast a same-stance pulse with a jump-switch lunge."
     ],
     "instructions": [
-      "Stand tall, then step into a long split so the front thigh is near parallel.",
-      "Keep the back knee close to the floor and the front shin fairly vertical.",
+      "Start in a split lunge with the back knee close to the floor and the torso tall.",
       "Set the opposite arm forward and the same-side arm back, as in a sprint.",
-      "Brace the trunk so the hips stay square and the torso does not collapse.",
-      "Pulse the split by driving the front foot into the floor and returning to the same stance.",
-      "Finish the reps on that leg, then switch the split and the arm drive."
+      "Drive through the front foot and stand up onto that leg.",
+      "Bring the back knee through and up to hip height as the arms switch.",
+      "Hold the tall single-leg position briefly, then step back into the lunge.",
+      "Finish the reps on that leg, then switch sides."
     ],
     "commonMistakes": [
-      "Letting the front knee collapse inward under the sprint arm drive.",
-      "Bouncing so high that the back foot leaves and the drill becomes a jump switch.",
-      "Leaning the torso onto the front thigh instead of staying tall.",
-      "Shortening the split until the back knee cannot drop."
+      "Letting the front knee collapse inward as you drive up.",
+      "Leaning back at the top instead of standing tall over the support foot.",
+      "Rushing the step back so the lunge loses depth.",
+      "Swinging the arms across the body instead of front to back."
     ],
-    "shortDescription": "A split-stance lunge held in a sprinter posture, pulsing in place with opposite-arm drive and no jump switch.",
+    "shortDescription": "A sprint-start drill that rises from a low split lunge into a tall single-leg stance with a high knee drive and opposite-arm swing.",
     "longDescription": "The lunge sprint in this clip is a same-stance athletic lunge, not a jumping switch. The mannequin stays in a forward split with the front thigh near parallel, the back knee hovering, and the arms in a running drive: opposite arm forward, same-side arm back. The loop pulses that stance rather than exchanging legs in the air. A standard forward lunge already trains the quads, glutes, and hamstrings with no equipment; the sprint arms add the posture athletes use out of the blocks without turning the clip into a plyometric jump lunge.\n\nFor a catalog this is a coaching clip for acceleration posture. App builders can drop it into speed warm-ups, lunge filters, and athletic templates that need a split stance with arm drive rather than a traveling walking lunge.",
     "posterFile": "posters/lunge-sprint.png",
     "videoFile": "lunge-sprint.mp4"
@@ -21675,7 +21677,7 @@
       "Calves"
     ],
     "equipment": [
-      "Bench",
+      "Machine",
       "Dumbbell"
     ],
     "movementPattern": [
@@ -22071,7 +22073,7 @@
   {
     "slug": "machine-lateral-raise",
     "aliases": [],
-    "name": "Machine Lateral Raise",
+    "name": "Machine Lateral Raise (Single Arm)",
     "primaryMuscles": [
       "Shoulders"
     ],
@@ -22093,9 +22095,9 @@
       "isolation"
     ],
     "benefits": [
-      "The fixed path removes balance and swing, so the side of the deltoid does the work.",
+      "The fixed path removes swing, so the side of the deltoid does the work.",
       "Easy to load in small steps, which makes progression simple for beginners.",
-      "Seated support means trunk fatigue does not end the set early."
+      "One arm at a time lets each shoulder work through its own full range."
     ],
     "useCases": [
       "Lateral raise machine entry in a commercial gym equipment filter.",
@@ -22104,20 +22106,20 @@
       "Comparison content against dumbbell and cable lateral raises."
     ],
     "instructions": [
-      "Adjust the seat until your shoulders line up with the machine's pivot points.",
-      "Sit upright with your feet flat on the floor and your back against the pad.",
-      "Set your forearms against the pads or take the handles, keeping a slight bend in the elbows.",
-      "Relax your grip and let your shoulders settle down away from your ears.",
-      "Lift both arms out to the sides until they reach shoulder height, then pause.",
-      "Lower slowly back to the start and repeat."
+      "Stand side-on to the machine and set the pad or handle at hip height.",
+      "Take the handle with the arm nearest the machine and a slight bend in the elbow.",
+      "Stand tall, brace your trunk and let the shoulder settle down away from the ear.",
+      "Raise the arm out to the side until it reaches shoulder height.",
+      "Pause, then lower slowly back to the start.",
+      "Finish the set, then turn around and work the other arm."
     ],
     "commonMistakes": [
-      "Sitting too high or too low, so the machine pivot no longer matches the shoulder joint.",
+      "Standing too far from the machine, so the lever path no longer matches the shoulder.",
       "Shrugging into the lift, which lets the traps take over from the side of the deltoid.",
       "Squeezing the handles hard, which drags the forearms into a movement they should not drive.",
       "Dropping the arms at the end of the rep, which throws away the lowering phase."
     ],
-    "shortDescription": "A seated machine lateral raise that isolates the side of the shoulder by lifting both arms against fixed pads.",
+    "shortDescription": "A standing single-arm lateral raise on a lever machine, isolating the side of the shoulder.",
     "longDescription": "The lateral raise machine seats you upright with your shoulders lined up against the machine's pivot points and your forearms on pads or hands on handles. You lift both arms out to the sides until they reach shoulder height, pause, then lower under control. It is a shoulder isolation movement with no significant secondary muscles, simple enough for beginners, and the governing cue is to keep the shoulders down instead of shrugging into the lift. The abduction path is the same one the free-weight lateral raise follows.\n\nFor a catalog this is the version of the lateral raise that removes balance and swing entirely, which makes it the natural machine-filter entry and the one to serve to beginners. Pair it with the dumbbell and cable raises to cover three equipment tiers.",
     "posterFile": "posters/machine-lateral-raise.png",
     "videoFile": "machine-lateral-raise.mp4"
@@ -24288,7 +24290,7 @@
   {
     "slug": "press-sit-up",
     "aliases": [],
-    "name": "Press Sit-Up",
+    "name": "Crunch Press",
     "primaryMuscles": [
       "Core"
     ],
@@ -24314,8 +24316,8 @@
       "abs"
     ],
     "benefits": [
-      "Loads a sit-up so the abs can progress past bodyweight.",
-      "Adds an overhead press at the top without a second exercise.",
+      "Loads the crunch so the abs can progress past bodyweight.",
+      "Adds a press without a second exercise.",
       "The floor setup needs only a bar and a foot anchor."
     ],
     "useCases": [
@@ -24328,17 +24330,17 @@
       "Lie on your back with knees bent and both feet anchored under a plate or similar stop.",
       "Hold a light barbell at the chest with an overhand grip.",
       "Brace the trunk and keep the bar stacked over the chest.",
-      "Sit up by curling the ribs toward the thighs.",
-      "As you reach the top, press the bar overhead to locked elbows.",
-      "Lower the bar to the chest, then roll the torso back to the floor."
+      "Curl the shoulders off the floor as you press the bar up to locked elbows.",
+      "Hold briefly at the top of the crunch with the bar over the shoulders.",
+      "Lower the bar to the chest as you roll the shoulders back to the floor."
     ],
     "commonMistakes": [
       "Yanking with the neck instead of curling the trunk.",
       "Using a heavy bar that turns the sit-up into a hip-flexor heave.",
       "Letting the feet fly so the hips slide and the press drifts.",
-      "Arching the lower back to finish the press instead of sitting tall."
+      "Arching the lower back to finish the press instead of keeping the ribs down."
     ],
-    "shortDescription": "A floor sit-up holding a barbell at the chest, then pressing it overhead as the torso comes upright.",
+    "shortDescription": "A lying crunch with a barbell, pressing it from the chest toward the ceiling as the shoulders curl up.",
     "longDescription": "The press sit-up pairs a sit-up with an overhead press. You lie with knees bent, feet anchored, and a barbell on the chest, then curl the torso up and press the bar to lockout before lowering both. That barbell sequence is a sit-up-to-press. The Otis-up is the same sit-up-to-press idea with a plate or dumbbell and notes a loaded barbell as the advanced implement. The approved frame uses a barbell at the chest and a floor plate as a foot anchor.\n\nFor a catalog this is a loaded core-plus-press clip, not a bodyweight sit-up. It fits weighted-ab blocks, compound core pages, and barbell accessory work where the sit-up and the press share one loop.",
     "posterFile": "posters/press-sit-up.png",
     "videoFile": "press-sit-up.mp4"
@@ -27551,7 +27553,7 @@
   {
     "slug": "single-leg-hip-thrust",
     "aliases": [],
-    "name": "Single-Leg Hip Thrust",
+    "name": "Single-Leg Hip Thrust (Floor)",
     "primaryMuscles": [
       "Glutes"
     ],
@@ -27578,8 +27580,8 @@
     ],
     "benefits": [
       "Builds hip extension strength that carries into sprinting, jumping, and stair climbing.",
-      "Exposes and corrects side to side glute strength differences.",
-      "Allows a longer glute range of motion than a floor bridge."
+      "Exposes and corrects side-to-side glute strength differences.",
+      "Needs no equipment, so it fits home and warm-up sessions."
     ],
     "useCases": [
       "Glute hypertrophy blocks in a strength training app.",
@@ -27588,20 +27590,20 @@
       "Exercise demo cards where the bench setup must be shown clearly."
     ],
     "instructions": [
-      "Sit on the floor with your upper back resting against the edge of a bench.",
-      "Plant one foot flat with the shin close to vertical and the knee bent about ninety degrees.",
-      "Raise the other leg and hold the hip and knee at roughly ninety degrees.",
-      "Brace your trunk and tuck your chin so the neck stays neutral.",
-      "Drive through the planted foot until your hips reach the height of your torso.",
+      "Lie on your back with one knee bent and that foot flat on the floor, close to your glutes.",
+      "Straighten the other leg and lift it so the thighs are roughly level.",
+      "Rest your arms on the floor beside you and brace your trunk.",
+      "Drive through the planted heel until your hips are fully extended and in line with your torso.",
+      "Keep the raised leg straight and the pelvis level at the top.",
       "Lower under control until the hips are just above the floor, then repeat and switch sides."
     ],
     "commonMistakes": [
       "Hyperextending the lower back or neck at lockout, which hides a shortfall in glute range.",
-      "Pushing with the elbows against the bench, which takes work away from the glutes.",
+      "Pushing down hard through the arms, which takes work away from the glutes.",
       "Stopping short of full hip extension, so the glute never reaches a hard contraction.",
       "Letting the pelvis rotate toward the free leg, which unloads the working side."
     ],
-    "shortDescription": "A bench-supported unilateral hip extension that drives one glute through a longer range than a floor bridge.",
+    "shortDescription": "A floor single-leg hip thrust with the free leg held straight, driving one glute into full hip extension.",
     "longDescription": "The single leg hip thrust sets your upper back on a bench so the hips can travel below the level of the shoulders before extending. One foot stays planted with the shin close to vertical while the other leg is held with the hip and knee near ninety degrees. The gluteus maximus, medius, and minimus drive the lift, with the spinal erectors, hamstrings, quadriceps, and adductors supporting the position rather than leading it.\n\nFor a product catalog this clip covers the loaded end of glute programming: hypertrophy blocks, unilateral strength progressions, and posterior chain sections of a training app. The bench-supported setup is visually distinct from a floor bridge, which matters when a library needs both patterns to be told apart at a glance.",
     "posterFile": "posters/single-leg-hip-thrust.png",
     "videoFile": "single-leg-hip-thrust.mp4"
@@ -27667,7 +27669,7 @@
   {
     "slug": "single-leg-kettlebell-romanian-deadlift-deficit",
     "aliases": [],
-    "name": "Single-Leg Dumbbell Romanian Deadlift (Deficit)",
+    "name": "Single-Leg Kettlebell Romanian Deadlift (Deficit)",
     "primaryMuscles": [
       "Hamstrings",
       "Glutes"
@@ -27677,7 +27679,7 @@
       "Calves"
     ],
     "equipment": [
-      "Dumbbell"
+      "Kettlebell"
     ],
     "movementPattern": [
       "Hinge"
@@ -27687,7 +27689,7 @@
     "tags": [
       "deficit romanian deadlift",
       "single leg",
-      "dumbbell",
+      "kettlebell",
       "hamstrings",
       "glutes",
       "hip hinge"
@@ -27705,10 +27707,10 @@
     ],
     "instructions": [
       "Set a stable platform one to three inches high and stand on it with one foot.",
-      "Hold a dumbbell and shift your weight onto the standing leg.",
+      "Hold a kettlebell in each hand and shift your weight onto the standing leg.",
       "Soften the standing knee and set your shoulders back.",
       "Push the hip back and let the free leg extend behind you.",
-      "Lower the dumbbell past the level of the platform, keeping the hips level.",
+      "Lower the kettlebells past the level of the platform, keeping the hips level.",
       "Drive the hip forward to stand, then finish the set and switch sides."
     ],
     "commonMistakes": [
@@ -27717,7 +27719,7 @@
       "Standing on an unstable riser, which makes balance rather than the hamstring the limit.",
       "Keeping the same load as the flat version, which is heavier through the added range."
     ],
-    "shortDescription": "A single-leg Romanian deadlift from a raised platform, adding range at the bottom of the hinge under load.",
+    "shortDescription": "A single-leg Romanian deadlift from a raised platform with a kettlebell in each hand, adding range at the bottom of the hinge.",
     "longDescription": "The deficit version stands the working foot on a low platform so the dumbbell can travel below the level of the foot. Everything else matches the standard single-leg RDL: soft standing knee, free leg extending behind, hips level, spine long, dumbbell tracking down the standing leg. The extra couple of inches load the hamstring at a longer muscle length, which is where hinge variations do most of their work. The turnaround belongs at the point where hamstring length stops the descent, and a deficit simply moves that point lower.\n\nThe clip is the range extension asset for a hinge progression: same movement, one visible change. It fits dumbbell equipment filters, advanced posterior chain blocks, and progression content showing range rather than load as the next step.",
     "posterFile": "posters/single-leg-kettlebell-romanian-deadlift-deficit.png",
     "videoFile": "single-leg-kettlebell-romanian-deadlift-deficit.mp4"
@@ -27790,7 +27792,8 @@
     ],
     "secondaryMuscles": [],
     "equipment": [
-      "Bodyweight"
+      "Bodyweight",
+      "Dumbbell"
     ],
     "movementPattern": [
       "Isolation"
@@ -27818,7 +27821,7 @@
     ],
     "instructions": [
       "Stand with the ball of one foot on the edge of a step or block, heel hanging free.",
-      "Hook the free foot behind the standing ankle and rest a hand on a wall for balance.",
+      "Hook the free foot behind the standing ankle. Hold a dumbbell in each hand for load, or rest a hand on a wall for balance.",
       "Straighten the standing knee and hold it straight for the whole set.",
       "Let the heel drop until you feel a firm stretch through the calf.",
       "Press up through the ball of the foot until the ankle is fully extended.",
@@ -27828,9 +27831,9 @@
       "Bouncing out of the bottom, which uses the Achilles tendon rather than the calf muscle.",
       "Bending the standing knee, which shortens the gastrocnemius and reduces its contribution.",
       "Cutting the range short at the top or bottom, which is the usual reason calves stop responding.",
-      "Hanging on the support hand and taking real load off the standing leg."
+      "Leaning on a support or swinging the dumbbells, which takes real load off the standing leg."
     ],
-    "shortDescription": "A one-legged plantar flexion drill that loads the calf of the standing leg through its full ankle range.",
+    "shortDescription": "A one-legged calf raise, shown holding a dumbbell in each hand, that loads the standing calf through its full ankle range.",
     "longDescription": "The single leg standing calf raise puts your whole bodyweight on one ankle. Standing on the ball of the foot with the heel free to drop, you press up as high as the ankle allows and lower until you feel a full stretch. Because the knee stays straight, the gastrocnemius is held long across the knee and takes the larger share of the work, while the soleus contributes throughout. Training research comparing knee-extended and knee-flexed calf work found far greater gastrocnemius growth from the standing pattern. MoveKit records both heads under the single Calves group, so knee angle rather than muscle naming separates this clip from a seated raise.\n\nIn a catalog this is the unilateral calf entry a lower body pack needs, covering balance work, ankle rehab, and calf specialization blocks.",
     "posterFile": "posters/single-leg-standing-calf-raise.png",
     "videoFile": "single-leg-standing-calf-raise.mp4"
@@ -29383,12 +29386,12 @@
       "Step one foot forward and plant it outside the same-side hand, heel down.",
       "Keep the trail leg long and the hips low so the front of that hip opens.",
       "Hold the open stance briefly, then return the foot to the plank.",
-      "Alternate sides, matching the clip's left-right cycle."
+      "Alternate sides with each rep."
     ],
     "commonMistakes": [
       "Piking the hips instead of keeping a long plank line as the foot steps in.",
       "Planting the front foot inside the hand, which blocks the hip from opening.",
-      "Letting the trail knee collapse to the floor when the clip keeps that leg long.",
+      "Letting the trail knee collapse to the floor instead of keeping that leg long.",
       "Shrugging the shoulders so the hands drift forward of the shoulders."
     ],
     "shortDescription": "A plank-to-lunge hip opener: one foot steps outside the same-side hand while the trail leg stays long.",
@@ -29958,7 +29961,7 @@
       "Repeat, keeping the wrists stacked over the elbows."
     ],
     "commonMistakes": [
-      "Rotating the palms forward mid-rep so the clip becomes the standard press.",
+      "Rotating the palms forward mid-rep, which turns it into the standard press.",
       "Flaring the elbows out wide, which loses the close-grip path.",
       "Arching the low back to finish lockout instead of bracing.",
       "Letting the bells drift behind the head, which the close grip does not want."
@@ -30128,7 +30131,7 @@
       "Stay on the same stance leg for the set, then switch."
     ],
     "commonMistakes": [
-      "Letting the free foot tap and take weight; the clip is a hover, not a tap.",
+      "Letting the free foot tap and take weight instead of hovering above the floor.",
       "Dropping the opposite hip as the stance knee bends.",
       "Letting the stance knee cave inward off the second toe.",
       "Turning the drill into a high-knee march instead of a small, controlled lower."

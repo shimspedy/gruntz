@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { ExerciseCharts, ExerciseHistory, ExerciseRecords, useExerciseSessions } from '../ExerciseProgress';
 import { MuscleBodyMap } from '../MuscleBodyMap';
 import { EXERCISE_LIBRARY, appMuscles, getLibraryItem } from '../../data/exerciseLibrary';
-import { libraryExerciseId } from '../../data/exercises';
+import { exerciseLogKey, libraryExerciseId } from '../../data/exercises';
 import { setLabel } from '../ExerciseProgress';
 import { useExerciseNotesStore } from '../../store/useExerciseNotesStore';
 import { useSessionStore } from '../../store/useSessionStore';
@@ -41,7 +41,7 @@ export function ExerciseInsights({
   exerciseKey: string;
   unit: 'lb' | 'kg';
 }) {
-  const logKey = exercise?.media_key ?? exercise?.id;
+  const logKey = exercise ? exerciseLogKey(exercise) : undefined;
   const sessions = useExerciseSessions(logKey, unit);
   const lib = exercise?.media_key ? getLibraryItem(exercise.media_key) : undefined;
   const steps = exercise?.steps?.length ? exercise.steps : (lib?.instructions ?? []);

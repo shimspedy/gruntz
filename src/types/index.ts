@@ -25,6 +25,8 @@ export interface Exercise {
   illustration?: string;
   /** Base name of the render in assets/exercise-media (see data/exerciseMedia.ts). */
   media_key?: string;
+  /** History key when it differs from media_key (see exerciseLogKey). */
+  log_key?: string;
 }
 
 export interface ProgressionRules {

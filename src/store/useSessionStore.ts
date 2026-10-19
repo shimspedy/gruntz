@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState } from 'react-native';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { getExerciseById, libraryExerciseId } from '../data/exercises';
+import { exerciseLogKey, getExerciseById, libraryExerciseId } from '../data/exercises';
 import { routineMinutes, type Routine } from './useRoutineStore';
 import { parsePlanSessionId, planSessionId, usePlanLibraryStore } from './usePlanLibraryStore';
 import { estimated1RM, toUnit, useExerciseLogStore } from './useExerciseLogStore';
@@ -614,7 +614,7 @@ export const useSessionStore = create<SessionState>()(
           // previous session's. The log has not been written yet at this point, so
           // the history compared against genuinely excludes today.
           const today = bestEffort(e.kind, done);
-          const key = ex?.media_key ?? e.exerciseId;
+          const key = ex ? exerciseLogKey(ex) : e.exerciseId;
           const history = useExerciseLogStore.getState().logs[key] ?? [];
           // History is stored in whatever unit was set when it was lifted, and today's
           // sets are in the current one. Comparing the raw numbers meant switching
@@ -678,7 +678,8 @@ export const useSessionStore = create<SessionState>()(
         get().exercises.forEach((e) => {
           const sets = e.sets.filter((st) => st.done && !st.warmup).map(({ reps, weight, seconds, distance }) => ({ reps, weight, seconds, distance }));
           if (!sets.length) return;
-          const key = getExerciseById(e.exerciseId)?.media_key ?? e.exerciseId;
+          const logged = getExerciseById(e.exerciseId);
+          const key = logged ? exerciseLogKey(logged) : e.exerciseId;
           log.record(key, { id: `${get().startedAt ?? at}:${e.key}`, at, workoutTitle: get().title, unit, sets });
         });
 

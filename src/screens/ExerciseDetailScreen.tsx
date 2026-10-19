@@ -6,7 +6,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ExerciseCharts, ExerciseHistory, ExerciseRecords, useExerciseSessions } from '../components/ExerciseProgress';
 import { ExerciseVideo } from '../components/ExerciseVideo';
 import { MuscleBodyMap } from '../components/MuscleBodyMap';
-import { exercises, getExerciseById, libraryExerciseId } from '../data/exercises';
+import { exerciseLogKey, exercises, getExerciseById, libraryExerciseId } from '../data/exercises';
 import { appMuscles, getLibraryItem } from '../data/exerciseLibrary';
 import { muscleLabel } from '../features/plan';
 import { useRoutineStore } from '../store/useRoutineStore';
@@ -55,8 +55,8 @@ export default function ExerciseDetailScreen() {
   const [tab, setTab] = useState<Tab>('about');
   const unit = useUserStore((u) => (u.profile?.settings.units === 'metric' ? 'kg' : 'lb'));
   // Same key the workout log uses: the clip, so an app exercise and its library clip share history.
-  const sessions = useExerciseSessions(ex ? (ex.media_key ?? ex.id) : undefined, unit);
-  const note = useExerciseNotesStore((n) => (ex ? n.notes[ex.media_key ?? ex.id] : undefined));
+  const sessions = useExerciseSessions(ex ? exerciseLogKey(ex) : undefined, unit);
+  const note = useExerciseNotesStore((n) => (ex ? n.notes[exerciseLogKey(ex)] : undefined));
   const [picker, setPicker] = useState(false);
   const routines = useRoutineStore((st) => st.routines);
 
