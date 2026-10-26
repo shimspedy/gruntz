@@ -71,6 +71,7 @@ function resetHarness() {
     './backup': { pauseAutomaticBackups: async () => events.push('backup-paused') },
     './activityTracking': { stopActiveActivityForDataChange: async () => events.push('tracking-stopped') },
     './profilePhoto': { deleteAllProfilePhotos: async () => events.push('photos-deleted') },
+    './retentionAnalytics': { clearRetentionAnalytics: async () => events.push('events-cleared') },
     './notifications': Object.fromEntries(['cancelDailyReminder','cancelRestDone','cancelTrialEndingReminder','cancelWeeklyRecap','clearWorkoutProgress','setNotificationsEnabled'].map(name => [name, async () => {}])),
   };
   for (const [name, store] of Object.entries(stores)) mocks[`../store/${name}`] = { [name]: store };

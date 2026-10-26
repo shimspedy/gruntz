@@ -17,6 +17,7 @@ import { toast } from '../ui/Toast';
 import { color, font, motion, radius, space } from '../ui/tokens';
 import { openExternalUrl } from '../utils/externalLinks';
 import { useContentSize } from '../ui/useContentSize';
+import { trackRetentionEvent } from '../services/retentionAnalytics';
 
 /** "$3.74/month" or "$3.74" → "$3.74 / month" */
 const perMonth = (p: string) => `${p.replace(/\s*\/\s*(mo|month)\.?$/i, '')} / month`;
@@ -62,10 +63,12 @@ export default function PaywallScreen() {
   }, [annual?.productIdentifier]);
 
   useEffect(() => {
+    trackRetentionEvent('paywall_viewed', { sessions: useUserStore.getState().progress.workouts_completed, source: inOnboarding ? 'onboarding' : 'app' });
     void loadOffering();
-  }, [loadOffering]);
+  }, [loadOffering, inOnboarding]);
 
   const dismiss = () => {
+    trackRetentionEvent('paywall_closed', { sessions: useUserStore.getState().progress.workouts_completed });
     if (inOnboarding) {
       // One-way door: finishing onboarding swaps the whole navigator, so back can't return here.
       useUserStore.getState().setOnboarded(true);
@@ -80,6 +83,7 @@ export default function PaywallScreen() {
     billingBusy.current = true;
     try {
       const r = await (selectedPlan === 'annual' ? purchaseAnnual() : purchaseMonthly());
+      trackRetentionEvent('subscription_purchase', { outcome: r, variant: selectedPlan });
       if (r === 'purchased') {
         haptic.success();
         toast(`Welcome to ${GRUNTZ_PRO_LABEL}`, { icon: 'starFill' });

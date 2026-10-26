@@ -21,6 +21,13 @@ import { haptic } from '../ui/haptics';
 import { toast } from '../ui/Toast';
 import { openExternalUrl } from '../utils/externalLinks';
 import { color, font, motion, radius, space } from '../ui/tokens';
+import { getTestTrend, getTrainingFocus, nextRetestDate } from '../features/trainingFocus';
+import { getFocusedProgramWorkout } from '../data/programWorkouts';
+import { useProgramStore } from '../store/useProgramStore';
+import { getLocalDateKey } from '../utils/dateKey';
+import { scheduleBackup } from '../services/backup';
+import { trackRetentionEvent } from '../services/retentionAnalytics';
+import { hasTestScoreChanges, prepareTestScoreEntry } from '../features/testScoreEntry';
 
 /** Opening a URL can fail (no browser, malformed link); say so instead of doing nothing. */
 async function openSource(url: string) {
@@ -41,8 +48,9 @@ export const BRANCH_LABEL: Record<ServiceBranch, string> = {
 export function formatEventValue(value: number, unit: string) {
   if (!value) return '–';
   if (unit !== 'seconds') return `${value}`;
-  const m = Math.floor(value / 60);
-  const s = Math.round(value % 60);
+  const rounded = Math.round(value);
+  const m = Math.floor(rounded / 60);
+  const s = rounded % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
@@ -76,14 +84,6 @@ function weeksOutLabel(weeks: number) {
   return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
 }
 
-function parseValue(text: string, unit: string) {
-  if (unit === 'seconds' && text.includes(':')) {
-    const [m, s] = text.split(':').map((n) => Number(n) || 0);
-    return m * 60 + s;
-  }
-  return Number(text.replace(/,/g, '.').replace(/[^0-9.]/g, '')) || 0;
-}
-
 export default function TestScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -94,6 +94,9 @@ export default function TestScreen() {
   const setProfile = useUserStore((s) => s.setProfile);
   const testScores = useReadinessStore((s) => s.testScores);
   const targetScores = useReadinessStore((s) => s.targetScores);
+  const testAttempts = useReadinessStore((s) => s.testAttempts);
+  const program = useProgramStore((s) => s.selectedProgram);
+  const week = useProgramStore((s) => s.currentWeek);
   const [logging, setLogging] = useState(false);
   const [dateSheet, setDateSheet] = useState(false);
   const metric = useUserStore((s) => s.profile?.settings.units === 'metric');
@@ -105,8 +108,15 @@ export default function TestScreen() {
   const scoped = Object.fromEntries(test.events.map((e) => [e.id, testScores[key(e.id)] ?? 0]));
   const readiness = getTestReadiness(test, scoped);
   const countdown = daysUntil(profile?.fitness_test_date);
-  const ranked = test.events.map((e) => ({ e, score: getTestReadiness({ ...test, events: [e] }, scoped).score })).sort((a, b) => a.score - b.score);
+  const ranked = test.events.filter((event) => scoped[event.id] > 0).map((e) => {
+    const target = targetScores[key(e.id)] || e.target;
+    return { e, score: e.direction === 'higher' ? scoped[e.id] / target : target / scoped[e.id] };
+  }).sort((a, b) => a.score - b.score);
   const anyLogged = Object.values(scoped).some((v) => v > 0);
+  const focus = getTrainingFocus(profile, testScores, targetScores);
+  const focusedDay = focus && program ? getFocusedProgramWorkout(program, week, profile, focus) : null;
+  const attempts = testAttempts.filter((attempt) => attempt.testId === test.id).sort((a, b) => (b.recordedAt ? Date.parse(b.recordedAt) : -Infinity) - (a.recordedAt ? Date.parse(a.recordedAt) : -Infinity));
+  const retest = nextRetestDate(attempts, test.id);
 
   return (
     <ScrollView ref={ref} style={styles.screen} contentContainerStyle={{ paddingTop: insets.top, paddingBottom: bottom }} showsVerticalScrollIndicator={false}>
@@ -136,6 +146,7 @@ export default function TestScreen() {
             </Text>
           </Ring>
         </View>
+        <Text variant="caption" tone="tertiary" style={{ marginTop: 6 }}>Preparation benchmark · your logged events</Text>
         {readiness.entered > 0 && readiness.entered < readiness.total ? (
           <Text variant="footnote" tone="tertiary" style={{ marginTop: space.xs }}>
             Based on {readiness.entered} of {readiness.total} events. Log the rest for a full picture.
@@ -176,12 +187,40 @@ export default function TestScreen() {
         <Button title={anyLogged ? 'Log scores' : 'Log your first scores'} onPress={() => setLogging(true)} style={{ marginTop: space.lg }} />
       </View>
 
+      {focus ? (
+        <View style={[styles.card, { marginTop: space.md }]}>
+          <Text variant="overline" tone="accent">Today’s purpose</Text>
+          <Text variant="headline" style={{ marginTop: 8 }}>{focus.title}</Text>
+          <Text variant="callout" tone="secondary" style={{ marginTop: 6 }}>{focus.reason}</Text>
+          <Text variant="footnote" tone="tertiary" style={{ marginTop: 8 }}>
+            {focusedDay ? `${focusedDay.title} includes work for this event. It moves first after your warm-up, using your existing plan targets.` : 'Keep your current plan balanced and use your next scores to check this event’s progress.'}
+          </Text>
+          <Button title={focusedDay ? 'View focused mission' : 'View my training'} variant="secondary" size="md" style={{ marginTop: space.md }} onPress={() => {
+            trackRetentionEvent('test_focus_opened');
+            if (focusedDay) navigation.navigate('WorkoutDetail', { workoutId: focusedDay.id, dateKey: getLocalDateKey() });
+            else navigation.navigate('Tabs', { screen: 'Train' });
+          }} />
+        </View>
+      ) : null}
+
+      {anyLogged ? (
+        <View style={[styles.card, { marginTop: space.md }]}>
+          <Text variant="overline" tone="secondary">Your next progress check</Text>
+          <Text variant="headline" style={{ marginTop: 8 }}>{retest ? retest.days <= 0 ? 'Ready for a retest?' : `Check back in ${retest.days} ${retest.days === 1 ? 'day' : 'days'}` : 'Save a dated baseline'}</Text>
+          <Text variant="callout" tone="secondary" style={{ marginTop: 6 }}>
+            {retest ? 'A progress check about every two weeks helps you see what is changing. Log the same events under comparable conditions when you are ready.' : 'Your earlier scores are kept. Save your next attempt to start a dated progress record.'}
+          </Text>
+          <Button title="Log a progress check" size="md" variant="secondary" onPress={() => setLogging(true)} style={{ marginTop: space.md }} />
+        </View>
+      ) : null}
+
       <SectionTitle title="Event Board" action="Branch" onAction={() => navigation.navigate('ServiceProfile')} style={styles.section} />
       <View style={{ gap: space.sm, paddingHorizontal: space.md }}>
         {test.events.map((e, i) => {
           const current = testScores[key(e.id)] ?? 0;
           const target = targetScores[key(e.id)] ?? e.target;
-          const pct = getTestReadiness({ ...test, events: [e] }, { [e.id]: current }).score;
+          const pct = current > 0 ? Math.round(Math.min(100, (e.direction === 'higher' ? current / target : target / current) * 100)) : 0;
+          const trend = getTestTrend(test.id, e, attempts);
           return (
             <Animated.View key={e.id} entering={FadeInDown.delay(i * motion.stagger).duration(320)} style={styles.event}>
               <View style={styles.eventHead}>
@@ -220,6 +259,17 @@ export default function TestScreen() {
                 </Text>
               </View>
               <Bar progress={pct / 100} height={5} trackColor={color.surfaceHigh} />
+              <Text variant="caption" tone="tertiary" style={{ marginTop: 5 }}>Of your target · preparation estimate</Text>
+              {trend ? (
+                <View style={{ marginTop: 10 }}>
+                  <Text variant="subhead" tone={trend.improved ? 'accent' : 'secondary'}>
+                    {trend.delta === 0 ? 'Holding your baseline' : `${formatEventValue(Math.abs(trend.delta), e.unit)} ${e.unit === 'seconds' ? (e.direction === 'lower' ? trend.improved ? 'faster' : 'slower' : trend.improved ? 'longer' : 'shorter') : `${trend.improved ? 'more' : 'less'} ${unitLabel(e.unit)}`} since baseline`}
+                  </Text>
+                  <Text variant="caption" tone="tertiary" style={{ marginTop: 3 }}>
+                    {formatEventValue(trend.baseline.scores[e.id], e.unit)} → {formatEventValue(trend.latest.scores[e.id], e.unit)} · {trend.attemptCount} progress checks
+                  </Text>
+                </View>
+              ) : null}
               {e.alternatives ? (
                 <Text variant="footnote" tone="tertiary" style={{ marginTop: 10 }}>
                   Alternatives: {e.alternatives.join(' · ')}
@@ -229,6 +279,21 @@ export default function TestScreen() {
           );
         })}
       </View>
+
+      {attempts.length ? (
+        <>
+          <SectionTitle title="Progress record" style={styles.section} />
+          <View style={{ gap: space.sm, paddingHorizontal: space.md }}>
+            {attempts.slice(0, 6).map((attempt) => (
+              <View key={attempt.id} style={styles.event}>
+                <Text variant="headline">{attempt.recordedAt ? new Date(attempt.recordedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Earlier saved scores'}</Text>
+                <Text variant="footnote" tone="tertiary" style={{ marginTop: 3 }}>{attempt.recordedAt ? 'Logged progress check' : 'Date was not recorded in your earlier version'}</Text>
+                <Text variant="callout" tone="secondary" style={{ marginTop: 8 }}>{test.events.filter((event) => attempt.scores[event.id] > 0).map((event) => `${event.shortName} ${formatEventValue(attempt.scores[event.id], event.unit)}`).join(' · ')}</Text>
+              </View>
+            ))}
+          </View>
+        </>
+      ) : null}
 
       <Tap feedback="highlight" baseColor={color.bg} pressedColor={color.bgRaised} style={styles.source} onPress={() => void openSource(test.sourceUrl)} accessibilityRole="link">
         <Icon name="info" size={20} color={color.textSecondary} />
@@ -279,18 +344,22 @@ export default function TestScreen() {
   );
 }
 
-function LogScoresSheet({ visible, onClose, testId, events }: { visible: boolean; onClose: () => void; testId: string; events: TestEventDefinition[] }) {
-  const testScores = useReadinessStore((s) => s.testScores);
+function LogScoresSheet({ visible, onClose, testId, events }: { visible: boolean; onClose: () => void; testId: FitnessTestType; events: TestEventDefinition[] }) {
   const targetScores = useReadinessStore((s) => s.targetScores);
-  const setScore = useReadinessStore((s) => s.setTestScore);
+  const saveAttempt = useReadinessStore((s) => s.saveTestAttempt);
   const setTarget = useReadinessStore((s) => s.setTargetScore);
   const [draft, setDraft] = useState<Record<string, { current: string; target: string }>>({});
+  const [loadedScores, setLoadedScores] = useState<Record<string, number>>({});
+  const entry = prepareTestScoreEntry(events, draft);
+  const hasScores = hasTestScoreChanges(entry.scores, loadedScores);
 
   React.useEffect(() => {
     if (!visible) return;
     const next: Record<string, { current: string; target: string }> = {};
+    const todaysAttempt = useReadinessStore.getState().testAttempts.find((attempt) => attempt.testId === testId && attempt.recordedAt && getLocalDateKey(new Date(attempt.recordedAt)) === getLocalDateKey());
+    setLoadedScores(todaysAttempt?.scores ?? {});
     events.forEach((e) => {
-      const c = testScores[`${testId}:${e.id}`] ?? 0;
+      const c = todaysAttempt?.scores[e.id] ?? 0;
       const t = targetScores[`${testId}:${e.id}`] ?? e.target;
       next[e.id] = { current: c ? (e.unit === 'seconds' ? formatEventValue(c, e.unit) : String(c)) : '', target: e.unit === 'seconds' ? formatEventValue(t, e.unit) : String(t) };
     });
@@ -299,22 +368,37 @@ function LogScoresSheet({ visible, onClose, testId, events }: { visible: boolean
   }, [visible, testId]);
 
   const save = () => {
+    const prepared = prepareTestScoreEntry(events, draft);
+    if (prepared.error) {
+      toast(prepared.error, { icon: 'alert', tone: 'error' });
+      return;
+    }
+    const first = !useReadinessStore.getState().testAttempts.some((attempt) => attempt.testId === testId);
+    const todaysAttempt = useReadinessStore.getState().testAttempts.find((attempt) => attempt.testId === testId && attempt.recordedAt && getLocalDateKey(new Date(attempt.recordedAt)) === getLocalDateKey());
+    const recordsAttempt = hasTestScoreChanges(prepared.scores, todaysAttempt?.scores);
+    if (recordsAttempt && !saveAttempt(testId, prepared.scores)) {
+      toast('Could not save this progress check', { icon: 'alert', tone: 'error' });
+      return;
+    }
+    let targetsChanged = false;
     events.forEach((e) => {
-      const d = draft[e.id];
-      if (!d) return;
-      setScore(`${testId}:${e.id}`, parseValue(d.current, e.unit));
-      setTarget(`${testId}:${e.id}`, parseValue(d.target, e.unit) || e.target);
+      if ((targetScores[`${testId}:${e.id}`] ?? e.target) !== prepared.targets[e.id]) targetsChanged = true;
+      setTarget(`${testId}:${e.id}`, prepared.targets[e.id]);
     });
+    scheduleBackup();
+    if (recordsAttempt) trackRetentionEvent('test_attempt_saved', { source: first ? 'baseline' : 'retest' });
+    else if (targetsChanged) trackRetentionEvent('test_targets_updated');
     haptic.success();
     onClose();
-    toast('Scores saved', { icon: 'check' });
+    toast(recordsAttempt ? 'Progress check saved' : 'Targets saved', { icon: 'check' });
   };
 
   // `scrollable`: the sheet itself scrolls. A scroll view nested inside a fit-to-content
   // system sheet was laid out over the sheet's title.
   return (
-    <Sheet visible={visible} onClose={onClose} title="Log scores" scrollable>
+    <Sheet visible={visible} onClose={onClose} title="Log progress check" scrollable>
       <View style={{ paddingHorizontal: space.gutter, paddingTop: space.sm }}>
+        <Text variant="footnote" tone="secondary" style={{ marginBottom: space.md }}>Today’s scores join your progress record. Leave events you did not test blank. You can update targets without entering a score. Editing scores again today updates today’s check.</Text>
         <View style={styles.logHead}>
           <Text variant="footnote" tone="tertiary" style={{ flex: 1 }}>
             Event
@@ -354,7 +438,7 @@ function LogScoresSheet({ visible, onClose, testId, events }: { visible: boolean
         ))}
       </View>
       <View style={{ paddingHorizontal: space.gutter, paddingTop: space.md }}>
-        <Button title="Save scores" onPress={save} />
+        <Button title={hasScores ? 'Save progress check' : 'Save targets'} onPress={save} />
       </View>
     </Sheet>
   );

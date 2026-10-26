@@ -5,6 +5,8 @@ import sitemap from '@astrojs/sitemap';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://gruntzfit.com',
+  // Preserve the site's Astro 6 whitespace behavior across the security upgrade.
+  compressHTML: true,
   integrations: [sitemap()],
   build: {
     format: 'directory',

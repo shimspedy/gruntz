@@ -6,6 +6,9 @@ import { prepareTrackedSession, splitTrackedSession } from '../features/activity
 import { clearRoutes, inlineRoute, saveRoute } from './activityRoutes';
 import { createFlushableStorage } from './flushableStorage';
 import { READINESS_STORAGE_KEY, readinessStorage } from './readinessStorage';
+import { militaryTests } from '../data/militaryTests';
+import type { FitnessTestType } from '../types';
+import { isTestAttempt, isTrainingChoice, type TestAttempt, type TrainingChoice, type TrainingMode } from '../features/trainingFocus';
 
 const readinessPersistence = createFlushableStorage(readinessStorage);
 export const flushReadinessPersistence = readinessPersistence.flush;
@@ -59,6 +62,8 @@ interface ReadinessState {
   checkIns: DailyReadinessCheckIn[];
   testScores: Record<string, number>;
   targetScores: Record<string, number>;
+  testAttempts: TestAttempt[];
+  trainingChoice: TrainingChoice | null;
   fieldMode: boolean;
   audioCues: boolean;
   keepScreenAwake: boolean;
@@ -71,6 +76,8 @@ interface ReadinessState {
   teamCount: number;
   saveCheckIn: (checkIn: DailyReadinessCheckIn) => void;
   setTestScore: (eventId: string, value: number) => void;
+  saveTestAttempt: (testId: FitnessTestType, scores: Record<string, number>, recordedAt?: string) => boolean;
+  setTrainingChoice: (mode: TrainingMode, date?: string) => void;
   setTargetScore: (eventId: string, value: number) => void;
   setFieldPreference: (key: 'fieldMode' | 'audioCues' | 'keepScreenAwake' | 'batterySaver', value: boolean) => void;
   /**
@@ -110,13 +117,52 @@ export function calculateDailyReadiness(checkIn?: DailyReadinessCheckIn) {
 export const useReadinessStore = create<ReadinessState>()(
   persist(
     (set, get) => ({
-      checkIns: [], testScores: {}, targetScores: {}, fieldMode: false, audioCues: true,
+      checkIns: [], testScores: {}, targetScores: {}, testAttempts: [], trainingChoice: null, fieldMode: false, audioCues: true,
       keepScreenAwake: true, batterySaver: false, trackedSessions: [], teamName: '', teamCode: '', teamCount: 0,
       includeActivityRoutesInBackup: false,
       saveCheckIn: (checkIn) => set((state) => ({
         checkIns: [checkIn, ...state.checkIns.filter((item) => item.date !== checkIn.date)].slice(0, MAX_CHECKINS),
       })),
       setTestScore: (eventId, value) => set((state) => ({ testScores: { ...state.testScores, [eventId]: value } })),
+      saveTestAttempt: (testId, scores, recordedAt = new Date().toISOString()) => {
+        const test = militaryTests[testId];
+        if (!test || !Number.isFinite(Date.parse(recordedAt))) return false;
+        const clean = Object.fromEntries(test.events.flatMap((event) => {
+          const value = scores[event.id];
+          return Number.isFinite(value) && value > 0 ? [[event.id, value]] : [];
+        }));
+        if (!Object.keys(clean).length) return false;
+        const at = new Date(recordedAt).toISOString();
+        const date = getLocalDateKey(new Date(at));
+        set((state) => {
+          const previous = (state.testAttempts ?? []).filter(isTestAttempt);
+          // Old scores had no timestamp. Keep them as an explicitly undated baseline.
+          if (!previous.some((attempt) => attempt.testId === testId)) {
+            const legacy = Object.fromEntries(test.events.flatMap((event) => {
+              const value = state.testScores[`${testId}:${event.id}`];
+              return Number.isFinite(value) && value > 0 ? [[event.id, value]] : [];
+            }));
+            if (Object.keys(legacy).length) previous.push({ id: `legacy:${testId}`, testId, recordedAt: null, scores: legacy });
+          }
+          const sameDay = previous.find((attempt) => attempt.testId === testId && attempt.recordedAt && getLocalDateKey(new Date(attempt.recordedAt)) === date);
+          const attempt: TestAttempt = { id: sameDay?.id ?? `${testId}:${at}`, testId, recordedAt: at, scores: clean };
+          const all = [attempt, ...previous.filter((entry) => entry.id !== attempt.id)];
+          // Keep the baseline for every test when bounding a long history.
+          const baselines = Object.keys(militaryTests).flatMap((id) => {
+            const oldest = all.filter((entry) => entry.testId === id).sort((a, b) => (a.recordedAt ? Date.parse(a.recordedAt) : -Infinity) - (b.recordedAt ? Date.parse(b.recordedAt) : -Infinity))[0];
+            return oldest ? [oldest] : [];
+          });
+          const recent = all.slice(0, 240 - baselines.length);
+          const testAttempts = [...recent, ...baselines.filter((baseline) => !recent.some((entry) => entry.id === baseline.id))];
+          const scoped = Object.fromEntries(Object.entries(clean).map(([eventId, value]) => [`${testId}:${eventId}`, value]));
+          return { testAttempts, testScores: { ...state.testScores, ...scoped } };
+        });
+        return true;
+      },
+      setTrainingChoice: (mode, date = getLocalDateKey()) => {
+        const choice = { date, mode };
+        if (isTrainingChoice(choice)) set({ trainingChoice: choice });
+      },
       setTargetScore: (eventId, value) => set((state) => ({ targetScores: { ...state.targetScores, [eventId]: value } })),
       setFieldPreference: (key, value) => set({ [key]: value }),
       addTrackedSession: (session) => {
@@ -138,6 +184,14 @@ export const useReadinessStore = create<ReadinessState>()(
     {
       name: '@gruntz_readiness',
       storage: createJSONStorage(() => readinessPersistence.storage),
+      merge: (persisted, current) => {
+        const saved = persisted && typeof persisted === 'object' ? persisted as Partial<ReadinessState> : {};
+        return {
+          ...current, ...saved,
+          testAttempts: Array.isArray(saved.testAttempts) ? saved.testAttempts.filter(isTestAttempt) : [],
+          trainingChoice: isTrainingChoice(saved.trainingChoice) ? saved.trainingChoice : null,
+        };
+      },
       // Deliberately not a persist `version` bump: an older build must still be able
       // to restore a backup made by this one.
       onRehydrateStorage: () => (_state, error) => {

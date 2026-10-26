@@ -5,10 +5,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { getExerciseById } from '../data/exercises';
-import { getProgramById } from '../data/programs';
+import { getProgramById, getProgramTrainingDays } from '../data/programs';
 import { usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { useProgramStore } from '../store/useProgramStore';
 import { useSessionStore } from '../store/useSessionStore';
+import { useUserStore } from '../store/useUserStore';
 import { hasTrainingAccess, useSubscriptionStore } from '../store/useSubscriptionStore';
 import type { ProgramId } from '../types';
 import type { RootStackParamList } from '../types/navigation';
@@ -29,6 +30,7 @@ export default function ProgramDetailScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useContentSize();
   const current = useProgramStore((s) => s.selectedProgram);
+  const profile = useUserStore((s) => s.profile);
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
   const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
   const program = getProgramById(params.programId);
@@ -87,7 +89,7 @@ export default function ProgramDetailScreen() {
           </Text>
           <View style={styles.stats}>
             <Stat label="Weeks" value={String(program.duration_weeks)} accent style={{ flex: 1 }} />
-            <Stat label="Days / week" value={String(program.days_per_week)} style={{ flex: 1 }} />
+            <Stat label="Days / week" value={String(getProgramTrainingDays(program, profile))} style={{ flex: 1 }} />
             <Stat label="Level" value={program.difficulty.charAt(0).toUpperCase() + program.difficulty.slice(1)} style={{ flex: 1 }} />
           </View>
           <Hairline />

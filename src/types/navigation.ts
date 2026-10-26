@@ -20,6 +20,13 @@ export interface CelebrationParams {
   streak: number;
   achievementIds: string[];
   title: string;
+  debrief?: {
+    winTitle: string;
+    winDetail: string;
+    sets: number;
+    minutes: number;
+    firstWorkout: boolean;
+  };
 }
 
 export type RootStackParamList = {
@@ -42,6 +49,8 @@ export type RootStackParamList = {
   Achievements: undefined;
   Streak: undefined;
   Stats: undefined;
+  WeeklyDebrief: { weekStart?: string } | undefined;
+  RetentionDiagnostics: undefined;
   Settings: undefined;
   ServiceProfile: undefined;
   Backup: undefined;

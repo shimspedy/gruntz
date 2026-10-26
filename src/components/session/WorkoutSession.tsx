@@ -117,6 +117,7 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
   const exercises = useSessionStore((st) => st.exercises);
   const index = useSessionStore((st) => st.index);
   const title = useSessionStore((st) => st.title);
+  const adaptation = useSessionStore((st) => st.adaptation);
   const active = useSessionStore((st) => st.active);
   const startedAt = useSessionStore((st) => st.startedAt);
   const minimize = useSessionStore((st) => st.minimize);
@@ -365,6 +366,13 @@ function SessionBody({ panGesture, visible }: { panGesture: ReturnType<typeof Ge
             </ScrollView>
           </View>
         </GestureDetector>
+
+        {adaptation ? (
+          <View style={{ marginHorizontal: space.gutter, paddingHorizontal: space.md, paddingVertical: space.sm, marginBottom: space.sm, borderRadius: radius.md, backgroundColor: color.accentSoft }}>
+            <Text variant="subhead" tone="accent">{adaptation.label}</Text>
+            <Text variant="caption" tone="secondary" style={{ marginTop: 3 }}>{adaptation.reason}</Text>
+          </View>
+        ) : null}
 
         {exercises.length === 0 ? (
           // Removing the last exercise used to leave a black screen with no way out.

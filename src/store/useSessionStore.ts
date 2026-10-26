@@ -10,6 +10,10 @@ import { useUserStore } from './useUserStore';
 import { cancelRestDone } from '../services/notifications';
 import type { PlanDay, WorkoutPlan } from '../data/workoutPlans';
 import type { CompletedExercise, CompletedMission, Exercise, WorkoutDay } from '../types';
+import { getTodaysTrainingChoice, getTrainingFocus, prioritizeWorkout, type TrainingMode } from '../features/trainingFocus';
+import { useReadinessStore } from './useReadinessStore';
+import { getLocalDateKey } from '../utils/dateKey';
+import { isSameCanonicalMovement } from '../features/exerciseProvenance';
 
 /**
  * The live workout. Lives outside navigation so the session can collapse into the
@@ -90,6 +94,7 @@ interface SessionState {
   /** Keyed by the session slot key, not the exercise id: one day can program the same movement twice with different rests. */
   restPrescribed: Record<string, number>;
   previous: Record<string, PreviousSet[]>;
+  adaptation: { mode: TrainingMode; label: string; reason: string } | null;
 
   start: (day: WorkoutDay, missionDate: string) => void;
   startRoutine: (routine: Routine, missionDate: string) => void;
@@ -231,14 +236,19 @@ export function convertSessionWeights(to: 'lb' | 'kg') {
  * an Epley 1RM estimate for weighted reps, plain reps for bodyweight, seconds for
  * holds. Returns null when there is nothing measurable to compare.
  */
-function bestEffort(kind: SetKind, sets: { reps?: number; weight?: number; seconds?: number }[]): number | null {
+function hasComparableNumbers(st: { reps?: number; weight?: number; seconds?: number }) {
+  return !!st && [st.reps, st.weight, st.seconds].every((value) => value === undefined || (typeof value === 'number' && Number.isFinite(value) && value >= 0));
+}
+
+function bestEffort(kind: SetKind, sets: { reps?: number; weight?: number; seconds?: number }[], weighted = false): number | null {
   let best: number | null = null;
   for (const st of sets) {
+    if (!hasComparableNumbers(st)) continue;
     let value: number | null = null;
-    if (kind === 'time') value = st.seconds ?? null;
-    else if (st.weight && st.reps) value = estimated1RM(st.weight, st.reps);
-    else if (st.reps) value = st.reps;
-    if (value != null && (best == null || value > best)) best = value;
+    if (kind === 'time') value = st.seconds && st.seconds > 0 ? st.seconds : null;
+    else if (kind === 'reps' && weighted && st.weight && st.reps) value = estimated1RM(st.weight, st.reps);
+    else if (kind === 'reps' && !weighted && st.reps && st.reps > 0) value = st.reps;
+    if (value != null && Number.isFinite(value) && value > 0 && (best == null || value > best)) best = value;
   }
   return best;
 }
@@ -265,7 +275,69 @@ const initial = {
   restTotal: 0,
   restSetId: null as string | null,
   restPrescribed: {} as Record<string, number>,
+  adaptation: null as SessionState['adaptation'],
 };
+
+/** A choice only affects a newly started session, never a workout underway. */
+function applySessionChoice(exercises: SessionExercise[], missionDate: string, estimatedMinutes: number, rewardXp: number) {
+  const mode = getTodaysTrainingChoice(useReadinessStore.getState().trainingChoice);
+  if (mode === 'planned') return { exercises, missionDate, estimatedMinutes, rewardXp, adaptation: null as SessionState['adaptation'] };
+  if (mode === 'recovery') {
+    const recovery: WorkoutDay = {
+      id: `recovery:${getLocalDateKey()}`, week: 0, day: 0, title: 'Recovery mission', objective: 'Move gently and keep comfortable ranges.', estimated_duration: 8,
+      sections: [{ id: 'recovery', type: 'recovery', title: 'Easy movement', instructions: 'Stay comfortable. Skip anything that does not feel right.', exercises: ['base_march_in_place', 'base_arm_circles', 'base_mobility_flow'] }],
+      rewards: { xp: 15, coins: 0 },
+    };
+    return {
+      exercises: buildSessionExercises(recovery, {}), missionDate: getLocalDateKey(), estimatedMinutes: 8, rewardXp: 15,
+      workoutDayId: recovery.id, title: recovery.title,
+      adaptation: { mode, label: 'Recovery option', reason: 'You chose easy movement today. Your planned workout stays available.' } as SessionState['adaptation'],
+    };
+  }
+  const shortenDistance = (distance: string | undefined) => {
+    // A range is still a measurable target. Course labels and interval totals
+    // (e.g. a prescribed pyramid) stay intact rather than inventing a new route.
+    const match = distance?.match(/^(\d+(?:\.\d+)?)(?:\s*[-–—]\s*(\d+(?:\.\d+)?))?\s*(m|km|mi|mile|miles|meter|meters|minute|minutes|min|yard|yards|yd|yds)$/i);
+    if (!match) return distance;
+    const low = Number(match[1]);
+    const high = match[2] ? Number(match[2]) : undefined;
+    if (!Number.isFinite(low) || low <= 0 || (high !== undefined && (!Number.isFinite(high) || high < low))) return distance;
+    const step = /^(?:km|mi|mile|miles)$/i.test(match[3]) || match[1].includes('.') || match[2]?.includes('.') ? 0.1 : 1;
+    const reduce = (value: number) => Math.min(value, Math.max(step, Number((Math.floor(value * 2 / 3 / step) * step).toFixed(1))));
+    const nextLow = reduce(low);
+    const nextHigh = high === undefined ? undefined : reduce(high);
+    if (nextLow === low && nextHigh === high) return distance;
+    return `${nextLow}${nextHigh === undefined ? '' : `-${nextHigh}`} ${match[3]}`;
+  };
+  let changed = false;
+  const preserved = new Set<string>();
+  const shorter = exercises.map((exercise) => {
+    const clip = getExerciseById(exercise.exerciseId);
+    if (clip?.category === 'warmup' || clip?.category === 'recovery') return exercise;
+    const working = exercise.sets.filter((set) => !set.warmup);
+    const target = Math.max(1, Math.floor(working.length * 2 / 3));
+    const single = working.length === 1;
+    if (working.length > target) changed = true;
+    const reduced = working.slice(0, target).map((set) => {
+      if (!single) return set;
+      const next = {
+        ...set,
+        reps: exercise.kind === 'reps' && set.reps ? Math.max(1, Math.floor(set.reps * 2 / 3)) : set.reps,
+        seconds: exercise.kind === 'time' && set.seconds ? Math.min(set.seconds, Math.max(1, Math.floor(set.seconds * 2 / 3))) : set.seconds,
+        distance: exercise.kind === 'distance' ? shortenDistance(set.distance) : set.distance,
+      };
+      if (next.reps !== set.reps || next.seconds !== set.seconds || next.distance !== set.distance) changed = true;
+      else preserved.add(exercise.prescribedName ?? clip?.name ?? 'One movement');
+      return next;
+    });
+    return { ...exercise, sets: [...exercise.sets.filter((set) => set.warmup), ...reduced], requiredSets: Math.min(exercise.requiredSets, reduced.length) };
+  });
+  const kept = preserved.size ? ` Targets kept as prescribed: ${Array.from(preserved).join(', ')}.` : '';
+  return {
+    exercises: shorter, missionDate, estimatedMinutes: changed ? Math.max(1, Math.round(estimatedMinutes * 0.7)) : estimatedMinutes, rewardXp: changed ? Math.max(1, Math.round(rewardXp * 0.7)) : rewardXp,
+    adaptation: { mode, label: changed ? 'Shorter session' : 'Original targets kept', reason: changed ? `Working volume is reduced. Completing these adjusted targets counts as your plan day.${kept}` : `This session has no working targets that can be safely reduced. Your original targets, time estimate and rewards are kept.${kept}` } as SessionState['adaptation'],
+  };
+}
 
 export const useSessionStore = create<SessionState>()(
   persist(
@@ -276,22 +348,24 @@ export const useSessionStore = create<SessionState>()(
 
       start: (day, missionDate) => {
         if (get().active) return get().expand();
-        const exercises = buildSessionExercises(day, get().previous);
+        const readiness = useReadinessStore.getState();
+        const focus = getTrainingFocus(useUserStore.getState().profile, readiness.testScores ?? {}, readiness.targetScores ?? {});
+        const focusedDay = prioritizeWorkout(day, focus, getExerciseById);
+        const exercises = buildSessionExercises(focusedDay, get().previous);
         if (!exercises.length) return;
+        const choice = applySessionChoice(exercises, missionDate, day.estimated_duration, day.rewards.xp);
         set({
           ...initial,
           active: true,
           minimized: false,
           workoutDayId: day.id,
-          missionDate,
           title: day.title,
-          estimatedMinutes: day.estimated_duration,
-          rewardXp: day.rewards.xp,
-          exercises,
           index: 0,
           startedAt: Date.now(),
           restEndsAt: null,
           restTotal: 0,
+          ...choice,
+          adaptation: choice.adaptation ?? (focusedDay !== day && focus ? { mode: 'planned', label: focus.title, reason: `${focus.eventName} work comes first after your warm-up, based on your logged scores.` } : null),
         });
       },
 
@@ -311,21 +385,19 @@ export const useSessionStore = create<SessionState>()(
         const prescribed: Record<string, number> = {};
         routine.items.forEach((it, i) => (prescribed[`${routine.id}:${i}:${it.key}`] = it.rest));
         if (!exercisesList.length) return;
+        const choice = applySessionChoice(exercisesList, missionDate, routineMinutes(routine), 20 + routine.items.length * 5);
         set({
           ...initial,
           active: true,
           minimized: false,
           workoutDayId: `routine:${routine.id}`,
-          missionDate,
           title: routine.name,
-          estimatedMinutes: routineMinutes(routine),
-          rewardXp: 20 + routine.items.length * 5,
-          exercises: exercisesList,
           index: 0,
           startedAt: Date.now(),
           restEndsAt: null,
           restTotal: 0,
           restPrescribed: prescribed,
+          ...choice,
         });
       },
 
@@ -381,21 +453,19 @@ export const useSessionStore = create<SessionState>()(
           return [{ key: `${day.id}:${i}:${slot.video_key}`, exerciseId: id, prescribedName, supersetGroup, section: day.title, kind, weighted: isWeighted(ex), requiredSets: workingSets, sets }];
         });
         if (!exercisesList.length) return;
+        const choice = applySessionChoice(exercisesList, missionDate, day.estimated_minutes, 20 + exercisesList.length * 5);
         set({
           ...initial,
           active: true,
           minimized: false,
           workoutDayId: planSessionId(plan.id, day.id),
-          missionDate,
           title: `${plan.title} · ${day.title}`,
-          estimatedMinutes: day.estimated_minutes,
-          rewardXp: 20 + exercisesList.length * 5,
-          exercises: exercisesList,
           index: 0,
           startedAt: Date.now(),
           restEndsAt: null,
           restTotal: 0,
           restPrescribed: prescribed,
+          ...choice,
         });
       },
 
@@ -613,9 +683,12 @@ export const useSessionStore = create<SessionState>()(
           // A personal record: today's best effort on this movement beats every
           // previous session's. The log has not been written yet at this point, so
           // the history compared against genuinely excludes today.
-          const today = bestEffort(e.kind, done);
+          const today = bestEffort(e.kind, done, e.weighted);
           const key = ex ? exerciseLogKey(ex) : e.exerciseId;
-          const history = useExerciseLogStore.getState().logs[key] ?? [];
+          // Shared clips and historical aliases can contain different movements.
+          // Preserve that history, but only known equivalent work can earn a PR.
+          const history = e.prescribedName ? [] : (useExerciseLogStore.getState().logs[key] ?? [])
+            .filter((entry) => (entry.unit === 'lb' || entry.unit === 'kg') && isSameCanonicalMovement(entry.movement, e.exerciseId));
           // History is stored in whatever unit was set when it was lifted, and today's
           // sets are in the current one. Comparing the raw numbers meant switching
           // lb -> kg ended PRs forever (45 kg never beats a 100 lb history) and kg -> lb
@@ -623,10 +696,11 @@ export const useSessionStore = create<SessionState>()(
           // already converts, so the PR badge and the Records tab disagreed about the
           // same lift.
           const previousBest = history.reduce<number | null>((best, entry) => {
+            const validSets = entry.sets.filter(hasComparableNumbers);
             const sets = entry.unit === unit
-              ? entry.sets
-              : entry.sets.map((st) => (st.weight ? { ...st, weight: toUnit(st.weight, entry.unit, unit) } : st));
-            const value = bestEffort(e.kind, sets);
+              ? validSets
+              : validSets.map((st) => (st.weight ? { ...st, weight: toUnit(st.weight, entry.unit, unit) } : st));
+            const value = bestEffort(e.kind, sets, e.weighted);
             return value != null && (best == null || value > best) ? value : best;
           }, null);
           // Needs a prior session to beat — the first time you do a movement is not a PR.
@@ -680,7 +754,7 @@ export const useSessionStore = create<SessionState>()(
           if (!sets.length) return;
           const logged = getExerciseById(e.exerciseId);
           const key = logged ? exerciseLogKey(logged) : e.exerciseId;
-          log.record(key, { id: `${get().startedAt ?? at}:${e.key}`, at, workoutTitle: get().title, unit, sets });
+          log.record(key, { id: `${get().startedAt ?? at}:${e.key}`, at, workoutTitle: get().title, unit, sets, movement: { exerciseId: e.exerciseId, ...(e.prescribedName ? { prescribedName: e.prescribedName } : {}) } });
         });
 
         const planDay = parsePlanSessionId(get().workoutDayId);
@@ -720,6 +794,7 @@ export const useSessionStore = create<SessionState>()(
         title: s.title,
         estimatedMinutes: s.estimatedMinutes,
         rewardXp: s.rewardXp,
+        adaptation: s.adaptation,
         exercises: s.exercises,
         index: s.index,
         startedAt: s.startedAt,

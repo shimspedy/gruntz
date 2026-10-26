@@ -44,6 +44,8 @@ import TeamScreen from '../screens/TeamScreen';
 import CommunitiesScreen from '../screens/CommunitiesScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import StatsScreen from '../screens/StatsScreen';
+import WeeklyDebriefScreen from '../screens/WeeklyDebriefScreen';
+import RetentionDiagnosticsScreen from '../screens/RetentionDiagnosticsScreen';
 import StreakScreen from '../screens/StreakScreen';
 import TestScreen from '../screens/TestScreen';
 import TrainingPreferencesScreen from '../screens/TrainingPreferencesScreen';
@@ -51,7 +53,7 @@ import TrainScreen from '../screens/TrainScreen';
 import WorkoutDetailScreen from '../screens/WorkoutDetailScreen';
 import { useChallengeStore } from '../store/useChallengeStore';
 import { useOnboardingDraftStore } from '../store/useOnboardingDraftStore';
-import { setNotificationsEnabled } from '../services/notifications';
+import { scheduleWeeklyRecap, setNotificationsEnabled } from '../services/notifications';
 import { useSubscriptionStore } from '../store/useSubscriptionStore';
 import { useProgramStore } from '../store/useProgramStore';
 import { useRoutineStore } from '../store/useRoutineStore';
@@ -74,6 +76,9 @@ import { useReadinessStore } from '../store/useReadinessStore';
 import { useTeamInboxStore } from '../store/useTeamInboxStore';
 import { useSignedIn } from '../hooks/useSignedIn';
 import { startInboxLifecycle } from '../services/teamInbox';
+import { startRetentionLifecycle } from '../services/retentionLifecycle';
+import { trackRetentionEvent } from '../services/retentionAnalytics';
+import { resolveNotificationLink } from './notificationLink';
 
 /** Coalesce navigation-state writes; a tab tap should not cost a disk write. */
 const NAV_SAVE_DEBOUNCE_MS = 600;
@@ -94,8 +99,7 @@ const ENTITLEMENT_REFRESH_MS = 30 * 60 * 1000;
  * running or backgrounded.
  */
 function notificationUrl(response: Notifications.NotificationResponse | null | undefined) {
-  const url = response?.notification.request.content.data?.url;
-  return typeof url === 'string' ? url : null;
+  return resolveNotificationLink(response?.notification.request.content.data, response?.notification.date);
 }
 
 const getInitialLink = createInitialLinkResolver({
@@ -142,6 +146,7 @@ const linking = {
       Achievements: 'achievements',
       Streak: 'streak',
       Stats: 'stats',
+      WeeklyDebrief: 'weekly-debrief',
       ActivityHistory: 'activities',
       ActivityDetail: 'activities/:sessionId',
       Settings: 'settings',
@@ -238,6 +243,8 @@ function AppStack() {
       <Stack.Screen name="Achievements" component={AchievementsScreen} />
       <Stack.Screen name="Streak" component={StreakScreen} />
       <Stack.Screen name="Stats" component={StatsScreen} />
+      <Stack.Screen name="WeeklyDebrief" component={WeeklyDebriefScreen} />
+      {__DEV__ ? <Stack.Screen name="RetentionDiagnostics" component={RetentionDiagnosticsScreen} /> : null}
       <Stack.Screen name="ActivityHistory" component={ActivityHistoryScreen} />
       <Stack.Screen name="ActivityDetail" component={ActivityDetailScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
@@ -453,11 +460,19 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   useEffect(() => {
     setNotificationsEnabled(remindersOn);
   }, [remindersOn]);
+  useEffect(() => {
+    // Replace earlier weekly reminders whose destination was the lifetime Stats screen.
+    if (hasHydrated && storesReady && isOnboarded && remindersOn) void scheduleWeeklyRecap();
+  }, [hasHydrated, storesReady, isOnboarded, remindersOn]);
   // Flushes a pending backup when the app is backgrounded, so finishing a workout
   // and immediately closing does not leave that session unbacked. No-ops entirely
   // when the build has no backup keys.
   useEffect(() => startBackupLifecycle(), []);
   useEffect(() => startHealthSyncLifecycle(), []);
+  useEffect(() => {
+    if (!hasHydrated || !storesReady || hydrationFailed) return;
+    return startRetentionLifecycle();
+  }, [hasHydrated, storesReady, hydrationFailed]);
   /**
    * Whether this launch came from a deep link.
    *
@@ -604,7 +619,11 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
         theme={theme}
         linking={linking}
         initialState={isOnboarded && !launchedFromLink ? nav.initial : undefined}
-        onStateChange={isOnboarded ? nav.save : undefined}
+        onStateChange={isOnboarded ? (state) => {
+          nav.save(state);
+          const screen = navigationRef.getCurrentRoute()?.name;
+          if (screen) trackRetentionEvent('screen_viewed', { screen });
+        } : undefined}
       >
         {isOnboarded ? <AppStack /> : <OnboardingFlow />}
       </NavigationContainer>

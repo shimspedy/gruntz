@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import type { LoggedMovement } from '../features/exerciseProvenance';
 
 /** One completed set, as logged. Weight is in `unit` (the user's setting when they lifted it). */
 export interface LoggedSet {
@@ -18,6 +19,8 @@ export interface ExerciseLogEntry {
   workoutTitle: string;
   unit: 'lb' | 'kg';
   sets: LoggedSet[];
+  /** Optional for older/imported logs, whose exact movement equivalence is unknown. */
+  movement?: LoggedMovement;
   /**
    * For an imported session: the source file's own date text and workout name. `at` is an
    * instant, so the same file read in another timezone produces a different `at` and a

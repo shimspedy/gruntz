@@ -2,6 +2,8 @@ import type { ProgramId, UserProfile, WorkoutDay } from '../types';
 import { BASE_CAMP_TOTAL_WEEKS, getBaseCampWeek, getBaseCampWorkoutDay, getBaseCampWorkoutForDate } from './baseCampWorkouts';
 import { getReconWeek, getReconWorkoutDay } from './reconWorkouts';
 import { getWorkoutDay, getWorkoutDaysForWeek, REST_DAYS, TOTAL_WEEKS as RAIDER_TOTAL_WEEKS } from './workouts';
+import { getExerciseById } from './exercises';
+import { matchesTrainingFocus, prioritizeWorkout, type TrainingFocus } from '../features/trainingFocus';
 
 const RECON_TOTAL_WEEKS = 12;
 
@@ -96,4 +98,21 @@ export function getNextProgramWorkout(
   }
 
   return null;
+}
+
+/** Choose an authored mission containing the athlete's priority event support work. */
+export function getFocusedProgramWorkout(
+  programId: ProgramId,
+  week: number,
+  profile: UserProfile | null | undefined,
+  focus: TrainingFocus,
+): WorkoutDay | null {
+  const ranked = getProgramWeek(programId, week, profile).map((day) => ({
+    day,
+    matches: day.sections.filter((section) => section.type !== 'warmup' && section.type !== 'recovery').reduce((sum, section) => sum + section.exercises.filter((id) => {
+      const exercise = getExerciseById(id);
+      return !!exercise && matchesTrainingFocus(exercise, focus);
+    }).length, 0),
+  })).filter((entry) => entry.matches > 0).sort((a, b) => b.matches - a.matches || a.day.day - b.day.day);
+  return ranked[0] ? prioritizeWorkout(ranked[0].day, focus, getExerciseById) : null;
 }

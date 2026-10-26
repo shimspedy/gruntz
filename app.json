@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.gruntz.fitness",
+      "appleTeamId": "YY96MFYC96",
       "buildNumber": "37",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,

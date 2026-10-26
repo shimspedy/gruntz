@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { getExerciseById } from '../data/exercises';
-import { PROGRAMS } from '../data/programs';
+import { PROGRAMS, getProgramTrainingDays } from '../data/programs';
 import { recommendProgramForProfile } from '../services/adaptiveCoach';
 import { useProgramStore } from '../store/useProgramStore';
 import { useUserStore } from '../store/useUserStore';
@@ -51,7 +51,7 @@ export default function ProgramSelectScreen() {
                 <View style={styles.copy}>
                   <Text variant="hero">{p.name.toUpperCase()}</Text>
                   <Text variant="callout" tone="secondary" style={{ marginTop: 4 }}>
-                    {p.duration_weeks} weeks · {p.days_per_week} days a week · {p.difficulty.charAt(0).toUpperCase() + p.difficulty.slice(1)}
+                    {p.duration_weeks} weeks · {getProgramTrainingDays(p, profile)} days a week · {p.difficulty.charAt(0).toUpperCase() + p.difficulty.slice(1)}
                   </Text>
                   <Text variant="footnote" tone="tertiary" style={{ marginTop: 6 }} numberOfLines={2}>
                     {p.subtitle}

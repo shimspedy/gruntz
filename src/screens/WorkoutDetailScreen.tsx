@@ -23,6 +23,9 @@ import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
 import { color, motion, radius, space } from '../ui/tokens';
 import { getLocalDateKey, parseLocalDateKey } from '../utils/dateKey';
+import { getTodaysTrainingChoice, getTrainingFocus, prioritizeWorkout } from '../features/trainingFocus';
+import { useReadinessStore } from '../store/useReadinessStore';
+import { useUiStore } from '../store/useUiStore';
 
 const SECTION_LABEL: Record<string, string> = {
   warmup: 'Warm-up',
@@ -40,6 +43,9 @@ export default function WorkoutDetailScreen() {
   const insets = useSafeAreaInsets();
   const program = useProgramStore((s) => s.selectedProgram);
   const profile = useUserStore((s) => s.profile);
+  const testScores = useReadinessStore((s) => s.testScores);
+  const targetScores = useReadinessStore((s) => s.targetScores);
+  const choice = useReadinessStore((s) => s.trainingChoice);
   const claimed = useUserStore((s) => s.progress.claimed_missions);
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
   const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
@@ -48,7 +54,11 @@ export default function WorkoutDetailScreen() {
   const sessionActive = useSessionStore((st) => st.active);
   const sessionDayId = useSessionStore((st) => st.workoutDayId);
 
-  const day = useMemo(() => getProgramWorkoutDay(program, params.workoutId, profile), [program, params.workoutId, profile]);
+  const day = useMemo(() => {
+    const original = getProgramWorkoutDay(program, params.workoutId, profile);
+    return original ? prioritizeWorkout(original, getTrainingFocus(profile, testScores, targetScores), getExerciseById) : undefined;
+  }, [program, params.workoutId, profile, testScores, targetScores]);
+  const mode = getTodaysTrainingChoice(choice);
   const exercises = useMemo(() => workoutExercises(day), [day]);
   const distribution = useMemo(() => muscleDistribution(day, 3), [day]);
 
@@ -70,11 +80,13 @@ export default function WorkoutDetailScreen() {
 
   let cta: { title: string; icon?: 'play'; disabled?: boolean; onPress?: () => void } = { title: 'Start Workout', icon: 'play' };
   if (!exercises.length) cta = { title: 'Recovery day', disabled: true };
-  else if (completed) cta = { title: isToday ? 'Completed today' : 'Completed', disabled: true };
+  else if (completed && mode !== 'recovery') cta = { title: isToday ? 'Completed today' : 'Completed', disabled: true };
   else if (!unlocked) cta = { title: 'Unlock Gruntz Pro', onPress: () => navigation.navigate('Paywall') };
   else if (sameSession) cta = { title: 'Resume Workout', icon: 'play', onPress: () => useSessionStore.getState().expand() };
   // Both of these used to be dead disabled buttons: one with nowhere to go, one with no way to train early.
   else if (sessionActive) cta = { title: 'Go to your current workout', icon: 'play', onPress: () => useSessionStore.getState().expand() };
+  else if (mode === 'recovery') cta = { title: 'Start recovery mission', icon: 'play' };
+  else if (mode === 'shorter') cta = { title: 'Start shorter session', icon: 'play' };
   else if (!isToday) cta = { title: `Do it now · ${weekday}'s workout`, icon: 'play' };
 
   const start = () => {
@@ -108,6 +120,14 @@ export default function WorkoutDetailScreen() {
             </Text>
           ) : null}
         </View>
+
+        {mode !== 'planned' ? (
+          <View style={{ marginHorizontal: space.gutter, marginBottom: space.lg, padding: space.md, borderRadius: radius.md, backgroundColor: color.accentSoft }}>
+            <Text variant="headline" tone="accent">{mode === 'shorter' ? 'Shorter option selected' : 'Recovery option selected'}</Text>
+            <Text variant="callout" tone="secondary" style={{ marginTop: 6 }}>{mode === 'shorter' ? 'The plan below is your original session. Working sets or single-set targets reduce when you start; your adjusted plan day counts when completed.' : 'Start an easy mobility mission today. The plan below stays available for another session.'}</Text>
+            <Button title="Change today’s option" size="sm" variant="secondary" style={{ alignSelf: 'flex-start', marginTop: space.md }} onPress={() => useUiStore.getState().setReadiness(true)} />
+          </View>
+        ) : null}
 
         {distribution.length ? (
           <>

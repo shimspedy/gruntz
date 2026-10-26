@@ -1,7 +1,5 @@
-import { setNotificationsEnabled } from '../../services/notifications';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BackHandler, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { BackHandler, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   FadeIn,
@@ -12,19 +10,16 @@ import Animated, {
   SlideOutRight,
 } from 'react-native-reanimated';
 import { branchDefaultTest, militaryTests } from '../../data/militaryTests';
-import { DEV_UNLOCK } from '../../config/monetization';
-import { getProgramById } from '../../data/programs';
+import { getProgramById, getProgramTrainingDays } from '../../data/programs';
 import { recommendProgramForProfile } from '../../services/adaptiveCoach';
 import { recommendPlans } from '../../features/planRecommend';
 import { usePlanLibraryStore } from '../../store/usePlanLibraryStore';
 import { useOnboardingDraftStore, useOnboardingDraftHydrated } from '../../store/useOnboardingDraftStore';
-import { requestNotificationPermission, scheduleDailyReminder, scheduleWeeklyRecap, setupNotificationChannels } from '../../services/notifications';
-import { notificationWeekdays } from '../../utils/trainingDays';
 import { useProgramStore } from '../../store/useProgramStore';
 import { useSubscriptionStore } from '../../store/useSubscriptionStore';
 import { useUserStore } from '../../store/useUserStore';
 import { defaultUnits } from '../../utils/units';
-import type { FitnessTestType, ServiceBranch, ServiceStatus, UserProfile } from '../../types';
+import type { FitnessTestType, ServiceBranch, UserProfile } from '../../types';
 import { Button } from '../../ui/Button';
 import { Icon, type IconName } from '../../ui/Icon';
 import { KeyboardLift } from '../../ui/KeyboardAware';
@@ -34,33 +29,13 @@ import { Segmented } from '../../ui/Segmented';
 import { Text } from '../../ui/Text';
 import { haptic } from '../../ui/haptics';
 import { color, font, motion, radius, space } from '../../ui/tokens';
-import { Commit, Generating, NotifyPrime, PlanReady } from './Finale';
+import { PlanReady } from './Finale';
 import { PlanMatches, builtinKey } from './PlanMatches';
 import { GridTile, OptionRow, Question, Ruler, onboardingStyles as os } from './parts';
-import { Story, STORY_BG } from './Story';
+import { trackRetentionEvent } from '../../services/retentionAnalytics';
+import { onboardingSteps, preferredOnboardingPlan, resumedOnboardingStep, type OnboardingStep } from './flow';
+import { PracticeSession } from './PracticeSession';
 import { Welcome } from './Welcome';
-
-type Step =
-  | 'welcome'
-  | 'goals'
-  | 'level'
-  | 'story1'
-  | 'branch'
-  | 'status'
-  | 'testChoice'
-  | 'testDate'
-  | 'story2'
-  | 'days'
-  | 'minutes'
-  | 'equipment'
-  | 'guardrails'
-  | 'age'
-  | 'intensity'
-  | 'name'
-  | 'notify'
-  | 'generating'
-  | 'ready'
-  | 'commit';
 
 const GOALS: { label: string; icon: IconName }[] = [
   { label: 'Build Muscle', icon: 'dumbbell' },
@@ -88,15 +63,6 @@ const BRANCHES: { id: ServiceBranch; label: string }[] = [
   { id: 'general', label: 'General readiness' },
 ];
 
-const STATUSES: { id: ServiceStatus; label: string }[] = [
-  { id: 'recruit', label: 'Recruit or applicant' },
-  { id: 'active', label: 'Active duty' },
-  { id: 'reserve', label: 'Reserve' },
-  { id: 'guard', label: 'National Guard' },
-  { id: 'rotc', label: 'ROTC or academy' },
-  { id: 'veteran', label: 'Veteran' },
-  { id: 'civilian', label: 'Civilian' },
-];
 
 const DAYS = [
   { n: 3, meta: 'Efficient' },
@@ -108,17 +74,6 @@ const MINUTES = [
   { n: 30, meta: 'Efficient' },
   { n: 45, meta: 'Serious' },
   { n: 60, meta: 'Intense' },
-];
-const AGES: { id: NonNullable<UserProfile['age_range']>; label: string }[] = [
-  { id: 'under_30', label: 'Under 30' },
-  { id: '30_44', label: '30 – 44' },
-  { id: '45_59', label: '45 – 59' },
-  { id: '60_plus', label: '60 or older' },
-];
-const INTENSITIES: { id: UserProfile['preferred_intensity']; label: string; meta: string }[] = [
-  { id: 'low', label: 'Ease into it', meta: 'Low' },
-  { id: 'moderate', label: 'Balanced push', meta: 'Moderate' },
-  { id: 'high', label: 'Hard but controlled', meta: 'High' },
 ];
 const GUARDRAILS: { id: string; label: string; icon: IconName }[] = [
   { id: 'low_impact', label: 'Low-impact start', icon: 'steps' },
@@ -137,268 +92,176 @@ export default function OnboardingScreen() {
 
 function OnboardingFlow() {
   const saved = useRef(useOnboardingDraftStore.getState().draft).current;
-  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-
-  const [name, setName] = useState(saved?.name ?? '');
   const [goals, setGoals] = useState<string[]>(saved?.goals ?? []);
   const [level, setLevel] = useState<UserProfile['fitness_level'] | null>(saved?.level ?? null);
   const [branch, setBranch] = useState<ServiceBranch | null>(saved?.branch ?? null);
-  const [status, setStatus] = useState<ServiceStatus | null>(saved?.status ?? null);
   const [testType, setTestType] = useState<FitnessTestType>(saved?.testType ?? 'general_readiness');
   const [weeksOut, setWeeksOut] = useState(saved?.weeksOut ?? 12);
-  const [noDate, setNoDate] = useState(saved?.noDate ?? false);
+  const [noDate, setNoDate] = useState(saved?.noDate ?? true);
   const [days, setDays] = useState<number | null>(saved?.days ?? null);
   const [minutes, setMinutes] = useState<number | null>(saved?.minutes ?? null);
   const [gear, setGear] = useState<string[]>(saved?.gear ?? []);
   const [guardrails, setGuardrails] = useState<string[]>(saved?.guardrails ?? []);
-  const [age, setAge] = useState<NonNullable<UserProfile['age_range']> | null>(saved?.age ?? null);
-  const [intensity, setIntensity] = useState<UserProfile['preferred_intensity'] | null>(saved?.intensity ?? null);
-  const [remindersOn, setRemindersOn] = useState(saved?.remindersOn ?? false);
-
-  // Branch, status and test questions only for people preparing for military service.
+  const [choice, setChoice] = useState<string | null>(saved?.planChoice ?? null);
+  const [practiceReady, setPracticeReady] = useState(false);
   const military = goals.includes('Military Prep');
-  const steps = useMemo<Step[]>(() => {
-    const s: Step[] = ['welcome', 'goals', 'level', 'story1'];
-    if (military) {
-      s.push('branch', 'status');
-      if (branch === 'marines') s.push('testChoice');
-      s.push('testDate');
-    }
-    s.push('story2', 'days', 'minutes', 'equipment', 'guardrails', 'age', 'intensity', 'name', 'notify', 'generating', 'ready', 'commit');
-    return s;
-  }, [branch, military]);
-
-  const [index, setIndex] = useState(() => Math.max(0, saved ? steps.indexOf(saved.step as Step) : 0));
+  const steps = useMemo(() => onboardingSteps(military, branch), [branch, military]);
+  const [step, setStep] = useState<OnboardingStep>(() => resumedOnboardingStep(saved?.step, steps));
   const [dir, setDir] = useState<1 | -1>(1);
-  const step = steps[index];
-  const questionSteps = steps.filter((x) => !['welcome', 'story1', 'story2', 'generating', 'ready', 'commit'].includes(x));
+  const index = steps.indexOf(step);
+  const questionSteps = steps.filter((x) => !['welcome', 'ready', 'practice'].includes(x));
   const qIndex = questionSteps.indexOf(step);
-  // Picking Military Prep inserts extra questions, which grew the denominator and
-  // visibly slid the bar backwards. Measure against the longest the flow can get,
-  // so answering a question never looks like losing ground.
   const maxQuestions = useRef(questionSteps.length);
   maxQuestions.current = Math.max(maxQuestions.current, questionSteps.length);
   const progress = qIndex >= 0 ? (qIndex + 1) / maxQuestions.current : 1;
+  const transitionFrom = useRef<OnboardingStep | null>(null);
+  const stepRef = useRef(step);
+  stepRef.current = step;
+
+  useEffect(() => {
+    transitionFrom.current = null;
+    trackRetentionEvent('onboarding_step_viewed', { step, count: index + 1 });
+  }, [step, index]);
+
+  const go = useCallback((delta: 1 | -1) => {
+    if (transitionFrom.current === step) return;
+    const nextStep = steps[Math.max(0, Math.min(steps.length - 1, index + delta))];
+    if (nextStep === step) return;
+    transitionFrom.current = step;
+    if (delta > 0) trackRetentionEvent('onboarding_step_completed', { step });
+    if (nextStep === 'practice') setPracticeReady(false);
+    haptic.light();
+    setDir(delta);
+    setStep(nextStep);
+  }, [step, steps, index]);
+  const next = useCallback(() => go(1), [go]);
+  const goRef = useRef(go);
+  goRef.current = go;
+  const practiceComplete = useCallback(() => setPracticeReady(true), []);
 
   useEffect(() => {
     if (Platform.OS !== 'android') return undefined;
-    // Without this, back exited the app mid-onboarding instead of going a step back.
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
       if (index <= 0) return false;
       go(-1);
       return true;
     });
     return () => sub.remove();
-  });
+  }, [go, index]);
 
-  const go = useCallback(
-    (delta: 1 | -1) => {
-      // 'generating' auto-advances, so stepping back onto it bounced the user forward again.
-      haptic.light();
-      setDir(delta);
-      setIndex((i) => {
-        let next = Math.max(0, Math.min(steps.length - 1, i + delta));
-        while (delta === -1 && next > 0 && steps[next] === 'generating') next -= 1;
-        return next;
-      });
-    },
-    [steps.length],
-  );
-  const next = useCallback(() => go(1), [go]);
-
-  // Single-choice steps move on by themselves: the answer is the decision, and a second
-  // tap on Continue for each of seven questions was pure friction. The pause lets the
-  // selection register first; Continue stays for anyone who came back to review.
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const indexRef = useRef(index);
-  indexRef.current = index;
   useEffect(() => () => clearTimeout(advanceTimer.current), []);
   const choose = (apply: () => void) => {
     apply();
-    const from = indexRef.current;
+    const from = stepRef.current;
     clearTimeout(advanceTimer.current);
     advanceTimer.current = setTimeout(() => {
-      if (indexRef.current === from) go(1);
+      // Selecting Marines inserts its test-choice step before this timer fires.
+      if (stepRef.current === from) goRef.current(1);
     }, 280);
   };
-
-  const toggle = (list: string[], set: (v: string[]) => void, v: string) => set(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
-
+  const toggle = (list: string[], set: (v: string[]) => void, value: string) => set(list.includes(value) ? list.filter((x) => x !== value) : [...list, value]);
   const testDate = useMemo(() => {
     if (noDate || !military) return null;
-    const d = new Date();
-    d.setDate(d.getDate() + weeksOut * 7);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const date = new Date();
+    date.setDate(date.getDate() + weeksOut * 7);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   }, [noDate, weeksOut, military]);
 
-  // Everything the recommenders score on. The name is added separately below so typing
-  // it doesn't re-score the catalog on every keystroke.
-  const scoringProfile = useMemo<UserProfile>(
-    () => ({
-      id: 'local',
-      display_name: 'Athlete',
-      created_at: new Date().toISOString(),
-      onboarding_complete: true,
-      fitness_level: level ?? 'beginner',
-      goals,
-      available_equipment: gear.filter((g) => g !== 'none'),
-      workout_days_per_week: days ?? 4,
-      has_pool_access: gear.includes('pool'),
-      has_ruck_access: military && gear.includes('ruck'),
-      has_gym_access: gear.includes('gym'),
-      age_range: age ?? '30_44',
-      movement_limitations: guardrails,
-      preferred_session_minutes: minutes ?? 30,
-      preferred_intensity: intensity ?? 'moderate',
-      service_branch: military ? (branch ?? 'general') : 'general',
-      service_status: military ? (status ?? 'civilian') : 'civilian',
-      fitness_test_type: !military ? branchDefaultTest.general : branch === 'marines' ? testType : branchDefaultTest[branch ?? 'general'],
-      fitness_test_date: testDate,
-      occupational_demands: [],
-      settings: { notifications_enabled: remindersOn, reminder_time: '07:00', units: defaultUnits() },
-    }),
-    [level, goals, gear, days, age, guardrails, minutes, intensity, branch, status, testType, testDate, remindersOn, military],
-  );
-  const profile = useMemo<UserProfile>(() => ({ ...scoringProfile, display_name: name.trim() || 'Athlete' }), [scoringProfile, name]);
-  const recommendation = useMemo(() => recommendProgramForProfile(scoringProfile), [scoringProfile]);
+  // Optional profile details can be filled in later. Preserve answers from older drafts.
+  const profile = useMemo<UserProfile>(() => ({
+    id: 'local',
+    display_name: saved?.name.trim() || 'Athlete',
+    created_at: new Date().toISOString(),
+    onboarding_complete: true,
+    fitness_level: level ?? 'beginner',
+    goals,
+    available_equipment: gear.filter((g) => g !== 'none'),
+    workout_days_per_week: days ?? 4,
+    has_pool_access: gear.includes('pool'),
+    has_ruck_access: military && gear.includes('ruck'),
+    has_gym_access: gear.includes('gym'),
+    age_range: saved?.age ?? undefined,
+    movement_limitations: guardrails,
+    preferred_session_minutes: minutes ?? 30,
+    preferred_intensity: saved?.intensity ?? 'moderate',
+    service_branch: military ? (branch ?? 'general') : 'general',
+    service_status: military ? saved?.status ?? undefined : 'civilian',
+    fitness_test_type: !military ? branchDefaultTest.general : branch === 'marines' ? testType : branchDefaultTest[branch ?? 'general'],
+    fitness_test_date: testDate,
+    occupational_demands: [],
+    settings: { notifications_enabled: saved?.remindersOn ?? false, reminder_time: '07:00', units: defaultUnits() },
+  }), [saved, level, goals, gear, days, guardrails, minutes, branch, testType, testDate, military]);
+  const recommendation = useMemo(() => recommendProgramForProfile(profile), [profile]);
   const program = getProgramById(recommendation.programId);
-  // Library plans are the default result; the Gruntz program is offered alongside for Military Prep.
-  // Scoring them parses the 4 MB plan file, so it waits for the "generating" step instead of
-  // stalling the first frame of Welcome.
-  const plansNeeded = index >= steps.indexOf('generating');
-  const planMatches = useMemo(() => (plansNeeded ? recommendPlans(scoringProfile, 3) : NO_MATCHES), [plansNeeded, scoringProfile]);
-  const offerBuiltIn = goals.includes('Military Prep') || planMatches.length === 0;
-  const [choice, setChoice] = useState<string | null>(saved?.planChoice ?? null);
-  const selectedPlan = choice ?? planMatches[0]?.plan.id ?? builtinKey(recommendation.programId);
+  // Parse the catalog only when the recommendation is visible, never on Welcome.
+  const plansNeeded = step === 'ready' || step === 'practice';
+  const planMatches = useMemo(() => plansNeeded ? recommendPlans(profile, 3) : NO_MATCHES, [plansNeeded, profile]);
+  const offerBuiltIn = military || planMatches.length === 0;
+  const selectedPlan = preferredOnboardingPlan(military, builtinKey(recommendation.programId), planMatches.map((match) => match.plan.id), choice);
 
   useEffect(() => {
     useOnboardingDraftStore.getState().save({
-      step, name, goals, level, branch, status, testType, weeksOut, noDate, days, minutes, gear, guardrails, age, intensity, remindersOn, planChoice: choice,
+      step, name: saved?.name ?? '', goals, level, branch, status: saved?.status ?? null,
+      testType, weeksOut, noDate, days, minutes, gear, guardrails, age: saved?.age ?? null,
+      intensity: saved?.intensity ?? null, remindersOn: saved?.remindersOn ?? false, planChoice: choice,
     });
-  }, [step, name, goals, level, branch, status, testType, weeksOut, noDate, days, minutes, gear, guardrails, age, intensity, remindersOn, choice]);
+  }, [saved, step, goals, level, branch, testType, weeksOut, noDate, days, minutes, gear, guardrails, choice]);
 
-  const askNotifications = async () => {
-    try {
-      const granted = await requestNotificationPermission();
-      setNotificationsEnabled(granted);
-      if (granted) {
-        await setupNotificationChannels();
-        // Their answer on the schedule step decides which days get a reminder —
-        // reminding a 3-day athlete every day is how notifications get turned off.
-        await scheduleDailyReminder(7, 0, notificationWeekdays(days ?? 4));
-        await scheduleWeeklyRecap();
-      }
-      setRemindersOn(granted);
-    } catch {
-      // Permission prompts can fail on simulators; carry on either way.
-    }
-    next();
-  };
-
+  const completed = useRef(false);
   const complete = () => {
-    // Save everything, then hand over to the paywall; RootNavigator swaps to the app after it.
+    if (completed.current || !practiceReady) return;
+    completed.current = true;
+    trackRetentionEvent('onboarding_step_completed', { step: 'practice' });
+    trackRetentionEvent('onboarding_completed');
     useUserStore.getState().setProfile(profile);
     if (selectedPlan.startsWith('builtin:')) {
-      useProgramStore.getState().selectProgram(recommendation.programId);
       usePlanLibraryStore.getState().unfollow();
+      useProgramStore.getState().selectProgram(recommendation.programId);
     } else {
+      useProgramStore.getState().clearProgram();
       usePlanLibraryStore.getState().follow(selectedPlan);
     }
     useProgramStore.getState().setHasSeenProgramSelect(true);
     useSubscriptionStore.getState().startTrialIfNeeded();
-    if (DEV_UNLOCK) {
-      // Dev builds skip the paywall and go straight into the app.
-      useUserStore.getState().setOnboarded(true);
-      return;
-    }
-    navigation.navigate('OnboardingPaywall' as never);
+    useOnboardingDraftStore.getState().clear();
+    useUserStore.getState().setOnboarded(true);
   };
 
   if (step === 'welcome') return <Welcome onStart={next} />;
-
-  const isStory = step === 'story1' || step === 'story2';
-  const bg = step === 'story1' ? STORY_BG.crimson : step === 'story2' ? STORY_BG.blue : color.bg;
-  const chrome = !['generating', 'commit'].includes(step);
-
   let valid = true;
   let cta = 'Continue';
-  let onCta: () => void = next;
   switch (step) {
-    case 'goals':
-      valid = goals.length > 0;
-      break;
-    case 'level':
-      valid = !!level;
-      break;
-    case 'branch':
-      valid = !!branch;
-      break;
-    case 'status':
-      valid = !!status;
-      break;
-    case 'days':
-      valid = !!days;
-      break;
-    case 'minutes':
-      valid = !!minutes;
-      break;
-    case 'equipment':
-      cta = gear.length ? 'Continue' : 'I train with bodyweight';
-      break;
-    case 'guardrails':
-      cta = guardrails.length ? 'Continue' : 'Skip';
-      break;
-    case 'age':
-      cta = age ? 'Continue' : 'Prefer not to say';
-      break;
-    case 'intensity':
-      valid = !!intensity;
-      break;
-    case 'name':
-      cta = name.trim() ? 'Continue' : 'Skip';
-      break;
-    case 'notify':
-      cta = 'Turn on reminders';
-      onCta = () => void askNotifications();
-      break;
-    case 'ready':
-      cta = 'Continue';
-      break;
+    case 'goals': valid = goals.length > 0; break;
+    case 'level': valid = !!level; break;
+    case 'branch': valid = !!branch; break;
+    case 'days': valid = !!days; break;
+    case 'minutes': valid = !!minutes; break;
+    case 'equipment': cta = gear.length ? 'Continue' : 'I train with bodyweight'; break;
+    case 'guardrails': cta = guardrails.length ? 'See my plan' : 'No limitations — see my plan'; break;
+    case 'ready': cta = 'Try the logger'; break;
+    case 'practice': cta = 'Start training'; valid = practiceReady; break;
   }
-
   const entering = (dir > 0 ? SlideInRight : SlideInLeft).duration(380).easing(motion.easeOut);
   const exiting = (dir > 0 ? SlideOutLeft : SlideOutRight).duration(300).easing(motion.easeOut);
 
   return (
     <Animated.View style={[styles.screen, { backgroundColor: color.bg }]}>
-      <Animated.View key={step} entering={entering} exiting={exiting} style={[StyleSheet.absoluteFill, { backgroundColor: bg }]}>
-        <View style={[styles.page, { paddingTop: isStory ? 0 : insets.top + 64 }]}>{renderStep()}</View>
+      <Animated.View key={step} entering={entering} exiting={exiting} style={[StyleSheet.absoluteFill, { backgroundColor: color.bg }]}>
+        <View style={[styles.page, { paddingTop: insets.top + 64 }]}>{renderStep()}</View>
       </Animated.View>
-
-      {chrome ? (
-        <View style={[styles.header, { paddingTop: insets.top + 6 }]} pointerEvents="box-none">
-          <Tap feedback="opacity" hitSlop={10} onPress={() => go(-1)} style={[styles.back, isStory && styles.backOnColor]} accessibilityLabel="Back">
-            <Icon name="back" size={20} color={color.text} weight="medium" />
-          </Tap>
-          {qIndex >= 0 ? <Bar progress={progress} height={9} tint="#FFFFFF" trackColor={color.lineStrong} style={{ flex: 1 }} duration={420} /> : <View style={{ flex: 1 }} />}
+      <View style={[styles.header, { paddingTop: insets.top + 6 }]} pointerEvents="box-none">
+        <Tap feedback="opacity" hitSlop={10} onPress={() => go(-1)} style={styles.back} accessibilityLabel="Back">
+          <Icon name="back" size={20} color={color.text} weight="medium" />
+        </Tap>
+        {qIndex >= 0 ? <Bar progress={progress} height={9} tint="#FFFFFF" trackColor={color.lineStrong} style={{ flex: 1 }} duration={420} /> : <View style={{ flex: 1 }} />}
+      </View>
+      <KeyboardLift offset={8}>
+        <View style={[styles.footer, { paddingBottom: insets.bottom + space.xs, backgroundColor: color.bg }]}>
+          <Button title={cta} caps disabled={!valid} onPress={step === 'practice' ? complete : next} />
         </View>
-      ) : null}
-
-      {chrome ? (
-        <KeyboardLift offset={8}>
-          <View style={[styles.footer, { paddingBottom: insets.bottom + space.xs }]}>
-            {step === 'notify' ? (
-              <Tap feedback="opacity" onPress={next} style={styles.notNow} accessibilityLabel="Not now">
-                <Text variant="callout" tone="tertiary">
-                  Not now
-                </Text>
-              </Tap>
-            ) : null}
-            <Button title={cta} caps disabled={!valid} onPress={onCta} />
-          </View>
-        </KeyboardLift>
-      ) : null}
+      </KeyboardLift>
     </Animated.View>
   );
 
@@ -410,7 +273,7 @@ function OnboardingFlow() {
             <Question title="What are you training for?" subtitle="Pick everything that fits." />
             <View style={os.list}>
               {GOALS.map((g, i) => (
-                <OptionRow key={g.label} index={i} label={g.label} icon={g.icon} multi selected={goals.includes(g.label)} onPress={() => toggle(goals, setGoals, g.label)} />
+                <OptionRow key={g.label} index={i} label={g.label} icon={g.icon} multi selected={goals.includes(g.label)} onPress={() => { setChoice(null); toggle(goals, setGoals, g.label); }} />
               ))}
             </View>
           </ScrollView>
@@ -426,12 +289,6 @@ function OnboardingFlow() {
             </View>
           </ScrollView>
         );
-      case 'story1':
-        return military ? (
-          <Story tone="crimson" title="Motivation fades. Standards don’t." body="Most people train when they feel like it. Tests don’t wait for that day." />
-        ) : (
-          <Story tone="crimson" title="Motivation fades. Plans don’t." body="Most people train when they feel like it. A plan gets you through the days you don’t." />
-        );
       case 'branch':
         return (
           <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
@@ -439,17 +296,6 @@ function OnboardingFlow() {
             <View style={os.list}>
               {BRANCHES.map((b, i) => (
                 <OptionRow key={b.id} index={i} label={b.label} selected={branch === b.id} onPress={() => choose(() => { setBranch(b.id); setTestType(branchDefaultTest[b.id]); })} />
-              ))}
-            </View>
-          </ScrollView>
-        );
-      case 'status':
-        return (
-          <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
-            <Question title="What’s your status?" />
-            <View style={os.list}>
-              {STATUSES.map((s, i) => (
-                <OptionRow key={s.id} index={i} label={s.label} selected={status === s.id} onPress={() => choose(() => setStatus(s.id))} />
               ))}
             </View>
           </ScrollView>
@@ -491,19 +337,13 @@ function OnboardingFlow() {
                   <View style={styles.note}>
                     <Icon name="shieldCheck" size={20} color={color.textSecondary} />
                     <Text variant="footnote" tone="secondary" style={{ flex: 1 }}>
-                      Your plan tapers intensity in the final week before test day.
+                      Your countdown stays on the Test tab, alongside your scores and targets.
                     </Text>
                   </View>
                 </>
               )}
             </Animated.View>
           </ScrollView>
-        );
-      case 'story2':
-        return military ? (
-          <Story tone="blue" title="Your test, broken into daily missions" body="One mission a day. Every set logged, every event tracked, every rank earned." />
-        ) : (
-          <Story tone="blue" title="Your goal, broken into daily workouts" body="One workout at a time. Every set logged, every week tracked, every rank earned." />
         );
       case 'days':
         return (
@@ -553,79 +393,18 @@ function OnboardingFlow() {
             </View>
           </ScrollView>
         );
-      case 'age':
-        return (
-          <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <Question title="What’s your age range?" />
-            <View style={os.list}>
-              {AGES.map((a, i) => (
-                <OptionRow key={a.id} index={i} label={a.label} selected={age === a.id} onPress={() => choose(() => setAge(a.id))} />
-              ))}
-            </View>
-          </ScrollView>
-        );
-      case 'intensity':
-        return (
-          <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <Question title="How hard do you want to push?" />
-            <View style={os.list}>
-              {INTENSITIES.map((it, i) => (
-                <OptionRow key={it.id} index={i} label={it.label} meta={it.meta} selected={intensity === it.id} onPress={() => choose(() => setIntensity(it.id))} />
-              ))}
-            </View>
-          </ScrollView>
-        );
-      case 'name':
-        return (
-          <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <Question title="What should we call you?" subtitle="This is the name shown on your profile." />
-            <View style={{ paddingHorizontal: space.gutter }}>
-              <TextInput
-                maxFontSizeMultiplier={1.8}
-                value={name}
-                onChangeText={setName}
-                placeholder="Your name"
-                placeholderTextColor={color.textTertiary}
-                maxLength={24}
-                autoCapitalize="words"
-                autoCorrect={false}
-                returnKeyType="done"
-                onSubmitEditing={next}
-                style={styles.input}
-                selectionColor={color.accent}
-                accessibilityLabel="Your name"
-              />
-            </View>
-          </ScrollView>
-        );
-      case 'notify':
-        return (
-          <View style={{ flex: 1 }}>
-            <NotifyPrime />
-            <View style={{ paddingHorizontal: space.xl, marginTop: space.xl }}>
-              <Text variant="question" align="center">
-                Get reminded when it’s time to train
-              </Text>
-              <Text variant="callout" tone="secondary" align="center" style={{ marginTop: 8 }}>
-                One reminder a day at 7:00 AM and a weekly recap. Change it anytime.
-              </Text>
-            </View>
-          </View>
-        );
-      case 'generating':
-        return <Generating onDone={next} military={military} />;
       case 'ready':
         return (
           <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
             {planMatches.length ? (
-              <PlanMatches matches={planMatches} builtIn={offerBuiltIn ? recommendation : null} selected={selectedPlan} onSelect={setChoice} />
+              <PlanMatches matches={planMatches} builtIn={offerBuiltIn ? recommendation : null} preferBuiltIn={military} profile={profile} selected={selectedPlan} onSelect={setChoice} />
             ) : (
-              <PlanReady program={program} recommendation={recommendation} daysPerWeek={profile.workout_days_per_week} />
+              <PlanReady program={program} recommendation={recommendation} daysPerWeek={program ? getProgramTrainingDays(program, profile) : profile.workout_days_per_week} />
             )}
           </ScrollView>
         );
-      case 'commit':
-        return <Commit days={profile.workout_days_per_week} onSigned={complete} />;
+      case 'practice':
+        return <PracticeSession onReady={practiceComplete} />;
       default:
         return null;
     }
@@ -649,9 +428,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backOnColor: { backgroundColor: 'rgba(0,0,0,0.22)' },
   footer: { paddingHorizontal: space.md, paddingTop: space.sm },
-  notNow: { alignSelf: 'center', paddingVertical: 12, paddingHorizontal: 20, marginBottom: 4 },
   big: { fontFamily: font.bold, fontSize: 40, color: color.text, marginTop: space.xl },
   note: {
     flexDirection: 'row',
@@ -662,15 +439,5 @@ const styles = StyleSheet.create({
     padding: space.md,
     borderRadius: radius.md,
     backgroundColor: color.surface,
-  },
-  input: {
-    height: 60,
-    borderRadius: radius.md,
-    borderCurve: 'continuous',
-    backgroundColor: color.surface,
-    paddingHorizontal: space.lg,
-    color: color.text,
-    fontFamily: font.medium,
-    fontSize: 20,
   },
 });

@@ -3,7 +3,8 @@ import { StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getExerciseById } from '../../data/exercises';
-import { getProgramById } from '../../data/programs';
+import { getProgramById, getProgramTrainingDays } from '../../data/programs';
+import type { UserProfile } from '../../types';
 import { planHero, planMeta } from '../../features/planDisplay';
 import type { PlanRecommendation } from '../../features/planRecommend';
 import type { ProgramRecommendation } from '../../services/adaptiveCoach';
@@ -32,12 +33,16 @@ interface Option {
 export function PlanMatches({
   matches,
   builtIn,
+  preferBuiltIn = false,
+  profile,
   selected,
   onSelect,
 }: {
   matches: PlanRecommendation[];
   /** Offered for Military Prep answers: the Gruntz program for their branch test. */
   builtIn?: ProgramRecommendation | null;
+  preferBuiltIn?: boolean;
+  profile: UserProfile;
   selected: string;
   onSelect: (key: string) => void;
 }) {
@@ -52,14 +57,16 @@ export function PlanMatches({
   }));
   const program = builtIn ? getProgramById(builtIn.programId) : undefined;
   if (builtIn && program) {
-    options.push({
+    const builtInOption: Option = {
       key: builtinKey(builtIn.programId),
       title: program.name,
-      meta: `${program.duration_weeks} weeks · ${program.days_per_week} days a week · Gruntz program`,
+      meta: `${program.duration_weeks} weeks · ${getProgramTrainingDays(program, profile)} days a week · Gruntz program`,
       reasons: [builtIn.reason],
       weeks: program.duration_weeks,
       hero: getExerciseById(BUILTIN_ART[builtIn.programId]),
-    });
+    };
+    if (preferBuiltIn) options.unshift(builtInOption);
+    else options.push(builtInOption);
   }
   const current = options.find((o) => o.key === selected) ?? options[0];
   if (!current) return null;

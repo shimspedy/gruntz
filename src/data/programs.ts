@@ -1,4 +1,5 @@
-import type { TrainingProgram, IntervalSplits } from '../types';
+import type { TrainingProgram, IntervalSplits, UserProfile } from '../types';
+import { getBaseCampTrainingDays } from './baseCampWorkouts';
 
 // ============================================================
 // TRAINING PROGRAMS — Base Camp, Raider Prep & Recon Prep
@@ -144,6 +145,10 @@ export const RECON_INTERVAL_SPLITS: IntervalSplits[] = [
 
 export function getProgramById(id: string): TrainingProgram | undefined {
   return PROGRAMS.find(p => p.id === id);
+}
+
+export function getProgramTrainingDays(program: TrainingProgram, profile?: UserProfile | null): number {
+  return program.id === 'basecamp' ? getBaseCampTrainingDays(profile) : program.days_per_week;
 }
 
 export function getAllPrograms(): TrainingProgram[] {

@@ -1,4 +1,5 @@
 import { isTrackedSession } from '../features/activityHistory';
+import { isTestAttempt, isTrainingChoice } from '../features/trainingFocus';
 
 type RestorableStore = {
   getState: () => Record<string, unknown>;
@@ -64,6 +65,14 @@ export async function prepareStoreRestore(values: Record<string, string>): Promi
       if (options.name === '@gruntz_readiness' && state.trackedSessions !== undefined
         && (!Array.isArray(state.trackedSessions) || state.trackedSessions.some((activity: unknown) => !isTrackedSession(activity)))) {
         throw new Error('That backup contains invalid activity history or GPS routes.');
+      }
+      if (options.name === '@gruntz_readiness' && state.testAttempts !== undefined
+        && (!Array.isArray(state.testAttempts) || state.testAttempts.some((attempt: unknown) => !isTestAttempt(attempt)))) {
+        throw new Error('That backup contains invalid fitness test history.');
+      }
+      if (options.name === '@gruntz_readiness' && state.trainingChoice !== undefined && state.trainingChoice !== null
+        && !isTrainingChoice(state.trainingChoice)) {
+        throw new Error('That backup contains an invalid training choice.');
       }
       next = options.merge ? options.merge(state, initial) : { ...initial, ...state };
     }

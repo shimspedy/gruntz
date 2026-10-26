@@ -16,6 +16,7 @@ import {
   scheduleDailyReminder,
   scheduleWeeklyRecap,
   setupNotificationChannels,
+  cancelTrainingReminders,
 } from '../services/notifications';
 import { useReadinessStore } from '../store/useReadinessStore';
 import { convertSessionWeights } from '../store/useSessionStore';
@@ -49,6 +50,7 @@ function formatTime(value: string) {
 export default function SettingsScreen() {
   const [timeSheet, setTimeSheet] = React.useState(false);
   const [restoring, setRestoring] = React.useState(false);
+  const [remindersBusy, setRemindersBusy] = React.useState(false);
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const profile = useUserStore((s) => s.profile);
@@ -72,26 +74,34 @@ export default function SettingsScreen() {
   };
 
   const toggleNotifications = async (v: boolean) => {
+    if (remindersBusy) return;
+    setRemindersBusy(true);
     try {
       if (v) {
+        await setupNotificationChannels();
         const granted = await requestNotificationPermission();
         if (!granted) {
           updateSettings({ notifications_enabled: false });
-          setNotificationsEnabled(false);
+          await cancelTrainingReminders();
           Alert.alert('Notifications are off', 'Gruntz needs permission in Settings before it can remind you.', [
             { text: 'Not now', style: 'cancel' },
             { text: 'Open Settings', onPress: () => void Linking.openSettings().catch(() => undefined) },
           ]);
           return;
         }
-        await setupNotificationChannels();
         // Turning reminders back on used to hardcode 07:00 and overwrite reminder_time,
         // silently discarding a time the athlete had chosen in the picker below.
         const savedTime = profile?.settings.reminder_time || '07:00';
         const [savedHour, savedMinute] = savedTime.split(':').map(Number);
         setNotificationsEnabled(true);
-        await scheduleDailyReminder(savedHour, savedMinute, notificationWeekdays(profile?.workout_days_per_week));
-        await scheduleWeeklyRecap();
+        const daily = await scheduleDailyReminder(savedHour, savedMinute, notificationWeekdays(profile?.workout_days_per_week));
+        const weekly = await scheduleWeeklyRecap();
+        if (!daily || !weekly) {
+          updateSettings({ notifications_enabled: false });
+          await cancelTrainingReminders();
+          Alert.alert('Couldn’t schedule reminders', 'Your reminders are off. Try turning them on again in a moment.');
+          return;
+        }
         // Turning reminders off cancels the trial nudge too, so turning them on has to bring it back.
         const sub = useSubscriptionStore.getState();
         const trialEndsAt = sub.entitlementActive ? null : getTrialEndsAt(sub.trialStartedAt);
@@ -111,6 +121,8 @@ export default function SettingsScreen() {
       updateSettings({ notifications_enabled: false });
     } catch {
       Alert.alert('Couldn’t update reminders', 'Try again in a moment.');
+    } finally {
+      setRemindersBusy(false);
     }
   };
 
@@ -229,6 +241,12 @@ export default function SettingsScreen() {
           <Row icon="star" title="Leave us a review" onPress={() => void maybeRequestReview('settings')} />
         </Group>
 
+        {__DEV__ ? (
+          <Group label="Development" style={styles.group}>
+            <Row icon="gauge" title="Retention diagnostics" subtitle="Local activation and training events" onPress={() => navigation.navigate('RetentionDiagnostics')} />
+          </Group>
+        ) : null}
+
         <Group label="Legal" style={styles.group}>
           <Row icon="doc" title="Privacy policy" onPress={() => void open(GRUNTZ_PRIVACY_POLICY_URL, 'Privacy Policy')} external />
           <Row icon="book" title="Terms of use" onPress={() => void open(GRUNTZ_TERMS_OF_USE_URL, 'Terms of Use')} external />
@@ -259,15 +277,28 @@ export default function SettingsScreen() {
                 style={styles.timeRow}
                 accessibilityRole="radio"
                 accessibilityState={{ selected: active }}
-                onPress={() => {
+                disabled={remindersBusy}
+                onPress={async () => {
+                  if (remindersBusy) return;
+                  setRemindersBusy(true);
                   haptic.selection();
                   const [h, m] = t.split(':').map(Number);
-                  void cancelDailyReminder()
-                    .then(() => scheduleDailyReminder(h, m, notificationWeekdays(profile?.workout_days_per_week)))
-                    .catch(() => undefined);
-                  updateSettings({ reminder_time: t });
-                  setTimeSheet(false);
-                  toast(`Reminders at ${formatTime(t)}`, { icon: 'bell' });
+                  try {
+                    const scheduled = await scheduleDailyReminder(h, m, notificationWeekdays(profile?.workout_days_per_week));
+                    if (!scheduled) {
+                      updateSettings({ notifications_enabled: false });
+                      await cancelTrainingReminders();
+                      Alert.alert('Couldn’t change reminder time', 'Your reminders are off. Turn them on again to retry.');
+                      return;
+                    }
+                    updateSettings({ reminder_time: t });
+                    setTimeSheet(false);
+                    toast(`Reminders at ${formatTime(t)}`, { icon: 'bell' });
+                  } catch {
+                    Alert.alert('Couldn’t change reminder time', 'Try again in a moment.');
+                  } finally {
+                    setRemindersBusy(false);
+                  }
                 }}
               >
                 <Text variant="bodyMedium" style={{ flex: 1 }}>

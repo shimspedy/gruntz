@@ -1,4 +1,4 @@
-import { scheduleDailyReminder } from '../services/notifications';
+import { cancelTrainingReminders, scheduleDailyReminder } from '../services/notifications';
 import { notificationWeekdays } from '../utils/trainingDays';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
@@ -93,7 +93,12 @@ export default function TrainingPreferencesScreen() {
     });
     if (profile.settings.notifications_enabled) {
       const [hour, minute] = (profile.settings.reminder_time || '07:00').split(':').map(Number);
-      void scheduleDailyReminder(hour, minute, notificationWeekdays(days));
+      void scheduleDailyReminder(hour, minute, notificationWeekdays(days)).then(async (scheduled) => {
+        if (scheduled) return;
+        useUserStore.getState().updateSettings({ notifications_enabled: false });
+        await cancelTrainingReminders();
+        toast('Preferences saved · reminders are off. Turn them on again in Settings.', { tone: 'info', icon: 'bell' });
+      });
     }
     // Deliberately doesn't switch the plan you're following — it only changes what's suggested.
     toast('Preferences saved', {

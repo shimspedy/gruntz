@@ -31,12 +31,14 @@ function createLoader(mocks = {}) {
 
 function createWorkoutEnv() {
   let user = { profile: { settings: { units: 'imperial' } } };
+  const readiness = { testScores: {}, targetScores: {}, trainingChoice: null };
   const storage = { getItem: async () => null, setItem: async () => {}, removeItem: async () => {} };
   const load = createLoader({
     '@react-native-async-storage/async-storage': storage,
     'react-native': { AppState: { addEventListener: () => ({ remove() {} }) } },
     '../services/notifications': { cancelRestDone: async () => {} },
     './useUserStore': { useUserStore: { getState: () => user } },
+    './useReadinessStore': { useReadinessStore: { getState: () => readiness } },
   });
   const { useSessionStore, isExerciseDone } = load('src/store/useSessionStore.ts');
   const { useExerciseLogStore } = load('src/store/useExerciseLogStore.ts');
@@ -45,6 +47,8 @@ function createWorkoutEnv() {
   return {
     load, session: useSessionStore, log: useExerciseLogStore, plans: usePlanLibraryStore, isExerciseDone, ...data,
     setUnits(units) { user.profile.settings.units = units; },
+    setProfile(patch) { user.profile = { ...user.profile, ...patch }; },
+    readiness,
     day(ids = ['bench_press']) {
       return { id: 'test-day', title: 'Test', estimated_duration: 25, rewards: { xp: 50 }, sections: [{ id: 'main', title: 'Main', exercises: ids }] };
     },

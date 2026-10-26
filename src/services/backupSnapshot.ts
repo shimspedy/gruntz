@@ -6,6 +6,7 @@ import { HEALTH_ID_PREFIX } from '../features/healthSync';
 import { READINESS_STORAGE_KEY, readinessStorage } from '../store/readinessStorage';
 import { loadRoute, pruneRoutes, stageRoutes } from '../store/activityRoutes';
 import type { RoutePoint } from '../types/activity';
+import { isTestAttempt, isTrainingChoice } from '../features/trainingFocus';
 
 /** Reject oversized snapshots rather than silently dropping activity history or routes. */
 export const MAX_BACKUP_PAYLOAD_BYTES = 32 * 1024 * 1024;
@@ -243,7 +244,7 @@ export function validateSnapshot(value: unknown): [string, string][] {
       '@gruntz_plan_library': ['progressByPlan'],
     };
     const arrayKeys: Record<string, string[]> = {
-      '@gruntz_user': ['achievements'], '@gruntz_readiness': ['checkIns', 'trackedSessions'],
+      '@gruntz_user': ['achievements'], '@gruntz_readiness': ['checkIns', 'trackedSessions', 'testAttempts'],
       '@gruntz_plan_library': ['completedDayIds'], '@gruntz_routines': ['routines'],
       '@gruntz_challenges': ['completedDates'],
     };
@@ -270,6 +271,14 @@ export function validateSnapshot(value: unknown): [string, string][] {
     if (key === '@gruntz_readiness' && state.includeActivityRoutesInBackup !== undefined
       && typeof state.includeActivityRoutesInBackup !== 'boolean') {
       throw new Error('That backup contains an invalid route privacy preference.');
+    }
+    if (key === '@gruntz_readiness' && Array.isArray(state.testAttempts)
+      && state.testAttempts.some((attempt: unknown) => !isTestAttempt(attempt))) {
+      throw new Error('That backup contains invalid fitness test history.');
+    }
+    if (key === '@gruntz_readiness' && state.trainingChoice !== undefined && state.trainingChoice !== null
+      && !isTrainingChoice(state.trainingChoice)) {
+      throw new Error('That backup contains an invalid training choice.');
     }
     pairs.push([key, raw]);
   }

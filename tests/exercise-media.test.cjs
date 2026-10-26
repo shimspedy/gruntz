@@ -42,3 +42,26 @@ test('exercises whose clip changed keep their old history key', () => {
   // Unchanged exercises still log under their clip.
   assert.equal(env.exerciseLogKey(env.getExerciseById('bench_press')), 'barbell-bench-press');
 });
+
+test('program drills without a matching demonstration keep instructions and historical keys without showing another movement', () => {
+  const { getExerciseById, exerciseLogKey } = createLoader()('src/data/exercises.ts');
+  const unmatched = {
+    child_pose: 'abdominals-stretch-variation-four',
+    butterfly_stretch: 'abdominals-stretch-variation-two',
+    ais_groin: 'cossack-squat',
+    ais_quads: 'abdominals-stretch-variation-one',
+    ankles_hips_shoulders: 'bodyweight-squat',
+    walking_high_knees: 'running-cooldown',
+    cradles: 'bodyweight-alternating-reverse-lunges',
+    roller_full: 'abdominals-stretch-variation-one',
+    base_mobility_flow: 'bodyweight-spinal-jefferson-curl',
+  };
+  for (const [id, historicalKey] of Object.entries(unmatched)) {
+    const exercise = getExerciseById(id);
+    assert.equal(exercise.media_key, undefined, id);
+    assert.ok(exercise.description.length > 0 && exercise.form_tips.length > 0, id);
+    assert.equal(exerciseLogKey(exercise), historicalKey, id);
+  }
+  // This clip's old file name refers to cycling, but its reviewed content is a march.
+  assert.equal(getExerciseById('base_march_in_place').media_key, 'cycling-warmup');
+});

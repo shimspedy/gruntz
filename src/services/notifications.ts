@@ -21,6 +21,12 @@ export function notificationsEnabled() {
   return remindersEnabled;
 }
 
+/** Roll back a failed opt-in/reschedule without leaving older alerts enabled. */
+export async function cancelTrainingReminders() {
+  setNotificationsEnabled(false);
+  await Promise.all([cancelDailyReminder(), cancelWeeklyRecap(), cancelTrialEndingReminder(), cancelRestDone()]);
+}
+
 async function withNotificationGuard<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
   try {
     return await fn();
@@ -86,9 +92,9 @@ export async function setupNotificationChannels() {
  */
 export async function scheduleDailyReminder(hour: number, minute: number, weekdays: number[] = []) {
   await cancelDailyReminder();
-  if (!remindersEnabled) return;
+  if (!remindersEnabled) return false;
 
-  await withNotificationGuard(async () => {
+  return withNotificationGuard(async () => {
     const content: Notifications.NotificationContentInput = {
       title: 'Time to train',
       body: 'Your next workout is ready when you are.',
@@ -100,7 +106,7 @@ export async function scheduleDailyReminder(hour: number, minute: number, weekda
         content,
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute },
       });
-      return;
+      return true;
     }
     for (const weekday of weekdays) {
       await Notifications.scheduleNotificationAsync({
@@ -108,7 +114,8 @@ export async function scheduleDailyReminder(hour: number, minute: number, weekda
         trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday, hour, minute },
       });
     }
-  }, undefined);
+    return true;
+  }, false);
 }
 
 export async function cancelDailyReminder() {
@@ -305,14 +312,14 @@ export async function cancelTrialEndingReminder() {
 
 export async function scheduleWeeklyRecap(hour = 19, minute = 0) {
   await cancelWeeklyRecap();
-  if (!remindersEnabled) return;
+  if (!remindersEnabled) return false;
 
-  await withNotificationGuard(async () => {
+  return withNotificationGuard(async () => {
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: 'Week In Review',
-        body: 'See your missions, streak, and challenge XP for the week.',
-        data: { type: 'weekly-recap', url: 'gruntz://stats' },
+        title: 'Your weekly debrief',
+        body: 'Review your training, see what moved, and plan your next mission.',
+        data: { type: 'weekly-recap', url: 'gruntz://weekly-debrief' },
         ...(Platform.OS === 'android' && { channelId: 'daily-reminder' }),
       },
       trigger: {
@@ -322,7 +329,8 @@ export async function scheduleWeeklyRecap(hour = 19, minute = 0) {
         minute,
       },
     });
-  }, undefined);
+    return true;
+  }, false);
 }
 
 export async function cancelWeeklyRecap() {

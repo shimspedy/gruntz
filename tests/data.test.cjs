@@ -87,6 +87,19 @@ function snapshotModule(disk, prepare = async () => () => {}) {
   });
 }
 
+test('fitness test history restores dated retests and undated legacy baselines, rejecting invalid records', () => {
+  const service = snapshotModule(storage());
+  const attempt = { id: 'baseline', testId: 'army_aft', recordedAt: null, scores: { deadlift: 160 } };
+  const valid = snapshot({ '@gruntz_readiness': serialized({ testAttempts: [attempt, { ...attempt, id: 'retest', recordedAt: '2026-10-20T12:00:00.000Z' }], trainingChoice: { date: '2026-10-26', mode: 'shorter' } }) });
+  assert.equal(service.validateSnapshot(valid).length, 1);
+  for (const invalid of [{ ...attempt, scores: { deadlift: -1 } }, { ...attempt, testId: 'invented' }, { ...attempt, recordedAt: 'not a date' }]) {
+    assert.throws(() => service.validateSnapshot(snapshot({ '@gruntz_readiness': serialized({ testAttempts: [invalid] }) })), /fitness test history/);
+  }
+  assert.throws(() => service.validateSnapshot(snapshot({ '@gruntz_readiness': serialized({ trainingChoice: { date: '2026-02-30', mode: 'recovery' } }) })), /training choice/);
+  // Missing new fields remains a supported backup from an older build.
+  assert.equal(service.validateSnapshot(snapshot({ '@gruntz_readiness': serialized({ testScores: {} }) })).length, 1);
+});
+
 test('corrupt backup is rejected before any existing data is removed', async () => {
   const disk = storage({ '@gruntz_user': 'keep me', '@gruntz_routines': 'keep routines' });
   const service = snapshotModule(disk);
