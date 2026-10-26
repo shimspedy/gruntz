@@ -13,5 +13,7 @@ jobs:
             package-lock.json
             website/package-lock.json
       - run: npm ci --ignore-scripts
+      - run: npm run postinstall
       - run: npm --prefix website ci
       - run: npm run check
+      - run: npm run security:audit

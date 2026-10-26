@@ -16,7 +16,8 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "node --test tests/*.test.cjs",
-    "postinstall": "node scripts/patch-expo-jsi-interface.cjs"
+    "postinstall": "node scripts/patch-expo-jsi-interface.cjs && node scripts/patch-expo-zod-bounds.cjs",
+    "security:audit": "npm audit --audit-level=low && npm --prefix website audit --audit-level=low"
   },
   "dependencies": {
     "@bacons/apple-targets": "^5.0.0",
@@ -77,7 +78,18 @@
   "devDependencies": {
     "@types/react": "~19.2.4",
     "canvas": "^3.2.3",
+    "node-forge": "file:vendor/node-forge",
     "typescript": "~6.0.3"
+  },
+  "overrides": {
+    "@bacons/xcode": {
+      "@expo/plist": "0.8.1",
+      "uuid": "11.1.1"
+    },
+    "@expo/cli": {
+      "zod": "4.6.7"
+    },
+    "node-forge": "$node-forge"
   },
   "private": true
 }
