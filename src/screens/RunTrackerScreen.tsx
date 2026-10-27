@@ -371,12 +371,18 @@ export default function RunTrackerScreen() {
             {tracker.isTracking && !tracker.backgroundEnabled ? <Button title="Open location settings" variant="secondary" onPress={() => void Linking.openSettings().catch(() => Alert.alert('Settings unavailable', 'Open your device settings and select Gruntz.'))} style={{ marginTop: 12 }} /> : null}
           </View>
         ) : null}
-        {tracker.error && !tracker.sessionId ? <View style={styles.statusBox}><Text variant="footnote" tone="secondary">{tracker.error}</Text><Button title="Retry saved activity" variant="secondary" onPress={() => void initializeActivityTracking()} style={{ marginTop: 12 }} />
-          {/* The message says to discard it if it isn't needed; without this there was no way to, and tracking stayed blocked. */}
-          <Button title="Discard saved activity" variant="secondary" onPress={() => Alert.alert('Discard this activity?', 'The unsaved recording will be removed from this device.', [
-            { text: 'Keep', style: 'cancel' },
-            { text: 'Discard', style: 'destructive', onPress: () => void discardActiveActivity().then(() => initializeActivityTracking()).catch(() => undefined) },
-          ])} style={{ marginTop: 8 }} /></View> : null}
+        {tracker.error && !tracker.sessionId ? (
+          <View style={styles.statusBox}>
+            <Text variant="footnote" tone="secondary">{tracker.error}</Text>
+            {tracker.savedDraftRecoveryRequired ? <>
+              <Button title="Retry saved activity" variant="secondary" onPress={() => void initializeActivityTracking()} style={{ marginTop: 12 }} />
+              <Button title="Discard saved activity" variant="secondary" onPress={() => Alert.alert('Discard this activity?', 'The unsaved recording will be removed from this device.', [
+                { text: 'Keep', style: 'cancel' },
+                { text: 'Discard', style: 'destructive', onPress: () => void discardActiveActivity().then(() => initializeActivityTracking()).catch(() => undefined) },
+              ])} style={{ marginTop: 8 }} />
+            </> : null}
+          </View>
+        ) : null}
         {idle ? <Button title="Activity history" variant="secondary" icon="mapPin" onPress={() => navigation.navigate('ActivityHistory')} style={{ marginHorizontal: space.md, marginTop: space.lg }} /> : null}
       </ScrollView>
 

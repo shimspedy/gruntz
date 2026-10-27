@@ -261,8 +261,38 @@ test('corrupt saved draft is preserved rather than overwritten, and explicit dis
   assert.equal(await env.engine.start(), false);
   assert.equal(env.disk.get(env.key), '{broken');
   assert.match(env.engine.getSnapshot().error, /could not be read/);
+  assert.equal(env.engine.getSnapshot().savedDraftRecoveryRequired, true);
   await env.engine.discard();
+  assert.equal(env.engine.getSnapshot().savedDraftRecoveryRequired, false);
   assert.equal(await env.engine.start(), true);
+});
+
+test('permission denial without a draft offers ordinary start retry, and success clears the error', async () => {
+  const env = trackerHarness(); env.setForegroundGranted(false);
+  assert.equal(await env.engine.start({ backgroundTracking: false }), false);
+  assert.equal(env.engine.getSnapshot().sessionId, null);
+  assert.equal(env.disk.has(env.key), false);
+  assert.ok(env.engine.getSnapshot().error);
+  assert.equal(env.engine.getSnapshot().savedDraftRecoveryRequired, false);
+  env.setForegroundGranted(true);
+  assert.equal(await env.engine.start({ backgroundTracking: false }), true);
+  assert.equal(env.engine.getSnapshot().error, null);
+  assert.equal(env.engine.getSnapshot().savedDraftRecoveryRequired, false);
+});
+
+test('GPS startup failure keeps its real paused draft and resume clears the error without read recovery', async () => {
+  const env = trackerHarness(); env.setFailLocation(true);
+  assert.equal(await env.engine.start({ backgroundTracking: false }), false);
+  const failed = env.engine.getSnapshot();
+  assert.ok(failed.error); assert.ok(failed.sessionId);
+  assert.equal(failed.isPaused, true);
+  assert.equal(failed.savedDraftRecoveryRequired, false);
+  assert.equal(JSON.parse(env.disk.get(env.key)).id, failed.sessionId);
+  env.setFailLocation(false);
+  assert.equal(await env.engine.resume(), true);
+  assert.equal(env.engine.getSnapshot().sessionId, failed.sessionId);
+  assert.equal(env.engine.getSnapshot().error, null);
+  assert.equal(env.engine.getSnapshot().savedDraftRecoveryRequired, false);
 });
 
 test('reset/discard waits for native stop, removes draft, and ignores late callbacks', async () => {
@@ -515,8 +545,10 @@ test('native iOS TaskManager code0 remains recording, while denied code1 pauses'
 test('successful hydration retry clears the obsolete read error', async () => {
   const env = trackerHarness(); env.setFailRead(true);
   await env.engine.hydrate(); assert.match(env.engine.getSnapshot().error, /could not be read/);
+  assert.equal(env.engine.getSnapshot().savedDraftRecoveryRequired, true);
   env.setFailRead(false); await env.engine.hydrate();
   assert.equal(env.engine.getSnapshot().ready, true); assert.equal(env.engine.getSnapshot().error, null);
+  assert.equal(env.engine.getSnapshot().savedDraftRecoveryRequired, false);
   assert.equal(await env.engine.start(), true);
 });
 

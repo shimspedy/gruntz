@@ -41,6 +41,8 @@ export interface RunTrackerState {
   stepsLimited: boolean;
   recoveryNotice: string | null;
   error: string | null;
+  /** A saved draft could not be read; new recording must not overwrite it. */
+  savedDraftRecoveryRequired: boolean;
   ready: boolean;
 }
 export interface ActivityLocation {
@@ -131,7 +133,7 @@ function compactRoute(route: RoutePoint[]): RoutePoint[] {
 function emptyState(): RunTrackerState {
   return { isTracking: false, isPaused: false, distanceMiles: 0, durationMs: 0, paceMinPerMile: null, currentSpeedMph: null,
     steps: 0, elevationGainFt: 0, route: [], caloriesEstimate: 0, sessionId: null, startedAt: null, activityType: 'run',
-    packWeightPounds: 0, terrain: null, backgroundEnabled: false, stepsLimited: false, recoveryNotice: null, error: null, ready: false };
+    packWeightPounds: 0, terrain: null, backgroundEnabled: false, stepsLimited: false, recoveryNotice: null, error: null, savedDraftRecoveryRequired: false, ready: false };
 }
 
 /** One serialized owner of the durable draft; native callbacks never write stores directly. */
@@ -140,6 +142,7 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
   let state = emptyState();
   let loaded = false;
   let readBlocked = false;
+  let errorOrigin: 'draft-read' | 'recording' | null = null;
   let recovering = false;
   let backgroundDirty = false;
   let queue: Promise<unknown> = Promise.resolve();
@@ -162,7 +165,8 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
     return result;
   };
   const elapsed = (at = deps.now()) => draft ? draft.elapsedMs + (draft.activeSince === null ? 0 : Math.max(0, at - draft.activeSince)) : 0;
-  function publish(patch: Partial<RunTrackerState> = {}) {
+  function publish(patch: Partial<RunTrackerState> = {}, origin: 'draft-read' | 'recording' = 'recording') {
+    if ('error' in patch) errorOrigin = patch.error ? origin : null;
     const miles = (draft?.distanceMeters ?? 0) * METERS_TO_MILES;
     const duration = elapsed(stopCutoff ?? deps.now());
     state = { ...state, ...(draft ? {
@@ -173,7 +177,7 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
       steps: Math.round(draft.stepsBanked + draft.stepsCurrent), elevationGainFt: Math.round(draft.elevationMeters * FEET_PER_METER),
       route: draft.route, backgroundEnabled: draft.backgroundEnabled, stepsLimited: draft.stepsLimited,
       caloriesEstimate: Math.round(miles * ((draft.options.loadedWeightLbs ?? DEFAULT_BODY_WEIGHT_LBS) / 1.6)),
-    } : {}), ...patch };
+    } : {}), ...patch, savedDraftRecoveryRequired: readBlocked };
     listeners.forEach((listener) => listener());
   }
   const breakSegment = () => {
@@ -231,7 +235,7 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
       draft = raw ? parseDraft(raw) : null;
       // Clear only this recovered read error, before native cleanup/persistence
       // can publish a new stop or write failure that still needs attention.
-      if (readBlocked && state.error === DRAFT_READ_ERROR) state = { ...state, error: null };
+      if (errorOrigin === 'draft-read') { state = { ...state, error: null }; errorOrigin = null; }
       loaded = true;
       readBlocked = false;
       recovering = !!draft && draft.status === 'recording';
@@ -256,7 +260,7 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
       loaded = true;
       readBlocked = true;
       await detachNative();
-      publish({ ready: true, error: DRAFT_READ_ERROR });
+      publish({ ready: true, error: DRAFT_READ_ERROR }, 'draft-read');
     }
   }
   async function reconcileSteps(at: number) {
@@ -451,6 +455,7 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
           stepsBanked: 0, stepsCurrent: 0, route: [], anchor: null, altitudeAnchor: null, lastTimestamp: 0, updatedAt: now,
           backgroundEnabled: false, stepsLimited: deps.platform !== 'ios' };
         state = { ...emptyState(), ready: true };
+        errorOrigin = null;
         publish();
         if (!await persist() || token !== generation) return false;
         if (!await attachLocation(token) || token !== generation) { publish(); return false; }
@@ -553,6 +558,7 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
       loaded = true;
       recovering = false;
       state = { ...emptyState(), ready: true };
+      errorOrigin = null;
       publish();
     });
   }

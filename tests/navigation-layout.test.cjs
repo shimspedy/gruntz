@@ -71,6 +71,42 @@ function all(node, predicate) {
 const find = (node, type) => all(node, child => child.type === type)[0];
 const styles = node => Object.assign({}, ...[node.props.style].flat().filter(Boolean));
 
+test('run tracker shows saved-draft recovery only for a failed draft read, preserving active and ended controls', () => {
+  let snapshot = {
+    ready: true, isTracking: false, isPaused: false, sessionId: null, activityType: 'run',
+    distanceMiles: 0, durationMs: 0, paceMinPerMile: null, currentSpeedMph: null,
+    steps: 0, elevationGainFt: 0, caloriesEstimate: 0, route: [],
+    backgroundEnabled: false, stepsLimited: false, recoveryNotice: null,
+    error: 'An error occurred.', savedDraftRecoveryRequired: false,
+  };
+  const user = { profile: { settings: { units: 'imperial' } }, recordTrackedSession() {} };
+  const useUserStore = selector => selector(user); useUserStore.getState = () => user;
+  const h = harness({
+    '@react-navigation/native': { useNavigation: () => ({}), useRoute: () => ({ params: {} }) },
+    '../hooks/useRunTracker': { useRunTracker: () => snapshot, DEFAULT_BODY_WEIGHT_LBS: 160 },
+    '../store/useSubscriptionStore': { useTrainingAccess: () => true },
+    '../store/useReadinessStore': { useReadinessStore: selector => selector({}) },
+    '../store/useUserStore': { useUserStore },
+  });
+  const Component = h.load('src/screens/RunTrackerScreen.tsx').default;
+  const titles = () => all(h.render(Component), node => node.type === 'Button').map(node => node.props.title);
+  assert.ok(titles().includes('Start run'));
+  assert.ok(!titles().includes('Retry saved activity'));
+  assert.ok(!titles().includes('Discard saved activity'));
+  snapshot = { ...snapshot, savedDraftRecoveryRequired: true };
+  assert.ok(titles().includes('Retry saved activity'));
+  assert.ok(titles().includes('Discard saved activity'));
+  snapshot = { ...snapshot, savedDraftRecoveryRequired: false, error: null };
+  assert.ok(!titles().includes('Retry saved activity'));
+  assert.ok(!titles().includes('Discard saved activity'));
+  snapshot = { ...snapshot, sessionId: 'real-draft', isTracking: true, isPaused: true, error: 'An error occurred.' };
+  assert.ok(titles().includes('Resume')); assert.ok(titles().includes('End'));
+  assert.ok(!titles().includes('Discard saved activity'));
+  snapshot = { ...snapshot, isTracking: false };
+  assert.ok(titles().includes('Save recovered activity'));
+  assert.ok(!titles().includes('Retry saved activity'));
+});
+
 test('Create menu keeps every action scrollable and clears chrome after window-height changes', () => {
   let height = 678, pressed = null;
   const actions = Array.from({ length: 5 }, (_, i) => ({ title: `Action ${i}`, onPress: () => { pressed = i; } }));
