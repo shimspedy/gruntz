@@ -24,10 +24,15 @@ function fixture(initial = []) {
       return { data: [{ type: 'appStoreVersions', id: target.versionId, attributes: { versionString: state.version, platform: 'IOS', appVersionState: state.versionState } }] };
     }
     if (method === 'GET' && path === `/v1/appStoreVersions/${target.versionId}/relationships/build`) return { data: { type: 'builds', id: state.attachedBuild } };
-    if (method === 'GET' && path.startsWith(`/v1/apps/${target.appId}/builds?`)) return {
+    if (method === 'GET' && path.startsWith('/v1/builds?')) {
+      const query = new URL(path, 'https://api.appstoreconnect.apple.com').searchParams;
+      assert.equal(query.get('filter[app]'), target.appId, 'the build collection must be filtered to the exact app');
+      assert.equal(query.get('include'), 'preReleaseVersion');
+      return {
       data: [{ type: 'builds', id: target.buildId, attributes: { processingState: state.processing }, relationships: { preReleaseVersion: { data: { type: 'preReleaseVersions', id: 'pre-release' } } } }],
       included: [{ type: 'preReleaseVersions', id: 'pre-release', attributes: { version: state.buildVersion, platform: state.buildPlatform } }],
-    };
+      };
+    }
     if (method === 'GET' && path.startsWith(`/v1/apps/${target.appId}/reviewSubmissions?`)) return { data: state.reviews.map(reviewResource) };
     const match = path.match(/^\/v1\/reviewSubmissions\/([^/]+)\/items\?/);
     if (method === 'GET' && match) return { data: copy(state.reviews.find((review) => review.id === match[1]).items) };
@@ -138,6 +143,35 @@ for (const operation of ['create', 'add', 'submit']) {
   });
 }
 
+test('Apple HTTP 400 item detail survives failed reconciliation while pending add still blocks replay', async () => {
+  const f = fixture(); f.state.noEffect = 'add';
+  const original = Object.assign(new Error('HTTP 400: The app version cannot be added for review'), {
+    status: 400, body: { errors: [{ status: '400', code: 'ENTITY_ERROR', detail: 'App version review metadata is incomplete.' }] },
+  });
+  const api = async (method, path, body) => {
+    try { return await f.api(method, path, body); }
+    catch (error) {
+      if (method === 'POST' && path === '/v1/reviewSubmissionItems') throw original;
+      throw error;
+    }
+  };
+  const start = () => createReviewTransaction({ api, target, journal: copy(f.state.durable ?? {}), saveJournal: f.saveJournal });
+  await assert.rejects(start().prepareDraft(), (error) => {
+    assert.equal(error.code, 'OUTCOME_UNKNOWN');
+    assert.equal(error.cause, original);
+    assert.equal(error.cause.status, 400);
+    assert.equal(error.cause.body.errors[0].detail, 'App version review metadata is incomplete.');
+    assert.equal(error.readbackError.code, 'OUTCOME_UNKNOWN');
+    return true;
+  });
+  assert.equal(f.state.durable.pending.kind, 'add');
+  assert.equal(f.state.reviews[0].items.length, 0);
+  const count = f.writes().length;
+  await assert.rejects(start().prepareDraft(), { code: 'OUTCOME_UNKNOWN' });
+  assert.equal(f.writes().length, count, 'diagnostic preservation must not retry the rejected item write');
+  assert.equal(f.state.durable.pending.kind, 'add');
+});
+
 for (const operation of ['create', 'add', 'submit']) {
   test(`unresolved ${operation} outcome leaves durable intent and refuses a blind replay`, async () => {
     const f = fixture();
@@ -173,6 +207,26 @@ test('wrong attached build, version ownership, pre-release platform/version or p
     await assert.rejects(f.start().prepareDraft(), (error) => ['WRONG_BUILD', 'WRONG_VERSION'].includes(error.code));
     assert.equal(f.writes().length, 0);
   }
+});
+
+test('live build-query contract uses the app-filtered collection because scoped builds rejects include', async () => {
+  const f = fixture();
+  const api = async (method, path, body) => {
+    if (path.startsWith(`/v1/apps/${target.appId}/builds?`) && new URL(path, 'https://api.appstoreconnect.apple.com').searchParams.has('include')) {
+      throw new Error('Apple HTTP 400: include is illegal on the app builds relationship');
+    }
+    return f.api(method, path, body);
+  };
+  const tx = createReviewTransaction({ api, target, journal: {}, saveJournal: f.saveJournal });
+  assert.equal((await tx.prepareDraft()).status, 'preparedDraft');
+  const queries = f.state.calls.filter((call) => call.method === 'GET' && call.path.startsWith('/v1/builds?'));
+  assert.ok(queries.length > 0);
+  for (const call of queries) {
+    const query = new URL(call.path, 'https://api.appstoreconnect.apple.com').searchParams;
+    assert.equal(query.get('filter[app]'), target.appId);
+    assert.equal(query.get('include'), 'preReleaseVersion');
+  }
+  assert.equal(f.state.calls.some((call) => call.path.startsWith(`/v1/apps/${target.appId}/builds?`)), false);
 });
 
 test('an already distributed version without a matching active journal cannot create a replacement review', async () => {

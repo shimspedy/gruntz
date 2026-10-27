@@ -10,7 +10,7 @@ const relation = (resource, name) => resource?.relationships?.[name]?.data;
 const stateOf = (resource) => resource?.attributes?.state;
 
 class ReviewSafetyError extends Error {
-  constructor(code, message) { super(message); this.name = 'ReviewSafetyError'; this.code = code; }
+  constructor(code, message, options) { super(message, options); this.name = 'ReviewSafetyError'; this.code = code; }
 }
 function refuse(code, message) { throw new ReviewSafetyError(code, message); }
 function sameTarget(a, b) { return ['appId', 'versionId', 'versionString', 'buildId', 'platform'].every((key) => a?.[key] === b?.[key]); }
@@ -34,6 +34,16 @@ function createReviewTransaction({ api, target: input, journal = {}, saveJournal
     if (busy) refuse('CONCURRENT_OPERATION', 'A review operation is already running');
     busy = true;
     try { return await action(); } finally { busy = false; }
+  }
+  async function reconcileMutation(mutationError, readback) {
+    try { return await readback(); }
+    catch (readbackError) {
+      if (!mutationError) throw readbackError;
+      // Keep Apple's original status/detail available without putting transport data in the journal.
+      const error = new ReviewSafetyError(readbackError?.code ?? 'RECONCILIATION_FAILED', readbackError?.message ?? 'Review mutation readback failed', { cause: mutationError });
+      error.readbackError = readbackError;
+      throw error;
+    }
   }
   async function collection(initialPath) {
     const data = [], included = [], seen = new Set(), ids = new Set();
@@ -62,7 +72,8 @@ function createReviewTransaction({ api, target: input, journal = {}, saveJournal
     if (version?.type !== 'appStoreVersions' || version.attributes?.versionString !== target.versionString || version.attributes?.platform !== target.platform) refuse('WRONG_VERSION', 'The exact iOS version does not belong to this app');
     const attached = await api('GET', `/v1/appStoreVersions/${target.versionId}/relationships/build`);
     if (attached?.data?.type !== 'builds' || attached.data.id !== target.buildId) refuse('WRONG_BUILD', 'The intended uploaded build is not attached to this version');
-    const builds = await collection(`/v1/apps/${target.appId}/builds?limit=200&include=preReleaseVersion`);
+    // The app's /builds relationship rejects include; the filtered collection supports it.
+    const builds = await collection(`/v1/builds?filter[app]=${target.appId}&limit=200&include=preReleaseVersion`);
     const build = builds.data.find((item) => item.id === target.buildId);
     const preRelease = builds.included.find((item) => item.type === 'preReleaseVersions' && item.id === relation(build, 'preReleaseVersion')?.id);
     if (build?.type !== 'builds' || build.attributes?.processingState !== 'VALID' || preRelease?.attributes?.version !== target.versionString || preRelease.attributes?.platform !== target.platform) refuse('WRONG_BUILD', 'The build must be processed and belong to this app, version and iOS platform');
@@ -143,10 +154,12 @@ function createReviewTransaction({ api, target: input, journal = {}, saveJournal
         await api('POST', '/v1/reviewSubmissions', { data: { type: 'reviewSubmissions', attributes: { platform: target.platform }, relationships: { app: { data: { type: 'apps', id: target.appId } } } } });
       } catch (error) {
         // A timeout may follow a successful write. Read back before deciding anything.
-        list = (await reviews()).data;
-        await reconcilePending(list);
-        info = await choose(list);
-        if (!info) throw error;
+        await reconcileMutation(error, async () => {
+          list = (await reviews()).data;
+          await reconcilePending(list);
+          info = await choose(list);
+          if (!info) throw error;
+        });
       }
       if (!info) {
         list = (await reviews()).data;
@@ -164,16 +177,19 @@ function createReviewTransaction({ api, target: input, journal = {}, saveJournal
       info = await inspect(selected);
       if (stateOf(selected) !== READY || !info.empty) refuse('DRAFT_CHANGED', 'The draft changed before adding the version');
       await persist({ pending: { kind: 'add', submissionId: selected.id } });
+      let mutationError;
       try {
         await api('POST', '/v1/reviewSubmissionItems', { data: { type: 'reviewSubmissionItems', relationships: {
           reviewSubmission: { data: { type: 'reviewSubmissions', id: selected.id } },
           appStoreVersion: { data: { type: 'appStoreVersions', id: target.versionId } },
         } } });
-      } catch { /* Reconcile without replaying a possibly successful POST. */ }
-      list = (await reviews()).data;
-      await reconcilePending(list);
-      info = await inspect(list.find((item) => item.id === selected.id));
-      versionState = await verifyTarget();
+      } catch (error) { mutationError = error; }
+      await reconcileMutation(mutationError, async () => {
+        list = (await reviews()).data;
+        await reconcilePending(list);
+        info = await inspect(list.find((item) => item.id === selected.id));
+        versionState = await verifyTarget();
+      });
     }
     if (!info.exact) refuse('FOREIGN_ITEMS', 'A prepared draft must contain only the intended version');
     return result(info, versionState);
@@ -189,13 +205,16 @@ function createReviewTransaction({ api, target: input, journal = {}, saveJournal
     if (SUBMITTED.has(stateOf(submission))) return result(info, versionState);
     if (stateOf(submission) !== READY || versionState !== READY) refuse('VERSION_NOT_READY', 'Both the exact draft and app version must be ready for review');
     await persist({ pending: { kind: 'submit', submissionId: submission.id } });
+    let mutationError;
     try {
       await api('PATCH', `/v1/reviewSubmissions/${submission.id}`, { data: { type: 'reviewSubmissions', id: submission.id, attributes: { submitted: true } } });
-    } catch { /* The subsequent read is authoritative, never a second PATCH. */ }
-    list = (await reviews()).data;
-    await reconcilePending(list);
-    const confirmed = await inspect(list.find((item) => item.id === submission.id));
-    return result(confirmed, await verifyTarget());
+    } catch (error) { mutationError = error; }
+    return reconcileMutation(mutationError, async () => {
+      list = (await reviews()).data;
+      await reconcilePending(list);
+      const confirmed = await inspect(list.find((item) => item.id === submission.id));
+      return result(confirmed, await verifyTarget());
+    });
   }
   return { prepareDraft: () => exclusive(prepare), submitPreparedDraft: (prepared) => exclusive(() => submit(prepared)), snapshotJournal: () => clone(current) };
 }
