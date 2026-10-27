@@ -23,7 +23,7 @@ import { getLocalDateKey } from '../utils/dateKey';
 export default function LibraryPlanDayScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { params } = useRoute<RouteProp<RootStackParamList, 'LibraryPlanDay'>>();
+  const params = useRoute<RouteProp<RootStackParamList, 'LibraryPlanDay'>>().params ?? { planId: '', dayId: '' };
   const plan = getWorkoutPlan(params.planId);
   const day = plan?.days.find((d) => d.id === params.dayId);
   // Narrow selectors: this screen stays mounted under the live workout, and the whole

@@ -39,7 +39,9 @@ const SECTION_LABEL: Record<string, string> = {
 
 export default function WorkoutDetailScreen() {
   const navigation = useNavigation();
-  const { params } = useRoute<RouteProp<RootStackParamList, 'WorkoutDetail'>>();
+  const params = useRoute<RouteProp<RootStackParamList, 'WorkoutDetail'>>().params ?? { workoutId: '', dateKey: '' };
+  const workoutId = typeof params.workoutId === 'string' ? params.workoutId : '';
+  const dateKey = typeof params.dateKey === 'string' ? params.dateKey : '';
   const insets = useSafeAreaInsets();
   const program = useProgramStore((s) => s.selectedProgram);
   const profile = useUserStore((s) => s.profile);
@@ -55,9 +57,9 @@ export default function WorkoutDetailScreen() {
   const sessionDayId = useSessionStore((st) => st.workoutDayId);
 
   const day = useMemo(() => {
-    const original = getProgramWorkoutDay(program, params.workoutId, profile);
+    const original = getProgramWorkoutDay(program, workoutId, profile);
     return original ? prioritizeWorkout(original, getTrainingFocus(profile, testScores, targetScores), getExerciseById) : undefined;
-  }, [program, params.workoutId, profile, testScores, targetScores]);
+  }, [program, workoutId, profile, testScores, targetScores]);
   const mode = getTodaysTrainingChoice(choice);
   const exercises = useMemo(() => workoutExercises(day), [day]);
   const distribution = useMemo(() => muscleDistribution(day, 3), [day]);
@@ -71,11 +73,11 @@ export default function WorkoutDetailScreen() {
     );
   }
 
-  const isToday = params.dateKey === getLocalDateKey();
-  const completed = claimed.has(`${params.dateKey}:${day.id}`);
+  const isToday = dateKey === getLocalDateKey();
+  const completed = claimed.has(`${dateKey}:${day.id}`);
   const unlocked = hasTrainingAccess({ trialStartedAt, entitlementActive });
   const sameSession = sessionActive && sessionDayId === day.id;
-  const date = parseLocalDateKey(params.dateKey);
+  const date = parseLocalDateKey(dateKey);
   const weekday = date ? WEEKDAYS[date.getDay()] : '';
 
   let cta: { title: string; icon?: 'play'; disabled?: boolean; onPress?: () => void } = { title: 'Start Workout', icon: 'play' };
@@ -92,7 +94,7 @@ export default function WorkoutDetailScreen() {
   const start = () => {
     if (cta.onPress) return cta.onPress();
     haptic.medium();
-    useSessionStore.getState().start(day, params.dateKey);
+    useSessionStore.getState().start(day, dateKey);
   };
 
   let row = 0;

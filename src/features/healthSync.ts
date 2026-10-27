@@ -211,8 +211,13 @@ export async function syncHealth(deps: HealthSyncDependencies): Promise<HealthSy
       if (written.some((workout) => sameOuting(workout, window))) { deps.markExported(session.id); continue; }
       try {
         const route = session.routePoints ? await deps.loadRoute(session.id) : undefined;
+        if (stopped()) return result;
         const payload = toHealthExport({ ...session, ...(route?.length ? { route } : {}) });
-        if (payload && await deps.adapter.saveWorkout(payload)) { deps.markExported(session.id); result.exported++; }
+        if (payload && await deps.adapter.saveWorkout(payload)) {
+          result.exported++;
+          if (stopped()) return result;
+          deps.markExported(session.id);
+        }
       } catch { /* Tried again on the next sync. */ }
     }
   }
@@ -224,18 +229,24 @@ export async function syncHealth(deps: HealthSyncDependencies): Promise<HealthSy
       if (stopped()) return result;
       try {
         const details = await deps.adapter.workoutDetails(workout.id).catch((): HealthWorkoutDetails => ({}));
+        if (stopped()) return result;
         const activity = toImportedActivity(workout, details);
         const route = cleanRoute(await deps.adapter.workoutRoute(workout.id).catch(() => []));
+        if (stopped()) return result;
         const heartRate = cleanHeartRate(await deps.adapter.heartRate(workout.startMs, workout.endMs).catch(() => null));
+        if (stopped()) return result;
         const saved = await deps.saveImported({
           ...activity,
           ...(route.length > 1 ? { route } : {}),
           ...(heartRate ? { averageHeartRate: heartRate.average, maxHeartRate: heartRate.max } : {}),
         });
         if (!saved) continue;
+        // A completed local save and its credit stay together. Data changes drain
+        // this write before replacing history; failed changes must retain both.
         deps.credit(activity);
         deps.heartRateChecked(activity.id, now);
         result.imported++;
+        if (stopped()) return result;
       } catch { /* Tried again on the next sync. */ }
     }
 
@@ -249,12 +260,13 @@ export async function syncHealth(deps: HealthSyncDependencies): Promise<HealthSy
       if (finite(checkedAt) && now - checkedAt < HEART_RATE_RECHECK_MS) continue;
       try {
         const heartRate = cleanHeartRate(await deps.adapter.heartRate(window.startMs, window.endMs));
+        if (stopped()) return result;
         deps.heartRateChecked(session.id, now);
         if (heartRate) { deps.setHeartRate(session.id, heartRate); result.heartRates++; }
       } catch { /* Tried again on the next sync. */ }
     }
   }
 
-  deps.finished(now);
+  if (!stopped()) deps.finished(now);
   return result;
 }

@@ -34,7 +34,7 @@ export function scheduleLabel(days: number[]) {
 export default function RoutineDetailScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { params } = useRoute<RouteProp<RootStackParamList, 'RoutineDetail'>>();
+  const params = useRoute<RouteProp<RootStackParamList, 'RoutineDetail'>>().params ?? { routineId: '' };
   const routine = useRoutineStore((s) => s.routines.find((r) => r.id === params.routineId));
   // Narrow selectors: this screen stays mounted under the live workout, and the whole
   // store changes on every logged set.

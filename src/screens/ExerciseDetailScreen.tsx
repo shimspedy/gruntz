@@ -40,7 +40,7 @@ const TABS: { value: Tab; label: string }[] = [
 
 export default function ExerciseDetailScreen() {
   const navigation = useNavigation();
-  const { params } = useRoute<RouteProp<RootStackParamList, 'ExerciseDetail'>>();
+  const params = useRoute<RouteProp<RootStackParamList, 'ExerciseDetail'>>().params ?? {};
   const insets = useSafeAreaInsets();
   const { width } = useContentSize();
   const focused = useIsFocused();
@@ -58,6 +58,7 @@ export default function ExerciseDetailScreen() {
   const sessions = useExerciseSessions(ex ? exerciseLogKey(ex) : undefined, unit);
   const note = useExerciseNotesStore((n) => (ex ? n.notes[exerciseLogKey(ex)] : undefined));
   const [picker, setPicker] = useState(false);
+  const newWorkoutAfterPicker = React.useRef(false);
   const routines = useRoutineStore((st) => st.routines);
 
   if (!ex) {
@@ -298,7 +299,17 @@ export default function ExerciseDetailScreen() {
 
       {/* A few workouts fit the sheet; a long list makes the sheet itself scroll. A scroll
           view nested inside a fit-to-content system sheet is laid out over the sheet's title. */}
-      <Sheet visible={picker} onClose={() => setPicker(false)} title="Add to a workout" scrollable={routines.length > 5}>
+      <Sheet
+        visible={picker}
+        onClose={() => setPicker(false)}
+        onDismissed={() => {
+          if (!newWorkoutAfterPicker.current) return;
+          newWorkoutAfterPicker.current = false;
+          newWorkoutWith();
+        }}
+        title="Add to a workout"
+        scrollable={routines.length > 5}
+      >
         <View>
           {routines.map((r) => (
             <Tap
@@ -331,8 +342,9 @@ export default function ExerciseDetailScreen() {
             style={styles.pickRow}
             accessibilityLabel="New workout"
             onPress={() => {
+              // Wait until the sheet route is gone, or Back from the editor can reopen it.
+              newWorkoutAfterPicker.current = true;
               setPicker(false);
-              newWorkoutWith();
             }}
           >
             <Icon name="plus" size={18} color={color.accent} />

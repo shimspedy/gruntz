@@ -27,7 +27,7 @@ export default function LibraryPlanDetailScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { width } = useContentSize();
-  const { params } = useRoute<RouteProp<RootStackParamList, 'LibraryPlanDetail'>>();
+  const params = useRoute<RouteProp<RootStackParamList, 'LibraryPlanDetail'>>().params ?? { planId: '' };
   const plan = getWorkoutPlan(params.planId);
   const activeId = usePlanLibraryStore((s) => s.activePlanId);
   const completed = usePlanLibraryStore((s) => s.completedDayIds);

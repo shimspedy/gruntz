@@ -51,6 +51,34 @@ function environment({ sessions = [], workouts = [], prefs = {}, heartRate = nul
   return { state, deps };
 }
 
+test('disconnect during an awaited workout read cannot import, credit or query more health data', async () => {
+  for (const method of ['workoutDetails', 'workoutRoute', 'heartRate']) {
+    const { state, deps } = environment({ workouts: [workout()] });
+    const called = [];
+    for (const name of ['workoutDetails', 'workoutRoute', 'heartRate']) {
+      deps.adapter[name] = async () => {
+        called.push(name);
+        if (name === method) state.connected = false;
+        return name === 'workoutDetails' ? {} : name === 'workoutRoute' ? [] : { average: 140, max: 160 };
+      };
+    }
+    const result = await syncHealth(deps);
+    assert.equal(result.stopped, true, method);
+    assert.equal(state.saved.length, 0, method);
+    assert.equal(state.credited.length, 0, method);
+    assert.equal(called.at(-1), method, 'no further native read after disconnect');
+    assert.equal(state.finishedAt, null);
+  }
+});
+
+test('disconnect while loading an export route prevents the native Health write', async () => {
+  const { state, deps } = environment({ sessions: [activity({ routePoints: 2 })], prefs: { importWorkouts: false } });
+  deps.loadRoute = async () => { state.connected = false; return []; };
+  assert.equal((await syncHealth(deps)).stopped, true);
+  assert.equal(state.written.length, 0);
+  assert.equal(state.prefs.exportedIds.length, 0);
+});
+
 test('a ruck is written as a hike with its distance in meters', () => {
   const payload = toHealthExport(activity({ type: 'ruck', caloriesEstimate: 410.4 }));
   assert.equal(payload.kind, 'hike');

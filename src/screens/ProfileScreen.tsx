@@ -291,9 +291,13 @@ function EditNameSheet({ visible, onClose }: { visible: boolean; onClose: () => 
   // Each open starts from the saved name, not whatever was abandoned last time. Reset
   // during render rather than in an effect so the field never shows the stale draft.
   const [wasVisible, setWasVisible] = useState(visible);
+  const [sheetOpen, setSheetOpen] = useState(visible);
   if (visible !== wasVisible) {
     setWasVisible(visible);
-    if (visible) setName(saved);
+    if (visible) {
+      setName(saved);
+      setSheetOpen(true);
+    }
   }
 
   const saveName = () => {
@@ -309,19 +313,22 @@ function EditNameSheet({ visible, onClose }: { visible: boolean; onClose: () => 
   // Closing used to discard whatever had been typed without a word. A name that
   // is actually different is confirmed first.
   const dismiss = () => {
+    // System drag dismissal has already removed the route. Reopening must toggle
+    // the actual presentation without resetting the unsaved name.
+    setSheetOpen(false);
     const typed = name.trim();
     if (typed && typed !== saved) {
       Alert.alert('Discard changes?', 'Your new name has not been saved.', [
-        { text: 'Keep editing', style: 'cancel' },
+        { text: 'Keep editing', style: 'cancel', onPress: () => setSheetOpen(true) },
         { text: 'Discard', style: 'destructive', onPress: onClose },
-      ]);
+      ], { cancelable: false });
       return;
     }
     onClose();
   };
 
   return (
-    <Sheet visible={visible} onClose={dismiss} title="Edit profile" avoidKeyboard>
+    <Sheet visible={visible && sheetOpen} onClose={dismiss} title="Edit profile" avoidKeyboard>
       <View style={{ paddingHorizontal: space.gutter, paddingTop: space.md }}>
         <Text variant="subhead" tone="secondary" style={{ marginBottom: 8 }}>
           Name

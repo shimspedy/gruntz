@@ -85,6 +85,66 @@ function store(overrides = {}) {
   return { ...exports, persistence, serviceApi, keychain, state: () => exports.useSubscriptionStore.getState() };
 }
 
+test('a stale startup response cannot revoke a more recent successful purchase', async () => {
+  let completeStartup;
+  const oldInfo = { ...customer(false), requestDate: '2026-10-27T10:00:00.000Z' };
+  const newInfo = { ...customer(true), requestDate: '2026-10-27T10:01:00.000Z' };
+  const env = store({
+    loadRevenueCatState: () => new Promise((resolve) => { completeStartup = resolve; }),
+    purchaseCurrentRevenueCatPackage: async () => ({ status: 'purchased', customerInfo: newInfo }),
+  });
+  const startup = env.state().initialize();
+  while (!completeStartup) await Promise.resolve();
+  assert.equal(await env.state().purchaseMonthly(), 'purchased');
+  assert.equal(env.state().entitlementActive, true);
+  completeStartup({ customerInfo: oldInfo, customerInfoKnown: true, configured: true });
+  await startup;
+  assert.equal(env.state().entitlementActive, true);
+});
+
+test('equal-second and missing RevenueCat dates cannot let an older startup undo a newer purchase', async () => {
+  for (const requestDate of ['2026-10-27T10:00:00Z', undefined]) {
+    let completeStartup;
+    const env = store({
+      loadRevenueCatState: () => new Promise((resolve) => { completeStartup = resolve; }),
+      purchaseCurrentRevenueCatPackage: async () => ({ status: 'purchased', customerInfo: { ...customer(true), requestDate } }),
+    });
+    const startup = env.state().initialize();
+    while (!completeStartup) await Promise.resolve();
+    assert.equal(await env.state().purchaseMonthly(), 'purchased');
+    completeStartup({ customerInfo: { ...customer(false), requestDate }, customerInfoKnown: true, configured: true });
+    await startup;
+    assert.equal(env.state().entitlementActive, true);
+  }
+});
+
+test('a new purchase with the same requestDate as the previous snapshot still activates access', async () => {
+  const requestDate = '2026-10-27T10:00:00Z';
+  const env = store({
+    loadRevenueCatState: async () => ({ customerInfo: { ...customer(false), requestDate }, customerInfoKnown: true, configured: true }),
+    purchaseCurrentRevenueCatPackage: async () => ({ status: 'purchased', customerInfo: { ...customer(true), requestDate } }),
+  });
+  await env.state().initialize();
+  assert.equal(env.state().entitlementActive, false);
+  assert.equal(await env.state().purchaseMonthly(), 'purchased');
+  assert.equal(env.state().entitlementActive, true);
+});
+
+test('native millisecond precision keeps a genuinely newer inactive snapshot authoritative within one second', async () => {
+  let completeStartup;
+  const requestDate = '2026-10-27T10:00:00Z', second = Date.parse(requestDate);
+  const env = store({
+    loadRevenueCatState: () => new Promise((resolve) => { completeStartup = resolve; }),
+    purchaseCurrentRevenueCatPackage: async () => ({ status: 'purchased', customerInfo: { ...customer(true), requestDate, requestDateMillis: second + 100 } }),
+  });
+  const startup = env.state().initialize();
+  while (!completeStartup) await Promise.resolve();
+  await env.state().purchaseMonthly();
+  completeStartup({ customerInfo: { ...customer(false), requestDate, requestDateMillis: second + 900 }, customerInfoKnown: true, configured: true });
+  await startup;
+  assert.equal(env.state().entitlementActive, false);
+});
+
 test('RevenueCat config runs once when startup and paywall initialize concurrently', async () => {
   const { api, calls } = service();
   const result = await Promise.all([api.configureRevenueCat(), api.configureRevenueCat(), api.loadRevenueCatState()]);

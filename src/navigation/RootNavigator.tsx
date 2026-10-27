@@ -126,8 +126,12 @@ const linking = {
     };
   },
   config: {
+    // A cold-start detail/notification link needs a home route underneath it,
+    // otherwise its Back button has nowhere to go.
+    initialRouteName: 'Tabs' as const,
     screens: {
       Tabs: {
+        initialRouteName: 'Train' as const,
         screens: {
           Train: 'train',
           Ranks: 'ranks',

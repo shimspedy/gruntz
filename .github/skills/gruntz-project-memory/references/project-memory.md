@@ -37,6 +37,8 @@
 - User settings that affect UX, permissions, or units should be stored in the persisted profile, not local screen state.
 - Never write persisted defaults after a hydration read/parse error. The boot gate must wait for training stores before daily rollover or edits.
 - Backup restore must update live stores along with disk and cancel pending session writes. A new device must not overwrite an existing cloud snapshot before explicit restore/replacement.
+- Pin cloud requests to the captured account token and invalidate old backup generations on session-change intent. Only an already-started local restore commit delays an account change; cloud requests do not. Serialize SDK auth mutations separately: `verifyOtp` persists a valid session before its promise returns. Conditional deletion cleanup must preserve newer login intents.
+- Health sync waits for training-store hydration and invalidates old connection generations. Reset/restore suspend new syncs and drain started local imports with their matching credit, without waiting for native reads.
 - Device-only reset preserves the original subscription/trial and the persisted backup pause marker, clears live training stores, and cancels session write debounce.
 - Streak decay must be applied on app hydration and foreground, not only when a mission completes.
 
@@ -75,6 +77,7 @@
 - Apple-side iOS subscription setup has already been handled by the user. When iOS billing issues come up, first verify app-side env values and RevenueCat product/offering mapping before re-explaining App Store Connect key setup.
 - Keep secrets out of repo files; `.env` stays local.
 - Development billing bypass is opt-in via `EXPO_PUBLIC_DEV_UNLOCK=true` and impossible in release builds. Verify store entitlement before calling a purchase successful; pending approval and unknown/offline entitlement are distinct states.
+- Order RevenueCat responses using native `requestDateMillis` when available plus operation order for ties/missing dates; formatted `requestDate` can lose subsecond precision. An older startup fetch must not undo a newer purchase/listener result.
 - Monthly and annual Pro have the same App Store subscription service level (1); changing billing duration must not imply a different feature tier.
 
 ## Release And Platform Notes
@@ -87,11 +90,14 @@
 - Expo tooling security uses scoped plist/UUID/Zod overrides, a guarded first-party Zod bounds patch, and an explicitly identified local Forge RSA backport. Include `vendor/node-forge` in build archives and run first-party postinstall even when dependency scripts are skipped. Keep the fork's provenance/license and installed-consumer regressions; replace it with a verified upstream fixed release when available.
 - Android activity history uses two checksummed document-file revisions to avoid AsyncStorage SQLite row and database limits. Readiness backup, restore and reset I/O must use `readinessStorage`; await `clearReadinessPersistence()` for deletion because Zustand's `persist.clearStorage()` returns void.
 - RevenueCat and App Store Connect configuration can fail independently; verify dashboard mapping before assuming app-side purchase bugs.
+- Account deletion uses the verified caller identity, hands over every team, and removes only that user's private team avatar before Auth deletion. The live `delete-account` function includes this cleanup for older clients too; do not rely on a client-only loop or accept a target user ID from the request body.
 - Expo/React Native iOS builds commonly show Hermes script warnings; these are noise unless accompanied by real build errors.
 - RevenueCat helper methods should fail to an unavailable/fallback path if native configure or URL-opening calls reject.
 - Haptic calls should fail closed too. Never allow `expo-haptics` promise rejections to show up as unhandled runtime noise.
 - Custom tab-bar interactions should use proper `Pressable`/button semantics, not raw touch-end handlers on plain views, especially for Android reliability and accessibility.
 - Invalid detail screens should always offer a recovery action instead of plain dead-end text.
+- Bound grids from current measured content width, including text shrink constraints. Height-capped action menus must scroll; test their last action in a short window.
+- Navigation from a shared Sheet waits for `onDismissed`. Reopening an unsaved draft must toggle presentation after dismissal. Public deep links seed `Tabs` beneath the destination so Back can return to Train.
 - Every achievement condition type present in `src/data/achievements.ts` must be implemented in `useUserStore.checkAchievements`, and condition ids must match real exercise ids.
 
 ## Agent Working Rules

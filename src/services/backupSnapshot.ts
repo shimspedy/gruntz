@@ -7,6 +7,7 @@ import { READINESS_STORAGE_KEY, readinessStorage } from '../store/readinessStora
 import { loadRoute, pruneRoutes, stageRoutes } from '../store/activityRoutes';
 import type { RoutePoint } from '../types/activity';
 import { isTestAttempt, isTrainingChoice } from '../features/trainingFocus';
+import { suspendHealthSyncForDataChange } from './healthSyncGate';
 
 /** Reject oversized snapshots rather than silently dropping activity history or routes. */
 export const MAX_BACKUP_PAYLOAD_BYTES = 32 * 1024 * 1024;
@@ -150,6 +151,12 @@ export async function captureSnapshot(): Promise<BackupSnapshot> {
  */
 export async function applySnapshot(snapshot: BackupSnapshot): Promise<void> {
   const { pairs, routes } = separateRoutes(validateSnapshot(snapshot));
+  const resumeHealth = await suspendHealthSyncForDataChange();
+  try { await applySnapshotNow(pairs, routes); }
+  finally { resumeHealth(); }
+}
+
+async function applySnapshotNow(pairs: [string, string][], routes: [string, RoutePoint[]][]): Promise<void> {
   const updateMemory = await prepareStoreRestore(Object.fromEntries(pairs));
   // Stop the native task before replacing any data; a queued location callback
   // must not resurrect a draft belonging to the profile being replaced.

@@ -16,7 +16,7 @@ import { color, motion, radius, space } from '../ui/tokens';
 
 export default function CardDetailScreen() {
   const navigation = useNavigation();
-  const { params } = useRoute<RouteProp<RootStackParamList, 'CardDetail'>>();
+  const params = useRoute<RouteProp<RootStackParamList, 'CardDetail'>>().params ?? { cardId: '' };
   const insets = useSafeAreaInsets();
   const card = getMovementCard(params.cardId);
 

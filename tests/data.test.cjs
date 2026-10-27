@@ -146,15 +146,15 @@ function backupModule({ remote = { user_id: 'athlete' }, lookupError = null, see
   let captured = 0;
   const api = {
     auth: {
-      getSession: async () => ({ data: { session: { user: { id: 'athlete', email: 'athlete@example.com' } } } }),
+      getSession: async () => ({ data: { session: { user: { id: 'athlete', email: 'athlete@example.com' }, access_token: 'mock-athlete' } } }),
       signInWithOtp: async () => ({ error: { status: 429 } }),
       signOut: async () => ({ error: null }),
     },
     from: () => ({
-      select() { return this; }, eq() { return this; },
+      select() { return this; }, eq() { return this; }, setHeader() { return this; },
       maybeSingle: async () => ({ data: remote, error: lookupError }),
-      upsert(payload) { writes.push(payload); return { select: () => ({ maybeSingle: async () => ({ data: { updated_at: '2026-10-07T12:00:00.000Z' }, error: null }) }) }; },
-      delete() { return { eq: async () => ({ error: null }) }; },
+      upsert(payload) { writes.push(payload); return { setHeader() { return this; }, select: () => ({ maybeSingle: async () => ({ data: { updated_at: '2026-10-07T12:00:00.000Z' }, error: null }) }) }; },
+      delete() { return { setHeader() { return this; }, eq: async () => ({ error: null }) }; },
     }),
   };
   const service = load('src/services/backup.ts', {

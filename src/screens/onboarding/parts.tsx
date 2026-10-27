@@ -70,7 +70,10 @@ export function OptionRow({
   );
 }
 
-/** Square tile for 2-up grids (equipment, guardrails). */
+const GRID_GAP = 12;
+const MIN_TILE_WIDTH = 140;
+
+/** Two columns when the current content width can keep both choices readable. */
 export function GridTile({
   label,
   icon,
@@ -84,13 +87,16 @@ export function GridTile({
   onPress: () => void;
   index?: number;
 }) {
+  const { width } = useContentSize();
+  const innerWidth = Math.max(0, width - space.gutter * 2);
+  const basis = innerWidth >= MIN_TILE_WIDTH * 2 + GRID_GAP ? (innerWidth - GRID_GAP) / 2 : innerWidth;
   const t = useSharedValue(selected ? 1 : 0);
   useEffect(() => {
     t.set(withTiming(selected ? 1 : 0, { duration: 180, easing: motion.easeOut }));
   }, [selected, t]);
   const box = useAnimatedStyle(() => ({ backgroundColor: interpolateColor(t.get(), [0, 1], [color.surface, color.cta]) }));
   return (
-    <Animated.View style={{ flexBasis: '46%', flexGrow: 1 }} entering={FadeInDown.delay(80 + index * motion.stagger).duration(360)}>
+    <Animated.View style={{ flexBasis: basis, flexGrow: 1, flexShrink: 1, minWidth: 0, maxWidth: '100%' }} entering={FadeInDown.delay(80 + index * motion.stagger).duration(360)}>
       <Tap
         onPress={() => {
           haptic.selection();
@@ -100,6 +106,7 @@ export function GridTile({
         accessibilityRole="checkbox"
         accessibilityState={{ checked: selected }}
         accessibilityLabel={label}
+        style={{ flex: 1 }}
       >
         <Animated.View style={[styles.tile, box]}>
           <Text variant="headline" style={{ color: selected ? '#000' : color.text, fontSize: 16 }}>
@@ -218,7 +225,7 @@ export function Question({ title, subtitle }: { title: string; subtitle?: string
 
 export const onboardingStyles = StyleSheet.create({
   list: { gap: 10, paddingHorizontal: space.gutter, paddingBottom: space.xl },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingHorizontal: space.gutter, justifyContent: 'space-between' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: GRID_GAP, paddingHorizontal: space.gutter, justifyContent: 'space-between' },
 });
 
 const styles = StyleSheet.create({
@@ -234,8 +241,8 @@ const styles = StyleSheet.create({
   },
   box: { width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: '#6E6E73', alignItems: 'center', justifyContent: 'center' },
   boxOn: { backgroundColor: color.accent, borderColor: color.accent },
-  tile: { height: 150, borderRadius: radius.md, borderCurve: 'continuous', padding: space.md },
-  tileIcon: { position: 'absolute', right: 14, bottom: 14 },
+  tile: { flex: 1, minHeight: 150, borderRadius: radius.md, borderCurve: 'continuous', padding: space.md, justifyContent: 'space-between', gap: space.md },
+  tileIcon: { alignSelf: 'flex-end' },
   tick: { width: 2, borderRadius: 1 },
   tickLabel: { position: 'absolute', top: 30, left: -6, fontFamily: font.medium },
   needle: { position: 'absolute', bottom: 0, width: 3, height: 84, borderRadius: 2, backgroundColor: '#FFFFFF' },

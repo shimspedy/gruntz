@@ -8,6 +8,7 @@ import { useHealthStore } from '../store/useHealthStore';
 import { saveTrackedActivity, useReadinessStore } from '../store/useReadinessStore';
 import { useUserStore } from '../store/useUserStore';
 import type { RoutePoint } from '../types/activity';
+import { healthSyncAllowed, healthSyncGeneration, trackHealthImportWrite } from './healthSyncGate';
 
 export const healthPlatformName = Platform.OS === 'ios' ? 'Apple Health' : 'Health Connect';
 export type HealthAvailability = 'ready' | 'needsUpdate' | 'unavailable';
@@ -331,7 +332,10 @@ export function healthWriteDenied(): boolean {
  * False when nothing was allowed, or the request itself failed.
  */
 export async function connectHealth(): Promise<boolean> {
+  const epoch = connectionEpoch;
+  const generation = healthSyncGeneration();
   const access = await platformAdapter()?.requestAccess().catch((): HealthAccess => ({ read: false, write: false })) ?? { read: false, write: false };
+  if (!healthSyncAllowed() || connectionEpoch !== epoch || healthSyncGeneration() !== generation) return false;
   const granted = access.read || access.write;
   const store = useHealthStore.getState();
   store.setConnected(granted);
@@ -348,6 +352,16 @@ export function disconnectHealth() {
 }
 
 let running: Promise<HealthSyncResult | null> | null = null;
+let connectionEpoch = 0;
+// A reconnect must not revive work started under the previous permission choices.
+useHealthStore.subscribe((next, previous) => {
+  if (next.connected !== previous.connected || next.importWorkouts !== previous.importWorkouts || next.writeActivities !== previous.writeActivities) connectionEpoch++;
+});
+
+function trainingStoresReady(): boolean {
+  return healthSyncAllowed() && useHealthStore.persist.hasHydrated() && useReadinessStore.persist.hasHydrated()
+    && useUserStore.persist.hasHydrated() && !useUserStore.getState().hydrationFailed;
+}
 
 /** One sync at a time; a second caller gets the result of the one in flight. Null when not connected. */
 export function runHealthSync(): Promise<HealthSyncResult | null> {
@@ -356,17 +370,20 @@ export function runHealthSync(): Promise<HealthSyncResult | null> {
 }
 
 async function sync(): Promise<HealthSyncResult | null> {
+  if (!trainingStoresReady()) return null;
   const health = platformAdapter();
   if (!health || !useHealthStore.getState().connected) return null;
+  const epoch = connectionEpoch;
+  const generation = healthSyncGeneration();
   try {
     return await syncHealth({
       adapter: health,
       now: () => Date.now(),
       prefs: () => useHealthStore.getState(),
       sessions: () => useReadinessStore.getState().trackedSessions,
-      connected: () => useHealthStore.getState().connected,
+      connected: () => useHealthStore.getState().connected && connectionEpoch === epoch && healthSyncAllowed() && healthSyncGeneration() === generation,
       loadRoute: async (id) => await loadRoute(id) ?? undefined,
-      saveImported: saveTrackedActivity,
+      saveImported: (activity) => trackHealthImportWrite(saveTrackedActivity(activity)),
       credit: (activity) => useUserStore.getState().recordTrackedSession({
         id: activity.id, type: activity.type, miles: activity.distanceMiles, seconds: activity.durationSeconds,
       }),
@@ -386,10 +403,12 @@ const MIN_AUTOMATIC_INTERVAL_MS = 15 * 60_000;
 export function startHealthSyncLifecycle(): () => void {
   const maybeSync = () => {
     const { connected, lastSyncAt } = useHealthStore.getState();
-    if (connected && Date.now() - (lastSyncAt ?? 0) >= MIN_AUTOMATIC_INTERVAL_MS) void runHealthSync();
+    if (trainingStoresReady() && connected && Date.now() - (lastSyncAt ?? 0) >= MIN_AUTOMATIC_INTERVAL_MS) void runHealthSync();
   };
-  const unsubscribe = useHealthStore.persist.onFinishHydration(maybeSync);
-  if (useHealthStore.persist.hasHydrated()) maybeSync();
+  const unsubscribeHealth = useHealthStore.persist.onFinishHydration(maybeSync);
+  const unsubscribeUser = useUserStore.persist.onFinishHydration(maybeSync);
+  const unsubscribeReadiness = useReadinessStore.persist.onFinishHydration(maybeSync);
+  maybeSync();
   const subscription = AppState.addEventListener('change', (next) => { if (next === 'active') maybeSync(); });
-  return () => { unsubscribe(); subscription.remove(); };
+  return () => { unsubscribeHealth(); unsubscribeUser(); unsubscribeReadiness(); subscription.remove(); };
 }

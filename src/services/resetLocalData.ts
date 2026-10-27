@@ -16,11 +16,18 @@ import { useChromePrefs, useUiStore } from '../store/useUiStore';
 import { useHealthStore } from '../store/useHealthStore';
 import { deleteAllProfilePhotos } from './profilePhoto';
 import { clearRetentionAnalytics } from './retentionAnalytics';
+import { suspendHealthSyncForDataChange } from './healthSyncGate';
 
 /** Clear disk AND memory; otherwise the next store write resurrects deleted data. */
 export async function resetLocalData() {
   // A device-only reset must never upload an empty profile over the cloud backup.
   await pauseAutomaticBackups();
+  const resumeHealth = await suspendHealthSyncForDataChange();
+  try { await resetLocalDataNow(); }
+  finally { resumeHealth(); }
+}
+
+async function resetLocalDataNow() {
   const { stopActiveActivityForDataChange } = await import('./activityTracking');
   await stopActiveActivityForDataChange();
   setNotificationsEnabled(false);

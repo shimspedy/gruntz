@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -146,6 +146,7 @@ function CreateMenu({ bottom }: { bottom: number }) {
   const open = useUiStore((s) => s.createMenuOpen);
   const setMenu = useUiStore((s) => s.setCreateMenu);
   const { height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const actions = useCreateActions();
   const t = useSharedValue(0);
   const [mounted, setMounted] = React.useState(open);
@@ -173,10 +174,12 @@ function CreateMenu({ bottom }: { bottom: number }) {
       <Animated.View style={[StyleSheet.absoluteFill, styles.scrim, scrim]}>
         <Tap feedback="none" style={StyleSheet.absoluteFill} onPress={() => setMenu(false)} accessibilityLabel="Close menu" />
       </Animated.View>
-      <Animated.View style={[styles.menu, { maxHeight: height * 0.7, transformOrigin: 'bottom center' }, card]}>
-        {actions.map((a, i) => (
-          <MenuRow key={a.title} index={i} open={open} {...a} />
-        ))}
+      <Animated.View style={[styles.menu, { maxHeight: Math.max(0, Math.min(height * 0.7, height - bottom - insets.top - 12 - space.sm)), transformOrigin: 'bottom center' }, card]}>
+        <ScrollView style={styles.menuScroll} contentContainerStyle={styles.menuContent} bounces={false} keyboardShouldPersistTaps="handled">
+          {actions.map((a, i) => (
+            <MenuRow key={a.title} index={i} open={open} {...a} />
+          ))}
+        </ScrollView>
       </Animated.View>
     </View>
   );
@@ -255,10 +258,11 @@ const styles = StyleSheet.create({
     backgroundColor: color.surface,
     borderRadius: radius.xl + 4,
     borderCurve: 'continuous',
-    paddingVertical: space.sm,
     overflow: 'hidden',
     boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
   },
+  menuScroll: { flexGrow: 0 },
+  menuContent: { paddingVertical: space.sm },
   menuRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.lg, paddingVertical: 12, gap: 18 },
   menuIcon: {
     width: 60,

@@ -20,6 +20,11 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
  * Deleting the auth user cascades to `public.backups` via the foreign key
  * (`references auth.users(id) on delete cascade`), so the training snapshot goes
  * with the identity rather than being orphaned.
+ *
+ * Finish team handovers and remove the caller's private avatar first. Older app
+ * builds may not leave every team, and after leaving, client storage policies no
+ * longer permit avatar cleanup. These calls span services: another device joining
+ * a team concurrently is not transactionally blocked by this handler.
  */
 
 function json(body: unknown, status: number): Response {
@@ -46,16 +51,39 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const { data, error } = await caller.auth.getUser();
-  if (error || !data.user) return json({ error: 'not-signed-in' }, 401);
+  const identity = await caller.auth.getUser().catch(() => null);
+  const userId = identity?.data.user?.id;
+  if (identity?.error || !userId) return json({ error: 'not-signed-in' }, 401);
 
   const admin = createClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const { error: deleteError } = await admin.auth.admin.deleteUser(data.user.id);
-  if (deleteError) {
-    console.error('[delete-account] failed', deleteError.message);
+  try {
+    const { data: memberships, error: membershipError } = await caller
+      .from('team_members').select('team_id').eq('user_id', userId);
+    if (membershipError || !Array.isArray(memberships)
+      || memberships.some((membership) => typeof membership?.team_id !== 'string' || !membership.team_id)) {
+      return json({ error: 'team-handover-failed' }, 500);
+    }
+    for (const teamId of new Set(memberships.map((membership) => membership.team_id))) {
+      // The caller client retains the verified JWT, so auth.uid() inside the RPC
+      // identifies this athlete; a service-role RPC would not provide that identity.
+      const { error: leaveError } = await caller.rpc('leave_team', { p_team_id: teamId });
+      if (leaveError) return json({ error: 'team-handover-failed' }, 500);
+    }
+
+    const { error: avatarError } = await admin.storage
+      .from('team-avatars').remove([`${userId}.jpg`]);
+    if (avatarError) return json({ error: 'avatar-delete-failed' }, 500);
+
+    const { error: deleteError } = await admin.auth.admin.deleteUser(userId);
+    if (deleteError) {
+      console.error('[delete-account] failed', deleteError.message);
+      return json({ error: 'delete-failed' }, 500);
+    }
+  } catch (error) {
+    console.error('[delete-account] cleanup failed', error instanceof Error ? error.message : 'Unexpected failure');
     return json({ error: 'delete-failed' }, 500);
   }
 

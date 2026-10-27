@@ -29,8 +29,10 @@ const TABS: { id: Tab; label: string }[] = [{ id: 'chat', label: 'Chat' }, { id:
 export default function TeamScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { teamId, tab: initialTab } = useRoute<RouteProp<RootStackParamList, 'Team'>>().params;
-  const [state, setState] = useState<State>({ kind: 'loading' });
+  const params = useRoute<RouteProp<RootStackParamList, 'Team'>>().params;
+  const teamId = params?.teamId ?? '';
+  const initialTab = params?.tab;
+  const [state, setState] = useState<State>(teamId ? { kind: 'loading' } : { kind: 'gone' });
   const [tab, setTab] = useState<Tab>(initialTab ?? 'chat');
   const [busy, setBusy] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -40,6 +42,10 @@ export default function TeamScreen() {
   const [visibility, setVisibility] = useState<{ team: Team; description: string } | null>(null);
 
   const load = useCallback(async () => {
+    if (!teamId) {
+      setState({ kind: 'gone' });
+      return;
+    }
     await syncTeamStatus();
     const result = await fetchMyTeams();
     if (!alive.current) return;

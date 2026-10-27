@@ -3,6 +3,7 @@ import { AppState, Platform } from 'react-native';
 import { BACKUP_DEBOUNCE_MS, BACKUP_SCHEMA_VERSION, isBackupAvailable } from '../config/backup';
 import { applySnapshot, captureSnapshot, snapshotWorkoutCount, type BackupSnapshot } from './backupSnapshot';
 import { getSupabase } from './supabaseClient';
+import type { Session } from '@supabase/supabase-js';
 
 export type BackupMeta = {
   updatedAt: string;
@@ -40,6 +41,51 @@ const BACKUP_SYNCED_AT_KEY = '@gruntz_backup_synced_at';
 let operationQueue: Promise<unknown> = Promise.resolve();
 let suspended = 0;
 let pendingPush: ReturnType<typeof setTimeout> | null = null;
+let sessionGeneration = 0;
+let sessionChanges = 0;
+let localRestoreCommit: Promise<void> | null = null;
+let authMutationQueue: Promise<unknown> = Promise.resolve();
+
+type BackupClient = NonNullable<ReturnType<typeof getSupabase>>;
+type BackupContext = { session: Session; generation: number };
+
+/** OTP verification saves SDK session state itself, so auth writes must finish in order. */
+function serializeAuthMutation<T>(change: () => Promise<T>): Promise<T> {
+  const run = async () => {
+    await localRestoreCommit?.catch(() => undefined);
+    return change();
+  };
+  const next = authMutationQueue.then(run, run);
+  authMutationQueue = next.catch(() => undefined);
+  return next;
+}
+
+/** Invalidate remote requests immediately; never queue auth behind cloud backup I/O. */
+function changeSession<T>(change: (generation: number) => Promise<T>): Promise<T> {
+  const generation = ++sessionGeneration;
+  sessionChanges++;
+  return serializeAuthMutation(async () => {
+    try { return await change(generation); }
+    finally { sessionChanges--; }
+  });
+}
+
+async function backupContext(client: BackupClient): Promise<BackupContext | null> {
+  const generation = sessionGeneration;
+  if (sessionChanges) throw new Error('Account is changing. Try again after sign-in finishes.');
+  const { data, error } = await client.auth.getSession();
+  if (error) throw error;
+  if (sessionChanges || generation !== sessionGeneration) throw new Error('Account changed during backup.');
+  return data.session ? { session: data.session, generation } : null;
+}
+
+const contextGenerationIsCurrent = (context: BackupContext) => !sessionChanges && context.generation === sessionGeneration;
+
+async function contextIsCurrent(client: BackupClient, context: BackupContext): Promise<boolean> {
+  if (sessionChanges || context.generation !== sessionGeneration) return false;
+  const { data, error } = await client.auth.getSession();
+  return !error && !sessionChanges && context.generation === sessionGeneration && data.session?.user.id === context.session.user.id;
+}
 
 // Serialize uploads, restores and deletion so a late upload cannot undo a restore
 // or recreate a backup immediately after deletion.
@@ -153,7 +199,11 @@ function isBadCodeError(message: string): boolean {
   return text.includes('invalid') || text.includes('expired') || text.includes('token');
 }
 
-export async function verifySignInCode(email: string, code: string): Promise<VerifyResult> {
+export function verifySignInCode(email: string, code: string): Promise<VerifyResult> {
+  return changeSession((generation) => verifySignInCodeNow(email, code, generation));
+}
+
+async function verifySignInCodeNow(email: string, code: string, generation: number): Promise<VerifyResult> {
   const supabase = getSupabase();
   if (!supabase) return 'unavailable';
   const normalizedEmail = email.trim().toLowerCase();
@@ -162,7 +212,9 @@ export async function verifySignInCode(email: string, code: string): Promise<Ver
   try {
     let lastBadCode = false;
     for (const type of OTP_TYPES) {
+      if (generation !== sessionGeneration) return 'error';
       const { error } = await supabase.auth.verifyOtp({ email: normalizedEmail, token, type });
+      if (generation !== sessionGeneration) return 'error';
       if (!error) return 'signed-in';
 
       if (isBadCodeError(error.message)) {
@@ -181,7 +233,11 @@ export async function verifySignInCode(email: string, code: string): Promise<Ver
   }
 }
 
-export async function signOut(): Promise<void> {
+export function signOut(): Promise<void> {
+  return changeSession(signOutNow);
+}
+
+async function signOutNow(): Promise<void> {
   const supabase = getSupabase();
   if (!supabase) return;
   try {
@@ -209,23 +265,25 @@ export async function getSignedInEmail(): Promise<string | null> {
  * idempotent — running it twice costs a round trip and changes nothing.
  */
 export function pushBackup(appVersion?: string, options: { replaceExisting?: boolean } = {}): Promise<PushBackupResult> {
-  return serialize(() => pushBackupNow(appVersion, options));
+  const generation = sessionGeneration;
+  return serialize(() => generation !== sessionGeneration ? Promise.resolve<'error'>('error') : pushBackupNow(appVersion, options));
 }
 
 async function pushBackupNow(appVersion: string | undefined, options: { replaceExisting?: boolean }): Promise<PushBackupResult> {
   const supabase = getSupabase();
   if (!supabase) return 'unavailable';
   try {
-    const { data } = await supabase.auth.getSession();
-    const userId = data.session?.user.id;
-    if (!userId) return 'signed-out';
+    const context = await backupContext(supabase);
+    if (!context) return 'signed-out';
+    const { session } = context;
+    const userId = session.user.id;
 
     if (suspended) return 'needs-review';
     const owner = await AsyncStorage.getItem(BACKUP_OWNER_KEY);
     if (owner !== userId && !options.replaceExisting) {
       if (owner === 'paused') return 'needs-review';
       const { data: existing, error: lookupError } = await supabase.from('backups')
-        .select('user_id').eq('user_id', userId).maybeSingle();
+        .select('user_id').setHeader('Authorization', `Bearer ${session.access_token}`).eq('user_id', userId).maybeSingle();
       // A failed lookup is never evidence that overwriting the cloud is safe.
       if (lookupError) return 'error';
       if (existing) return 'needs-review';
@@ -236,7 +294,7 @@ async function pushBackupNow(appVersion: string | undefined, options: { replaceE
       const syncedAt = Date.parse((await AsyncStorage.getItem(BACKUP_SYNCED_AT_KEY)) ?? '');
       if (Number.isFinite(syncedAt)) {
         const { data: existing, error: lookupError } = await supabase.from('backups')
-          .select('updated_at').eq('user_id', userId).maybeSingle();
+          .select('updated_at').setHeader('Authorization', `Bearer ${session.access_token}`).eq('user_id', userId).maybeSingle();
         if (lookupError) return 'error';
         const cloudAt = Date.parse(existing?.updated_at ?? '');
         if (Number.isFinite(cloudAt) && cloudAt > syncedAt) return 'needs-review';
@@ -244,6 +302,8 @@ async function pushBackupNow(appVersion: string | undefined, options: { replaceE
     }
     const snapshot = await captureSnapshot();
     if (!Object.keys(snapshot.stores).length) return 'error';
+    const trialStartedAt = await readLocalTrialStart();
+    if (!await contextIsCurrent(supabase, context) || !contextGenerationIsCurrent(context)) return 'error';
     const { data: saved, error } = await supabase.from('backups').upsert({
       user_id: userId,
       payload: snapshot,
@@ -253,13 +313,14 @@ async function pushBackupNow(appVersion: string | undefined, options: { replaceE
       workout_count: snapshotWorkoutCount(snapshot),
       // Sent outside the payload on purpose — see the migration. Entitlement is
       // never backed up; only when the trial began.
-      trial_started_at: await readLocalTrialStart(),
-    }, { onConflict: 'user_id' }).select('updated_at').maybeSingle();
+      trial_started_at: trialStartedAt,
+    }, { onConflict: 'user_id' }).setHeader('Authorization', `Bearer ${session.access_token}`).select('updated_at').maybeSingle();
 
     if (error) {
       if (__DEV__) console.warn('[backup] pushBackup failed', error);
       return 'error';
     }
+    if (!await contextIsCurrent(supabase, context) || !contextGenerationIsCurrent(context)) return 'error';
     await AsyncStorage.setItem(BACKUP_OWNER_KEY, userId);
     if (saved?.updated_at) await AsyncStorage.setItem(BACKUP_SYNCED_AT_KEY, saved.updated_at);
     else await AsyncStorage.removeItem(BACKUP_SYNCED_AT_KEY);
@@ -275,11 +336,15 @@ export async function fetchBackupMeta(): Promise<BackupMeta | null> {
   const supabase = getSupabase();
   if (!supabase) return null;
   try {
+    const context = await backupContext(supabase);
+    if (!context) return null;
     const { data, error } = await supabase
       .from('backups')
       .select('updated_at, workout_count, device_label, app_version, trial_started_at')
+      .setHeader('Authorization', `Bearer ${context.session.access_token}`)
+      .eq('user_id', context.session.user.id)
       .maybeSingle();
-    if (error || !data) return null;
+    if (error || !data || !await contextIsCurrent(supabase, context) || !contextGenerationIsCurrent(context)) return null;
     return {
       updatedAt: data.updated_at as string,
       workoutCount: (data.workout_count as number) ?? 0,
@@ -300,18 +365,21 @@ export async function fetchBackupMeta(): Promise<BackupMeta | null> {
  * to restart with confidence rather than hope.
  */
 export function restoreBackup(): Promise<RestoreBackupResult> {
+  const generation = sessionGeneration;
   const resume = suspendAutomaticBackups();
-  return serialize(restoreBackupNow).finally(resume);
+  return serialize(() => generation !== sessionGeneration ? Promise.resolve<'error'>('error') : restoreBackupNow()).finally(resume);
 }
 
 async function restoreBackupNow(): Promise<RestoreBackupResult> {
   const supabase = getSupabase();
   if (!supabase) return 'unavailable';
   try {
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (!sessionData.session?.user.id) return 'signed-out';
+    const context = await backupContext(supabase);
+    if (!context) return 'signed-out';
 
-    const { data, error } = await supabase.from('backups').select('payload, updated_at').maybeSingle();
+    const { data, error } = await supabase.from('backups').select('payload, updated_at')
+      .setHeader('Authorization', `Bearer ${context.session.access_token}`)
+      .eq('user_id', context.session.user.id).maybeSingle();
     if (error) {
       if (__DEV__) console.warn('[backup] restoreBackup fetch failed', error);
       return 'error';
@@ -321,9 +389,17 @@ async function restoreBackupNow(): Promise<RestoreBackupResult> {
     const snapshot = data.payload as BackupSnapshot;
     if (snapshot.schema_version > BACKUP_SCHEMA_VERSION) return 'too-new';
 
-    await applySnapshot(snapshot);
-    await AsyncStorage.setItem(BACKUP_OWNER_KEY, sessionData.session.user.id);
+    // Recheck synchronously after the async identity read, then publish the local
+    // commit before yielding. A session intent cannot slip into that microtask gap.
+    if (!await contextIsCurrent(supabase, context) || !contextGenerationIsCurrent(context)) return 'error';
+    const commit = Promise.resolve().then(() => applySnapshot(snapshot));
+    localRestoreCommit = commit;
+    try { await commit; }
+    finally { if (localRestoreCommit === commit) localRestoreCommit = null; }
+    if (!await contextIsCurrent(supabase, context) || !contextGenerationIsCurrent(context)) return 'error';
+    await AsyncStorage.setItem(BACKUP_OWNER_KEY, context.session.user.id);
     if (data.updated_at) await AsyncStorage.setItem(BACKUP_SYNCED_AT_KEY, data.updated_at);
+    else await AsyncStorage.removeItem(BACKUP_SYNCED_AT_KEY);
     return 'restored';
   } catch (error) {
     if (__DEV__) console.warn('[backup] restoreBackup threw', error);
@@ -333,23 +409,28 @@ async function restoreBackupNow(): Promise<RestoreBackupResult> {
 
 /** Delete the stored backup. The athlete's local training is untouched. */
 export function deleteBackup(): Promise<'deleted' | 'signed-out' | 'unavailable' | 'error'> {
+  const generation = sessionGeneration;
   const resume = suspendAutomaticBackups();
-  return serialize(deleteBackupNow).finally(resume);
+  return serialize(() => generation !== sessionGeneration ? Promise.resolve<'error'>('error') : deleteBackupNow()).finally(resume);
 }
 
 async function deleteBackupNow(): Promise<'deleted' | 'signed-out' | 'unavailable' | 'error'> {
   const supabase = getSupabase();
   if (!supabase) return 'unavailable';
   try {
-    const { data } = await supabase.auth.getSession();
-    const userId = data.session?.user.id;
-    if (!userId) return 'signed-out';
+    const context = await backupContext(supabase);
+    if (!context) return 'signed-out';
+    const userId = context.session.user.id;
+    if (!await contextIsCurrent(supabase, context) || !contextGenerationIsCurrent(context)) return 'error';
     await AsyncStorage.setItem(BACKUP_OWNER_KEY, 'paused');
-    const { error } = await supabase.from('backups').delete().eq('user_id', userId);
+    if (!await contextIsCurrent(supabase, context) || !contextGenerationIsCurrent(context)) return 'error';
+    const { error } = await supabase.from('backups').delete()
+      .setHeader('Authorization', `Bearer ${context.session.access_token}`).eq('user_id', userId);
     if (error) {
       if (__DEV__) console.warn('[backup] deleteBackup failed', error);
       return 'error';
     }
+    if (!await contextIsCurrent(supabase, context) || !contextGenerationIsCurrent(context)) return 'error';
     return 'deleted';
   } catch {
     return 'error';
@@ -376,20 +457,48 @@ export async function deleteAccount(): Promise<'deleted' | 'signed-out' | 'unava
   if (!supabase) return 'unavailable';
   try {
     const { data } = await supabase.auth.getSession();
-    if (!data.session?.user.id) return 'signed-out';
+    const session = data.session;
+    if (!session?.user.id) return 'signed-out';
 
-    // Leave any team first. Deleting the account cascades, and a leader's team would go
-    // with it; leaving hands the team to the next member instead. Best effort: someone
-    // who is not in a team, or a failed call, must not block deleting the account.
-    await supabase.rpc('leave_team').then(() => undefined, () => undefined);
+    // The legacy no-argument RPC leaves only the oldest team. Hand over every
+    // membership before deleting an owner, whose remaining teams would cascade.
+    const { data: memberships, error: membershipError } = await supabase.from('team_members')
+      .select('team_id').eq('user_id', session.user.id)
+      .setHeader('Authorization', `Bearer ${session.access_token}`);
+    if (membershipError || !Array.isArray(memberships)) return 'error';
+    for (const teamId of new Set(memberships.map((membership) => membership.team_id as string))) {
+      const { error } = await supabase.rpc('leave_team', { p_team_id: teamId })
+        .setHeader('Authorization', `Bearer ${session.access_token}`);
+      if (error) return 'error'; // Keep the account for a safe retry if handover fails.
+    }
+    const { data: current } = await supabase.auth.getSession();
+    if (current.session?.user.id !== session.user.id) return 'error';
 
-    const { data: result, error } = await supabase.functions.invoke('delete-account', { method: 'POST' });
+    // Bind the verified server action to the account the athlete confirmed, even
+    // if another sign-in happens while the function request is being dispatched.
+    const { data: result, error } = await supabase.functions.invoke('delete-account', {
+      method: 'POST', headers: { Authorization: `Bearer ${session.access_token}` },
+    });
     if (error || result?.ok !== true) {
       if (__DEV__) console.warn('[backup] deleteAccount failed', error);
       return 'error';
     }
 
-    await supabase.auth.signOut({ scope: 'local' });
+    // Server deletion is already committed. Cleanup failure cannot undo it, and
+    // must not sign out a replacement account or report that deletion failed.
+    try {
+      // Maintenance is ordered with user auth writes, but must not supersede a
+      // newer login intent. Inspect the identity only once this turn owns the queue.
+      sessionChanges++;
+      await serializeAuthMutation(async () => {
+        try {
+          const { data: after } = await supabase.auth.getSession();
+          if (after.session?.user.id === session.user.id) await supabase.auth.signOut({ scope: 'local' });
+        } finally { sessionChanges--; }
+      });
+    } catch (cleanupError) {
+      if (__DEV__) console.warn('[backup] deleted account local cleanup failed', cleanupError);
+    }
     return 'deleted';
   } catch (error) {
     if (__DEV__) console.warn('[backup] deleteAccount threw', error);

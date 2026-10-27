@@ -26,7 +26,7 @@ import { useContentSize } from '../ui/useContentSize';
 
 export default function ProgramDetailScreen() {
   const navigation = useNavigation();
-  const { params } = useRoute<RouteProp<RootStackParamList, 'ProgramDetail'>>();
+  const params = useRoute<RouteProp<RootStackParamList, 'ProgramDetail'>>().params ?? { programId: '' };
   const insets = useSafeAreaInsets();
   const { width } = useContentSize();
   const current = useProgramStore((s) => s.selectedProgram);

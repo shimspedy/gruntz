@@ -22,10 +22,12 @@ function permissionEnvironment(overrides = {}) {
   };
 }
 
-test('iOS Always upgrade waits until the preceding foreground sheet is dismissed', async () => {
+test('iOS Always upgrade waits until the preceding foreground sheet is dismissed', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'setInterval', 'Date'] });
   const env = permissionEnvironment(); env.setState('inactive');
   const result = requestActivityBackgroundPermission(env.deps);
-  await new Promise((resolve) => setTimeout(resolve, 10)); assert.equal(env.requests, 0);
+  await Promise.resolve();
+  t.mock.timers.tick(10); assert.equal(env.requests, 0);
   env.grant(); env.setState('active');
   assert.equal(await result, true); assert.equal(env.requests, 1); assert.equal(env.listeners.size, 0);
 });

@@ -182,17 +182,25 @@ type PurchaseRunner = () => Promise<{
   message?: string;
 }>;
 
+// A startup fetch can finish after a purchase or SDK listener delivered newer info.
+// Native requestDateMillis retains precision that requestDate's ISO string can omit.
+// Operation order resolves equal/missing timestamps without blocking same-time purchases.
+let latestCustomerInfoAt: number | null = null;
+let entitlementOperation = 0;
+let latestAppliedOperation = 0;
+
 async function runPurchase(
   set: (partial: Partial<SubscriptionState>) => void,
   runner: PurchaseRunner,
 ): Promise<PurchaseStatus> {
+  const operation = ++entitlementOperation;
   set({ isLoading: true, lastError: null });
 
   try {
     const result = await runner();
 
     if (result.customerInfo) {
-      syncEntitlementState(set, result.customerInfo, true);
+      syncEntitlementState(set, result.customerInfo, true, operation);
     }
 
     const configured = isRevenueCatAvailable();
@@ -238,8 +246,18 @@ function syncEntitlementState(
   set: (partial: Partial<SubscriptionState>) => void,
   customerInfo: Awaited<ReturnType<typeof loadRevenueCatState>>['customerInfo'],
   known: boolean,
+  operation: number,
 ) {
   if (!known) return;
+  const milliseconds = (customerInfo as { requestDateMillis?: unknown } | null)?.requestDateMillis;
+  const requestedAt = typeof milliseconds === 'number' && Number.isFinite(milliseconds)
+    ? milliseconds : Date.parse(customerInfo?.requestDate ?? '');
+  if (Number.isFinite(requestedAt) && latestCustomerInfoAt !== null) {
+    if (latestCustomerInfoAt !== null && requestedAt < latestCustomerInfoAt) return;
+    if (requestedAt === latestCustomerInfoAt && operation < latestAppliedOperation) return;
+  } else if (operation < latestAppliedOperation) return;
+  if (Number.isFinite(requestedAt)) latestCustomerInfoAt = requestedAt;
+  latestAppliedOperation = operation;
   const entitlement = getEntitlementAccess(customerInfo);
   const active = entitlement?.isActive === true;
   set({
@@ -292,6 +310,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       },
 
       initialize: async () => {
+        const operation = ++entitlementOperation;
         if (useUserStore.getState().isOnboarded) {
           get().startTrialIfNeeded();
         }
@@ -301,14 +320,14 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         try {
           // Always attach the listener so mid-trial subscriptions are detected
           await addRevenueCatCustomerInfoListener((customerInfo) => {
-            syncEntitlementState(set, customerInfo, true);
+            syncEntitlementState(set, customerInfo, true, ++entitlementOperation);
           });
 
           // A listener does not trigger a fetch. Always check existing purchases,
           // including during the app trial; a returning subscriber may have paid
           // on another device or while the app was closed.
           const state = await loadRevenueCatState({ includeOfferings: false });
-          syncEntitlementState(set, state.customerInfo, state.customerInfoKnown);
+          syncEntitlementState(set, state.customerInfo, state.customerInfoKnown, operation);
           set({
             isConfigured: state.configured,
           });
@@ -330,11 +349,12 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       },
 
       loadOffering: async () => {
+        const operation = ++entitlementOperation;
         set({ isLoading: true, lastError: null });
 
         try {
           const state = await loadRevenueCatState({ includeOfferings: true });
-          syncEntitlementState(set, state.customerInfo, state.customerInfoKnown);
+          syncEntitlementState(set, state.customerInfo, state.customerInfoKnown, operation);
           set({
             currentOffering: state.currentOffering,
             isConfigured: state.configured,
@@ -360,13 +380,14 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       purchaseAnnual: async () => runPurchase(set, purchaseAnnualRevenueCatPackage),
 
       restoreAccess: async () => {
+        const operation = ++entitlementOperation;
         set({ isLoading: true, lastError: null });
 
         try {
           const result = await restoreRevenueCatPurchases();
 
           if (result.customerInfo) {
-            syncEntitlementState(set, result.customerInfo, true);
+            syncEntitlementState(set, result.customerInfo, true, operation);
           }
 
           const configured = isRevenueCatAvailable();
@@ -402,10 +423,11 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       },
 
       openCustomerCenter: async () => {
+        const operation = ++entitlementOperation;
         set({ isLoading: true, lastError: null });
         try {
           const result = await presentRevenueCatCustomerCenter();
-          if (result.customerInfo) syncEntitlementState(set, result.customerInfo, true);
+          if (result.customerInfo) syncEntitlementState(set, result.customerInfo, true, operation);
           if (result.status === 'presented') return 'presented';
           // Callers already use the returned status to decide whether to fall
           // back. Report a successful fallback so it is not opened a second time.
