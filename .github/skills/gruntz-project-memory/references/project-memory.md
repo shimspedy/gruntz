@@ -8,6 +8,8 @@
 ## UX Rules
 - Keep the app feeling game-like, sharp, and tactical rather than casual fitness.
 - The mission flow is the product. Supporting screens should reinforce it, not compete with it.
+- Onboarding practice is isolated from workout history, streaks, achievements and XP; entering core training does not require an onboarding purchase.
+- Military setup recommends the matching built-in program first. Base Camp's displayed frequency must use its adaptive schedule, including the onboarding draft profile.
 - Avoid blank-screen `return null` behavior for broken route params or missing content. Prefer explicit fallback states with a recovery action.
 - For tab-root screens, bottom scroll padding must account for the real tab bar height and safe-area inset. Do not rely on small fixed padding values under an absolute tab bar.
 - For exercises with sets and rest, behave like a gym app:
@@ -19,6 +21,8 @@
 ## Current Workout Logging Rules
 - Partial set progress should display as in-progress, not complete.
 - Blank sets must not be savable.
+- Improvement comparisons and PR XP require verified matching performed-movement metadata; shared media/history keys and unverified legacy records cannot establish equivalence.
+- Readiness choices apply only to a newly started session. Shorter/recovery sessions must describe the actual prescription and completion credit honestly.
 - Partial working sets belong in history and mission rep totals; only complete working-set targets mark a plan day done.
 - Prior weights must be converted from their recorded lb/kg unit before prefilling a new workout. Do not relabel already logged sets when swapping exercises.
 - Rest overlays should mask the screen and return the user to the same exercise if more sets remain.
@@ -74,6 +78,10 @@
 - Monthly and annual Pro have the same App Store subscription service level (1); changing billing duration must not imply a different feature tier.
 
 ## Release And Platform Notes
+- Production iOS builds use the pinned `macos-tahoe-26.6-xcode-27.1` EAS image with the existing custom scene-lifecycle plugin. Do not layer Expo's automatic scene migration over that custom AppDelegate/manifest.
+- Before a new upload, read the live App Store version and highest build number. EAS remote versioning is authoritative; local/manual uploads can leave its counter behind. Preserve the existing store release mode, reviewer contact, privacy declarations and screenshots.
+- EAS Submit uploads a binary; App Review submission is a separate action. Use a durable journal and read-back reconciliation around version/review creation to avoid duplicates after unknown responses.
+- Expo tooling security uses scoped plist/UUID/Zod overrides, a guarded first-party Zod bounds patch, and an explicitly identified local Forge RSA backport. Include `vendor/node-forge` in build archives and run first-party postinstall even when dependency scripts are skipped. Keep the fork's provenance/license and installed-consumer regressions; replace it with a verified upstream fixed release when available.
 - Android activity history uses two checksummed document-file revisions to avoid AsyncStorage SQLite row and database limits. Readiness backup, restore and reset I/O must use `readinessStorage`; await `clearReadinessPersistence()` for deletion because Zustand's `persist.clearStorage()` returns void.
 - RevenueCat and App Store Connect configuration can fail independently; verify dashboard mapping before assuming app-side purchase bugs.
 - Expo/React Native iOS builds commonly show Hermes script warnings; these are noise unless accompanied by real build errors.

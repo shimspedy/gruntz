@@ -25,7 +25,16 @@
       "autoIncrement": true,
       "ios": {
         "buildConfiguration": "Release",
-        "image": "latest"
+        "image": "macos-tahoe-26.6-xcode-27.1"
+      }
+    },
+    "release-simulator": {
+      "extends": "production",
+      "autoIncrement": false,
+      "distribution": "internal",
+      "environment": "production",
+      "ios": {
+        "simulator": true
       }
     }
   },
