@@ -78,6 +78,7 @@
   "devDependencies": {
     "@types/react": "~19.2.4",
     "canvas": "^3.2.3",
+    "deepmerge": "file:vendor/deepmerge",
     "node-forge": "file:vendor/node-forge",
     "typescript": "~6.0.3"
   },
@@ -89,7 +90,8 @@
     "@expo/cli": {
       "zod": "4.6.7"
     },
-    "node-forge": "$node-forge"
+    "node-forge": "$node-forge",
+    "deepmerge": "$deepmerge"
   },
   "private": true
 }
