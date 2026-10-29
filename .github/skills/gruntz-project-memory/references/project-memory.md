@@ -82,6 +82,7 @@
 - Monthly and annual Pro have the same App Store subscription service level (1); changing billing duration must not imply a different feature tier.
 
 ## Release And Platform Notes
+- As of October 28, **1.13.1 (50)** from `069e8fb` is submitted and **WAITING_FOR_REVIEW**, preserving **AFTER_APPROVAL**. Both production iPhone/Watch signatures and App Store profiles were verified; exact build/version/review IDs and evidence are in `docs/audit-2026-10-26.md`. The prior **1.13 (49)** was already live, so this upload required a new patch version. Private journal: `~/.appstoreconnect/release-journals/gruntz-1.13.1-review.json`.
 - Production iOS builds use the pinned `macos-tahoe-26.6-xcode-27.1` EAS image with the existing custom scene-lifecycle plugin. Do not layer Expo's automatic scene migration over that custom AppDelegate/manifest.
 - Before a new upload, read the live App Store version and highest build number. EAS remote versioning is authoritative; local/manual uploads can leave its counter behind. Preserve the existing store release mode, reviewer contact, privacy declarations and screenshots.
 - Non-interactive API-key signing also needs `EXPO_APPLE_TEAM_ID` and `EXPO_APPLE_TEAM_TYPE=INDIVIDUAL` alongside the `EXPO_ASC_*` key settings. Phone and Watch share the distribution certificate but require separate App Store provisioning profiles; configure both before queuing a build, because a credential failure can still consume its remote build number.
