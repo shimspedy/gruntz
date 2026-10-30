@@ -291,6 +291,9 @@ function OnboardingFlow() {
         component={PaywallScreen}
         options={{ animation: 'fade', gestureEnabled: false }}
       />
+      {/* Restoring onto a new phone, before any setup. A completed restore flips
+          isOnboarded and this whole stack is replaced by the app. */}
+      <OnboardingStack.Screen name="Backup" component={BackupScreen} />
     </OnboardingStack.Navigator>
   );
 }

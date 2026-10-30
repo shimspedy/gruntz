@@ -1,5 +1,6 @@
 import React from 'react';
 import { Alert, View, StyleSheet, Platform } from 'react-native';
+import { reportError } from '../services/crashReporting';
 import { resetTransientState } from '../services/resetLocalData';
 import { Button } from '../ui/Button';
 import { LogoMark } from '../ui/Logo';
@@ -31,6 +32,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
+    // The boundary swallows the error, so the global handler never sees it.
+    reportError(error, info.componentStack);
     if (__DEV__) {
       console.error('[ErrorBoundary]', error, info.componentStack);
     }

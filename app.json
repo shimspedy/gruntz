@@ -107,7 +107,8 @@
       ],
       "expo-sharing",
       "@maplibre/maplibre-react-native",
-      "@bacons/apple-targets"
+      "@bacons/apple-targets",
+      "@sentry/react-native"
     ],
     "extra": {
       "eas": {

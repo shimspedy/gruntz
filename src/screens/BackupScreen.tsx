@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import { isBackupAvailable, OTP_CODE_LENGTH } from '../config/backup';
@@ -20,6 +20,7 @@ import {
 } from '../services/backup';
 import { verifySignInCode } from '../services/backup';
 import { flushReadinessPersistence, useReadinessStore } from '../store/useReadinessStore';
+import { useUserStore } from '../store/useUserStore';
 import { Button } from '../ui/Button';
 import { EmptyState, Group, NavHeader, Row } from '../ui/Layout';
 import { Text } from '../ui/Text';
@@ -35,9 +36,14 @@ import { relativeTime } from '../utils/relativeTime';
  * does not lose a training history, and it is reached from Profile — after someone
  * already has something worth keeping, never before. The app is fully usable, for
  * as long as anyone likes, without ever opening it.
+ *
+ * The one exception is the first setup screen, which opens it with `onboarding` so
+ * someone on a new phone can restore before answering any questions. That mode only
+ * signs in and restores: this phone has nothing worth backing up yet.
  */
 export default function BackupScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const onboarding = useRoute<RouteProp<RootStackParamList, 'Backup'>>().params?.onboarding === true;
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [stage, setStage] = useState<'email' | 'code'>('email');
@@ -60,7 +66,7 @@ export default function BackupScreen() {
   if (!isBackupAvailable()) {
     return (
       <View style={styles.screen}>
-        <NavHeader title="Back up progress" />
+        <NavHeader title={onboarding ? 'Restore progress' : 'Back up progress'} />
         <EmptyState
           icon="alert"
           title="Backup isn’t available"
@@ -155,6 +161,21 @@ export default function BackupScreen() {
       // overwriting the server's earlier start with this device's fresh one.
       await reconcileTrialStart();
       await refresh();
+      if (onboarding) {
+        // Nothing on a phone mid-setup is worth uploading; go straight to the restore.
+        const found = await fetchBackupMeta();
+        setBusy(false);
+        if (found) {
+          confirmRestore(found);
+        } else {
+          Alert.alert(
+            'No backup on this account',
+            'You’re signed in, so the training you log from now on will back up to this email. Let’s set up your plan.',
+            [{ text: 'Continue', onPress: () => navigation.goBack() }],
+          );
+        }
+        return;
+      }
       // First sign-in on a device that has been training: get it safe immediately,
       // rather than waiting for the next debounced push.
       const backupResult = await pushBackup();
@@ -202,17 +223,19 @@ export default function BackupScreen() {
     Alert.alert('Backup didn’t finish', 'We couldn’t reach the server. Nothing on this device has changed.');
   };
 
-  const confirmRestore = () => {
+  const confirmRestore = (backup: BackupMeta | null = meta) => {
     Alert.alert(
       'Restore from backup?',
-      meta
-        ? `This replaces everything on this phone with the backup from ${relativeTime(meta.updatedAt)} (${meta.workoutCount} workouts). Anything logged here since then will be lost.`
+      onboarding && backup
+        ? `This brings back your backup from ${relativeTime(backup.updatedAt)} (${backup.workoutCount} workouts), with your plan, streak and history.`
+        : backup
+        ? `This replaces everything on this phone with the backup from ${relativeTime(backup.updatedAt)} (${backup.workoutCount} workouts). Anything logged here since then will be lost.`
         : 'This replaces everything on this phone with your backup.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Replace my data',
-          style: 'destructive',
+          text: onboarding ? 'Restore' : 'Replace my data',
+          style: onboarding ? 'default' : 'destructive',
           onPress: () => void doRestore(),
         },
       ],
@@ -225,6 +248,9 @@ export default function BackupScreen() {
     setBusy(false);
     if (result === 'restored') {
       haptic.success();
+      // A restored profile that finished setup swaps onboarding for the app on its own;
+      // one that never did returns to setup with its history in place.
+      if (onboarding && !useUserStore.getState().isOnboarded) navigation.goBack();
       Alert.alert(
         'Progress restored',
         'Your training history, plan and streak are ready on this phone.',
@@ -318,9 +344,27 @@ export default function BackupScreen() {
 
   return (
     <View style={styles.screen}>
-      <NavHeader title="Back up progress" />
+      <NavHeader title={onboarding ? 'Restore progress' : 'Back up progress'} />
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-        {signedInEmail ? (
+        {signedInEmail && onboarding ? (
+          <>
+            <Group style={styles.group}>
+              <Row icon="check" title="Signed in" value={signedInEmail} />
+              <Row icon="restart" title="Last backup" value={meta ? relativeTime(meta.updatedAt) : 'None yet'} />
+            </Group>
+            <Text variant="callout" tone="secondary" style={styles.note}>
+              {meta
+                ? `Your backup has ${meta.workoutCount} workouts. Restore it to pick up where you left off.`
+                : 'There’s no backup on this account yet. Set up your plan and new training will back up to this email.'}
+            </Text>
+            {meta ? <Button title="Restore my progress" onPress={() => confirmRestore()} loading={busy} /> : null}
+            <View style={styles.spacer} />
+            <Button title="Set up a new plan instead" variant="secondary" onPress={() => navigation.goBack()} disabled={busy} />
+            <Group style={styles.group}>
+              <Row icon="back" title="Sign out" onPress={busy ? undefined : () => void signOut().then(refresh)} />
+            </Group>
+          </>
+        ) : signedInEmail ? (
           <>
             <Group style={styles.group}>
               <Row icon="check" title="Signed in" value={signedInEmail} />
@@ -358,7 +402,7 @@ export default function BackupScreen() {
             <Button
               title="Restore on this phone"
               variant="secondary"
-              onPress={confirmRestore}
+              onPress={() => confirmRestore()}
               disabled={busy || !meta}
             />
 
@@ -373,13 +417,12 @@ export default function BackupScreen() {
         ) : (
           <>
             <Text variant="title" style={styles.heading}>
-              Keep your training if you lose your phone
+              {onboarding ? 'Pick up where you left off' : 'Keep your training if you lose your phone'}
             </Text>
             <Text variant="callout" tone="secondary" style={styles.note}>
-              Gruntz works completely offline and always will — everything you log is saved on
-              this phone. Adding your email means there’s a copy to restore from if this phone
-              is lost, broken or replaced. No password or ads. GPS routes stay on this device
-              unless you separately turn on route backup after signing in.
+              {onboarding
+                ? 'Enter the email you used for backup on your old phone. We’ll email you a code, then bring back your plan, streak and training history. No password needed.'
+                : 'Gruntz works completely offline and always will — everything you log is saved on this phone. Adding your email means there’s a copy to restore from if this phone is lost, broken or replaced. No password or ads. GPS routes stay on this device unless you separately turn on route backup after signing in.'}
             </Text>
 
             {stage === 'email' ? (

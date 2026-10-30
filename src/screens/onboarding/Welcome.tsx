@@ -5,6 +5,7 @@ import { Image } from 'expo-image';
 import Animated, { interpolate, useAnimatedStyle, useSharedValue, withDelay, withTiming, type SharedValue } from 'react-native-reanimated';
 import { Button } from '../../ui/Button';
 import { LogoMark } from '../../ui/Logo';
+import { Tap } from '../../ui/Pressable';
 import { Text } from '../../ui/Text';
 import { color, motion, space } from '../../ui/tokens';
 import { useContentSize } from '../../ui/useContentSize';
@@ -16,7 +17,7 @@ const SLIDES = [
   { title: 'Reach your goal', body: 'Plans matched to your goals, days and gear — with military test prep if that is what you are training for.' },
 ];
 
-export function Welcome({ onStart }: { onStart: () => void }) {
+export function Welcome({ onStart, onRestore }: { onStart: () => void; onRestore?: () => void }) {
   const { width, height } = useContentSize();
   // The phone takes the space between the copy and the footer, capped so it never crowds small screens.
   const phoneHeight = Math.min(500, Math.round(height * 0.5));
@@ -118,6 +119,13 @@ export function Welcome({ onStart }: { onStart: () => void }) {
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + space.xs }]}>
           <Button title="Get started" caps onPress={onStart} />
+          {onRestore ? (
+            <Tap feedback="opacity" onPress={onRestore} style={styles.restore} accessibilityRole="button" hitSlop={8}>
+              <Text variant="callout" tone="secondary" align="center">
+                Already use Gruntz? <Text variant="callout" style={styles.restoreLink}>Restore your progress</Text>
+              </Text>
+            </Tap>
+          ) : null}
           <Text variant="caption" tone="tertiary" align="center" style={styles.disclaimer}>
             Talk to a healthcare provider before starting a new exercise program. For ages 13 and up.
           </Text>
@@ -168,6 +176,8 @@ const styles = StyleSheet.create({
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: space.lg },
   dot: { height: 8, borderRadius: 4, backgroundColor: '#FFFFFF' },
   footer: { paddingHorizontal: space.md },
+  restore: { marginTop: space.md, paddingVertical: 6, alignSelf: 'center' },
+  restoreLink: { color: color.accent },
   disclaimer: { marginTop: 14, paddingHorizontal: space.lg, lineHeight: 15 },
   phone: {
     padding: 4,

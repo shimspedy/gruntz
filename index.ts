@@ -1,4 +1,6 @@
 import { registerRootComponent } from 'expo';
+// First import, so a crash while the rest of the app loads is still reported.
+import './src/services/crashReporting';
 
 import './src/services/activityTracking';
 import App from './App';

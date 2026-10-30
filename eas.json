@@ -26,6 +26,9 @@
       "ios": {
         "buildConfiguration": "Release",
         "image": "macos-tahoe-26.6-xcode-27.1"
+      },
+      "env": {
+        "SENTRY_ALLOW_FAILURE": "true"
       }
     },
     "release-simulator": {

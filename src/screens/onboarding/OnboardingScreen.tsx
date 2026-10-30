@@ -1,6 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BackHandler, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { isBackupAvailable } from '../../config/backup';
+import type { OnboardingStackParamList } from '../../types/navigation';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -91,6 +95,7 @@ export default function OnboardingScreen() {
 }
 
 function OnboardingFlow() {
+  const navigation = useNavigation<NativeStackNavigationProp<OnboardingStackParamList>>();
   const saved = useRef(useOnboardingDraftStore.getState().draft).current;
   const insets = useSafeAreaInsets();
   const [goals, setGoals] = useState<string[]>(saved?.goals ?? []);
@@ -229,7 +234,7 @@ function OnboardingFlow() {
     useUserStore.getState().setOnboarded(true);
   };
 
-  if (step === 'welcome') return <Welcome onStart={next} />;
+  if (step === 'welcome') return <Welcome onStart={next} onRestore={isBackupAvailable() ? () => navigation.navigate('Backup', { onboarding: true }) : undefined} />;
   let valid = true;
   let cta = 'Continue';
   switch (step) {
