@@ -22,3 +22,18 @@
 .proof-mark{border:0;border-radius:7px;object-fit:contain;display:block;flex:none}.hero-comic{transform:rotate(-4deg);box-shadow:5px 8px 0 #d9d8cf60}.hero-phone{transform:rotate(2deg)}.comic-teaser{transform:none;box-shadow:none}.teaser-icon{font-size:initial;width:28px;height:28px;flex:none}.branch-inner ul{align-items:center}.photo-label{background:#111712;padding:7px 10px;left:20px;top:20px;font-size:10px}.final-cta{background:#e8edf5;border-bottom-color:#d1d9e4}.final-grid{grid-template-columns:1.3fr 1fr;gap:90px}.download-panel{padding:29px;border:1px solid #c4cdda;background:#f8f9fc}.download-app{display:flex;align-items:center;gap:15px}.download-app>img{border-radius:12px}.download-app strong{display:block;font-size:25px;letter-spacing:-1px;font-weight:800}.download-app span{display:block;font-size:11px;color:var(--text-2);margin-top:2px}.download-panel .store-badge{margin-top:23px}.final-cta .download-panel small{max-width:340px;color:var(--text-2)}
 @media(max-width:850px){.final-grid{gap:40px}.download-panel{padding:24px}}
 @media(max-width:650px){.download-panel{margin-top:29px}.hero-comic{transform:rotate(-4deg)}}
+
+.people{background:var(--bg)}
+.people-head{display:grid;grid-template-columns:1.2fr 1fr;gap:70px;align-items:end;margin-bottom:44px}
+.people-head h2{font-size:44px;line-height:1.05;letter-spacing:-.03em;max-width:560px}
+.people-head p{color:var(--text-2);font-size:16px;line-height:1.6;max-width:380px}
+.people-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.people-photo{position:relative;aspect-ratio:4/5;overflow:hidden;border-radius:var(--radius);background:var(--surface)}
+.people-photo img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s var(--ease)}
+.people-card:hover .people-photo img{transform:scale(1.03)}
+.people-chip{position:absolute;left:12px;bottom:12px;background:rgba(17,23,18,.82);color:#fff;font-size:12px;font-weight:600;padding:6px 10px;border-radius:999px}
+.people-card h3{font-size:18px;line-height:1.25;margin-top:16px}
+.people-card p{color:var(--text-2);font-size:14px;line-height:1.6;margin-top:8px}
+@media(max-width:1100px){.people-grid{grid-template-columns:repeat(2,1fr);gap:28px 20px}.people-head{gap:40px}}
+@media(max-width:650px){.people-head{display:block;margin-bottom:28px}.people-head h2{font-size:34px}.people-head p{margin-top:14px}.people-grid{grid-template-columns:1fr}.people-photo{aspect-ratio:3/2}}
+@media(prefers-reduced-motion:reduce){.people-photo img{transition:none}}

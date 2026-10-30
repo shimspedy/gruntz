@@ -38,6 +38,25 @@ const c = es ? {
   testNote: 'Preparation estimates use your logged events and personal targets. They are not official scores or a guarantee of passing.',
   quick: ['Structured training plans', 'Sets, reps & rest', 'XP, ranks & streaks'],
 };
+const people = es ? {
+  title: 'Militar o no, el plan es el mismo.',
+  sub: 'Gruntz tiene perfiles para las seis ramas y planes de entrenamiento general para quien nunca ha servido.',
+  cards: [
+    { chip: 'Reclutas y aspirantes', title: 'Construye tu base antes del entrenamiento básico', copy: 'Sesiones estructuradas para el entrenamiento básico, la escuela de oficiales o una selección, con un registro de tu progreso.', photo: '/photos/p08-900.webp', alt: 'Reclutas sentados en fila haciendo abdominales en la playa', pos: '50% 35%' },
+    { chip: 'Militares en servicio', title: 'Ten presente tu próxima prueba física', copy: 'Guarda resultados de tus pruebas, compara controles de progreso e identifica la mayor diferencia respecto a tu objetivo.', photo: '/photos/p01-900.webp', alt: 'Hombre con pantalón de camuflaje junto a una barra con pesas al aire libre', pos: '50% 50%' },
+    { chip: 'Veteranos', title: 'Sigue entrenando después de salir', copy: 'Sigue un programa o crea tus propias sesiones. Tu historial, tus rachas y tu rango siguen contigo.', photo: '/photos/p84-900.webp', alt: 'Atleta haciendo dominadas en un gimnasio oscuro', pos: '50% 30%' },
+    { chip: 'Civiles', title: 'Sin servicio previo', copy: 'Elige un plan para tu equipo y tu horario. Los planes de entrenamiento general no requieren experiencia militar.', photo: '/photos/p68-900.webp', alt: 'Atleta en posición de salida de sprint en un parque', pos: '50% 40%' },
+  ],
+} : {
+  title: 'Military or not, the plan works the same.',
+  sub: 'Gruntz has profiles for all six branches, plus general training plans for people who never served.',
+  cards: [
+    { chip: 'Recruits & candidates', title: 'Build your base before boot camp', copy: 'Structured sessions for basic training, OCS, or selection prep, with a record of every workout.', photo: '/photos/p08-900.webp', alt: 'Recruits sitting in a line doing sit-ups on a beach', pos: '50% 35%' },
+    { chip: 'Service members', title: 'Keep your next PT test in view', copy: 'Save test-event results, compare progress checks, and see your biggest logged gap to a target.', photo: '/photos/p01-900.webp', alt: 'Man in camouflage pants beside a loaded barbell outdoors', pos: '50% 50%' },
+    { chip: 'Veterans', title: 'Keep training after you get out', copy: 'Follow a program or build your own workouts. Your history, streaks, and rank stay with you.', photo: '/photos/p84-900.webp', alt: 'Athlete doing pull-ups in a dark gym', pos: '50% 30%' },
+    { chip: 'Civilians', title: 'No service required', copy: 'Pick a plan for your equipment and schedule. General training plans need no military background.', photo: '/photos/p68-900.webp', alt: 'Athlete in a sprint start position in a park', pos: '50% 40%' },
+  ],
+};
 const branches = ['Army', 'Marine Corps', 'Navy', 'Air Force', 'Space Force', 'Coast Guard'];
 const featureData = { features: t.features.map(f => ({name:f.name,headline:f.headline,copy:f.copy,screen:f.screen})), counter:t.featuresHead.counter, screenAlt:t.featuresHead.screenAlt };
 const jsonLd = { '@context':'https://schema.org', '@type':'SoftwareApplication', name:'Gruntz: Military Fitness & PT', operatingSystem:'iOS', applicationCategory:'HealthApplication', inLanguage:lang, description:t.meta.description, url:site.url, downloadUrl:site.appStoreUrl, isAccessibleForFree:false };
@@ -74,6 +93,16 @@ const jsonLd = { '@context':'https://schema.org', '@type':'SoftwareApplication',
 
     <section class="branch-band" aria-label={es ? 'Seis ramas militares de EE. UU.' : 'Six U.S. military branches'}>
       <div class="site-shell branch-inner"><span class="branch-intro">{es ? 'PARA LAS SEIS RAMAS' : 'FOR ALL SIX BRANCHES'}</span><ul>{branches.map(branch=><li>{branch}</li>)}</ul></div>
+    </section>
+
+
+    <section class="people section" id="who" aria-labelledby="people-title">
+      <div class="site-shell">
+        <div class="people-head"><h2 id="people-title">{people.title}</h2><p>{people.sub}</p></div>
+        <ul class="people-grid">
+          {people.cards.map(p => <li class="people-card"><div class="people-photo"><img src={p.photo} alt={p.alt} width="900" height="600" loading="lazy" decoding="async" style={`object-position:${p.pos}`} /><span class="people-chip">{p.chip}</span></div><h3>{p.title}</h3><p>{p.copy}</p></li>)}
+        </ul>
+      </div>
     </section>
 
     <section class="app-section section" id="features" aria-labelledby="app-title">
