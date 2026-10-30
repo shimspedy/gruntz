@@ -29,6 +29,8 @@ import { nextTrainingDay, summarizeTrainingWeek, trainingDateKeys } from '../fea
 import { promptTrainingReminder } from '../services/retentionReminders';
 import { trackRetentionEvent } from '../services/retentionAnalytics';
 import { toast } from '../ui/Toast';
+import { ShareCardSheet } from '../components/share/ShareCardSheet';
+import { missionCardModel } from '../features/shareCards';
 
 /** After a mission: what moved. Rank-ups get the big moment; everything else stays calm. */
 export default function CelebrationScreen() {
@@ -45,6 +47,7 @@ export default function CelebrationScreen() {
   const next = nextTrainingDay(profile?.workout_days_per_week, dates);
   const reducedMotion = useReducedMotion();
   const [reminding, setReminding] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const rankUp = params.rankAfter !== params.rankBefore;
   const levelUp = params.levelAfter > params.levelBefore;
   const unlocked = params.achievementIds.map((id) => achievements.find((a) => a.id === id)).filter(Boolean);
@@ -115,6 +118,14 @@ export default function CelebrationScreen() {
             <Text style={styles.xp} tabular>
               +{shownXp} XP
             </Text>
+            <Button
+              title={rankUp ? 'Share your rank' : 'Share'}
+              icon="share"
+              variant="outline"
+              size="md"
+              onPress={() => setSharing(true)}
+              style={{ marginTop: space.lg, alignSelf: 'center', paddingHorizontal: space.xl }}
+            />
           </Animated.View>
         </View>
 
@@ -190,6 +201,12 @@ export default function CelebrationScreen() {
           ))}
         </View>
       </ScrollView>
+      <ShareCardSheet
+        visible={sharing}
+        onClose={() => setSharing(false)}
+        source="mission"
+        model={sharing ? missionCardModel({ ...params, minutes: params.debrief?.minutes, sets: params.debrief?.sets }) : null}
+      />
       <View style={[styles.footer, { paddingBottom: insets.bottom + space.xs }]}>
         <Button title="Back to Train" onPress={() => navigation.dispatch(StackActions.popTo('Tabs', { screen: 'Train' }))} />
       </View>

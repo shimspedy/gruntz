@@ -28,6 +28,8 @@ import { getLocalDateKey } from '../utils/dateKey';
 import { scheduleBackup } from '../services/backup';
 import { trackRetentionEvent } from '../services/retentionAnalytics';
 import { hasTestScoreChanges, prepareTestScoreEntry } from '../features/testScoreEntry';
+import { formatEventValue, testCardModel } from '../features/shareCards';
+import { ShareCardSheet } from '../components/share/ShareCardSheet';
 
 /** Opening a URL can fail (no browser, malformed link); say so instead of doing nothing. */
 async function openSource(url: string) {
@@ -45,14 +47,7 @@ export const BRANCH_LABEL: Record<ServiceBranch, string> = {
   general: 'General readiness',
 };
 
-export function formatEventValue(value: number, unit: string) {
-  if (!value) return '–';
-  if (unit !== 'seconds') return `${value}`;
-  const rounded = Math.round(value);
-  const m = Math.floor(rounded / 60);
-  const s = rounded % 60;
-  return `${m}:${String(s).padStart(2, '0')}`;
-}
+export { formatEventValue };
 
 const unitLabel = (u: TestEventDefinition['unit']) => (u === 'seconds' ? 'min:sec' : u === 'pounds' ? 'lb' : u);
 
@@ -99,6 +94,7 @@ export default function TestScreen() {
   const week = useProgramStore((s) => s.currentWeek);
   const [logging, setLogging] = useState(false);
   const [dateSheet, setDateSheet] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const metric = useUserStore((s) => s.profile?.settings.units === 'metric');
 
   const branch = profile?.service_branch ?? 'general';
@@ -185,6 +181,9 @@ export default function TestScreen() {
         ) : null}
 
         <Button title={anyLogged ? 'Log scores' : 'Log your first scores'} onPress={() => setLogging(true)} style={{ marginTop: space.lg }} />
+        {anyLogged ? (
+          <Button title="Share my scores" icon="share" variant="secondary" size="md" onPress={() => setSharing(true)} style={{ marginTop: space.sm }} />
+        ) : null}
       </View>
 
       {focus ? (
@@ -306,6 +305,7 @@ export default function TestScreen() {
         <Icon name="external" size={16} color={color.textTertiary} />
       </Tap>
 
+      <ShareCardSheet visible={sharing} onClose={() => setSharing(false)} source="test" model={sharing ? testCardModel(test, scoped, readiness) : null} />
       <LogScoresSheet visible={logging} onClose={() => setLogging(false)} testId={test.id} events={test.events} />
 
       <Sheet visible={dateSheet} onClose={() => setDateSheet(false)} title="Test date">
