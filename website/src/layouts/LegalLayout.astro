@@ -15,7 +15,7 @@ const { title, description, kicker = 'Legal' } = Astro.props as Props;
 
 <BaseLayout title={`${title} | ${site.name}`} description={description}>
   <Header />
-  <main>
+  <main id="main">
     <section class="legal-hero">
       <div class="site-shell">
         <p class="eyebrow">{kicker}</p>

@@ -38,7 +38,7 @@ const alternates = isHome
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#070708" />
+    <meta name="theme-color" content="#f5f3ed" />
     {/* A file, not inline: the Content-Security-Policy blocks inline scripts. */}
     <script is:inline src="/js-flag.js"></script>
     <link rel="canonical" href={canonical} />
@@ -60,6 +60,7 @@ const alternates = isHome
     <meta name="twitter:image" content={ogImage} />
   </head>
   <body>
+    <a class="skip-link" href="#main">{lang === 'es' ? 'Saltar al contenido' : 'Skip to content'}</a>
     <slot />
   </body>
 </html>

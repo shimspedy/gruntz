@@ -4,7 +4,7 @@ export const site = {
   url: 'https://gruntzfit.com',
   title: 'Gruntz — Military Fitness & PT Test Training App',
   description:
-    'Train like a soldier. Gruntz gives you a daily military fitness program, PT test readiness tracking for the Army AFT, Marine PFT, Navy PRT and Air Force PT, a fast workout log and 412 exercise videos.',
+    'Military fitness for all six U.S. branches. Follow your daily plan, log sets, earn XP, and track fitness-test events with Gruntz.',
   tagline: 'Military fitness, one mission a day.',
   price: '$4.99/month',
   trialDays: 15,

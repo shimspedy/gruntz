@@ -15,8 +15,8 @@ configuration live inside `website/`.
 ## Stack
 
 - Astro
-- Swiper web components for the screenshot rail
-- Oxanium + IBM Plex font stack
+- Accessible feature tabs and a six-branch comic reader
+- DM Sans, Gruntz blue, cream paper, and dark app-preview panels
 
 ## Local Development
 
@@ -48,6 +48,8 @@ security headers in `public/_headers`.
 ## Content Updates
 
 Most site constants live in `src/data/site.ts`.
+
+Homepage content lives in `src/i18n/content.ts` and `src/components/Home.astro`; the original comic reader is `src/components/ComicGallery.astro`. See `DESIGN-NOTES.md` for the marketing guidance, real screenshot sources, responsive checks, and deployment notes.
 
 Update that file if you want to change:
 

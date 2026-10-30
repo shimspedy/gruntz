@@ -17,6 +17,7 @@ const home = localePath(lang, '/').replace(/(.)\/$/, '$1');
 const links = [
   { label: t.home, href: localePath(lang, '/') },
   { label: t.features, href: localePath(lang, '/#features') },
+  { label: lang === 'es' ? 'Cómics' : 'Comics', href: localePath(lang, '/#comics') },
   { label: t.faq, href: localePath(lang, '/#faq') },
   { label: t.support, href: '/support' },
 ];

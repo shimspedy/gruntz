@@ -1,0 +1,354 @@
+---
+import type { Lang } from '../i18n/content';
+
+interface Props {
+  lang?: Lang;
+}
+
+const { lang = 'en' } = Astro.props;
+const isSpanish = lang === 'es';
+const labels = isSpanish
+  ? {
+      eyebrow: 'EL LADO DIVERTIDO DE PRESENTARSE',
+      title: 'Un poco de humor militar.',
+      intro: 'Seis ramas. Conversaciones conocidas. Elige la tuya.',
+      tabs: 'Elige una rama militar',
+      series: 'LOS CÓMICS DE GRUNTZ',
+      previous: 'Cómic anterior',
+      next: 'Siguiente cómic',
+      transcript: 'Leer el diálogo',
+      panel: 'Viñeta',
+      swipe: 'Desliza o usa las flechas para leer las dos viñetas.',
+      firstPanel: 'Mostrar la primera viñeta',
+      secondPanel: 'Mostrar la segunda viñeta',
+      openArt: 'Abrir ilustración',
+      withoutScript: 'También puedes abrir cada ilustración y leer su diálogo aquí.',
+    }
+  : {
+      eyebrow: 'THE FUNNY SIDE OF SHOWING UP',
+      title: 'A little service humor.',
+      intro: 'Six branches. Familiar conversations. Pick your crew.',
+      tabs: 'Choose a military branch',
+      series: 'THE GRUNTZ COMICS',
+      previous: 'Previous comic',
+      next: 'Next comic',
+      transcript: 'Read the dialogue',
+      panel: 'Panel',
+      swipe: 'Swipe or use the arrows to read both panels.',
+      firstPanel: 'Show the first panel',
+      secondPanel: 'Show the second panel',
+      openArt: 'Open illustration',
+      withoutScript: 'You can also open each illustration and read its dialogue here.',
+    };
+
+const comics = [
+  {
+    id: 'army', branch: 'Army', fullBranch: 'U.S. Army',
+    title: isSpanish ? '¿Cuál es el plan?' : 'What’s the plan?',
+    dialogue: isSpanish ? ['¿Cuál es la rutina?', 'Esperaba que tú supieras.'] : ['What’s the workout?', 'I was hoping you knew.'],
+    speakers: [75, 28],
+    alt: isSpanish ? 'Dos colegas del Ejército con uniformes OCP en un gimnasio. Una pregunta; el otro se encoge de hombros.' : 'Two Army colleagues in OCP uniforms at a gym. One asks a question; the other gives an amused shrug.',
+    caption: isSpanish ? 'La primera misión: ponerse de acuerdo.' : 'First mission: get on the same page.',
+  },
+  {
+    id: 'marines', branch: 'Marines', fullBranch: 'U.S. Marine Corps',
+    title: isSpanish ? '¿Todavía esperando?' : 'Still waiting?',
+    dialogue: isSpanish ? ['¿Esperando motivación?', 'Sigo esperando.'] : ['Waiting for motivation?', 'Still waiting.'],
+    speakers: [27, 76],
+    alt: isSpanish ? 'Dos Marines con uniformes woodland MARPAT en un gimnasio. Una observa a su colega sentado, aún esperando motivación.' : 'Two Marines in woodland MARPAT uniforms at a gym. One watches her colleague sit on a bench, still waiting for motivation.',
+    caption: isSpanish ? 'La motivación no siempre llega a tiempo.' : 'Motivation doesn’t always report on time.',
+  },
+  {
+    id: 'navy', branch: 'Navy', fullBranch: 'U.S. Navy',
+    title: isSpanish ? '¿Perdido en el gimnasio?' : 'Lost in the gym?',
+    dialogue: isSpanish ? ['¿Qué toca entrenar?', 'Perdido en el mar.'] : ['Today’s workout?', 'Lost at sea.'],
+    speakers: [27, 76],
+    alt: isSpanish ? 'Dos marineros con uniformes NWU verdes en un gimnasio de la base. Uno estudia un mapa mientras su colega lo mira divertida.' : 'Two sailors in green NWU working uniforms at a base gym. One studies a map while his colleague looks on with amusement.',
+    caption: isSpanish ? 'Hasta en tierra hace falta un rumbo.' : 'Even on shore, a little direction helps.',
+  },
+  {
+    id: 'air-force', branch: 'Air Force', fullBranch: 'U.S. Air Force',
+    title: isSpanish ? 'La charla. Luego las pesas.' : 'Brief. Then lift.',
+    dialogue: isSpanish ? ['Ya dimos la charla.', '¿Y entrenamos o no?'] : ['We briefed the workout.', 'Did we do the workout?'],
+    speakers: [28, 75],
+    alt: isSpanish ? 'Dos miembros de la Fuerza Aérea con uniformes OCP. Uno sostiene una carpeta; la otra señala una mancuerna sin usar.' : 'Two Air Force colleagues in OCP uniforms. One holds a briefing binder; the other points to an untouched dumbbell.',
+    caption: isSpanish ? 'La carpeta ya hizo su parte.' : 'The binder has done its part.',
+  },
+  {
+    id: 'space-force', branch: 'Space Force', fullBranch: 'U.S. Space Force',
+    title: isSpanish ? 'Registra el trabajo.' : 'Log the work.',
+    dialogue: isSpanish ? ['¿Lo registras todo?', 'Menos mis entrenamientos.'] : ['Tracking everything?', 'Except my workouts.'],
+    speakers: [75, 28],
+    alt: isSpanish ? 'Dos Guardians con uniformes OCP y detalles azules. Uno señala unas gráficas; la otra señala un cuaderno de entrenamiento vacío.' : 'Two Guardians in OCP uniforms with blue service details. One gestures toward charts; the other points to an empty workout notebook.',
+    caption: isSpanish ? 'Siempre falta un dato.' : 'There’s always one missing data point.',
+  },
+  {
+    id: 'coast-guard', branch: 'Coast Guard', fullBranch: 'U.S. Coast Guard',
+    title: isSpanish ? 'Mantén el rumbo.' : 'Stay on course.',
+    dialogue: isSpanish ? ['¿Quién anota el entrenamiento?', 'Pensé que tú.'] : ['Who tracks our training?', 'I thought you did.'],
+    speakers: [28, 76],
+    alt: isSpanish ? 'Dos miembros de la Guardia Costera con uniformes azul marino. Uno sostiene una tabla vacía; su colega lo señala con una sonrisa.' : 'Two Coast Guard colleagues in navy-blue working uniforms. One holds an empty clipboard; his colleague points back to him with a smile.',
+    caption: isSpanish ? 'Una pequeña confusión en el relevo.' : 'A small mix-up at the handoff.',
+  },
+];
+---
+
+<section class="comic-gallery" id="comics" aria-labelledby="comics-heading" data-comic-reader>
+  <div class="comic-shell">
+    <div class="comic-section-head">
+      <div>
+        <p class="comic-eyebrow">{labels.eyebrow}</p>
+        <h2 id="comics-heading">{labels.title}</h2>
+      </div>
+      <p class="comic-intro">{labels.intro}</p>
+    </div>
+
+    <div class="comic-tabs" role="tablist" aria-label={labels.tabs}>
+      {comics.map((comic, index) => (
+        <button
+          class="comic-tab"
+          type="button"
+          role="tab"
+          id={`comic-tab-${comic.id}`}
+          aria-controls={`comic-panel-${comic.id}`}
+          aria-selected={index === 0 ? 'true' : 'false'}
+          tabindex={index === 0 ? 0 : -1}
+          data-comic-tab
+          data-comic-index={index}
+        >
+          <span class="comic-tab-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+          {comic.branch}
+        </button>
+      ))}
+    </div>
+
+    <div class="comic-reader">
+      {comics.map((comic, index) => (
+        <div
+          class="comic-panel"
+          id={`comic-panel-${comic.id}`}
+          role="tabpanel"
+          aria-labelledby={`comic-tab-${comic.id}`}
+          tabindex="0"
+          hidden={index !== 0}
+          data-comic-panel
+        >
+          <div class="comic-title-row">
+            <span class="comic-edition">{labels.series} <span aria-hidden="true">/</span> {String(index + 1).padStart(2, '0')}</span>
+            <h3>{comic.title}</h3>
+          </div>
+
+          <figure class="comic-figure">
+            <div class="comic-viewport" tabindex="0" aria-label={`${comic.fullBranch}: ${labels.swipe}`} data-comic-viewport>
+              <div class="comic-canvas">
+                <img
+                  src={`/comics/${comic.id}-1600.webp`}
+                  srcset={`/comics/${comic.id}-800.webp 800w, /comics/${comic.id}-1600.webp 1600w`}
+                  sizes="(max-width: 650px) calc(200vw - 64px), (max-width: 1200px) calc(100vw - 80px), 1120px"
+                  width="1600"
+                  height={comic.id === 'marines' ? 729 : 728}
+                  alt={comic.alt}
+                  loading="lazy"
+                  decoding="async"
+                />
+                {comic.dialogue.map((line, panelIndex) => (
+                  <p
+                    class:list={['comic-dialogue', { 'comic-dialogue-second': panelIndex === 1 }]}
+                    style={`--speaker: ${comic.speakers[panelIndex]}%`}
+                    aria-hidden="true"
+                  >{line}</p>
+                ))}
+              </div>
+            </div>
+
+            <div class="comic-mobile-controls" aria-label={labels.swipe}>
+              <span>{labels.panel} <span data-comic-scene-number>1</span> / 2</span>
+              <div>
+                <button type="button" class="comic-scene-button" aria-label={labels.firstPanel} data-comic-scene="0">
+                  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m14 5-7 7 7 7" /></svg>
+                </button>
+                <button type="button" class="comic-scene-button" aria-label={labels.secondPanel} data-comic-scene="1">
+                  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m10 5 7 7-7 7" /></svg>
+                </button>
+              </div>
+            </div>
+
+            <figcaption class="comic-caption">
+              <p>{comic.caption}</p>
+              <details class="comic-transcript">
+                <summary>{labels.transcript}</summary>
+                <ol>
+                  {comic.dialogue.map((line, panelIndex) => <li><span>{labels.panel} {panelIndex + 1}</span>“{line}”</li>)}
+                </ol>
+              </details>
+            </figcaption>
+          </figure>
+        </div>
+      ))}
+
+      <div class="comic-reader-footer">
+        <span class="comic-count" data-comic-count aria-live="polite" aria-atomic="true">01 <span aria-hidden="true">/</span> 06</span>
+        <div class="comic-next-prev">
+          <button type="button" class="comic-nav-button" aria-label={labels.previous} data-comic-previous>
+            <svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true"><path d="M20 12H4m7-7-7 7 7 7" /></svg>
+          </button>
+          <button type="button" class="comic-nav-button" aria-label={labels.next} data-comic-next>
+            <svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true"><path d="M4 12h16m-7-7 7 7-7 7" /></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <noscript>
+      <div class="comic-fallback">
+        <p>{labels.withoutScript}</p>
+        {comics.map(comic => <details><summary>{comic.fullBranch} — {comic.title}</summary><p>{comic.dialogue.join(' / ')}</p><a href={`/comics/${comic.id}-1600.webp`}>{labels.openArt}</a></details>)}
+      </div>
+    </noscript>
+  </div>
+</section>
+
+<script>
+  function initializeComicReaders() {
+    document.querySelectorAll<HTMLElement>('[data-comic-reader]').forEach((reader) => {
+      if (reader.dataset.comicReady) return;
+      reader.dataset.comicReady = 'true';
+      const tabs = Array.from(reader.querySelectorAll<HTMLButtonElement>('[data-comic-tab]'));
+      const panels = Array.from(reader.querySelectorAll<HTMLElement>('[data-comic-panel]'));
+      const counter = reader.querySelector<HTMLElement>('[data-comic-count]');
+      let selected = 0;
+
+      function activate(index: number, focusTab = false) {
+        selected = (index + tabs.length) % tabs.length;
+        tabs.forEach((tab, i) => {
+          tab.setAttribute('aria-selected', String(i === selected));
+          tab.tabIndex = i === selected ? 0 : -1;
+          panels[i].hidden = i !== selected;
+        });
+        if (counter) counter.textContent = `${String(selected + 1).padStart(2, '0')} / ${String(tabs.length).padStart(2, '0')}`;
+        if (focusTab) tabs[selected].focus({ preventScroll: true });
+      }
+
+      tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => activate(index));
+        tab.addEventListener('keydown', (event) => {
+          const movement: Record<string, number> = { ArrowRight: selected + 1, ArrowLeft: selected - 1, Home: 0, End: tabs.length - 1 };
+          if (!(event.key in movement)) return;
+          event.preventDefault();
+          activate(movement[event.key], true);
+        });
+      });
+
+      reader.querySelector('[data-comic-previous]')?.addEventListener('click', () => activate(selected - 1));
+      reader.querySelector('[data-comic-next]')?.addEventListener('click', () => activate(selected + 1));
+
+      panels.forEach((panel) => {
+        const viewport = panel.querySelector<HTMLElement>('[data-comic-viewport]');
+        const sceneNumber = panel.querySelector<HTMLElement>('[data-comic-scene-number]');
+        if (!viewport) return;
+        panel.querySelectorAll<HTMLButtonElement>('[data-comic-scene]').forEach((button) => {
+          button.addEventListener('click', () => {
+            const last = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+            const target = button.dataset.comicScene === '1' ? last : 0;
+            viewport.scrollTo({ left: target, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+          });
+        });
+        const updateSceneNumber = () => {
+          if (sceneNumber) sceneNumber.textContent = viewport.scrollLeft > (viewport.scrollWidth - viewport.clientWidth) / 2 ? '2' : '1';
+        };
+        viewport.addEventListener('scroll', updateSceneNumber, { passive: true });
+        const resizeObserver = new ResizeObserver(updateSceneNumber);
+        resizeObserver.observe(viewport);
+        document.addEventListener('astro:before-swap', () => resizeObserver.disconnect(), { once: true });
+      });
+    });
+  }
+
+  initializeComicReaders();
+  document.addEventListener('astro:page-load', initializeComicReaders);
+</script>
+
+<style>
+  .comic-gallery {
+    --comic-paper: #f5f2e9;
+    --comic-ink: #101511;
+    --comic-muted: #596157;
+    --comic-blue: #2d8cff;
+    --comic-rule: #cecfc2;
+    padding: clamp(64px, 8vw, 112px) 0;
+    background: var(--comic-paper);
+    color: var(--comic-ink);
+    color-scheme: light;
+    scroll-margin-top: 110px;
+  }
+  .comic-shell { width: min(1120px, calc(100% - 48px)); margin: 0 auto; }
+  .comic-section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; margin-bottom: 34px; }
+  .comic-eyebrow { margin: 0 0 16px; color: var(--comic-muted); font-size: 11px; font-weight: 800; letter-spacing: .14em; line-height: 1.4; }
+  .comic-section-head h2 { max-width: 700px; margin: 0; font-size: clamp(38px, 5vw, 65px); font-weight: 800; letter-spacing: -.055em; line-height: 1.02; }
+  .comic-intro { max-width: 260px; margin: 0 0 4px; color: var(--comic-muted); font-size: 16px; line-height: 1.6; }
+  .comic-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+  .comic-tab { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 46px; margin: 0; padding: 11px 17px; border: 1px solid var(--comic-rule); border-radius: 4px; background: transparent; color: var(--comic-ink); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s, border-color .15s; }
+  .comic-tab:hover { border-color: var(--comic-ink); }
+  .comic-tab[aria-selected='true'] { border-color: var(--comic-ink); background: var(--comic-ink); color: var(--comic-paper); }
+  .comic-tab-number { color: #777f71; font-size: 10px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .comic-tab[aria-selected='true'] .comic-tab-number { color: #b8c2ad; }
+  .comic-reader { container: comic-reader / inline-size; border: 1px solid var(--comic-rule); background: #fbf9f3; }
+  .comic-panel[hidden] { display: none; }
+  .comic-panel:focus-visible { outline-offset: -4px; }
+  .comic-title-row { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 23px 26px; }
+  .comic-edition { flex: 0 0 auto; color: var(--comic-muted); font-size: 10px; font-weight: 700; letter-spacing: .1em; line-height: 1.4; }
+  .comic-edition span { margin: 0 9px; color: #93998d; }
+  .comic-title-row h3 { margin: 0; font-size: 21px; font-weight: 800; line-height: 1.2; letter-spacing: -.025em; text-align: right; }
+  .comic-figure { margin: 0; }
+  .comic-viewport { overflow-x: auto; scrollbar-width: thin; scrollbar-color: #9da496 #ebeae0; overscroll-behavior-x: contain; }
+  .comic-canvas { position: relative; width: 100%; }
+  .comic-canvas img { display: block; width: 100%; max-width: none; height: auto; }
+  .comic-dialogue { position: absolute; z-index: 1; top: 3%; left: 2%; display: flex; align-items: center; justify-content: center; width: 45%; min-height: 16%; margin: 0; padding: .5em .65em; border: 1.5px solid var(--comic-ink); border-radius: 1em; background: #fff; color: var(--comic-ink); font-size: clamp(14px, 2.4cqw, 27px); font-weight: 700; line-height: 1.18; text-align: center; text-wrap: balance; }
+  .comic-dialogue::after { position: absolute; bottom: -.36em; left: calc(var(--speaker) - .3em); width: .65em; height: .65em; border-right: 1.5px solid var(--comic-ink); border-bottom: 1.5px solid var(--comic-ink); background: #fff; content: ''; transform: rotate(45deg); }
+  .comic-dialogue-second { left: 52%; }
+  .comic-mobile-controls { display: none; }
+  .comic-caption { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding: 20px 26px; }
+  .comic-caption > p { margin: 0; color: var(--comic-muted); font-size: 14px; line-height: 1.5; }
+  .comic-transcript { flex: 0 0 auto; max-width: 53%; color: var(--comic-ink); font-size: 13px; }
+  .comic-transcript summary { cursor: pointer; text-underline-offset: 4px; }
+  .comic-transcript summary:hover { text-decoration: underline; }
+  .comic-transcript ol { display: grid; gap: 10px; margin: 16px 0 0; padding: 0; list-style: none; }
+  .comic-transcript li { line-height: 1.5; }
+  .comic-transcript li span { display: block; color: var(--comic-muted); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .comic-reader-footer { display: flex; align-items: center; justify-content: space-between; padding: 13px 26px; border-top: 1px solid var(--comic-rule); }
+  .comic-count { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: .08em; }
+  .comic-count span { margin: 0 7px; color: #90988a; }
+  .comic-next-prev { display: flex; gap: 8px; }
+  .comic-nav-button, .comic-scene-button { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 40px; padding: 0; border: 1px solid var(--comic-rule); border-radius: 3px; background: transparent; color: var(--comic-ink); cursor: pointer; }
+  .comic-nav-button:hover, .comic-scene-button:hover { border-color: var(--comic-ink); background: #e9ecdf; }
+  .comic-nav-button svg, .comic-scene-button svg { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .comic-gallery :is(button, summary, a, [tabindex]):focus-visible { outline: 3px solid var(--comic-blue); outline-offset: 4px; }
+  .comic-fallback { display: grid; gap: 16px; margin-top: 24px; font-size: 14px; }
+  .comic-fallback summary { cursor: pointer; font-weight: 700; }
+  .comic-fallback p { margin: 10px 0; }
+  .comic-fallback a { text-decoration: underline; }
+  @container comic-reader (max-width: 650px) {
+    .comic-title-row { align-items: flex-start; flex-direction: column; gap: 8px; padding: 20px; }
+    .comic-title-row h3 { font-size: 22px; text-align: left; }
+    .comic-canvas { width: 200%; }
+    .comic-dialogue { font-size: clamp(15px, 4.1cqw, 23px); }
+    .comic-mobile-controls { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px 0; color: var(--comic-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+    .comic-mobile-controls > div { display: flex; gap: 6px; }
+    .comic-scene-button { width: 36px; height: 36px; }
+    .comic-caption { align-items: flex-start; flex-direction: column; gap: 16px; padding: 17px 20px 20px; }
+    .comic-transcript { max-width: 100%; }
+    .comic-reader-footer { padding-right: 20px; padding-left: 20px; }
+  }
+  @media (max-width: 760px) {
+    .comic-section-head { align-items: flex-start; flex-direction: column; gap: 20px; margin-bottom: 27px; }
+    .comic-intro { max-width: 360px; font-size: 15px; }
+    .comic-tab { flex: 1 0 calc(33.333% - 8px); gap: 6px; padding-right: 10px; padding-left: 10px; font-size: 12px; }
+  }
+  @media (max-width: 420px) {
+    .comic-shell { width: calc(100% - 32px); }
+    .comic-tab { flex-basis: calc(50% - 8px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .comic-tab { transition: none; }
+  }
+</style>

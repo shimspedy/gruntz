@@ -2,278 +2,114 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from './Header.astro';
 import Footer from './Footer.astro';
+import ComicGallery from './ComicGallery.astro';
 import { site } from '../data/site';
 import { content, type Lang } from '../i18n/content';
-
-interface Props {
-  lang: Lang;
-}
-
+interface Props { lang: Lang; }
 const { lang } = Astro.props as Props;
 const t = content[lang];
-const pad = (i: number) => String(i + 1).padStart(2, '0');
-
-const icons: Record<string, string> = {
-  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>',
-  gauge: '<path d="M4 16a8 8 0 1 1 16 0"/><path d="m12 16 4-5"/>',
-  list: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17"/>',
-  play: '<rect x="3" y="4" width="18" height="16" rx="3"/><path d="m10 9 5 3-5 3z"/>',
-  calendar: '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>',
-  badge: '<path d="M12 2.5 20 7v10l-8 4.5L4 17V7z"/><path d="m12 8 1.2 2.5 2.8.4-2 2 .5 2.8-2.5-1.3-2.5 1.3.5-2.8-2-2 2.8-.4z"/>',
+const es = lang === 'es';
+const c = es ? {
+  issue: 'TU PLAN DIARIO', intro: 'Una app de fitness militar para el trabajo de cada día.',
+  more: 'Explora la app', comic: 'Lee los cómics', proof: 'Creada por un exmarine de EE. UU.',
+  plan: 'UN PLAN. UN REGISTRO. TU PROGRESO.', field: 'DENTRO DE GRUNTZ',
+  appTitle: 'Tu plan y tu registro de entrenamiento.', appSub: 'Elige una función para ver la pantalla real de la app.',
+  screen: 'Captura real de Gruntz', branches: 'Tu rama. Tu entrenamiento.',
+  branchesSub: 'Para quienes empiezan, siguen en servicio o simplemente siguen entrenando.',
+  founderTitle: 'Creada por un exmarine de EE. UU.', aboutBody: 'Elige un programa o crea una sesión. Gruntz guarda tus series completadas, resultados de pruebas y XP en tu historial de entrenamiento.',
+  note: 'SOBRE GRUNTZ', question: 'Antes de empezar.', faqIntro: 'Lo que necesitas saber para tu próxima sesión.',
+  start: 'DESCARGA GRUNTZ', startTitle: 'Elige tu plan en Gruntz.',
+  startSub: 'Sigue un programa o crea tu propia rutina. Tu próxima sesión empieza en la app.',
+  store: 'Descargar Gruntz', price: '15 días de acceso completo incluidos. Después se requiere una suscripción. Consulta los precios actuales en el App Store.',
+  testNote: 'Las estimaciones de preparación usan tus eventos registrados y objetivos personales. No son puntuaciones oficiales ni garantizan aprobar.',
+  quick: ['Planes estructurados', 'Series, repeticiones y descanso', 'XP, rangos y rachas'],
+} : {
+  issue: 'YOUR DAILY PLAN', intro: 'Military fitness for the work you put in every day.',
+  more: 'Explore the app', comic: 'Read the comics', proof: 'Built by a former U.S. Marine',
+  plan: 'A PLAN. A LOG. YOUR PROGRESS.', field: 'INSIDE GRUNTZ',
+  appTitle: 'Your plan and workout log.', appSub: 'Choose a feature to see the actual app screen.',
+  screen: 'Actual Gruntz app screen', branches: 'Your branch. Your training.',
+  branchesSub: 'For the people getting started, still serving, or simply still showing up.',
+  founderTitle: 'Built by a former U.S. Marine.', aboutBody: 'Choose a training program or build a workout. Gruntz keeps your completed sets, test-event results, and XP in your training history.',
+  note: 'ABOUT GRUNTZ', question: 'Before you get after it.', faqIntro: 'A few things to know before your first session.',
+  start: 'GET GRUNTZ', startTitle: 'Choose your plan in Gruntz.',
+  startSub: 'Follow a program or build your own. Your next session starts in the app.',
+  store: 'Download Gruntz', price: '15 days of full access included. Subscription required afterward. See the App Store for current pricing.',
+  testNote: 'Preparation estimates use your logged events and personal targets. They are not official scores or a guarantee of passing.',
+  quick: ['Structured training plans', 'Sets, reps & rest', 'XP, ranks & streaks'],
 };
-
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'SoftwareApplication',
-  name: 'Gruntz: Military Fitness & PT',
-  operatingSystem: 'iOS',
-  applicationCategory: 'HealthApplication',
-  inLanguage: lang,
-  description: t.meta.description,
-  url: site.url,
-  downloadUrl: site.appStoreUrl,
-  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-};
-
-const featureData = {
-  features: t.features.map((f) => ({ name: f.name, headline: f.headline, copy: f.copy, screen: f.screen })),
-  counter: t.featuresHead.counter,
-  screenAlt: t.featuresHead.screenAlt,
-};
+const branches = ['Army', 'Marine Corps', 'Navy', 'Air Force', 'Space Force', 'Coast Guard'];
+const featureData = { features: t.features.map(f => ({name:f.name,headline:f.headline,copy:f.copy,screen:f.screen})), counter:t.featuresHead.counter, screenAlt:t.featuresHead.screenAlt };
+const jsonLd = { '@context':'https://schema.org', '@type':'SoftwareApplication', name:'Gruntz: Military Fitness & PT', operatingSystem:'iOS', applicationCategory:'HealthApplication', inLanguage:lang, description:t.meta.description, url:site.url, downloadUrl:site.appStoreUrl, isAccessibleForFree:false };
 ---
-
 <BaseLayout lang={lang} title={t.meta.title} description={t.meta.description} ogLocale={t.meta.ogLocale}>
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
   <Header lang={lang} />
-
-  <main>
-    <!-- Hero -->
-    <section class="hero">
+  <main id="main">
+    <section class="hero" aria-labelledby="hero-title">
       <div class="site-shell hero-grid">
-        <div class="hero-copy reveal">
-          <span class="eyebrow">{t.hero.eyebrow}</span>
-          <h1>{t.hero.title}</h1>
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="status-dot"></span>{t.hero.eyebrow}</p>
+          <h1 id="hero-title">{es ? 'Tu entrenamiento.' : 'Your workout.'}<br /><span>{es ? 'Ya planificado.' : 'Already planned.'}</span></h1>
           <p class="hero-lede">{t.hero.lede}</p>
-
-          <div class="stat-row">
-            {t.stats.map((s) => (
-              <div class="stat">
-                <strong>{s.value}</strong>
-                <span>{s.label}</span>
-              </div>
-            ))}
-          </div>
-
           <div class="hero-actions">
-            <a class="store-badge" href={site.appStoreUrl} target="_blank" rel="noopener">
-              <img src="/brand/app-store-badge.svg" alt={t.hero.badgeAlt} width="162" height="54" />
-            </a>
-            <small>{t.hero.priceNote}</small>
+            <a class="button button-primary" href={site.appStoreUrl} target="_blank" rel="noopener" data-cta="hero">{c.store}<span aria-hidden="true">↗</span></a>
+            <a class="text-link" href="#features">{c.more}<span aria-hidden="true">↓</span></a>
           </div>
-
-          <p class="built-by">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5 20 6v6c0 4.7-3.4 8.3-8 9.5C7.4 20.3 4 16.7 4 12V6z" /><path d="m8.5 12 2.5 2.5 4.5-5" /></svg>
-            {t.hero.builtBy}
-          </p>
+          <p class="access-note">{t.hero.priceNote}</p>
+          <div class="founder-proof"><img class="proof-mark" src="/brand/gruntz-icon.png" width="32" height="32" alt="" /><span>{c.proof}<small>{c.intro}</small></span></div>
         </div>
+        <div class="hero-visual">
 
-        <div class="hero-visual reveal" aria-hidden="true">
-          <div class="hero-photo">
-            <img src="/photos/p01.jpg" alt="" loading="eager" fetchpriority="high" />
+          <span class="visual-label">GRUNTZ / {c.issue}</span>
+          <div class="hero-comic" aria-hidden="true">
+            <div class="comic-paper-label"><span>GRUNTZ COMICS</span><span>ARMY</span></div>
+            <img src="/comics/army-1600.webp" width="1600" height="728" alt="" fetchpriority="high" />
+            <div class="paper-punchline">{es ? '¿Cuál es el plan?' : 'WHAT’S THE PLAN?'}</div>
           </div>
-          <div class="phone">
-            <div class="phone-screen"><img src="/app/train.jpg" alt="" /></div>
-          </div>
-          <div class="float-chip chip-a">
-            <span class="chip-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2.5 20 7v10l-8 4.5L4 17V7z" /></svg>
-            </span>
-            <span><strong>{t.hero.chipRank.title}</strong><small>{t.hero.chipRank.sub}</small></span>
-          </div>
-          <div class="float-chip chip-b">
-            <span class="chip-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 16a8 8 0 1 1 16 0" /><path d="m12 16 4-5" /></svg>
-            </span>
-            <span><strong>{t.hero.chipTest.title}</strong><small>{t.hero.chipTest.sub}</small></span>
-          </div>
+          <div class="hero-phone phone"><div class="phone-screen"><img src="/app/train-current.webp" width="402" height="874" alt={es ? 'Pantalla real del plan de entrenamiento de Gruntz' : 'Genuine Gruntz daily training plan screen'} loading="eager" /></div></div>
+          <a class="comic-teaser" href="#comics"><svg class="teaser-icon" width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 5h20v14H11l-5 4v-4H4z"/><path d="M8 10h12M8 14h8"/></svg><span>{c.comic}<small>{es ? 'Seis ramas. Un poco de humor.' : 'Six branches. A little service humor.'}</small></span><span aria-hidden="true">↗</span></a>
+          <span class="screen-caption">{c.screen}</span>
         </div>
       </div>
     </section>
 
-    <!-- 3 steps -->
-    <section class="section" id="how">
+    <section class="branch-band" aria-label={es ? 'Seis ramas militares de EE. UU.' : 'Six U.S. military branches'}>
+      <div class="site-shell branch-inner"><span class="branch-intro">{es ? 'PARA LAS SEIS RAMAS' : 'FOR ALL SIX BRANCHES'}</span><ul>{branches.map(branch=><li>{branch}</li>)}</ul></div>
+    </section>
+
+    <section class="app-section section" id="features" aria-labelledby="app-title">
       <div class="site-shell">
-        <div class="section-head reveal">
-          <h2>{t.stepsHead.title} <span>{t.stepsHead.accent}</span></h2>
-          <p>{t.stepsHead.sub}</p>
-          <div class="section-rule"></div>
-        </div>
+        <div class="section-top"><div><p class="eyebrow">{c.field}</p><h2 id="app-title">{c.appTitle}</h2></div><p>{c.appSub}</p></div>
+        <div class="app-grid">
+          <div class="feature-list"><div role="tablist" aria-label={t.featuresHead.tablistLabel} aria-orientation="vertical" id="feature-tabs" data-features={JSON.stringify(featureData)}>
+            {t.features.map((f,i)=><button class="feature-tab" role="tab" id={`tab-${i}`} aria-selected={i===0?'true':'false'} aria-controls="feature-panel" tabindex={i===0?0:-1}><span class="feature-number">{String(i+1).padStart(2,'0')}</span><span><strong>{f.name}</strong><small>{f.short}</small></span><span class="feature-arrow" aria-hidden="true">↗</span></button>)}
+          </div></div>
+          <div class="feature-stage" id="feature-panel" role="tabpanel" aria-labelledby="tab-0" tabindex="0">
 
-        <div class="steps">
-          {t.steps.map((s, i) => (
-            <article class="step reveal">
-              <div class="step-media">
-                <img src={s.photo} alt={s.alt} loading="lazy" />
-                <span class="step-num">{pad(i)}</span>
-              </div>
-              <div>
-                <span class="eyebrow">{t.stepsHead.label} {pad(i)}</span>
-                <h3>{s.title}</h3>
-                <p>{s.copy}</p>
-              </div>
-            </article>
-          ))}
-        </div>
-
-        <div class="cta-center reveal">
-          <a class="button button-primary" href={site.appStoreUrl} target="_blank" rel="noopener">
-            {t.stepsHead.cta}
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-          </a>
-          <small>{t.stepsHead.ctaNote}</small>
-        </div>
-      </div>
-    </section>
-
-    <!-- Who it's for -->
-    <section class="section" id="who">
-      <div class="site-shell">
-        <div class="section-head reveal">
-          <h2>{t.audienceHead.title} <span>{t.audienceHead.accent}</span></h2>
-          <p>{t.audienceHead.sub}</p>
-          <div class="section-rule"></div>
-        </div>
-
-        <div class="audience-grid">
-          {t.audiences.map((a) => (
-            <article class="audience-card reveal">
-              <div class="audience-photo">
-                <img src={a.photo} alt={a.alt} loading="lazy" />
-                <span class="audience-chip">{a.chip}</span>
-              </div>
-              <div class="audience-body">
-                <h3>{a.title}</h3>
-                <p>{a.copy}</p>
-              </div>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-
-    <!-- Founder -->
-    <section class="founder" id="founder">
-      <div class="site-shell">
-        <div class="founder-card reveal">
-          <span class="founder-mark" aria-hidden="true">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 20 6v6c0 4.7-3.4 8.3-8 9.5C7.4 20.3 4 16.7 4 12V6z" /><path d="m8.5 12 2.5 2.5 4.5-5" /></svg>
-          </span>
-          <span class="eyebrow">{t.founder.eyebrow}</span>
-          <h2>{t.founder.title}</h2>
-          <p>{t.founder.copy}</p>
-          <small>{t.founder.note}</small>
-        </div>
-      </div>
-    </section>
-
-    <!-- Features -->
-    <section class="section" id="features">
-      <div class="site-shell">
-        <div class="section-head reveal">
-          <h2>{t.featuresHead.title} <span>{t.featuresHead.accent}</span></h2>
-          <p>{t.featuresHead.sub}</p>
-          <div class="section-rule"></div>
-        </div>
-
-        <div class="feature-grid">
-          <div class="feature-list reveal">
-            <h3>{t.featuresHead.listTitle}</h3>
-            <p>{t.featuresHead.listSub}</p>
-            <div role="tablist" aria-label={t.featuresHead.tablistLabel} id="feature-tabs" data-features={JSON.stringify(featureData)}>
-              {t.features.map((f, i) => (
-                <button
-                  class="feature-tab"
-                  role="tab"
-                  id={`tab-${i}`}
-                  aria-selected={i === 0 ? 'true' : 'false'}
-                  aria-controls="feature-panel"
-                  tabindex={i === 0 ? 0 : -1}
-                >
-                  <span class="tab-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={icons[f.icon]} />
-                  </span>
-                  <span>
-                    <strong>{f.name}</strong>
-                    <small>{f.short}</small>
-                  </span>
-                  <span class="tab-dot"></span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div class="feature-stage reveal" id="feature-panel" role="tabpanel" aria-labelledby="tab-0">
-            <div class="phone">
-              <div class="phone-screen">
-                <img id="feature-screen" src={t.features[0].screen} alt={`${t.features[0].name} ${t.featuresHead.screenAlt}`} />
-              </div>
-            </div>
-            <div class="feature-copy">
-              <h3 id="feature-headline">{t.features[0].headline}</h3>
-              <p id="feature-text">{t.features[0].copy}</p>
-              <span class="eyebrow" id="feature-count">{t.featuresHead.counter} 01</span>
-            </div>
+            <div class="feature-copy"><span class="eyebrow" id="feature-count">{t.featuresHead.counter} 01</span><h3 id="feature-headline">{t.features[0].headline}</h3><p id="feature-text">{t.features[0].copy}</p><p class="feature-caption">{c.screen}</p></div>
+            <div class="phone feature-phone"><div class="phone-screen"><img id="feature-screen" src={t.features[0].screen} alt={`${t.features[0].name} ${t.featuresHead.screenAlt}`} width="402" height="874" loading="lazy" /></div></div>
           </div>
         </div>
+        <p class="test-note">{c.testNote}</p>
       </div>
     </section>
 
-    <!-- FAQ -->
-    <section class="section" id="faq">
-      <div class="site-shell">
-        <div class="section-head reveal">
-          <h2>{t.faqHead.title} <span>{t.faqHead.accent}</span></h2>
-          <div class="section-rule"></div>
-        </div>
-        <div class="faq reveal">
-          {t.faq.map((f) => (
-            <details>
-              <summary>{f.q}</summary>
-              <p>{f.a}</p>
-            </details>
-          ))}
-        </div>
+    <ComicGallery lang={lang} />
+
+    <section class="field-note section" id="about">
+      <div class="site-shell field-grid">
+        <div class="field-photo"><img src="/photos/p39.jpg" alt={es ? 'Entrenamiento al aire libre con una mochila' : 'Outdoor training with a rucksack'} width="800" height="1000" loading="lazy" /><span class="photo-label">{es ? 'ENTRENAMIENTO AL AIRE LIBRE' : 'OUTDOOR TRAINING'}</span></div>
+        <div class="field-copy"><p class="eyebrow">{c.note}</p><h2>{c.founderTitle}</h2><p>{c.aboutBody}</p><div class="founder-signature"><img src="/brand/gruntz-icon.png" width="44" height="44" alt="" /><div><strong>{es ? 'App de fitness independiente' : 'Independent fitness app'}</strong><span>{t.founder.note}</span></div></div><div class="branch-message"><h3>{c.branches}</h3><p>{c.branchesSub}</p><a class="text-link" href="#features">{c.more}<span aria-hidden="true">↗</span></a></div></div>
       </div>
     </section>
 
-    <!-- Final CTA -->
-    <section class="final-cta">
-      <div class="final-cta-photo" aria-hidden="true">
-        <img src="/photos/p68.jpg" alt="" loading="lazy" />
-      </div>
-      <div class="site-shell reveal">
-        <span class="pill">{t.cta.pill}</span>
-        <h2>{t.cta.title}</h2>
-        <p>{t.cta.sub}</p>
-        <a class="store-badge" href={site.appStoreUrl} target="_blank" rel="noopener">
-          <img src="/brand/app-store-badge.svg" alt={t.hero.badgeAlt} width="162" height="54" />
-        </a>
-        <ul class="checks">
-          {t.cta.checks.map((c) => (
-            <li>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
-              {c}
-            </li>
-          ))}
-        </ul>
-        <p class="fine-print">{t.cta.fine}</p>
-      </div>
+    <section class="faq-section section" id="faq">
+      <div class="site-shell faq-grid"><div><p class="eyebrow">FAQ</p><h2>{c.question}</h2><p class="faq-intro">{c.faqIntro}</p><a class="text-link" href="/support">{t.nav.support}<span aria-hidden="true">↗</span></a></div><div class="faq">{t.faq.map(f=><details><summary>{f.q}<span aria-hidden="true">+</span></summary><p>{f.a}</p></details>)}</div></div>
     </section>
+
+    <section class="final-cta" id="download"><div class="site-shell final-grid"><div><p class="eyebrow">{c.start}</p><h2>{c.startTitle}</h2><p>{c.startSub}</p></div><div class="download-panel"><div class="download-app"><img src="/brand/gruntz-icon.png" width="58" height="58" alt="" /><div><strong>Gruntz</strong><span>{es ? 'Fitness militar y registro de entrenamientos' : 'Military fitness & workout log'}</span></div></div><a class="store-badge" href={site.appStoreUrl} target="_blank" rel="noopener" data-cta="footer"><img src="/brand/app-store-badge.svg" alt={t.hero.badgeAlt} width="162" height="54" /></a><small>{c.price}</small></div></div></section>
   </main>
-
   <Footer lang={lang} />
-
-  {/* Loaded as files, not inline: the site's Content-Security-Policy only runs scripts
-      from its own origin, so an inline script here is blocked and the tabs do nothing. */}
   <script src="../scripts/home.ts"></script>
 </BaseLayout>
