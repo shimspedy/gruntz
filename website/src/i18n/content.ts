@@ -29,8 +29,8 @@ const en = {
   nav: { home: 'Home', features: 'Features', faq: 'FAQ', support: 'Support', download: 'Download', language: 'Language' },
   hero: {
     eyebrow: 'Military fitness app',
-    title: 'Your workout. Already planned.',
-    lede: 'Follow your daily plan, log every set, and earn XP as you train. Track fitness-test events for all six U.S. military branches.',
+    title: 'Your daily mission is ready.',
+    lede: 'Gruntz lines up today’s PT, run, or ruck from your plan. Log each set, keep your streak, and earn rank. Military Prep tracks fitness-test events for all six U.S. branches.',
     priceNote: `${site.trialDays} days of full access included. Subscription required afterward.`,
     chipRank: { title: 'XP & streaks', sub: 'Progress you earn' },
     chipTest: { title: 'Six U.S. branches', sub: 'Log your test events' },
@@ -223,8 +223,8 @@ const es: Content = {
   nav: { home: 'Inicio', features: 'Funciones', faq: 'Preguntas', support: 'Soporte', download: 'Descargar', language: 'Idioma' },
   hero: {
     eyebrow: 'App de entrenamiento militar',
-    title: 'Tu entrenamiento. Ya planificado.',
-    lede: 'Sigue tu plan diario, registra cada serie y gana XP al entrenar. Lleva un registro de las pruebas físicas de las seis ramas militares de EE. UU.',
+    title: 'Tu misión diaria está lista.',
+    lede: 'Gruntz prepara el PT, la carrera o la marcha con mochila de hoy según tu plan. Registra cada serie, mantén tu racha y gana rangos. Military Prep lleva el registro de las pruebas físicas de las seis ramas de EE. UU.',
     priceNote: `${site.trialDays} días de acceso completo incluidos. Después se requiere una suscripción.`,
     chipRank: { title: 'XP y rachas', sub: 'El progreso que te ganas' },
     chipTest: { title: 'Seis ramas de EE. UU.', sub: 'Registra tus pruebas físicas' },

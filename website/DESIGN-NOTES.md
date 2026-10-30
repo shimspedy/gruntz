@@ -21,4 +21,4 @@ Production Astro build, static asset/route audit, and browser checks at 320, 390
 
 ## Deployment
 
-Existing Netlify project `gruntz`, site `5c3d76ec-d753-47ba-aa76-3e2787ca1088`, serves `https://gruntzfit.com`. Git continuous deployment targets `main`, runs `npm run build` from `website`, and publishes `website/dist`. The redesigned source and its local assets are versioned together so subsequent Git deployments preserve the comic reader and app previews. Manual production deployments should use the same built directory.
+Existing Netlify project `gruntz`, site `5c3d76ec-d753-47ba-aa76-3e2787ca1088`, serves `https://gruntzfit.com`. Git continuous deployment targets `main`, runs `npm run build` from `website`, and publishes `website/dist`. The redesigned source and its local assets are versioned together so subsequent Git deployments preserve the comic reader and app previews. Manual production deployments should use the same built directory. `website/tsconfig.json` extends Astro’s configuration so website-only builds do not depend on the mobile app’s Expo packages.
