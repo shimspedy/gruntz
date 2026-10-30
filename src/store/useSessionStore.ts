@@ -159,6 +159,8 @@ const debouncedStorage = (() => {
     if (next !== 'active') flush();
   });
   return {
+    /** Write now instead of in a second: a ticked set, a finish or a discard must survive a crash. */
+    flushNow: flush,
     getItem: (key: string) => AsyncStorage.getItem(key),
     setItem: (key: string, value: string) => {
       pending = [key, value];
@@ -532,6 +534,7 @@ export const useSessionStore = create<SessionState>()(
             startedRest = true;
           }
         }
+        debouncedStorage.flushNow();
         return { completedExercise, startedRest };
       },
 
@@ -774,11 +777,14 @@ export const useSessionStore = create<SessionState>()(
         // Keep the most recent exercises only: this blob is rewritten on every set logged.
         const trimmed = Object.fromEntries(Object.entries(previous).slice(-200));
         set({ ...initial, previous: trimmed });
+        // Without this a kill within a second of Save brought the finished workout back as active.
+        debouncedStorage.flushNow();
       },
 
       discard: () => {
         void cancelRestDone();
         set({ ...initial });
+        debouncedStorage.flushNow();
       },
     }),
     {

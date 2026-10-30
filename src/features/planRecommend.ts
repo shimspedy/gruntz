@@ -1,5 +1,5 @@
 import { UserProfile } from '../types';
-import { allPlans, PlanEquipmentAccess, PlanLevel, WorkoutPlan } from '../data/workoutPlans';
+import { allPlans, PlanEquipmentAccess, PlanLevel, planExercises, WorkoutPlan } from '../data/workoutPlans';
 
 export interface PlanRecommendation {
   plan: WorkoutPlan;
@@ -25,43 +25,48 @@ function userEquipment(profile: UserProfile): PlanEquipmentAccess {
   return profile.available_equipment.includes('home') ? 'minimal' : 'none';
 }
 
-/** Equipment the plan's own metadata says it needs, or null when it says nothing. */
-const NO_GEAR = new Set(['bodyweight', 'none', '']);
-const LIGHT_GEAR = new Set([
-  ...NO_GEAR,
-  'dumbbells', 'kettle bells', 'bands', 'resistance bands', 'exercise ball',
-  'medicine ball', 'stability ball', 'jump rope', 'ez bar', 'other',
-]);
-const ACCESS_RANK: Record<string, number> = { none: 0, minimal: 1, gym: 2 };
-
-function declaredEquipmentAccess(plan: WorkoutPlan): WorkoutPlan['match']['equipment_access'] | null {
-  const equipment = (plan.summary.equipment ?? []).map((item) => item.trim().toLowerCase());
-  if (!equipment.length) return null;
-  if (equipment.every((item) => NO_GEAR.has(item))) return 'none';
-  if (equipment.every((item) => LIGHT_GEAR.has(item))) return 'minimal';
-  return 'gym';
-}
-
 /**
- * What a plan actually demands, rather than the worst clip matched to it.
+ * What a plan actually demands, read from the equipment tags on its own exercises.
  *
- * `match.equipment_access` is a strict maximum over the exercise clips the plan was
- * matched against, so one gym-equipment substitute tagged the whole plan `gym` —
- * "Full-Body Bodyweight Workout" among them, whose own `summary.equipment` reads
- * Bodyweight. That tag is a hard filter in both recommendation passes and a ceiling
- * in the browse gear chip, so the plans a no-gym athlete most needs were the ones
- * being hidden from them, and the detail screen printed "Full gym" directly above
- * its own "Bodyweight" line.
+ * Neither plan-level label could be trusted. `match.equipment_access` is the worst
+ * matched video clip, so one gym substitute tagged a bodyweight plan `gym` and hid it
+ * from no-gym athletes. `summary.equipment` went the other way: "4-Day Dumbbell Fat
+ * Loss Plan" and "20-Minute Treadmill Shred" claimed Bodyweight while prescribing
+ * dumbbells, machines and a treadmill. That is the "said dumbbells only, got a
+ * workout full of machines" review this app must never earn.
  *
- * The plan's authored equipment list wins when it is more permissive: it is the
- * plan's own statement of what it needs, and it is what the detail screen shows.
- * 22 of 424 programs reclassify, all in that direction.
+ * A bench counts as no gear (a chair or step stands in) and a weight plate as home
+ * gear (a dumbbell stands in). Anything else beyond dumbbells, bands, kettlebells
+ * and a stability ball needs a gym.
  */
-export function effectiveEquipmentAccess(plan: WorkoutPlan): WorkoutPlan['match']['equipment_access'] {
-  const derived = plan.match.equipment_access;
-  const declared = declaredEquipmentAccess(plan);
-  if (!declared) return derived;
-  return ACCESS_RANK[declared] < ACCESS_RANK[derived] ? declared : derived;
+const NO_GEAR = new Set(['Bodyweight', 'Bench']);
+const HOME_GEAR = new Set([...NO_GEAR, 'Dumbbell', 'Band', 'Kettlebell', 'Stability Ball', 'Weight Plate']);
+const ACCESS_CACHE = new Map<string, PlanEquipmentAccess>();
+
+export function effectiveEquipmentAccess(plan: WorkoutPlan): PlanEquipmentAccess {
+  const cached = ACCESS_CACHE.get(plan.id);
+  if (cached) return cached;
+  const library = planExercises();
+  let access: PlanEquipmentAccess = 'none';
+  let known = false;
+  for (const day of plan.days) {
+    for (const slot of day.exercises) {
+      const gear = library[slot.exercise_id]?.equipment;
+      if (!gear) continue;
+      known = true;
+      for (const item of gear) {
+        if (NO_GEAR.has(item)) continue;
+        if (HOME_GEAR.has(item)) access = 'minimal';
+        else { access = 'gym'; break; }
+      }
+      if (access === 'gym') break;
+    }
+    if (access === 'gym') break;
+  }
+  // No tagged exercises at all: fall back to the conservative clip-derived label.
+  const result = known ? access : plan.match.equipment_access;
+  ACCESS_CACHE.set(plan.id, result);
+  return result;
 }
 
 function scorePlan(plan: WorkoutPlan, profile: UserProfile, relaxed = false): PlanRecommendation | null {
@@ -95,6 +100,8 @@ function scorePlan(plan: WorkoutPlan, profile: UserProfile, relaxed = false): Pl
     const gap = Math.abs(m.days_per_week - profile.workout_days_per_week);
     if (gap === 0) { score += 3; reasons.push(`${m.days_per_week} days a week`); }
     else if (gap === 1) score += 1.5;
+    // Someone with 3 days a week shouldn't be handed a 6-day split.
+    else score -= gap;
   }
 
   const minutes = profile.preferred_session_minutes;

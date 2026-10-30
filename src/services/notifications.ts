@@ -283,7 +283,7 @@ export async function scheduleTrialEndingReminder(trialEndsAt: string) {
     await Notifications.scheduleNotificationAsync({
       content: {
         title: 'Your access ends soon',
-        body: 'Your Gruntz trial wraps up in less than 2 days. Subscribe to keep your streak.',
+        body: 'Your included Gruntz days end in under 2 days. Your history and routines stay yours either way.',
         data: { type: 'trial-ending', url: 'gruntz://paywall' },
         ...(Platform.OS === 'android' && { channelId: 'daily-reminder' }),
       },

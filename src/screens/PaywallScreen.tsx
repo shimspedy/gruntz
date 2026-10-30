@@ -52,15 +52,10 @@ export default function PaywallScreen() {
   const trialLeft = getTrialDaysRemaining(trialStartedAt);
   const monthly = getDisplayedMonthlyPrice(offering);
   const annual = offering?.annual ?? null;
-  const [plan, setPlan] = useState<'annual' | 'monthly'>(annual ? 'annual' : 'monthly');
+  const [plan, setPlan] = useState<'annual' | 'monthly'>('monthly');
   const billingBusy = useRef(false);
   const selectedPlan = plan === 'annual' && annual ? 'annual' : monthly ? 'monthly' : annual ? 'annual' : 'monthly';
   const store = Platform.OS === 'ios' ? 'App Store' : 'Google Play';
-
-  useEffect(() => {
-    if (annual) setPlan('annual');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [annual?.productIdentifier]);
 
   useEffect(() => {
     trackRetentionEvent('paywall_viewed', { sessions: useUserStore.getState().progress.workouts_completed, source: inOnboarding ? 'onboarding' : 'app' });
@@ -147,7 +142,7 @@ export default function PaywallScreen() {
   };
 
   const restore = async () => {
-    if (billingBusy.current || isLoading) return;
+    if (billingBusy.current) return;
     billingBusy.current = true;
     try {
       const r = await restoreAccess();
@@ -215,7 +210,7 @@ export default function PaywallScreen() {
             {access === 'trial'
               ? `${trialLeft} of ${GRUNTZ_TRIAL_DAYS} included free days left`
               : access === 'locked'
-                ? 'Your included access has ended'
+                ? 'Your included access has ended. Your history, own routines, and data export stay free.'
                 : access === 'subscriber'
                   ? 'Every program and workout is unlocked'
                   : `${GRUNTZ_TRIAL_DAYS} days of full access included`}
@@ -291,12 +286,12 @@ export default function PaywallScreen() {
         <View style={styles.reassure}>
           <Icon name="shieldCheck" size={16} color={color.accent} />
           <Text variant="subhead" tone="secondary">
-            No commitment, cancel anytime
+            {selectedPlan === 'annual' ? 'Renews yearly. Cancel anytime in Settings' : 'Renews monthly. Cancel anytime in Settings'}
           </Text>
         </View>
         <View style={styles.links}>
           {/* These were bare text well under the 44pt minimum. */}
-          <Tap feedback="opacity" disabled={isLoading} hitSlop={12} onPress={() => void restore()} style={styles.link} accessibilityLabel="Restore purchases">
+          <Tap feedback="opacity" hitSlop={12} onPress={() => void restore()} style={styles.link} accessibilityLabel="Restore purchases">
             <Text variant="footnote" tone="secondary">
               Restore
             </Text>

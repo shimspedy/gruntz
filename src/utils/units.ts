@@ -15,7 +15,10 @@ export function defaultUnits(): 'imperial' | 'metric' {
     const locale = Intl.DateTimeFormat().resolvedOptions().locale ?? '';
     // "en-US" -> US; "en-US-u-ca-gregory" -> US; bare "en" -> unknown.
     const region = locale.split('-').find((part) => /^[A-Z]{2}$/.test(part));
-    return region && IMPERIAL_REGIONS.includes(region) ? 'imperial' : 'metric';
+    if (region) return IMPERIAL_REGIONS.includes(region) ? 'imperial' : 'metric';
+    // Bare "en" with no region is almost always a US phone; starting them in kg
+    // without asking is how a 135 lb set gets logged as 135 kg.
+    return locale.split('-')[0] === 'en' ? 'imperial' : 'metric';
   } catch {
     // Intl missing or locale unreadable: keep the previous behaviour rather than
     // silently flipping existing expectations.

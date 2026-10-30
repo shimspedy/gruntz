@@ -14,6 +14,7 @@ import {
   type OfferingSnapshot,
   type PurchaseStatus,
   presentRevenueCatCustomerCenter,
+  PURCHASE_ERROR_TEXT,
   restoreRevenueCatPurchases,
 } from '../services/subscription';
 import {
@@ -166,6 +167,7 @@ export function getAccessState(state: Pick<SubscriptionState, 'trialStartedAt' |
 /** Convert raw SDK error messages into clean, user-facing text. */
 function userFacingError(raw: string | undefined | null, fallback: string): string {
   if (!raw) return fallback;
+  if ((Object.values(PURCHASE_ERROR_TEXT) as string[]).includes(raw)) return raw;
   // Strip SDK noise — keep it simple for the user
   if (raw.includes('configuration') || raw.includes('products registered'))
     return 'Subscription is temporarily unavailable. Please try again later.';

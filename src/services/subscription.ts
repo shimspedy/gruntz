@@ -349,6 +349,41 @@ export async function loadRevenueCatState(options?: {
   };
 }
 
+
+/**
+ * Plain-language text for store errors people can act on. GymStreak's 1-star
+ * reviews are full of "something went wrong" with no next step; these say what
+ * happened and what to do.
+ */
+export const PURCHASE_ERROR_TEXT = {
+  notAllowed: 'Purchases are turned off on this device. Check Screen Time > Content & Privacy Restrictions, then try again.',
+  alreadyOwned: 'You already have Gruntz Pro on this Apple ID. Tap Restore to turn it on here. You won’t be charged again.',
+  storeProblem: 'The App Store had a problem completing this. You were not charged. Try again in a few minutes.',
+  network: 'Couldn’t reach the App Store. Check your connection and try again.',
+  invalid: 'The App Store couldn’t process this payment. Check the payment method on your Apple ID and try again.',
+} as const;
+
+function purchaseErrorText(
+  codes: Record<string, string> | undefined,
+  err: { message?: string; code?: string },
+  fallback: string,
+): string {
+  // An uncoded error must not match a case whose constant is also undefined.
+  if (!err.code || !codes) return err.message || fallback;
+  const c = codes;
+  switch (err.code) {
+    case c.PURCHASE_NOT_ALLOWED_ERROR: return PURCHASE_ERROR_TEXT.notAllowed;
+    case c.PRODUCT_ALREADY_PURCHASED_ERROR:
+    case c.RECEIPT_ALREADY_IN_USE_ERROR: return PURCHASE_ERROR_TEXT.alreadyOwned;
+    case c.STORE_PROBLEM_ERROR: return PURCHASE_ERROR_TEXT.storeProblem;
+    case c.NETWORK_ERROR:
+    case c.OFFLINE_CONNECTION_ERROR: return PURCHASE_ERROR_TEXT.network;
+    case c.PURCHASE_INVALID_ERROR:
+    case c.PAYMENT_PENDING_ERROR: return PURCHASE_ERROR_TEXT.invalid;
+    default: return err.message || fallback;
+  }
+}
+
 export async function purchaseCurrentRevenueCatPackage(): Promise<{
   status: PurchaseStatus;
   customerInfo: CustomerInfo | null;
@@ -388,7 +423,7 @@ export async function purchaseCurrentRevenueCatPackage(): Promise<{
     return {
       status: 'error',
       customerInfo: null,
-      message: err.message || 'Purchase failed. Try again in a moment.',
+      message: purchaseErrorText(purchasesModule.PURCHASES_ERROR_CODE as unknown as Record<string, string>, err, 'Purchase failed. Try again in a moment.'),
     };
   }
 }
@@ -432,7 +467,7 @@ export async function purchaseAnnualRevenueCatPackage(): Promise<{
     return {
       status: 'error',
       customerInfo: null,
-      message: err.message || 'Purchase failed. Try again in a moment.',
+      message: purchaseErrorText(purchasesModule.PURCHASES_ERROR_CODE as unknown as Record<string, string>, err, 'Purchase failed. Try again in a moment.'),
     };
   }
 }
