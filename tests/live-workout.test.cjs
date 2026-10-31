@@ -83,6 +83,7 @@ test('sets logged from the Lock Screen are applied in order with their own time 
   const ex = env.session.getState().exercises[0];
   const sets = ex.sets.filter((s) => !s.warmup && s.reps);
   const now = Date.now();
+  env.session.setState({ startedAt: now - 10 * MIN });
   const { mod } = loadLive(env);
   mod.applyLoggedSets([
     { exKey: ex.key, setId: sets[1].id, at: now - 20_000 },
@@ -98,6 +99,8 @@ test('sets logged from the Lock Screen are applied in order with their own time 
   else assert.equal(env.session.getState().restEndsAt, null);
   mod.applyLoggedSets([{ exKey: ex.key, setId: sets[0].id, at: now }], now);
   assert.equal(env.session.getState().exercises[0].sets.find((s) => s.id === sets[0].id).done, true, 'a set already done is never toggled back');
+  mod.applyLoggedSets([{ exKey: ex.key, setId: sets[2]?.id ?? 'none', at: now + 24 * 60 * MIN }], now);
+  if (sets[2]) assert.equal(env.session.getState().lastActivityAt, now, 'a log is never dated after now');
 });
 
 test('syncing starts once per change and ends with the workout', async () => {

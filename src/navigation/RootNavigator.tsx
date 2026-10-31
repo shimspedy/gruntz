@@ -386,7 +386,8 @@ function useSavedNavigation(hydrated: boolean, onboarded: boolean) {
       .then((raw) => {
         if (!raw || cancelled) return;
         const saved = JSON.parse(raw) as { savedAt: number; state: InitialState };
-        if (Date.now() - saved.savedAt < NAV_MAX_AGE_MS) setInitial(restorable(saved.state));
+        // The app's home must be at the bottom of the stack, or Back has nowhere to go.
+        if (Date.now() - saved.savedAt < NAV_MAX_AGE_MS && saved.state?.routes?.[0]?.name === 'Tabs') setInitial(restorable(saved.state));
       })
       .catch(() => undefined)
       .finally(() => !cancelled && setReady(true));
@@ -623,6 +624,9 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   return (
     <View style={styles.fill}>
       <NavigationContainer
+        // Setup and the app are separate navigators. Without a fresh container, finishing
+        // setup from Restore carried that screen into the app with nothing under it.
+        key={isOnboarded ? 'app' : 'setup'}
         ref={navigationRef}
         theme={theme}
         linking={linking}

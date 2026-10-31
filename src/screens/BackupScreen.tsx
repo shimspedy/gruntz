@@ -43,7 +43,9 @@ import { relativeTime } from '../utils/relativeTime';
  */
 export default function BackupScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const onboarding = useRoute<RouteProp<RootStackParamList, 'Backup'>>().params?.onboarding === true;
+  // Setup mode only while setup is still running: once a restore finishes it, this is the normal screen.
+  const isOnboarded = useUserStore((s) => s.isOnboarded);
+  const onboarding = useRoute<RouteProp<RootStackParamList, 'Backup'>>().params?.onboarding === true && !isOnboarded;
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [stage, setStage] = useState<'email' | 'code'>('email');

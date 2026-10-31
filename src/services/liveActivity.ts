@@ -105,7 +105,10 @@ export function applyLoggedSets(logged: { exKey: string; setId: string; at: numb
   const store = useSessionStore.getState();
   if (!store.active) return;
   let last: { at: number; exKey: string } | null = null;
-  for (const entry of [...logged].sort((a, b) => a.at - b.at)) {
+  // A log can only have happened during this workout, never after now.
+  const earliest = store.startedAt ?? 0;
+  const entries = logged.map((e) => ({ ...e, at: Math.min(now, Math.max(earliest, e.at)) }));
+  for (const entry of entries.sort((a, b) => a.at - b.at)) {
     const set = useSessionStore.getState().exercises.find((e) => e.key === entry.exKey)?.sets.find((st) => st.id === entry.setId);
     if (!set || set.done) continue;
     useSessionStore.getState().toggleSet(entry.exKey, entry.setId);
@@ -121,7 +124,8 @@ export function applyLoggedSets(logged: { exKey: string; setId: string; at: numb
 }
 
 let lastSignature = '';
-let ended = true;
+// False at launch, so an activity left behind by a crash is ended when no workout is open.
+let ended = false;
 
 /** Keeps the Live Activity in step with the running workout. Safe to call on every store change. */
 export async function syncLiveActivity(s: SessionView) {

@@ -8,6 +8,8 @@ import Foundation
 struct LogNextSetIntent: LiveActivityIntent {
   static var title: LocalizedStringResource = "Log set"
   static var description = IntentDescription("Logs the next set of the running workout.")
+  /// Only the Live Activity's button runs it; it has no place in Shortcuts or Spotlight.
+  static var isDiscoverable: Bool = false
 
   init() {}
 
