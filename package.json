@@ -79,7 +79,7 @@
     "@types/react": "~19.2.4",
     "canvas": "^3.2.3",
     "deepmerge": "file:vendor/deepmerge",
-    "eslint": "^9.39.5",
+    "eslint": "^10.13.0",
     "eslint-config-expo": "~57.0.2",
     "typescript": "~6.0.3"
   },
