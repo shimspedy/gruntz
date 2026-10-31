@@ -7,6 +7,7 @@ import { TabHeader } from '../components/TabHeader';
 import { branchDefaultTest, getTestReadiness, getTestsForBranch, type TestEventDefinition } from '../data/militaryTests';
 import { useTabChromeInset } from '../navigation/TabBar';
 import { useReadinessStore } from '../store/useReadinessStore';
+import { useChromePrefs } from '../store/useUiStore';
 import { useUserStore } from '../store/useUserStore';
 import type { FitnessTestType, ServiceBranch } from '../types';
 import { Button } from '../ui/Button';
@@ -16,6 +17,7 @@ import { Bar, Ring } from '../ui/Progress';
 import { Tap } from '../ui/Pressable';
 import { Segmented } from '../ui/Segmented';
 import { Sheet } from '../ui/Sheet';
+import { SwipeDismiss } from '../ui/SwipeDismiss';
 import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
 import { toast } from '../ui/Toast';
@@ -108,6 +110,9 @@ export default function TestScreen() {
   }).sort((a, b) => a.score - b.score);
   const anyLogged = Object.values(scoped).some((v) => v > 0);
   const focus = getTrainingFocus(profile, testScores, targetScores);
+  // Swiped away for the day, or until the focus itself changes.
+  const purposeKey = `test-purpose:${focus?.title ?? ''}`;
+  const purposeHidden = useChromePrefs((s) => s.dismissedCards[purposeKey] === getLocalDateKey());
   const focusedDay = focus && program ? getFocusedProgramWorkout(program, week, profile, focus) : null;
   const attempts = testAttempts.filter((attempt) => attempt.testId === test.id).sort((a, b) => (b.recordedAt ? Date.parse(b.recordedAt) : -Infinity) - (a.recordedAt ? Date.parse(a.recordedAt) : -Infinity));
   const retest = nextRetestDate(attempts, test.id);
@@ -184,9 +189,14 @@ export default function TestScreen() {
         ) : null}
       </View>
 
-      {focus ? (
-        <View style={[styles.card, { marginTop: space.md }]}>
-          <Text variant="overline" tone="accent">Today’s purpose</Text>
+      {focus && !purposeHidden ? (
+        <SwipeDismiss key={purposeKey} style={[styles.card, { marginTop: space.md }]} onDismiss={() => useChromePrefs.getState().dismissCard(purposeKey, getLocalDateKey())}>{(dismiss) => (<>
+          <Text
+            variant="overline"
+            tone="accent"
+            accessibilityActions={[{ name: 'dismiss', label: 'Dismiss for today' }]}
+            onAccessibilityAction={(e) => { if (e.nativeEvent.actionName === 'dismiss') dismiss(); }}
+          >Today’s purpose</Text>
           <Text variant="headline" style={{ marginTop: 8 }}>{focus.title}</Text>
           <Text variant="callout" tone="secondary" style={{ marginTop: 6 }}>{focus.reason}</Text>
           <Text variant="footnote" tone="tertiary" style={{ marginTop: 8 }}>
@@ -197,7 +207,7 @@ export default function TestScreen() {
             if (focusedDay) navigation.navigate('WorkoutDetail', { workoutId: focusedDay.id, dateKey: getLocalDateKey() });
             else navigation.navigate('Tabs', { screen: 'Train' });
           }} />
-        </View>
+        </>)}</SwipeDismiss>
       ) : null}
 
       {anyLogged ? (
