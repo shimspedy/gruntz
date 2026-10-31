@@ -1,0 +1,1 @@
+../../../targets/live-activity/_shared/WorkoutActivityShared.swift

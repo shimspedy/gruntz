@@ -4,7 +4,7 @@
     "slug": "gruntz",
     "scheme": "gruntz",
     "owner": "blaqdu",
-    "version": "1.14.0",
+    "version": "1.15.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -17,7 +17,13 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSMotionUsageDescription": "Gruntz uses motion sensors to count workout reps and steps during runs, rucks and hikes.",
         "NSLocationWhenInUseUsageDescription": "Gruntz uses your location to record the route, distance and pace of runs, rucks and hikes you start.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow Gruntz to record your active run, ruck or hike while the screen is locked or you use another app. Recording stops when you end the activity."
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow Gruntz to record your active run, ruck or hike while the screen is locked or you use another app. Recording stops when you end the activity.",
+        "NSSupportsLiveActivities": true
+      },
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.gruntz.fitness"
+        ]
       }
     },
     "android": {

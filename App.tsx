@@ -21,6 +21,8 @@ import { ToastHost } from './src/ui/Toast';
 import { useShellSideColor } from './src/ui/SideBleed';
 import { color } from './src/ui/tokens';
 import { initializeActivityTracking } from './src/services/activityTracking';
+import { initializeLiveActivity } from './src/services/liveActivity';
+import { initializeWorkoutPresence } from './src/services/workoutPresence';
 
 // Dev-only: suppress known RevenueCat config warnings while App Store Connect
 // products haven't propagated. In production we WANT these logs surfaced so
@@ -70,6 +72,9 @@ export default function App() {
     // (onboarding reminder step or the Settings toggle), never at launch.
     setupNotificationChannels();
     void initializeActivityTracking();
+    // Lock Screen logs are applied before the Live Activity is next updated.
+    initializeLiveActivity();
+    initializeWorkoutPresence();
   }, []);
 
   useEffect(() => {

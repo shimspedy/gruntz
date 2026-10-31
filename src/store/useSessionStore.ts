@@ -85,6 +85,8 @@ interface SessionState {
   exercises: SessionExercise[];
   index: number;
   startedAt: number | null;
+  /** When a set was last logged or edited; what "the workout ended" means for one left open. */
+  lastActivityAt: number | null;
   restEndsAt: number | null;
   restTotal: number;
   /** The set whose completion started the current rest. */
@@ -139,6 +141,22 @@ function kindFor(ex: Exercise): SetKind {
 }
 
 const STALE_SESSION_MS = 12 * 60 * 60 * 1000;
+/** Idle longer than this and the workout is treated as having ended at its last activity. */
+export const IDLE_SESSION_MS = 45 * 60 * 1000;
+
+/**
+ * Minutes to record for a workout. One left running after the last set (phone in a
+ * bag, app closed) ends at that last activity, not when someone finally taps Finish,
+ * so forgotten time never counts as training. Past the stale cutoff the clock is
+ * meaningless and the estimate is used.
+ */
+export function sessionMinutes(startedAt: number | null, lastActivityAt: number | null, now: number, estimatedMinutes: number): number {
+  if (startedAt === null) return estimatedMinutes;
+  const last = lastActivityAt ?? startedAt;
+  const end = now - last > IDLE_SESSION_MS ? Math.min(now, last + 60_000) : now;
+  const elapsed = end - startedAt;
+  return elapsed >= 0 && elapsed <= STALE_SESSION_MS ? Math.max(1, Math.round(elapsed / 60000)) : estimatedMinutes;
+}
 
 /**
  * Typing a weight rewrote the whole workout to disk on every keystroke. Writes are coalesced
@@ -258,7 +276,7 @@ function bestEffort(kind: SetKind, sets: { reps?: number; weight?: number; secon
 
 export const isExerciseDone = (e: SessionExercise) => e.sets.filter((s) => s.done && !s.warmup).length >= e.requiredSets;
 
-function hasSetResult(kind: SetKind, set: SessionSet): boolean {
+export function hasSetResult(kind: SetKind, set: SessionSet): boolean {
   const positive = (n: number | undefined) => typeof n === 'number' && Number.isFinite(n) && n > 0;
   return kind === 'reps' ? positive(set.reps) : kind === 'time' ? positive(set.seconds) : !!set.distance?.trim();
 }
@@ -274,6 +292,7 @@ const initial = {
   exercises: [] as SessionExercise[],
   index: 0,
   startedAt: null,
+  lastActivityAt: null as number | null,
   restEndsAt: null,
   restTotal: 0,
   restSetId: null as string | null,
@@ -365,6 +384,7 @@ export const useSessionStore = create<SessionState>()(
           title: day.title,
           index: 0,
           startedAt: Date.now(),
+          lastActivityAt: Date.now(),
           restEndsAt: null,
           restTotal: 0,
           ...choice,
@@ -397,6 +417,7 @@ export const useSessionStore = create<SessionState>()(
           title: routine.name,
           index: 0,
           startedAt: Date.now(),
+          lastActivityAt: Date.now(),
           restEndsAt: null,
           restTotal: 0,
           restPrescribed: prescribed,
@@ -465,6 +486,7 @@ export const useSessionStore = create<SessionState>()(
           title: `${plan.title} · ${day.title}`,
           index: 0,
           startedAt: Date.now(),
+          lastActivityAt: Date.now(),
           restEndsAt: null,
           restTotal: 0,
           restPrescribed: prescribed,
@@ -476,6 +498,7 @@ export const useSessionStore = create<SessionState>()(
 
       updateSet: (exKey, setId, patch) => {
         set((s) => ({
+          lastActivityAt: Date.now(),
           exercises: s.exercises.map((e) => {
             if (e.key !== exKey) return e;
             const at = e.sets.findIndex((st) => st.id === setId);
@@ -521,7 +544,7 @@ export const useSessionStore = create<SessionState>()(
         const exercises = get().exercises.map((e) =>
           e.key !== exKey ? e : { ...e, sets: e.sets.map((st) => (st.id === setId ? { ...st, done: nowDone } : st)) },
         );
-        set({ exercises });
+        set({ exercises, lastActivityAt: Date.now() });
         const after = exercises.find((e) => e.key === exKey)!;
         const completedExercise = nowDone && isExerciseDone(after) && !isExerciseDone(before);
         // Un-logging the set that started the rest cancels that rest.
@@ -729,10 +752,7 @@ export const useSessionStore = create<SessionState>()(
         // A session left open overnight would otherwise log hundreds of minutes of
         // "training". Past the stale cutoff the clock is meaningless, so fall back to
         // what the workout was estimated to take.
-        const elapsed = s.startedAt ? Date.now() - s.startedAt : null;
-        const minutes = elapsed !== null && elapsed <= STALE_SESSION_MS
-          ? Math.max(1, Math.round(elapsed / 60000))
-          : s.estimatedMinutes;
+        const minutes = sessionMinutes(s.startedAt, s.lastActivityAt, Date.now(), s.estimatedMinutes);
         return {
           mission_date: s.missionDate,
           workout_day_id: s.workoutDayId,
@@ -808,6 +828,7 @@ export const useSessionStore = create<SessionState>()(
         exercises: s.exercises,
         index: s.index,
         startedAt: s.startedAt,
+        lastActivityAt: s.lastActivityAt,
         restOverrides: s.restOverrides,
         restPrescribed: s.restPrescribed,
         previous: s.previous,

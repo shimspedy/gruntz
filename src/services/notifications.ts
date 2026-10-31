@@ -209,6 +209,46 @@ export async function cancelRestDone() {
   await dismissPresentedNotificationsByType('rest-done');
 }
 
+// ─── Workout left open ──────────────────────────────────────────
+
+const LEFT_OPEN_IDS = ['workout-open-1', 'workout-open-2'];
+
+/**
+ * Two nudges after the last logged set: one at an hour, one at three. Re-armed each
+ * time a set is logged, cancelled on finish or discard, so they only reach someone
+ * who walked away from an open workout.
+ */
+export async function scheduleWorkoutLeftOpen(lastActivityAt: number, title: string) {
+  await cancelWorkoutLeftOpen();
+  if (!remindersEnabled) return;
+  const nudges = [
+    { id: LEFT_OPEN_IDS[0], at: lastActivityAt + 60 * 60 * 1000, title: 'Workout still open', body: `${title || 'Your workout'} has had no sets for an hour. Finish it so your log stays accurate.` },
+    { id: LEFT_OPEN_IDS[1], at: lastActivityAt + 3 * 60 * 60 * 1000, title: 'Still training?', body: `Finish or discard ${title || 'your workout'}. The time since your last set won’t count.` },
+  ];
+  await withNotificationGuard(async () => {
+    for (const nudge of nudges) {
+      if (nudge.at <= Date.now() + 1000) continue;
+      await Notifications.scheduleNotificationAsync({
+        identifier: nudge.id,
+        content: {
+          title: nudge.title,
+          body: nudge.body,
+          data: { type: 'workout-open', url: 'gruntz://train' },
+          ...(Platform.OS === 'android' && { channelId: 'workout-progress' }),
+        },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: new Date(nudge.at) },
+      });
+    }
+  }, undefined);
+}
+
+export async function cancelWorkoutLeftOpen() {
+  await withNotificationGuard(async () => {
+    for (const id of LEFT_OPEN_IDS) await Notifications.cancelScheduledNotificationAsync(id);
+  }, undefined);
+  await dismissPresentedNotificationsByType('workout-open');
+}
+
 // ─── Trial Ending Nudge ─────────────────────────────────────────
 // Schedules a one-shot reminder ~36h before the trial window ends so the
 // user has time to subscribe before losing access. Replaces any prior
