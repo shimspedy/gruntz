@@ -462,7 +462,7 @@ function toggleExclusive(list: string[], v: string) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  restoreLink: { alignSelf: 'flex-start', marginTop: -space.sm, marginBottom: space.md },
+  restoreLink: { alignSelf: 'center', marginTop: -space.xs, marginBottom: space.md, paddingHorizontal: space.gutter },
   restoreLinkStrong: { color: color.accent },
   page: { flex: 1 },
   header: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: space.md },
