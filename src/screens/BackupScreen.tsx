@@ -45,8 +45,10 @@ export default function BackupScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   // Setup mode only while setup is still running: once a restore finishes it, this is the normal screen.
   const isOnboarded = useUserStore((s) => s.isOnboarded);
-  const onboarding = useRoute<RouteProp<RootStackParamList, 'Backup'>>().params?.onboarding === true && !isOnboarded;
-  const [email, setEmail] = useState('');
+  const params = useRoute<RouteProp<RootStackParamList, 'Backup'>>().params;
+  const onboarding = params?.onboarding === true && !isOnboarded;
+  // Filled in from iCloud when this Apple ID backed up before; still needs the emailed code.
+  const [email, setEmail] = useState(params?.email ?? '');
   const [code, setCode] = useState('');
   const [stage, setStage] = useState<'email' | 'code'>('email');
   const [signedInEmail, setSignedInEmail] = useState<string | null>(null);

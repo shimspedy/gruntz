@@ -40,5 +40,5 @@ export function MovedDeviceSheet() {
 }
 
 const styles = StyleSheet.create({
-  body: { gap: space.md, paddingBottom: space.md },
+  body: { gap: space.md, paddingHorizontal: space.gutter, paddingTop: space.sm, paddingBottom: space.md },
 });

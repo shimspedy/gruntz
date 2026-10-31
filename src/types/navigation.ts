@@ -54,7 +54,7 @@ export type RootStackParamList = {
   Settings: undefined;
   ServiceProfile: undefined;
   /** `onboarding` opens it from the first setup screen to restore onto a new phone. */
-  Backup: { onboarding?: boolean } | undefined;
+  Backup: { onboarding?: boolean; email?: string } | undefined;
   DataTransfer: undefined;
   HealthSync: undefined;
   TrainingPreferences: undefined;
@@ -73,7 +73,7 @@ export type RootStackParamList = {
 export type OnboardingStackParamList = {
   Onboarding: undefined;
   OnboardingPaywall: undefined;
-  Backup: { onboarding?: boolean } | undefined;
+  Backup: { onboarding?: boolean; email?: string } | undefined;
 };
 
 declare global {

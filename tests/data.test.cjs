@@ -176,7 +176,7 @@ function backupModule({ remote = { user_id: 'athlete' }, lookupError = null, see
     '@react-native-async-storage/async-storage': disk,
     'react-native': { AppState: { addEventListener: () => ({ remove() {} }) }, Platform: { OS: 'ios' } },
     '../config/backup': { BACKUP_SCHEMA_VERSION: 1, BACKUP_DEBOUNCE_MS: 20000, isBackupAvailable: () => true },
-    './supabaseClient': { getSupabase: () => api }, './profilePhotoCloud': { restoreProfilePhoto: async () => 'none', syncProfilePhoto: async () => {} },
+    './supabaseClient': { getSupabase: () => api }, './profilePhotoCloud': { restoreProfilePhoto: async () => 'none', syncProfilePhoto: async () => {} }, './returningAthlete': { rememberBackupAccount() {} },
     './backupSnapshot': {
       captureSnapshot: async () => { captured += 1; if (captureError) throw captureError; return snapshot({ '@gruntz_user': serialized({ progress: {} }) }); },
       snapshotWorkoutCount: () => 1, applySnapshot: async () => { if (restoreError) throw restoreError; },

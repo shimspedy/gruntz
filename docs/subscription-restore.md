@@ -68,9 +68,13 @@ other.
 - The profile photo of a signed-in athlete is saved with the account and comes back
   on its own.
 
-Not done here: iCloud key-value / CloudKit sync and Android Block Store. They would
-let an athlete who never signed in be recognised on a new phone; they need an iCloud
-container entitlement and a native module, and are a candidate follow-up.
+- iPhone: the backup email is remembered in the athlete's own iCloud key-value store
+  (`modules/gruntz-cloud-hint`, entitlement `com.apple.developer.ubiquity-kvstore-identifier`).
+  After a reinstall or on a new iPhone with the same Apple ID, Get Started offers
+  "Welcome back" even to non-subscribers, with the email filled in. The emailed code is
+  still required, and nothing is restored without confirming.
+- Android: Auto Backup is on (`allowBackup`), with Expo SecureStore excluded by its own
+  backup rules, so app data comes back with the phone's Google backup.
 
 ## Review notes (paste into App Store Connect / Play Console)
 

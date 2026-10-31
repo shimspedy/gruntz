@@ -41,6 +41,7 @@ import { onboardingSteps, preferredOnboardingPlan, resumedOnboardingStep, type O
 import { PracticeSession } from './PracticeSession';
 import { Welcome } from './Welcome';
 import { showRestoreResult } from '../../components/restoreResult';
+import { rememberedBackupAccount } from '../../services/returningAthlete';
 import { toast } from '../../ui/Toast';
 import { getLocalDateKey } from '../../utils/dateKey';
 
@@ -144,7 +145,7 @@ function OnboardingFlow() {
     setStep(nextStep);
   }, [step, steps, index]);
   const next = useCallback(() => go(1), [go]);
-  const openRestoreProgress = useCallback(() => navigation.navigate('Backup', { onboarding: true }), [navigation]);
+  const openRestoreProgress = useCallback((email?: string) => navigation.navigate('Backup', email ? { onboarding: true, email } : { onboarding: true }), [navigation]);
 
   /**
    * Nothing is asked before Get Started. After it, the store is checked quietly: a
@@ -155,12 +156,14 @@ function OnboardingFlow() {
     next();
     void (async () => {
       await useSubscriptionStore.getState().refresh().catch(() => undefined);
-      if (!useSubscriptionStore.getState().entitlementActive) return;
-      toast('Gruntz Pro restored', { icon: 'check' });
-      if (!isBackupAvailable()) return;
+      const subscriber = useSubscriptionStore.getState().entitlementActive;
+      // Remembered in this Apple ID's iCloud when they backed up on another install.
+      const backupEmail = rememberedBackupAccount();
+      if (subscriber) toast('Gruntz Pro restored', { icon: 'check' });
+      if ((!subscriber && !backupEmail) || !isBackupAvailable()) return;
       Alert.alert('Welcome back', 'Restore your progress? Your plan, streak and training history come back from your backup.', [
         { text: 'Start fresh', style: 'cancel' },
-        { text: 'Restore', onPress: openRestoreProgress },
+        { text: 'Restore', onPress: () => openRestoreProgress(backupEmail ?? undefined) },
       ]);
     })();
   }, [next, openRestoreProgress]);
@@ -311,7 +314,7 @@ function OnboardingFlow() {
           <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
             <Question title="What are you training for?" subtitle="Pick everything that fits." />
             {isBackupAvailable() ? (
-              <Tap feedback="opacity" hitSlop={8} onPress={openRestoreProgress} style={styles.restoreLink} accessibilityRole="button">
+              <Tap feedback="opacity" hitSlop={8} onPress={() => openRestoreProgress(rememberedBackupAccount() ?? undefined)} style={styles.restoreLink} accessibilityRole="button">
                 <Text variant="footnote" tone="secondary">Already use Gruntz? <Text variant="footnote" style={styles.restoreLinkStrong}>Restore your progress</Text></Text>
               </Tap>
             ) : null}

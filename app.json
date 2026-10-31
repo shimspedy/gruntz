@@ -23,7 +23,8 @@
       "entitlements": {
         "com.apple.security.application-groups": [
           "group.com.gruntz.fitness"
-        ]
+        ],
+        "com.apple.developer.ubiquity-kvstore-identifier": "$(TeamIdentifierPrefix)$(CFBundleIdentifier)"
       }
     },
     "android": {

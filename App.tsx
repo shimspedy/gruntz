@@ -24,6 +24,7 @@ import { initializeActivityTracking } from './src/services/activityTracking';
 import { initializeLiveActivity } from './src/services/liveActivity';
 import { initializeWorkoutPresence } from './src/services/workoutPresence';
 import { initializeProfilePhotoCloud } from './src/services/profilePhotoCloud';
+import { initializeReturningAthlete } from './src/services/returningAthlete';
 
 // Dev-only: suppress known RevenueCat config warnings while App Store Connect
 // products haven't propagated. In production we WANT these logs surfaced so
@@ -77,6 +78,7 @@ export default function App() {
     initializeLiveActivity();
     initializeWorkoutPresence();
     initializeProfilePhotoCloud();
+    initializeReturningAthlete();
   }, []);
 
   useEffect(() => {

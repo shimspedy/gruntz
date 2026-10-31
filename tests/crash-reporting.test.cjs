@@ -99,8 +99,8 @@ test('a new phone can restore from the first onboarding screen', () => {
   assert.match(onboardingStack, /name="Backup" component=\{BackupScreen\}/);
   const screen = fs.readFileSync(path.join(root, 'src/screens/onboarding/OnboardingScreen.tsx'), 'utf8');
   // Reachable right after Get Started (the welcome screen itself only offers Restore purchases).
-  assert.match(screen, /openRestoreProgress = useCallback\(\(\) => navigation\.navigate\('Backup', \{ onboarding: true \}\)/);
-  assert.match(screen, /isBackupAvailable\(\) \? \(\s*<Tap feedback="opacity" hitSlop=\{8\} onPress=\{openRestoreProgress\}/);
+  assert.match(screen, /openRestoreProgress = useCallback\(\(email\?: string\) => navigation\.navigate\('Backup', email \? \{ onboarding: true, email \} : \{ onboarding: true \}\)/);
+  assert.match(screen, /isBackupAvailable\(\) \? \(\s*<Tap feedback="opacity" hitSlop=\{8\} onPress=\{\(\) => openRestoreProgress\(/);
   const backup = fs.readFileSync(path.join(root, 'src/screens/BackupScreen.tsx'), 'utf8');
   // Mid-setup sign-in must never upload this phone's empty state over a real backup.
   const onboardingBranch = backup.slice(backup.indexOf('if (onboarding) {'), backup.indexOf('// First sign-in'));

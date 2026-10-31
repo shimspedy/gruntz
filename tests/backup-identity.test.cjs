@@ -44,7 +44,7 @@ function environment({ beforeQuery, afterQuery, onCapture, onApply, onVerify, de
     },
     'react-native': { Platform: { OS: 'ios' }, AppState: {} },
     '../config/backup': { BACKUP_SCHEMA_VERSION: 2, BACKUP_DEBOUNCE_MS: 1000, isBackupAvailable: () => true },
-    './supabaseClient': { getSupabase: () => api }, './profilePhotoCloud': { restoreProfilePhoto: async () => 'none', syncProfilePhoto: async () => {} },
+    './supabaseClient': { getSupabase: () => api }, './profilePhotoCloud': { restoreProfilePhoto: async () => 'none', syncProfilePhoto: async () => {} }, './returningAthlete': { rememberBackupAccount() {} },
     './backupSnapshot': {
       captureSnapshot: async () => { onCapture?.(state); return SNAPSHOT('local'); }, snapshotWorkoutCount: () => 1,
       applySnapshot: async (snapshot) => { state.applied.push(snapshot); await onApply?.(state); },

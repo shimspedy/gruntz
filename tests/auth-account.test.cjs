@@ -46,7 +46,7 @@ async function installedAuth({ initialUser = null, deferLogout = false } = {}) {
     '@react-native-async-storage/async-storage': {},
     'react-native': { Platform: { OS: 'ios' }, AppState: {} },
     '../config/backup': { BACKUP_SCHEMA_VERSION: 2, BACKUP_DEBOUNCE_MS: 1000, isBackupAvailable: () => true },
-    './backupSnapshot': {}, './supabaseClient': { getSupabase: () => client }, './profilePhotoCloud': { restoreProfilePhoto: async () => 'none', syncProfilePhoto: async () => {} },
+    './backupSnapshot': {}, './supabaseClient': { getSupabase: () => client }, './profilePhotoCloud': { restoreProfilePhoto: async () => 'none', syncProfilePhoto: async () => {} }, './returningAthlete': { rememberBackupAccount() {} },
   })('src/services/backup.ts');
   return { client, service, requests, events, disk, storageKey, close: () => subscription.unsubscribe() };
 }
@@ -76,7 +76,7 @@ function account({ memberships = ['one', 'two'], leaveError = false, signOutErro
     '@react-native-async-storage/async-storage': {},
     'react-native': { Platform: { OS: 'ios' }, AppState: {} },
     '../config/backup': { BACKUP_SCHEMA_VERSION: 2, BACKUP_DEBOUNCE_MS: 1000, isBackupAvailable: () => true },
-    './backupSnapshot': {}, './supabaseClient': { getSupabase: () => api }, './profilePhotoCloud': { restoreProfilePhoto: async () => 'none', syncProfilePhoto: async () => {} },
+    './backupSnapshot': {}, './supabaseClient': { getSupabase: () => api }, './profilePhotoCloud': { restoreProfilePhoto: async () => 'none', syncProfilePhoto: async () => {} }, './returningAthlete': { rememberBackupAccount() {} },
   })('src/services/backup.ts');
   return { state, api, service };
 }

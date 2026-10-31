@@ -4,6 +4,7 @@ import { BACKUP_DEBOUNCE_MS, BACKUP_SCHEMA_VERSION, isBackupAvailable } from '..
 import { applySnapshot, captureSnapshot, snapshotWorkoutCount, type BackupSnapshot } from './backupSnapshot';
 import { getSupabase } from './supabaseClient';
 import { restoreProfilePhoto, syncProfilePhoto } from './profilePhotoCloud';
+import { rememberBackupAccount } from './returningAthlete';
 import { reportHandled } from './crashReporting';
 import type { Session } from '@supabase/supabase-js';
 
@@ -442,6 +443,7 @@ async function deleteBackupNow(): Promise<'deleted' | 'signed-out' | 'unavailabl
       return 'error';
     }
     if (!await contextIsCurrent(supabase, context) || !contextGenerationIsCurrent(context)) return 'error';
+    rememberBackupAccount(null);
     return 'deleted';
   } catch {
     return 'error';
@@ -511,6 +513,8 @@ export async function deleteAccount(): Promise<'deleted' | 'signed-out' | 'unava
       if (__DEV__) console.warn('[backup] deleted account local cleanup failed', cleanupError);
       reportHandled(cleanupError, 'backup.deleteAccountCleanup');
     }
+    // The account is gone, so a reinstall has nothing to offer back.
+    rememberBackupAccount(null);
     return 'deleted';
   } catch (error) {
     if (__DEV__) console.warn('[backup] deleteAccount threw', error);
