@@ -26,6 +26,9 @@ interface ChromePrefs {
   /** Local date key the daily-challenge pill was swiped away on. */
   challengePillHiddenOn: string | null;
   hideChallengePill: (dateKey: string | null) => void;
+  /** Cards swiped away on Train: card key → local date key it was hidden on. */
+  dismissedCards: Record<string, string>;
+  dismissCard: (key: string, dateKey: string) => void;
   /** The "what a team sees" note on Leader tools has been read and closed. */
   leaderPrivacyDismissed: boolean;
   setLeaderPrivacyDismissed: (dismissed: boolean) => void;
@@ -42,6 +45,11 @@ export const useChromePrefs = create<ChromePrefs>()(
     (set) => ({
       challengePillHiddenOn: null,
       hideChallengePill: (challengePillHiddenOn) => set({ challengePillHiddenOn }),
+      dismissedCards: {},
+      // Only today's entries are kept, so the record never grows.
+      dismissCard: (key, dateKey) => set((s) => ({
+        dismissedCards: { ...Object.fromEntries(Object.entries(s.dismissedCards).filter(([, day]) => day === dateKey)), [key]: dateKey },
+      })),
       leaderPrivacyDismissed: false,
       setLeaderPrivacyDismissed: (leaderPrivacyDismissed) => set({ leaderPrivacyDismissed }),
       profilePhotoFile: null,

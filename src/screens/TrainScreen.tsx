@@ -20,7 +20,7 @@ import { displayTitle, planDayHero } from '../features/planDisplay';
 import { nextPlanDay, useActivePlanDeferred, usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { useProgramStore } from '../store/useProgramStore';
 import { calculateDailyReadiness, getTodaysCheckIn, useReadinessStore } from '../store/useReadinessStore';
-import { useUiStore } from '../store/useUiStore';
+import { useChromePrefs, useUiStore } from '../store/useUiStore';
 import { useUserStore } from '../store/useUserStore';
 import type { Exercise, MovementCard } from '../types';
 import { Button } from '../ui/Button';
@@ -28,6 +28,7 @@ import { HeroArt } from '../ui/ExerciseArt';
 import { Icon, type IconName } from '../ui/Icon';
 import { Chip, SectionTitle } from '../ui/Layout';
 import { Tap } from '../ui/Pressable';
+import { SwipeDismiss } from '../ui/SwipeDismiss';
 import { Text } from '../ui/Text';
 import { color, radius, space } from '../ui/tokens';
 import { useContentSize } from '../ui/useContentSize';
@@ -91,6 +92,16 @@ export default function TrainScreen() {
   const nextMission = todayMission ?? days.find((day) => !day.isPast && day.workout && !day.completed);
   const purposeMission = activePlan || planPending ? null : nextMission;
   const choice = getTodaysTrainingChoice(trainingChoice, new Date(now));
+  // A swiped-away card stays away for the day, or until what it says changes.
+  const dismissed = useChromePrefs((s) => s.dismissedCards);
+  const comebackKey = 'comeback';
+  const briefKey = `brief:${choice}:${focus?.title ?? purposeMission?.workout?.id ?? ''}`;
+  const hidden = (key: string) => dismissed[key] === dateKey;
+  const hide = (key: string) => () => useChromePrefs.getState().dismissCard(key, dateKey);
+  const dismissAction = (dismiss: () => void) => ({
+    accessibilityActions: [{ name: 'dismiss', label: 'Dismiss for today' }],
+    onAccessibilityAction: (e: { nativeEvent: { actionName: string } }) => { if (e.nativeEvent.actionName === 'dismiss') dismiss(); },
+  });
 
   useEffect(() => {
     if (showComeback) trackRetentionEvent('comeback_viewed', { source: 'train' });
@@ -118,19 +129,19 @@ export default function TrainScreen() {
     >
       <TabHeader />
 
-      {showComeback ? (
-        <View style={styles.brief}>
-          <Text variant="overline" tone="accent">Welcome back</Text>
+      {showComeback && !hidden(comebackKey) ? (
+        <SwipeDismiss key={comebackKey} style={styles.brief} onDismiss={hide(comebackKey)}>{(dismiss) => (<>
+          <Text variant="overline" tone="accent" {...dismissAction(dismiss)}>Welcome back</Text>
           <Text variant="question" style={{ marginTop: space.sm }}>Pick up from where you are</Text>
           <Text variant="callout" tone="secondary" style={{ marginTop: space.sm }}>Your history and level are still here. Choose a shorter next session and leave room to build back up.</Text>
           <Button title="Choose a shorter session" variant="primary" size="md" onPress={shorterSession} disabled={planPending} style={{ marginTop: space.md }} />
           <Button title="Adjust my training week" variant="outline" size="md" onPress={() => navigation.navigate('TrainingPreferences')} style={{ marginTop: space.sm }} />
-        </View>
+        </>)}</SwipeDismiss>
       ) : null}
 
-      {focus || purposeMission?.workout?.objective || choice !== 'planned' ? (
-        <View style={styles.brief}>
-          <Text variant="overline" tone="accent">{choice !== 'planned' ? 'Your choice for today' : focus ? 'Your test focus' : 'Mission purpose'}</Text>
+      {(focus || purposeMission?.workout?.objective || choice !== 'planned') && !hidden(briefKey) ? (
+        <SwipeDismiss key={briefKey} style={styles.brief} onDismiss={hide(briefKey)}>{(dismiss) => (<>
+          <Text variant="overline" tone="accent" {...dismissAction(dismiss)}>{choice !== 'planned' ? 'Your choice for today' : focus ? 'Your test focus' : 'Mission purpose'}</Text>
           <Text variant="headline" style={{ marginTop: space.sm }}>{choice === 'shorter' ? 'A shorter session is ready' : choice === 'recovery' ? 'A recovery session is ready' : focus?.title ?? purposeMission?.workout?.title}</Text>
           <Text variant="callout" tone="secondary" style={{ marginTop: space.xs }}>{choice !== 'planned' ? 'Your next workout will use this choice when you start. You can change it in your readiness check-in.' : focus?.reason ?? purposeMission?.workout?.objective}</Text>
           {focus && activePlan && choice === 'planned' ? <Text variant="footnote" tone="secondary" style={{ marginTop: space.xs }}>Use this focus alongside your chosen plan; library plans keep their exercise selection.</Text> : null}
@@ -143,7 +154,7 @@ export default function TrainScreen() {
           <Tap feedback="opacity" onPress={() => choice !== 'planned' ? useUiStore.getState().setReadiness(true) : focus ? navigation.navigate('Tabs', { screen: 'Test' }) : navigation.navigate('Plan')} style={styles.briefLink}>
             <Text variant="subhead" tone="accent">{choice !== 'planned' ? 'Review today’s choice' : focus ? 'See test progress' : 'See weekly plan'}</Text><Icon name="arrowRight" color={color.accent} size={15} />
           </Tap>
-        </View>
+        </>)}</SwipeDismiss>
       ) : null}
 
       {/* One label for one action: "See plan", "See More" and "Browse" all opened
