@@ -81,7 +81,7 @@
     "deepmerge": "file:vendor/deepmerge",
     "eslint": "^9.39.5",
     "eslint-config-expo": "~57.0.2",
-    "typescript": "~6.0.3"
+    "typescript": "~7.0.2"
   },
   "overrides": {
     "@bacons/xcode": {
