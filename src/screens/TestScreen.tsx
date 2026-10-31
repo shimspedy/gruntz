@@ -7,7 +7,7 @@ import { TabHeader } from '../components/TabHeader';
 import { branchDefaultTest, getTestReadiness, getTestsForBranch, type TestEventDefinition } from '../data/militaryTests';
 import { useTabChromeInset } from '../navigation/TabBar';
 import { useReadinessStore } from '../store/useReadinessStore';
-import { useChromePrefs } from '../store/useUiStore';
+import { isCardHidden, useChromePrefs } from '../store/useUiStore';
 import { useUserStore } from '../store/useUserStore';
 import type { FitnessTestType, ServiceBranch } from '../types';
 import { Button } from '../ui/Button';
@@ -112,7 +112,7 @@ export default function TestScreen() {
   const focus = getTrainingFocus(profile, testScores, targetScores);
   // Swiped away for the day, or until the focus itself changes.
   const purposeKey = `test-purpose:${focus?.title ?? ''}`;
-  const purposeHidden = useChromePrefs((s) => s.dismissedCards[purposeKey] === getLocalDateKey());
+  const purposeHidden = useChromePrefs((s) => isCardHidden(s.dismissedCards, purposeKey, getLocalDateKey()));
   const focusedDay = focus && program ? getFocusedProgramWorkout(program, week, profile, focus) : null;
   const attempts = testAttempts.filter((attempt) => attempt.testId === test.id).sort((a, b) => (b.recordedAt ? Date.parse(b.recordedAt) : -Infinity) - (a.recordedAt ? Date.parse(a.recordedAt) : -Infinity));
   const retest = nextRetestDate(attempts, test.id);
@@ -190,7 +190,7 @@ export default function TestScreen() {
       </View>
 
       {focus && !purposeHidden ? (
-        <SwipeDismiss key={purposeKey} style={[styles.card, { marginTop: space.md }]} onDismiss={() => useChromePrefs.getState().dismissCard(purposeKey, getLocalDateKey())}>{(dismiss) => (<>
+        <SwipeDismiss key={purposeKey} style={[styles.card, { marginTop: space.md }]} onDismiss={() => useChromePrefs.getState().dismissCard(purposeKey, getLocalDateKey(), getLocalDateKey())}>{(dismiss, guard) => (<>
           <Text
             variant="overline"
             tone="accent"
@@ -202,11 +202,11 @@ export default function TestScreen() {
           <Text variant="footnote" tone="tertiary" style={{ marginTop: 8 }}>
             {focusedDay ? `${focusedDay.title} includes work for this event. It moves first after your warm-up, using your existing plan targets.` : 'Keep your current plan balanced and use your next scores to check this event’s progress.'}
           </Text>
-          <Button title={focusedDay ? 'View focused mission' : 'View my training'} variant="secondary" size="md" style={{ marginTop: space.md }} onPress={() => {
+          <Button title={focusedDay ? 'View focused mission' : 'View my training'} variant="secondary" size="md" style={{ marginTop: space.md }} onPress={guard(() => {
             trackRetentionEvent('test_focus_opened');
             if (focusedDay) navigation.navigate('WorkoutDetail', { workoutId: focusedDay.id, dateKey: getLocalDateKey() });
             else navigation.navigate('Tabs', { screen: 'Train' });
-          }} />
+          })} />
         </>)}</SwipeDismiss>
       ) : null}
 

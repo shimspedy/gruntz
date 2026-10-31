@@ -20,7 +20,7 @@ import { displayTitle, planDayHero } from '../features/planDisplay';
 import { nextPlanDay, useActivePlanDeferred, usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { useProgramStore } from '../store/useProgramStore';
 import { calculateDailyReadiness, getTodaysCheckIn, useReadinessStore } from '../store/useReadinessStore';
-import { useChromePrefs, useUiStore } from '../store/useUiStore';
+import { isCardHidden, useChromePrefs, useUiStore } from '../store/useUiStore';
 import { useUserStore } from '../store/useUserStore';
 import type { Exercise, MovementCard } from '../types';
 import { Button } from '../ui/Button';
@@ -96,8 +96,11 @@ export default function TrainScreen() {
   const dismissed = useChromePrefs((s) => s.dismissedCards);
   const comebackKey = 'comeback';
   const briefKey = `brief:${choice}:${focus?.title ?? purposeMission?.workout?.id ?? ''}`;
-  const hidden = (key: string) => dismissed[key] === dateKey;
-  const hide = (key: string) => () => useChromePrefs.getState().dismissCard(key, dateKey);
+  const hidden = (key: string) => isCardHidden(dismissed, key, dateKey);
+  const hide = (key: string, untilKey = dateKey) => () => useChromePrefs.getState().dismissCard(key, untilKey, dateKey);
+  // The debrief is weekly, so swiping it away hides it until next week starts.
+  const weeklyKey = `weekly:${weekSummary.startKey}`;
+  const weekEndKey = getLocalDateKey(new Date(weekSummary.end.getTime() - 12 * 60 * 60 * 1000));
   const dismissAction = (dismiss: () => void) => ({
     accessibilityActions: [{ name: 'dismiss', label: 'Dismiss for today' }],
     onAccessibilityAction: (e: { nativeEvent: { actionName: string } }) => { if (e.nativeEvent.actionName === 'dismiss') dismiss(); },
@@ -130,28 +133,28 @@ export default function TrainScreen() {
       <TabHeader />
 
       {showComeback && !hidden(comebackKey) ? (
-        <SwipeDismiss key={comebackKey} style={styles.brief} onDismiss={hide(comebackKey)}>{(dismiss) => (<>
+        <SwipeDismiss key={comebackKey} style={styles.brief} onDismiss={hide(comebackKey)}>{(dismiss, guard) => (<>
           <Text variant="overline" tone="accent" {...dismissAction(dismiss)}>Welcome back</Text>
           <Text variant="question" style={{ marginTop: space.sm }}>Pick up from where you are</Text>
           <Text variant="callout" tone="secondary" style={{ marginTop: space.sm }}>Your history and level are still here. Choose a shorter next session and leave room to build back up.</Text>
-          <Button title="Choose a shorter session" variant="primary" size="md" onPress={shorterSession} disabled={planPending} style={{ marginTop: space.md }} />
-          <Button title="Adjust my training week" variant="outline" size="md" onPress={() => navigation.navigate('TrainingPreferences')} style={{ marginTop: space.sm }} />
+          <Button title="Choose a shorter session" variant="primary" size="md" onPress={guard(shorterSession)} disabled={planPending} style={{ marginTop: space.md }} />
+          <Button title="Adjust my training week" variant="outline" size="md" onPress={guard(() => navigation.navigate('TrainingPreferences'))} style={{ marginTop: space.sm }} />
         </>)}</SwipeDismiss>
       ) : null}
 
       {(focus || purposeMission?.workout?.objective || choice !== 'planned') && !hidden(briefKey) ? (
-        <SwipeDismiss key={briefKey} style={styles.brief} onDismiss={hide(briefKey)}>{(dismiss) => (<>
+        <SwipeDismiss key={briefKey} style={styles.brief} onDismiss={hide(briefKey)}>{(dismiss, guard) => (<>
           <Text variant="overline" tone="accent" {...dismissAction(dismiss)}>{choice !== 'planned' ? 'Your choice for today' : focus ? 'Your test focus' : 'Mission purpose'}</Text>
           <Text variant="headline" style={{ marginTop: space.sm }}>{choice === 'shorter' ? 'A shorter session is ready' : choice === 'recovery' ? 'A recovery session is ready' : focus?.title ?? purposeMission?.workout?.title}</Text>
           <Text variant="callout" tone="secondary" style={{ marginTop: space.xs }}>{choice !== 'planned' ? 'Your next workout will use this choice when you start. You can change it in your readiness check-in.' : focus?.reason ?? purposeMission?.workout?.objective}</Text>
           {focus && activePlan && choice === 'planned' ? <Text variant="footnote" tone="secondary" style={{ marginTop: space.xs }}>Use this focus alongside your chosen plan; library plans keep their exercise selection.</Text> : null}
           {focusMission && choice === 'planned' ? (
             <>
-              <Button title="See focus mission" variant="outline" size="md" onPress={() => navigation.navigate('WorkoutDetail', { workoutId: focusMission.id, dateKey })} style={{ marginTop: space.md }} />
+              <Button title="See focus mission" variant="outline" size="md" onPress={guard(() => navigation.navigate('WorkoutDetail', { workoutId: focusMission.id, dateKey }))} style={{ marginTop: space.md }} />
               <Text variant="footnote" tone="secondary" style={{ marginTop: space.xs }}>An option from your current program week. Swap it for a session and keep your recovery days.</Text>
             </>
           ) : null}
-          <Tap feedback="opacity" onPress={() => choice !== 'planned' ? useUiStore.getState().setReadiness(true) : focus ? navigation.navigate('Tabs', { screen: 'Test' }) : navigation.navigate('Plan')} style={styles.briefLink}>
+          <Tap feedback="opacity" onPress={guard(() => choice !== 'planned' ? useUiStore.getState().setReadiness(true) : focus ? navigation.navigate('Tabs', { screen: 'Test' }) : navigation.navigate('Plan'))} style={styles.briefLink}>
             <Text variant="subhead" tone="accent">{choice !== 'planned' ? 'Review today’s choice' : focus ? 'See test progress' : 'See weekly plan'}</Text><Icon name="arrowRight" color={color.accent} size={15} />
           </Tap>
         </>)}</SwipeDismiss>
@@ -196,7 +199,17 @@ export default function TrainScreen() {
         </Text>
       ) : null}
 
-      <Tap feedback="highlight" baseColor={color.surface} pressedColor={color.surfacePressed} style={styles.weekly} onPress={() => navigation.navigate('WeeklyDebrief', { weekStart: weekSummary.startKey })} accessibilityLabel="Open weekly debrief">
+      {hidden(weeklyKey) ? null : (
+      <SwipeDismiss key={weeklyKey} style={styles.weeklySpace} onDismiss={hide(weeklyKey, weekEndKey)}>{(dismiss, guard) => (
+      <Tap
+        feedback="highlight"
+        baseColor={color.surface}
+        pressedColor={color.surfacePressed}
+        style={styles.weekly}
+        onPress={guard(() => navigation.navigate('WeeklyDebrief', { weekStart: weekSummary.startKey }))}
+        accessibilityLabel="Open weekly debrief"
+        {...dismissAction(dismiss)}
+      >
         <View style={{ flex: 1 }}>
           <Text variant="headline">Weekly debrief</Text>
           <Text variant="callout" tone="secondary" style={{ marginTop: space.xxs }}>{weekSummary.trainingDays} / {weekSummary.currentTarget} training days this week · Next: {next.label}</Text>
@@ -204,6 +217,8 @@ export default function TrainScreen() {
         </View>
         <Icon name="arrowRight" size={18} color={color.textSecondary} />
       </Tap>
+      )}</SwipeDismiss>
+      )}
 
       <MyWorkouts />
 
@@ -367,7 +382,9 @@ const styles = StyleSheet.create({
   section: { paddingHorizontal: space.gutter, marginTop: space.sm, marginBottom: space.md },
   brief: { marginHorizontal: space.gutter, marginBottom: space.lg, padding: space.lg, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: color.surface },
   briefLink: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.xs, paddingVertical: space.sm, marginTop: space.xs },
-  weekly: { marginHorizontal: space.gutter, marginTop: space.lg, padding: space.lg, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: color.surface, flexDirection: 'row', alignItems: 'center', gap: space.md },
+  // Margins sit on the swipe wrapper so the space closes with the card.
+  weeklySpace: { marginHorizontal: space.gutter, marginTop: space.lg },
+  weekly: { padding: space.lg, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: color.surface, flexDirection: 'row', alignItems: 'center', gap: space.md },
   chips: { paddingHorizontal: space.gutter, gap: 10, paddingBottom: space.md },
   quick: { flexDirection: 'row', alignItems: 'center', paddingLeft: space.gutter },
   quickThumb: { width: 96, height: 96, borderRadius: radius.md, borderCurve: 'continuous' },

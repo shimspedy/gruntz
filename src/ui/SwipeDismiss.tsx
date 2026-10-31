@@ -14,8 +14,11 @@ type Props = {
   onDismiss: () => void;
   /** The card's own style (margins included); the space it takes closes after a swipe. */
   style?: StyleProp<ViewStyle>;
-  /** Receives `dismiss`, so a screen-reader action on the card can do what the swipe does. */
-  children: (dismiss: () => void) => ReactNode;
+  /**
+   * Receives `dismiss`, so a screen-reader action can do what the swipe does, and
+   * `guard`, which wraps a tappable card's onPress so the end of a swipe is not a tap.
+   */
+  children: (dismiss: () => void, guard: (onPress: () => void) => () => void) => ReactNode;
 };
 
 /**
@@ -30,6 +33,20 @@ export function SwipeDismiss({ onDismiss, style, children }: Props) {
   const height = useSharedValue(-1);
   const collapse = useSharedValue(1);
   const done = useRef(false);
+  const dragging = useRef(false);
+  const dragTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const startDrag = useCallback(() => {
+    clearTimeout(dragTimer.current);
+    dragging.current = true;
+  }, []);
+  // The press that ends a drag arrives just after the gesture ends; ignore it.
+  const endDrag = useCallback(() => {
+    clearTimeout(dragTimer.current);
+    dragTimer.current = setTimeout(() => { dragging.current = false; }, 300);
+  }, []);
+  const guard = useCallback((onPress: () => void) => () => {
+    if (!dragging.current) onPress();
+  }, []);
 
   const finish = useCallback(() => {
     if (done.current) return;
@@ -52,6 +69,12 @@ export function SwipeDismiss({ onDismiss, style, children }: Props) {
   const pan = Gesture.Pan()
     .activeOffsetX([-12, 12])
     .failOffsetY([-10, 10])
+    .onStart(() => {
+      scheduleOnRN(startDrag);
+    })
+    .onFinalize(() => {
+      scheduleOnRN(endDrag);
+    })
     .onChange((e) => {
       x.set(e.translationX);
     })
@@ -86,7 +109,7 @@ export function SwipeDismiss({ onDismiss, style, children }: Props) {
     <Animated.View style={outer} onLayout={onOuterLayout}>
       <GestureDetector gesture={pan}>
         <Animated.View style={[style, card]} onLayout={onCardLayout}>
-          {children(dismiss)}
+          {children(dismiss, guard)}
         </Animated.View>
       </GestureDetector>
     </Animated.View>

@@ -26,9 +26,10 @@ interface ChromePrefs {
   /** Local date key the daily-challenge pill was swiped away on. */
   challengePillHiddenOn: string | null;
   hideChallengePill: (dateKey: string | null) => void;
-  /** Cards swiped away on Train: card key → local date key it was hidden on. */
+  /** Cards swiped away: card key → last local date key it stays hidden on. */
   dismissedCards: Record<string, string>;
-  dismissCard: (key: string, dateKey: string) => void;
+  /** Hides a card through `untilKey` (today for daily cards, the week's last day for weekly ones). */
+  dismissCard: (key: string, untilKey: string, todayKey: string) => void;
   /** The "what a team sees" note on Leader tools has been read and closed. */
   leaderPrivacyDismissed: boolean;
   setLeaderPrivacyDismissed: (dismissed: boolean) => void;
@@ -46,9 +47,9 @@ export const useChromePrefs = create<ChromePrefs>()(
       challengePillHiddenOn: null,
       hideChallengePill: (challengePillHiddenOn) => set({ challengePillHiddenOn }),
       dismissedCards: {},
-      // Only today's entries are kept, so the record never grows.
-      dismissCard: (key, dateKey) => set((s) => ({
-        dismissedCards: { ...Object.fromEntries(Object.entries(s.dismissedCards).filter(([, day]) => day === dateKey)), [key]: dateKey },
+      // Expired entries are dropped on each write, so the record never grows.
+      dismissCard: (key, untilKey, todayKey) => set((s) => ({
+        dismissedCards: { ...Object.fromEntries(Object.entries(s.dismissedCards).filter(([, until]) => until >= todayKey)), [key]: untilKey },
       })),
       leaderPrivacyDismissed: false,
       setLeaderPrivacyDismissed: (leaderPrivacyDismissed) => set({ leaderPrivacyDismissed }),
@@ -60,3 +61,6 @@ export const useChromePrefs = create<ChromePrefs>()(
     { name: '@gruntz_chrome', storage: createJSONStorage(() => AsyncStorage) },
   ),
 );
+
+/** Whether a swiped-away card is still hidden today. Date keys compare as strings. */
+export const isCardHidden = (dismissed: Record<string, string>, key: string, todayKey: string) => (dismissed[key] ?? '') >= todayKey;
