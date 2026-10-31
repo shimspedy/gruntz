@@ -1,4 +1,3 @@
-import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { getExerciseById } from '../../data/exercises';
 import { useSessionStore } from '../../store/useSessionStore';

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Linking, Platform, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -25,7 +25,7 @@ import { Chip, IconButton } from '../ui/Layout';
 import { Segmented } from '../ui/Segmented';
 import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
-import { color, font, motion, radius, space } from '../ui/tokens';
+import { color, font, radius, space } from '../ui/tokens';
 
 const AWAKE = 'gruntz-field-session';
 

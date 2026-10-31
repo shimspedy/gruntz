@@ -1,2 +1,0 @@
-# Preserve the integrity-verified upstream license byte for byte.
-vendor/node-forge/LICENSE -whitespace

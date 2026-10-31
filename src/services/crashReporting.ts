@@ -31,6 +31,11 @@ export function initCrashReporting(): void {
     tracesSampleRate: 0,
     beforeSend(event) {
       delete event.user;
+      // Database errors can quote row values: account ids and emails never leave the device.
+      if (event.message) event.message = redact(event.message);
+      for (const exception of event.exception?.values ?? []) {
+        if (exception.value) exception.value = redact(exception.value);
+      }
       if (event.request) {
         delete event.request.cookies;
         delete event.request.headers;
@@ -53,6 +58,25 @@ export function initCrashReporting(): void {
 export function reportError(error: unknown, componentStack?: string | null): void {
   if (!started) return;
   Sentry.captureException(error, componentStack ? { contexts: { react: { componentStack } } } : undefined);
+}
+
+/**
+ * For errors the app catches and recovers from (a failed backup, a storage write) that
+ * would otherwise vanish. Tagged so they group by where they came from. Same scrubbing
+ * as every other report: they go through the same `beforeSend`.
+ */
+export function reportHandled(error: unknown, tag: string): void {
+  if (!started) return;
+  Sentry.withScope((scope) => {
+    scope.setTag('handled', tag);
+    Sentry.captureException(error);
+  });
+}
+
+export function redact(text: string): string {
+  return text
+    .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '<id>')
+    .replace(/[^\s@"'()<>]+@[^\s@"'()<>]+\.[a-z]{2,}/gi, '<email>');
 }
 
 function stripQuery(url: string): string {

@@ -3,12 +3,12 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
-const { patchExpoJsiInterfaceSource } = require('../scripts/patch-expo-jsi-interface.cjs');
 
+// expo-modules-jsi 57.1.3+ ships the Swift 6.4 (`::`) sanitizer itself, so the
+// former postinstall patch is gone. This guards against an upgrade regressing it.
 test('Expo JSI interface cleanup handles both Swift namespace spellings without removing public API', () => {
   const upstream = fs.readFileSync(path.join(__dirname, '../node_modules/expo-modules-jsi/apple/scripts/build-xcframework.sh'), 'utf8');
-  const patched = patchExpoJsiInterfaceSource(upstream);
-  const line = patched.split('\n').find(line => line.includes("sed -E '/^extension __ObjC"));
+  const line = upstream.split('\n').find(line => line.includes("sed -E '/^extension __ObjC"));
   assert.ok(line, 'The installed Expo version must use the reviewed interface sanitizer.');
   const expression = line.split("'", 3)[1];
   const fixture = [
@@ -27,5 +27,4 @@ test('Expo JSI interface cleanup handles both Swift namespace spellings without 
     '',
   ].join('\n');
   assert.equal(execFileSync('sed', ['-E', expression], { input: fixture, encoding: 'utf8' }), 'public struct Before {}\npublic struct After {}\n');
-  assert.equal(patchExpoJsiInterfaceSource(patched), patched);
 });

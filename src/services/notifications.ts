@@ -209,54 +209,6 @@ export async function cancelRestDone() {
   await dismissPresentedNotificationsByType('rest-done');
 }
 
-export async function showWorkoutComplete(xpEarned: number, streakDays: number) {
-  await clearWorkoutProgress();
-
-  await withNotificationGuard(async () => {
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'Mission Complete',
-        body: `+${xpEarned} XP earned${streakDays > 1 ? ` • ${streakDays}-day streak` : ''}`,
-        data: { type: 'workout-complete', url: 'gruntz://train' },
-        ...(Platform.OS === 'android' && { channelId: 'workout-progress' }),
-      },
-      trigger: null,
-    });
-  }, undefined);
-}
-
-// ─── Achievement Notifications ──────────────────────────────────
-
-export async function showAchievementUnlocked(achievementName: string, _icon: string) {
-  await withNotificationGuard(async () => {
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'Achievement Unlocked',
-        body: achievementName,
-        data: { type: 'achievement', url: 'gruntz://achievements' },
-        ...(Platform.OS === 'android' && { channelId: 'achievements' }),
-      },
-      trigger: null,
-    });
-  }, undefined);
-}
-
-// ─── Streak Warning ─────────────────────────────────────────────
-
-export async function showStreakWarning(streakDays: number) {
-  await withNotificationGuard(async () => {
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'Streak At Risk',
-        body: `Your ${streakDays}-day streak expires at midnight. Get a mission in!`,
-        data: { type: 'streak-warning', url: 'gruntz://streak' },
-        ...(Platform.OS === 'android' && { channelId: 'daily-reminder' }),
-      },
-      trigger: null,
-    });
-  }, undefined);
-}
-
 // ─── Trial Ending Nudge ─────────────────────────────────────────
 // Schedules a one-shot reminder ~36h before the trial window ends so the
 // user has time to subscribe before losing access. Replaces any prior

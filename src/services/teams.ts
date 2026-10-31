@@ -47,7 +47,7 @@ export type PublicTeam = {
   isMember: boolean;
 };
 
-export type TeamFailure = 'signed-out' | 'unavailable' | 'not-found' | 'full' | 'already-in-team' | 'too-many-teams' | 'error';
+export type TeamFailure = 'signed-out' | 'unavailable' | 'not-found' | 'full' | 'already-in-team' | 'too-many-teams' | 'rate-limited' | 'error';
 /** How many teams one athlete may belong to; matches the database rule. */
 export const MAX_TEAMS = 10;
 export type TeamResult<T> = { ok: true; value: T } | { ok: false; reason: TeamFailure };
@@ -79,6 +79,7 @@ function failureFor(message: string | undefined): TeamFailure {
   if (message.includes('ALREADY_IN_TEAM')) return 'already-in-team';
   if (message.includes('TOO_MANY_TEAMS')) return 'too-many-teams';
   if (message.includes('NOT_SIGNED_IN')) return 'signed-out';
+  if (message.includes('RATE_LIMITED')) return 'rate-limited';
   return 'error';
 }
 
@@ -169,7 +170,23 @@ async function call(fn: string, args?: Record<string, unknown>): Promise<TeamRes
 }
 
 export const createTeam = (name: string) => call('create_team', { p_name: name.trim(), p_display_name: localTeamStatus().displayName });
-export const joinTeam = (code: string) => call('join_team', { p_code: code.trim().toUpperCase(), p_display_name: localTeamStatus().displayName });
+/** A wrong code comes back as no team rather than an error, so the server can count the miss. */
+export async function joinTeam(code: string): Promise<TeamResult<null>> {
+  const user = await signedInUserId();
+  if (!user.ok) return user;
+  const supabase = getSupabase();
+  if (!supabase) return fail('unavailable');
+  try {
+    const { data, error } = await supabase.rpc('join_team', { p_code: code.trim().toUpperCase(), p_display_name: localTeamStatus().displayName });
+    if (error) return fail(failureFor(error.message));
+    return data ? { ok: true, value: null } : fail('not-found');
+  } catch {
+    return fail('error');
+  }
+}
+
+/** Leader only: replaces the invite code, so the old one stops working. */
+export const rotateInviteCode = (teamId: string) => call('rotate_team_invite_code', { p_team_id: teamId });
 export const removeTeamMember = (teamId: string, userId: string) => call('remove_team_member', { p_team_id: teamId, p_user_id: userId });
 export const joinPublicTeam = (teamId: string) => call('join_public_team', { p_team_id: teamId, p_display_name: localTeamStatus().displayName });
 export const setTeamVisibility = (teamId: string, isPublic: boolean, description: string) => call('set_team_visibility', { p_team_id: teamId, p_public: isPublic, p_description: description.trim().slice(0, 200) });

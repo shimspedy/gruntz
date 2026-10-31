@@ -1,5 +1,5 @@
 import { appMuscles, getLibraryItem } from './exerciseLibrary';
-import { Exercise, EquipmentAccess } from '../types';
+import { Exercise } from '../types';
 
 // ============================================================
 // RAIDER FITNESS PREPARATION LOG — COMPLETE EXERCISE DATABASE
@@ -1102,27 +1102,4 @@ export function exerciseLogKey(ex: Exercise): string {
 export function getExerciseById(id: string): Exercise | undefined {
   if (id.startsWith(LIBRARY_PREFIX)) return libraryExercise(id.slice(LIBRARY_PREFIX.length));
   return exercises.find(e => e.id === id);
-}
-
-export function getExercisesByCategory(category: Exercise['category']): Exercise[] {
-  return exercises.filter(e => e.category === category);
-}
-
-export function getExercisesByMuscleGroup(muscleGroup: string): Exercise[] {
-  return exercises.filter(e => e.muscle_groups?.includes(muscleGroup));
-}
-
-export function getExerciseForEquipment(exerciseId: string, access: EquipmentAccess): Exercise | undefined {
-  const exercise = getExerciseById(exerciseId);
-  if (!exercise) return undefined;
-  if (access === 'gym' && exercise.gym_alternative_id) {
-    return getExerciseById(exercise.gym_alternative_id) || exercise;
-  }
-  return exercise;
-}
-
-export function getAllMuscleGroups(): string[] {
-  const groups = new Set<string>();
-  exercises.forEach(e => e.muscle_groups?.forEach(g => groups.add(g)));
-  return Array.from(groups).sort();
 }

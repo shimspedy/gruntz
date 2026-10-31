@@ -62,6 +62,20 @@ test('database refusals turn into reasons the screens can explain', async () => 
   assert.deepEqual(await load(null).fetchPublicTeams(''), { ok: false, reason: 'unavailable' });
 });
 
+test('a wrong invite code comes back as no team, a match joins, and too many misses are explained', async () => {
+  assert.deepEqual(await load(fakeSupabase()).joinTeam(' abc234 '), { ok: false, reason: 'not-found' });
+  const supabase = fakeSupabase({ rpcResult: { join_team: 't1' } });
+  assert.deepEqual(await load(supabase).joinTeam(' abc234 '), { ok: true, value: null });
+  assert.deepEqual(supabase.calls[0], ['join_team', { p_code: 'ABC234', p_display_name: 'Alex' }]);
+  assert.deepEqual(await load(fakeSupabase({ rpcError: { message: 'RATE_LIMITED' } })).joinTeam('ABC234'), { ok: false, reason: 'rate-limited' });
+});
+
+test('only the leader call is made to reset an invite code', async () => {
+  const supabase = fakeSupabase();
+  assert.deepEqual(await load(supabase).rotateInviteCode('t1'), { ok: true, value: null });
+  assert.deepEqual(supabase.calls, [['rotate_team_invite_code', { p_team_id: 't1' }]]);
+});
+
 test('leaving names the team, and the last team to go takes the shared photo with it', async () => {
   const supabase = fakeSupabase();
   const teams = load(supabase, 2);

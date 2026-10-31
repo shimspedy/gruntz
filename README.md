@@ -1,128 +1,93 @@
 # Gruntz
 
-Gruntz is a local-first Expo / React Native military fitness app. The main loop is:
+Gruntz is an offline-first Expo / React Native fitness app built around military fitness tests. Training, logging,
+XP, ranks and streaks all run on the device from bundled data; an account is optional and only adds backup,
+teams and chat.
 
-1. onboard the user
-2. choose a training program
-3. load today's mission from bundled workout data
-4. log the workout
-5. award XP, streak progress, and achievements
-6. gate long-term access through RevenueCat
-
-## How The App Works
+## How the app fits together
 
 ```mermaid
 flowchart TD
-  subgraph UI["User Flow"]
-    A["App.tsx"] --> B["RootNavigator"]
-    B --> C{"User onboarded?"}
-    C -- No --> D["OnboardingScreen"]
-    C -- Yes --> E["AppTabs"]
+  App["index.ts → App.tsx"] --> Crash["crashReporting (Sentry, loaded first)"]
+  App --> Nav["RootNavigator"]
+  Nav --> Onb{"Onboarded?"}
+  Onb -- No --> Onboarding["Onboarding flow (restore from backup available)"]
+  Onb -- Yes --> Tabs["Tabs: Train · Ranks · Test or Plans · Profile"]
+  Tabs --> Session["Workout session (WorkoutSessionHost)"]
+  Tabs --> Stack["Stack screens: plans, programs, exercise library, run tracker,<br/>activity history, stats, backup, Health sync, Team, Communities, Paywall"]
 
-    E --> F["Home tab"]
-    E --> G["Missions tab"]
-    E --> H["Progress tab"]
-    E --> I["Profile tab"]
+  Session --> Stores["Zustand stores (persisted to AsyncStorage)"]
+  Stack --> Stores
+  Stores --> Data["Bundled content in src/data<br/>programs, workout plans, exercise library, movement cards"]
 
-    F --> J["ProgramSelect / ProgramDetail"]
-    F --> K{"Training access available?"}
-    K -- Yes --> L["DailyMissionScreen"]
-    K -- No --> M["PaywallScreen"]
-    F --> N["RunTrackerScreen"]
-    I --> O["SettingsScreen"]
-  end
-
-  subgraph State["Zustand State"]
-    U["useUserStore<br/>profile, XP, streak, achievements"]
-    P["useProgramStore<br/>selected program, week, assessment"]
-    Q["useMissionStore<br/>today's mission, rest day, progress"]
-    S["useSubscriptionStore<br/>trial, entitlement, offering"]
-    T["useThemeStore<br/>active theme"]
-  end
-
-  subgraph Data["Bundled Training Content"]
-    D1["programs.ts"]
-    D2["workouts.ts + reconWorkouts.ts"]
-    D3["exercises.ts"]
-    D4["achievements.ts + movementCards.ts"]
-  end
-
-  subgraph Services["Persistence + Device + Billing"]
-    X1["AsyncStorage"]
-    X2["SecureStore"]
-    X3["RevenueCat"]
-    X4["Expo Notifications"]
-    X5["Expo Location + Pedometer + Barometer"]
-  end
-
-  A --> X4
-  B --> S
-  B --> T
-
-  D --> U
-  D --> S
-
-  J --> P
-  J --> D1
-
-  F --> Q
-  Q --> D2
-  Q --> D3
-
-  L --> D2
-  L --> D3
-  L --> Q
-  L --> R["Finish mission -> update XP, streak, achievements"]
-  R --> U
-  L --> X4
-
-  G --> D4
-  H --> U
-  I --> U
-  I --> S
-  O --> T
-  O --> X4
-
-  M --> X3
-  X3 --> S
-
-  N --> X5
-
-  U <--> X1
-  S <--> X1
-  T <--> X1
-  P --> X1
-  P --> X2
+  Stores <--> Backup["Supabase: account, backup/restore"]
+  Stack --> Teams["Supabase: teams, team chat, inbox"]
+  Stores <--> Health["HealthKit / Health Connect sync"]
+  Health <--> Watch["Apple Watch app (targets/watch)"]
+  Stack --> RC["RevenueCat: trial + Gruntz Pro"]
 ```
 
-## Screen-Level Breakdown
+## Navigation
 
-- `Home` is the command center. It loads the selected program, computes today's mission, shows access state, and routes the user into the workout flow or paywall.
-- `Missions` is the reference area for workout cards, movement cards, and achievements.
-- `Progress` reads from `useUserStore` and turns saved mission history into XP, rank, totals, and record dashboards.
-- `Profile` surfaces identity, membership, stats, program switching, and settings.
-- `Settings` controls theme selection, notification reminders, and unit preferences.
-- `Run Tracker` is a live sensor-driven screen for distance, pace, steps, and elevation.
+- **Tabs** (`src/navigation/RootNavigator.tsx`, custom bar in `TabBar.tsx`): `Train`, `Ranks`, `Test` for
+  military users or `Plans` for everyone else, and `Profile`.
+- Everything else is a stack screen: workout/plan/program detail, exercise library, routines, run tracker and
+  activity history, stats and weekly debrief, achievements, backup, data transfer, Health sync, settings, team,
+  communities, paywall.
+- The live workout is a session overlay (`src/components/session`) that minimizes to a mini bar.
 
-## State And Data Model
+## State (`src/store`)
 
-- `useUserStore` is the main game-state store. It owns the profile, streak, XP, completed missions, and unlocked achievements.
-- `useProgramStore` owns the active program, week number, and assessment inputs. General program state is stored in `AsyncStorage`; assessment data is stored in `SecureStore`.
-- `useMissionStore` converts the selected program plus the current date into today's mission or rest-day state.
-- `useSubscriptionStore` handles the 15-day free-access window plus RevenueCat entitlement state.
-- Most training content is shipped in `src/data`, so the app does not need a backend to generate daily missions.
+| Store | Holds |
+| --- | --- |
+| `useUserStore` | Profile, settings, XP, rank, streak, completed missions, achievements |
+| `useSessionStore` | The in-progress workout (sets, rest timer); writes debounced to disk |
+| `useExerciseLogStore` / `useExerciseNotesStore` | Per-exercise set history and notes |
+| `useProgramStore` | Selected built-in program and progress |
+| `usePlanLibraryStore` | Followed library plan and completed days |
+| `useRoutineStore` | User-built routines |
+| `useReadinessStore` | Fitness test scores/attempts, tracked activities (routes stored as files) |
+| `useChallengeStore` | Daily challenge progress |
+| `useHealthStore` | Health connection and sync preferences |
+| `useSubscriptionStore` | Trial window and RevenueCat entitlement |
+| `useTeamInboxStore`, `useOnboardingDraftStore`, `useUiStore` | Team unread state, onboarding draft, transient UI |
 
-## Important Notes About The Current MVP
+Persisted stores are versioned; bumping a store's `version` needs a real `migrate`, because backups made by one
+build are restored by another (`src/services/backupRestoreStores.ts`).
 
-- The training loop is mostly local-first. Core workout generation, progression, and achievement logic run from bundled data and local persistence.
-- RevenueCat is the main external product dependency in the app flow right now.
-- Notifications are used for reminder scheduling, workout progress, mission completion, and achievement unlocks.
-- The run tracker is live and sensor-based, but it is currently screen-local. Its session results are not yet written back into `useUserStore`.
+## Services (`src/services`)
 
-## Run The App
+- **Supabase** (`supabaseClient.ts`, `backup.ts`): optional email-code sign-in, full-state backup and restore,
+  account deletion (edge function in `supabase/functions/delete-account`). Off when the build has no Supabase keys.
+- **Teams** (`teams.ts`, `teamChat.ts`, `teamInbox.ts`): teams with Chat, Leaderboard and Members; only after sign-in.
+- **Crash reporting** (`crashReporting.ts`): Sentry, off in development and without `EXPO_PUBLIC_SENTRY_DSN`;
+  reports carry no personal data.
+- **Billing** (`subscription.ts`): RevenueCat trial and Gruntz Pro entitlement.
+- **Health** (`healthSync.ts`): imports workouts from and writes activities to HealthKit (iOS) or Health Connect
+  (Android).
+- **Activity tracking** (`activityTracking*.ts`): GPS run/ruck tracking, including in the background.
+- **Notifications and retention** (`notifications.ts`, `retention*.ts`): reminders, rest timers, trial nudges.
+
+## Apple Watch
+
+`targets/watch` is a native watchOS app (via `@bacons/apple-targets`) that records workouts into Health; the
+phone imports them through Health sync.
+
+## Website
+
+`website/` is the marketing site, a separate Astro package with its own `package.json`.
+
+## Development
 
 ```bash
-npm start
-npm run ios
-npm run android
+npm start            # Expo dev server
+npm run ios          # build and run on iOS
+npm run android      # build and run on Android
+
+npm run typecheck    # tsc --noEmit
+npm test             # node:test suites in tests/*.test.cjs
+npm run site:build   # build the website
+npm run check        # typecheck + tests + site build
 ```
+
+iOS layouts must work in any window size (iPhone Duo, iPhone Mirroring, iPad multitasking); see `AGENTS.md`.

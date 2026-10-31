@@ -3,7 +3,8 @@ import { getLocalDateKey } from '../utils/dateKey';
 /** A recap belongs to the delivered week even if it is opened after Monday. */
 export function resolveNotificationLink(data: Record<string, unknown> | undefined, deliveredAt: number | undefined): string | null {
   const url = data?.url;
-  if (typeof url !== 'string') return null;
+  // Only the app's own links are routed, whatever a notification payload carries.
+  if (typeof url !== 'string' || !url.startsWith('gruntz://')) return null;
   if (data?.type !== 'weekly-recap') return url;
   // Expo 57 forwards seconds on iOS and milliseconds on Android.
   const millis = typeof deliveredAt === 'number' && Number.isFinite(deliveredAt)

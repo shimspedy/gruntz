@@ -770,29 +770,8 @@ export const movementCards: MovementCard[] = [
   },
 ];
 
-/**
- * Rounds in a card, summed from its sections.
- *
- * This used to be a stored `total_rounds` field that nothing read and that had
- * drifted out of agreement with the sections on 8 of the 12 cards. Derived, it
- * cannot disagree.
- */
-export function getCardRounds(card: MovementCard): number {
-  return card.sections.reduce((sum, section) => sum + (section.rounds ?? 0), 0);
-}
-
 export function getMovementCard(id: string): MovementCard | undefined {
   return movementCards.find(c => c.id === id);
-}
-
-export function getMovementCardByNumber(cardNumber: number, category?: string): MovementCard | undefined {
-  return movementCards.find(c =>
-    c.card_number === cardNumber && (!category || c.category === category)
-  );
-}
-
-export function getCardsByCategory(category: MovementCard['category']): MovementCard[] {
-  return movementCards.filter(c => c.category === category);
 }
 
 export function getAllMovementCards(): MovementCard[] {

@@ -8,8 +8,6 @@ const os = require('node:os');
 const path = require('node:path');
 const { createRequire } = require('node:module');
 
-const root = path.resolve(__dirname, '..');
-const vendor = path.join(root, 'vendor/node-forge');
 const cliRoot = path.dirname(require.resolve('@expo/cli/package.json'));
 const cliRequire = createRequire(path.join(cliRoot, 'build/src/run/ios/codeSigning/Security.js'));
 const certificatesRequire = createRequire(require.resolve('@expo/code-signing-certificates'));
@@ -21,7 +19,8 @@ const installedConsumers = [
   directory: path.dirname(consumerRequire.resolve('node-forge/package.json')),
 }));
 // By default every behavioral regression targets Expo's installed dependency.
-// The override is only for demonstrating failures against an unpatched copy.
+// The override is only for demonstrating failures against an unpatched copy
+// (for example node-forge 1.4.0).
 const target = process.env.NODE_FORGE_SECURITY_TARGET
   ? path.resolve(process.env.NODE_FORGE_SECURITY_TARGET)
   : installedConsumers[0].directory;
@@ -56,26 +55,25 @@ function signatureForEncodedDigest(info, privateKey) {
     Buffer.concat([Buffer.from([0, 1]), padding, Buffer.from([0]), info])).toString('binary');
 }
 
-test('local forge source is the pinned package plus only the reviewed RSA patch', () => {
-  const provenance = require(path.join(vendor, 'provenance.json'));
-  assert.equal(provenance.patchCommit, 'db05494352dd3c9a5a07c5270333dcc78866cad2');
-  assert.equal(provenance.patchedRsaSha256, 'c7b72e7ef41f4fc0e5228dce3e37851e9ca064c789365d5e392c25d1c5f6e710');
-  assert.equal(provenance.baseRsaSha256, 'fd4740238145ec26470eb3f06a627c72039538ce1307dbdce40521f94dfd0a50');
-  for (const [file, originalHash] of Object.entries(provenance.upstreamFiles)) {
-    const expected = file === 'lib/rsa.js' ? provenance.patchedRsaSha256 : originalHash;
-    assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(vendor, file))).digest('hex'), expected, file);
-  }
-  assert.equal(fs.readdirSync(path.join(vendor, 'lib')).length, 49);
-  assert.equal(fs.existsSync(path.join(vendor, 'dist')), false);
-});
+// node-forge 1.4.1 is the first upstream release that requires canonical DER
+// DigestInfo bytes (CVE-2026-85393 / GHSA-86w9-cpqp-85rv); 1.4.2 also fixes
+// the PEM parsing ReDoS (GHSA-7wch-p9px-956x).
+const minimumFixedVersion = [1, 4, 2];
 
-test('both installed Expo consumers resolve the identified security fork and patched RSA source', () => {
+function atLeast(version, minimum) {
+  const parts = version.split(/[.-]/, 3).map(Number);
+  for (let i = 0; i < minimum.length; i += 1) {
+    if (parts[i] !== minimum[i]) return parts[i] > minimum[i];
+  }
+  return true;
+}
+
+test('both installed Expo consumers resolve an upstream node-forge release with the security fixes', () => {
   for (const { name, directory } of installedConsumers) {
     const installedPackage = require(path.join(directory, 'package.json'));
-    assert.equal(installedPackage.name, '@gruntz/node-forge', `${name}: package identity`);
-    assert.equal(installedPackage.version, '1.4.0-gruntz.1', `${name}: package version`);
-    assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(directory, 'lib/rsa.js'))).digest('hex'),
-      'c7b72e7ef41f4fc0e5228dce3e37851e9ca064c789365d5e392c25d1c5f6e710', `${name}: RSA source`);
+    assert.equal(installedPackage.name, 'node-forge', `${name}: package identity`);
+    assert.ok(atLeast(installedPackage.version, minimumFixedVersion),
+      `${name}: node-forge ${installedPackage.version} predates ${minimumFixedVersion.join('.')}`);
   }
 });
 
@@ -120,7 +118,7 @@ for (const exponent of [3, 65537]) {
   });
 }
 
-test('Expo certificate/key PEM, CSR, manifest signing and verification work with the patched fork', () => {
+test('Expo certificate/key PEM, CSR, manifest signing and verification work with the installed node-forge', () => {
   const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'gruntz-forge-expo-test-'));
   try {
     // Exercise the actual installed consumer code with isolated Node resolution.
@@ -128,7 +126,11 @@ test('Expo certificate/key PEM, CSR, manifest signing and verification work with
     const consumerSource = path.dirname(require.resolve('@expo/code-signing-certificates/package.json'));
     const consumerPath = path.join(temporary, 'node_modules/@expo/code-signing-certificates');
     fs.mkdirSync(path.dirname(consumerPath), { recursive: true });
-    fs.cpSync(consumerSource, consumerPath, { recursive: true });
+    // Skip the consumer's nested node_modules so it resolves the target forge.
+    fs.cpSync(consumerSource, consumerPath, {
+      recursive: true,
+      filter: source => !path.relative(consumerSource, source).split(path.sep).includes('node_modules'),
+    });
     fs.symlinkSync(target, path.join(temporary, 'node_modules/node-forge'), 'dir');
     const isolatedRequire = createRequire(path.join(temporary, 'test.cjs'));
     const consumerRequire = createRequire(path.join(consumerPath, 'package.json'));

@@ -1,6 +1,5 @@
 export const GRUNTZ_TRIAL_DAYS = 15;
 export const GRUNTZ_PRO_LABEL = 'Gruntz Pro';
-export const GRUNTZ_MONTHLY_PRODUCT_ID = 'monthly';
 
 export const REVENUECAT_ENTITLEMENT_ID =
   process.env.EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID?.trim() || 'pro';

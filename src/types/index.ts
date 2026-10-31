@@ -69,17 +69,6 @@ export interface WorkoutPlan {
   days: WorkoutDay[];
 }
 
-export interface DailyMission {
-  date: string;
-  workout_day_id: string;
-  mission_title: string;
-  mission_summary: string;
-  bonus_objectives: string[];
-  reward_xp: number;
-  reward_coins: number;
-  completed: boolean;
-}
-
 export interface UserProgress {
   user_id: string;
   current_level: number;
@@ -155,13 +144,6 @@ export interface Challenge {
   completed: boolean;
 }
 
-export interface AvatarConfig {
-  body_stage: number;
-  outfit_id: string;
-  gear_ids: string[];
-  badge_ids: string[];
-}
-
 export interface UserProfile {
   id: string;
   display_name: string;
@@ -223,13 +205,6 @@ export interface CompletedMission {
   completed_at: string;
 }
 
-export interface CoachMessage {
-  id: string;
-  type: 'motivation' | 'insight' | 'recovery' | 'warning' | 'celebration';
-  message: string;
-  generated_at: string;
-}
-
 // Movement Card system
 export interface CardExercise {
   exercise_id: string;
@@ -260,24 +235,6 @@ export interface CardSection {
   exercises: CardExercise[];
   rest_between_rounds?: number;
   notes?: string;
-}
-
-// Rep/set logging
-export interface SetLog {
-  set_number: number;
-  reps_completed?: number;
-  weight_used?: number;
-  duration_seconds?: number;
-  distance?: string;
-  rpe?: number;
-}
-
-export interface ExerciseLog {
-  exercise_id: string;
-  sets_completed: SetLog[];
-  rest_taken_seconds: number;
-  notes?: string;
-  timestamp: string;
 }
 
 // AI Recommendations
@@ -327,14 +284,6 @@ export interface RPELevel {
   label: string;
   description: string;
   color: string;
-}
-
-export interface IntervalSplits {
-  mile_split_range: string;
-  splits_400m: string;
-  splits_800m: string;
-  splits_1200m: string;
-  splits_1600m: string;
 }
 
 export interface UserAssessment {

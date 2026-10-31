@@ -46,6 +46,9 @@ const REST_TIMER_ROW = 'rest timer';
  * `split(',')` silently shifts every later column — which would put reps in the
  * distance field rather than failing loudly.
  */
+/** Undo the export's formula guard, so an exported note reads back exactly as written. */
+const unguard = (cell: string) => (/^'[=+\-@\t\r]/.test(cell) ? cell.slice(1) : cell);
+
 function csvRecords(text: string): { cells: string[]; line: number; malformed: boolean }[] {
   const records: { cells: string[]; line: number; malformed: boolean }[] = [];
   let cells: string[] = [];
@@ -66,14 +69,14 @@ function csvRecords(text: string): { cells: string[]; line: number; malformed: b
       if (quoted) field += newline;
       else {
         cells.push(field);
-        if (cells.some((cell) => cell.trim())) records.push({ cells, line: startLine, malformed: false });
+        if (cells.some((cell) => cell.trim())) records.push({ cells: cells.map(unguard), line: startLine, malformed: false });
         cells = []; field = ''; startLine = line + 1;
       }
       line += 1;
     } else field += char;
   }
   cells.push(field);
-  if (cells.some((cell) => cell.trim())) records.push({ cells, line: startLine, malformed: quoted });
+  if (cells.some((cell) => cell.trim())) records.push({ cells: cells.map(unguard), line: startLine, malformed: quoted });
   return records;
 }
 
@@ -119,7 +122,10 @@ export function parseStrongDate(value: string): string | null {
 }
 
 function escapeCsv(value: string): string {
-  return /[",\n\r]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+  // A text cell starting with = + - @ (or a tab/CR) runs as a formula when the export is
+  // opened in a spreadsheet; a leading apostrophe keeps it text. Numbers are untouched.
+  const safe = /^[=+\-@\t\r]/.test(value) && !/^-?\d+(\.\d+)?$/.test(value) ? `'${value}` : value;
+  return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
 }
 
 export type ParsedStrongWorkout = {
@@ -253,15 +259,6 @@ export function parseStrongCsv(text: string): StrongParseResult {
   }
   workouts.sort((a, b) => parseStrongDate(a.startedAt)!.localeCompare(parseStrongDate(b.startedAt)!));
   return { workouts, skipped };
-}
-
-/** `1h 23m`, the shape Strong writes. */
-export function formatStrongDuration(totalSeconds: number): string {
-  const minutes = Math.max(0, Math.round(totalSeconds / 60));
-  if (minutes < 60) return `${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  return rest ? `${hours}h ${rest}m` : `${hours}h`;
 }
 
 /** `2026-09-22 12:25:05` in local time, which is how Strong writes its dates. */

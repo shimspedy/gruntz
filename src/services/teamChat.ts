@@ -86,7 +86,7 @@ export async function sendMessage(teamId: string, body: string): Promise<TeamRes
   if (!userId) return fail('signed-out');
   try {
     const { data, error } = await supabase.from('team_messages').insert({ team_id: teamId, user_id: userId, display_name: displayName, body: text }).select('id, team_id, user_id, display_name, body, created_at').single();
-    if (error || !data) return fail(error?.message.includes('row-level security') ? 'not-found' : 'error');
+    if (error || !data) return fail(error?.message.includes('row-level security') ? 'not-found' : error?.message.includes('RATE_LIMITED') ? 'rate-limited' : 'error');
     return { ok: true, value: toMessage(data as Row, userId) };
   } catch {
     return fail('error');

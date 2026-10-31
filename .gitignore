@@ -56,3 +56,6 @@ secrets/
 *.swp
 supabase/.temp/
 .claude/worktrees/
+
+# Local Python venv for App Store Optimization scripts
+.venv-aso/

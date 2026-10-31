@@ -1,4 +1,3 @@
-import React from 'react';
 import { Text as RNText, type TextProps, type TextStyle, StyleSheet } from 'react-native';
 import { color, font } from './tokens';
 
@@ -69,5 +68,3 @@ export function Text({ variant = 'body', tone = 'primary', align, tabular, style
 const styles = StyleSheet.create({
   tabular: { fontVariant: ['tabular-nums'] },
 });
-
-export const typeRamp = variants;

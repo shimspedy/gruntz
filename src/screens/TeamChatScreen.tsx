@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActionSheetIOS, Alert, FlatList, KeyboardAvoidingView, Platform, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -131,6 +131,8 @@ export function TeamChatView({ team }: { team: Team }) {
   // status bar on top and shorter with one beside the content (iPhone Duo folded shut).
   // The team screen fills the window from the top, so this view's offset in it is the offset in the window.
   const [top, setTop] = useState(0);
+  // Newest first for the inverted list; built once per change, not once per row.
+  const reversed = useMemo(() => (messages ? [...messages].reverse() : []), [messages]);
 
   return (
     <View onLayout={(e) => setTop(Math.round(e.nativeEvent.layout.y))} style={styles.screen}>
@@ -140,12 +142,11 @@ export function TeamChatView({ team }: { team: Team }) {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={top - Math.max(insets.bottom - space.sm, 0)}>
         <FlatList
           ref={list}
-          data={messages ? [...messages].reverse() : []}
+          data={reversed}
           inverted
           keyExtractor={(message) => message.id}
           renderItem={({ item, index }) => {
-            const data = messages ? [...messages].reverse() : [];
-            const previous = data[index + 1];
+            const previous = reversed[index + 1];
             const sameAuthor = previous?.userId === item.userId && Date.parse(item.createdAt) - Date.parse(previous.createdAt) < 5 * 60_000;
             return <Bubble message={item} showAuthor={!sameAuthor} photoUrl={photoFor(item)} onLongPress={() => options(item)} />;
           }}

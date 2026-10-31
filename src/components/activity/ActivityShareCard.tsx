@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import type { TrackedSession } from '../../store/useReadinessStore';
 import type { RoutePoint } from '../../types/activity';

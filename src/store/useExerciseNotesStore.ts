@@ -27,6 +27,12 @@ export const useExerciseNotesStore = create<ExerciseNotesState>()(
           return { notes: next };
         }),
     }),
-    { name: '@gruntz_exercise_notes', version: 1, storage: createJSONStorage(() => AsyncStorage) },
+    {
+      name: '@gruntz_exercise_notes',
+      version: 1,
+      // Identity: every saved copy is version 1. Bumping `version` needs a real migration here.
+      migrate: (persisted) => persisted as ExerciseNotesState,
+      storage: createJSONStorage(() => AsyncStorage),
+    },
   ),
 );

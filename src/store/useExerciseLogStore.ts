@@ -198,7 +198,13 @@ export const useExerciseLogStore = create<ExerciseLogState>()(
       removeEntry: (key, entryId) =>
         set((s) => ({ logs: { ...s.logs, [key]: (s.logs[key] ?? []).filter((e) => e.id !== entryId) } })),
     }),
-    { name: '@gruntz_exercise_log', version: 1, storage: createJSONStorage(() => AsyncStorage) },
+    {
+      name: '@gruntz_exercise_log',
+      version: 1,
+      // Identity: every saved copy is version 1. Bumping `version` needs a real migration here.
+      migrate: (persisted) => persisted as ExerciseLogState,
+      storage: createJSONStorage(() => AsyncStorage),
+    },
   ),
 );
 

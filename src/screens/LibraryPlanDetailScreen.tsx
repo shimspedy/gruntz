@@ -1,4 +1,3 @@
-import React from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -43,7 +42,7 @@ export default function LibraryPlanDetailScreen() {
   }
 
   const following = activeId === plan.id;
-  const next = following ? nextPlanDay(plan, completed) : null;
+  const next = following ? nextPlanDay(plan, completed) ?? null : null;
   // Every day ticked. `restartPlan` used to be reachable only from the completion
   // card on Train, and both of that card's other buttons dismissed it for good —
   // after which nextPlanDay wrapped to day 1, markDayDone early-returned because it
@@ -69,7 +68,7 @@ export default function LibraryPlanDetailScreen() {
       toast(`Following ${plan.title} · shows on Train`, {
         tone: 'success',
         icon: 'check',
-        action: { label: 'Start', onPress: () => navigation.navigate('LibraryPlanDay', { planId: plan.id, dayId: day.id }) },
+        action: day ? { label: 'Start', onPress: () => navigation.navigate('LibraryPlanDay', { planId: plan.id, dayId: day.id }) } : undefined,
       });
     };
     if (activeId && activeId !== plan.id) {

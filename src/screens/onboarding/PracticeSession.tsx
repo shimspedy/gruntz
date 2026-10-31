@@ -1,4 +1,4 @@
-import React, { useReducer, useRef } from 'react';
+import { useReducer, useRef } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { getExerciseById } from '../../data/exercises';

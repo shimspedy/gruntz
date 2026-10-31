@@ -3,6 +3,7 @@ import { AppState, Platform } from 'react-native';
 import { BACKUP_DEBOUNCE_MS, BACKUP_SCHEMA_VERSION, isBackupAvailable } from '../config/backup';
 import { applySnapshot, captureSnapshot, snapshotWorkoutCount, type BackupSnapshot } from './backupSnapshot';
 import { getSupabase } from './supabaseClient';
+import { reportHandled } from './crashReporting';
 import type { Session } from '@supabase/supabase-js';
 
 export type BackupMeta = {
@@ -145,6 +146,8 @@ export async function reconcileTrialStart(): Promise<'adopted' | 'kept-local' | 
     const local = await readLocalTrialStart();
     const remoteMs = Date.parse(remote);
     if (!Number.isFinite(remoteMs)) return 'nothing';
+    // The row is client-writable, so a start in the future is never trusted.
+    if (remoteMs > Date.now() + 5 * 60 * 1000) return 'nothing';
     if (local) {
       const localMs = Date.parse(local);
       if (Number.isFinite(localMs) && localMs <= remoteMs) return 'kept-local';
@@ -318,6 +321,7 @@ async function pushBackupNow(appVersion: string | undefined, options: { replaceE
 
     if (error) {
       if (__DEV__) console.warn('[backup] pushBackup failed', error);
+      reportHandled(error, 'backup.push');
       return 'error';
     }
     if (!await contextIsCurrent(supabase, context) || !contextGenerationIsCurrent(context)) return 'error';
@@ -327,7 +331,9 @@ async function pushBackupNow(appVersion: string | undefined, options: { replaceE
     return 'ok';
   } catch (error) {
     if (__DEV__) console.warn('[backup] pushBackup threw', error);
-    return isBackupTooLarge(error) ? 'too-large' : 'error';
+    if (isBackupTooLarge(error)) return 'too-large';
+    reportHandled(error, 'backup.push');
+    return 'error';
   }
 }
 
@@ -403,7 +409,9 @@ async function restoreBackupNow(): Promise<RestoreBackupResult> {
     return 'restored';
   } catch (error) {
     if (__DEV__) console.warn('[backup] restoreBackup threw', error);
-    return isBackupTooLarge(error) ? 'too-large' : 'error';
+    if (isBackupTooLarge(error)) return 'too-large';
+    reportHandled(error, 'backup.restore');
+    return 'error';
   }
 }
 
@@ -498,10 +506,12 @@ export async function deleteAccount(): Promise<'deleted' | 'signed-out' | 'unava
       });
     } catch (cleanupError) {
       if (__DEV__) console.warn('[backup] deleted account local cleanup failed', cleanupError);
+      reportHandled(cleanupError, 'backup.deleteAccountCleanup');
     }
     return 'deleted';
   } catch (error) {
     if (__DEV__) console.warn('[backup] deleteAccount threw', error);
+    reportHandled(error, 'backup.deleteAccount');
     return 'error';
   }
 }

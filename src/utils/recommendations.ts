@@ -163,12 +163,3 @@ export function getTopRecommendations(
 ): WorkoutRecommendation[] {
   return generateRecommendations(progress, userProfile).slice(0, count);
 }
-
-export function getStrengthProfile(progress: UserProgress): StrengthProfile {
-  return buildStrengthProfile(progress);
-}
-
-export function getWeakAreaNames(progress: UserProgress, userProfile?: UserProfile | null): string[] {
-  const strength = buildStrengthProfile(progress);
-  return getWeakAreas(strength, userProfile).map(area => area.replace('_', ' '));
-}

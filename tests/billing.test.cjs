@@ -283,6 +283,18 @@ test('malformed trial date does not crash gating and cloud reconciliation cannot
   assert.equal(s.state().trialStartedAt, '2026-01-01T00:00:00.000Z');
 });
 
+test('a future trial start is never adopted or honored, even on a device with no trial yet', () => {
+  const s = store();
+  const future = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+  assert.equal(s.getTrialEndsAt(future), null);
+  assert.equal(s.getTrialDaysRemaining(future), 0);
+  assert.equal(s.state().trialStartedAt, null);
+  s.state().adoptTrialStart(future);
+  assert.equal(s.state().trialStartedAt, null);
+  s.state().startTrialIfNeeded(future);
+  assert.ok(Date.parse(s.state().trialStartedAt) <= Date.now());
+});
+
 test('successful management fallback is reported as presented, avoiding duplicate opening', async () => {
   let calls = 0;
   const s = store({ openManagementUrl: async () => { calls += 1; return true; } });

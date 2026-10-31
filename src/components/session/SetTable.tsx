@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActionSheetIOS, Alert, InputAccessoryView, Keyboard, Platform, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { FadeInDown, interpolateColor, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import type { PreviousSet, SessionExercise, SessionSet } from '../../store/useSessionStore';

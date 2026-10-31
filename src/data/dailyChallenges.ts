@@ -352,13 +352,6 @@ export function getChallengeForDate(date: Date): DailyChallenge {
   return challenges[index];
 }
 
-/**
- * Get all available challenges (useful for UI displays)
- */
-export function getAllChallenges(): DailyChallenge[] {
-  return [...challenges];
-}
-
 export function formatChallengeAmount(
   value: number,
   challenge: Pick<DailyChallenge, 'type' | 'unit'>

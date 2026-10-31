@@ -1,6 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { isBackupAvailable, SUPABASE_ANON_KEY, SUPABASE_URL } from '../config/backup';
+import { secureSessionStorage } from './secureSessionStorage';
 
 /**
  * The Supabase client, created lazily and only when backup is configured.
@@ -23,7 +23,7 @@ export function getSupabase(): SupabaseClient | null {
     const { createClient } = require('@supabase/supabase-js') as typeof import('@supabase/supabase-js');
     client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: {
-        storage: AsyncStorage,
+        storage: secureSessionStorage,
         // The session has to survive a relaunch, or "restore my progress" would
         // mean signing in every time.
         persistSession: true,

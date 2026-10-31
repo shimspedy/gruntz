@@ -35,8 +35,12 @@ function harness(extra = {}) {
     color: {}, radius: { xl: 28 }, font: {},
   };
   const native = { View: 'View', ScrollView: 'ScrollView', TextInput: 'TextInput', Platform: { OS: 'ios' }, StyleSheet: { create: value => value, absoluteFill: {} } };
+  // Components use the automatic JSX runtime (tsconfig `jsx: react-jsx`), so most no
+  // longer import React. Route it to the same element shape createElement builds.
+  const jsx = (type, { children, ...props } = {}, key) => react.createElement(type, key === undefined ? props : { ...props, key }, ...(children === undefined ? [] : [children]));
+  const jsxRuntime = { jsx, jsxs: jsx, Fragment: react.Fragment };
   const mocks = {
-    react, 'react-native': native,
+    react, 'react/jsx-runtime': jsxRuntime, 'react-native': native,
     'react-native-reanimated': { __esModule: true, ...animation },
     'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 28, bottom: 34, left: 0, right: 0 }) },
     '../ui/tokens': tokens, '../../ui/tokens': tokens,
@@ -51,7 +55,7 @@ function harness(extra = {}) {
   function load(file, names = []) {
     const filename = path.join(__dirname, '..', file);
     const source = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
-      compilerOptions: { jsx: ts.JsxEmit.React, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, esModuleInterop: true },
+      compilerOptions: { jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, esModuleInterop: true },
       fileName: filename,
     }).outputText;
     const module = { exports: {} };

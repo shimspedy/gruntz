@@ -109,6 +109,8 @@ export const usePlanLibraryStore = create<PlanLibraryState>()(
     {
       name: '@gruntz_plan_library',
       version: 1,
+      // Identity: every saved copy is version 1. Bumping `version` needs a real migration here.
+      migrate: (persisted) => persisted as PlanLibraryState,
       storage: createJSONStorage(() => AsyncStorage),
     },
   ),
@@ -123,8 +125,8 @@ export function parsePlanSessionId(id: string | null): { planId: string; dayId: 
   return planId && dayId ? { planId, dayId } : null;
 }
 
-/** The first day not yet completed; after a finished cycle it wraps to day one. */
-export function nextPlanDay(plan: WorkoutPlan, completedDayIds: string[]): PlanDay {
+/** The first day not yet completed; after a finished cycle it wraps to day one. Undefined only for a plan with no days. */
+export function nextPlanDay(plan: WorkoutPlan, completedDayIds: string[]): PlanDay | undefined {
   return plan.days.find((d) => !completedDayIds.includes(d.id)) ?? plan.days[0];
 }
 
@@ -149,9 +151,4 @@ export function useActivePlanDeferred(): { plan: WorkoutPlan | undefined; pendin
   }, [ready]);
   if (!id) return { plan: undefined, pending: false };
   return ready ? { plan: getWorkoutPlan(id), pending: false } : { plan: undefined, pending: true };
-}
-
-export function useActivePlan(): WorkoutPlan | undefined {
-  const id = usePlanLibraryStore((s) => s.activePlanId);
-  return id ? getWorkoutPlan(id) : undefined;
 }

@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { AppState, Linking, Platform } from 'react-native';
 import {
-  syncHealth, type HealthAdapter, type HealthExport, type HealthSyncResult, type HealthWorkout, type HealthWorkoutDetails, type HealthWorkoutKind,
+  syncHealth, type HealthAdapter, type HealthSyncResult, type HealthWorkout, type HealthWorkoutDetails, type HealthWorkoutKind,
 } from '../features/healthSync';
 import { loadRoute } from '../store/activityRoutes';
 import { useHealthStore } from '../store/useHealthStore';
@@ -9,6 +9,7 @@ import { saveTrackedActivity, useReadinessStore } from '../store/useReadinessSto
 import { useUserStore } from '../store/useUserStore';
 import type { RoutePoint } from '../types/activity';
 import { healthSyncAllowed, healthSyncGeneration, trackHealthImportWrite } from './healthSyncGate';
+import { reportHandled } from './crashReporting';
 
 export const healthPlatformName = Platform.OS === 'ios' ? 'Apple Health' : 'Health Connect';
 export type HealthAvailability = 'ready' | 'needsUpdate' | 'unavailable';
@@ -365,7 +366,10 @@ function trainingStoresReady(): boolean {
 
 /** One sync at a time; a second caller gets the result of the one in flight. Null when not connected. */
 export function runHealthSync(): Promise<HealthSyncResult | null> {
-  running ??= sync().catch(() => null).finally(() => { running = null; });
+  running ??= sync().catch((error: unknown) => {
+    reportHandled(error, 'healthSync.sync');
+    return null;
+  }).finally(() => { running = null; });
   return running;
 }
 

@@ -51,6 +51,7 @@ function reconcilePinnedTrialStart() {
   }).catch(() => undefined);
 }
 const DAY_MS = 24 * 60 * 60 * 1000;
+const TRIAL_CLOCK_SKEW_MS = 5 * 60 * 1000;
 // A failed read must not replace the original trial or entitlement with defaults.
 let subscriptionStorageWritable = false;
 const subscriptionStorage = {
@@ -119,6 +120,9 @@ export function getTrialEndsAt(trialStartedAt: string | null) {
     return null;
   }
   const started = Date.parse(trialStartedAt);
+  // A trial cannot start in the future. Without this, a future date written to the
+  // cloud backup row would be adopted on a fresh device and never run out.
+  if (started > Date.now() + TRIAL_CLOCK_SKEW_MS) return null;
   const endsAt = started + GRUNTZ_TRIAL_DAYS * DAY_MS;
   if (!Number.isFinite(endsAt) || Math.abs(endsAt) > 8.64e15) return null;
   return new Date(endsAt).toISOString();

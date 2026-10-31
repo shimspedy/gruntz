@@ -155,6 +155,7 @@ function CreateMenu({ bottom }: { bottom: number }) {
     if (open) {
       setMounted(true);
       t.set(withSpring(1, motion.sheet));
+      return undefined;
     } else {
       t.set(withTiming(0, { duration: 180, easing: motion.easeOut }));
       const id = setTimeout(() => setMounted(false), 190);
