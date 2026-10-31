@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-30",
+  "video": "exports/gruntz-since-monday-1080x1920.mp4",
+  "reelane_url": "https://reelane.com/app/queue?post=caae4ed3-e646-4185-86eb-92f17ae7e575",
+  "caption": "Rest timer: since Monday. 😅\n\nToday’s workout shouldn’t be a guessing game.\nDownload Gruntz on the App Store: https://gruntzfit.com\n\n#Gruntz #MilitaryFitness #GymHumor",
+  "accounts": [
+    {
+      "platform": "instagram",
+      "account": "fitvete",
+      "status": "published",
+      "url": "https://www.instagram.com/reel/DfG1-KViLkX/"
+    },
+    {
+      "platform": "facebook",
+      "account": "FitVete",
+      "status": "published",
+      "url": "https://www.facebook.com/reel/3029756540697212/"
+    },
+    {
+      "platform": "youtube",
+      "account": "blaqdu",
+      "status": "published",
+      "url": "https://www.youtube.com/watch?v=6J4H-kferY4"
+    },
+    {
+      "platform": "tiktok",
+      "account": "fitvete",
+      "status": "published",
+      "worker_status": "PUBLISH_COMPLETE",
+      "publish_id": "v_pub_file~v2-1.7702329826400716814",
+      "url": null
+    }
+  ],
+  "all_accounts_selected": true,
+  "publish_mode": "post_now",
+  "tiktok": {
+    "visibility": "PUBLIC_TO_EVERYONE",
+    "comments": true,
+    "duet": false,
+    "stitch": false,
+    "disclosure": "Your brand / Promotional content",
+    "music_usage_confirmation": "Explicitly approved by user in this chat immediately before posting"
+  },
+  "proof": "qa/reelane-published.jpg",
+  "notes": "Reelane reports published for all four posts; TikTok did not return a public post URL."
+}

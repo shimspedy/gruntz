@@ -1,0 +1,187 @@
+{
+  "concepts": 6,
+  "placements": 12,
+  "imageFiles": 24,
+  "status": "Published to Meta; delivery subject to Meta review/preparation",
+  "files": [
+    {
+      "file": "army-feed.jpg",
+      "width": 1080,
+      "height": 1350,
+      "bytes": 341292,
+      "sha256": "7755b8621ab9f65f83e915fa582560fd7c70e814e3e128c767c9b6d13bd314a5"
+    },
+    {
+      "file": "army-feed.png",
+      "width": 1080,
+      "height": 1350,
+      "bytes": 922305,
+      "sha256": "203b45a38abbe801ecfd7243316cfbdec6bee0fd875490ec1a1b2e71e27f34a0"
+    },
+    {
+      "file": "army-story.jpg",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 356274,
+      "sha256": "7b2fa7fbe90f39045942ff34a4ca7fbf9aee8bd0491ac90208560159baf780c7"
+    },
+    {
+      "file": "army-story.png",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 943814,
+      "sha256": "8c65f10da63cb5fa1a96ff802b8e36e6ff811bef209b78b48f28b6070e7c9137"
+    },
+    {
+      "file": "marines-feed.jpg",
+      "width": 1080,
+      "height": 1350,
+      "bytes": 359557,
+      "sha256": "35b4e1304411209be6eb07854f00f6c2060f3a9eea8b322d6e53df2e7154b998"
+    },
+    {
+      "file": "marines-feed.png",
+      "width": 1080,
+      "height": 1350,
+      "bytes": 952849,
+      "sha256": "4310cf09139e878f27add28e994c32e436cc4fb3846e6200022a7d56d53ef070"
+    },
+    {
+      "file": "marines-story.jpg",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 376703,
+      "sha256": "0f20e2d5b90e71adc8adc89a3eda63aa3d6a5f0a3b55596223c91617bc91a01f"
+    },
+    {
+      "file": "marines-story.png",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 970989,
+      "sha256": "ed773f0597029d4c55d15a97d1bb9eafd642b89ad8547c47949055755a2811f6"
+    },
+    {
+      "file": "navy-feed.jpg",
+      "width": 1080,
+      "height": 1350,
+      "bytes": 357471,
+      "sha256": "2e912052ea9e50bf613c07640c5d89c55c97c79971bdebe80f66733b1f4e170c"
+    },
+    {
+      "file": "navy-feed.png",
+      "width": 1080,
+      "height": 1350,
+      "bytes": 976674,
+      "sha256": "47f5a84d6b5ba0bfcc0210084932d00359b246ce807d41e6c9dd9fa943144f91"
+    },
+    {
+      "file": "navy-story.jpg",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 374157,
+      "sha256": "d95c7ced2ad899fa0ff2ba3e6193c2550d703ad0ab6ae331fb101b089dbdbaf6"
+    },
+    {
+      "file": "navy-story.png",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 999350,
+      "sha256": "3210cc68b7650f40d7e87d65aff6e3b6c363dd30eb88b57fa597ea2a583032e9"
+    },
+    {
+      "file": "air-force-feed.jpg",
+      "width": 1080,
+      "height": 1350,
+      "bytes": 339325,
+      "sha256": "868bf8cf1e48b38a6ba949fb319b6b8b6749ee57827acf35418cb7768dd2f2f2"
+    },
+    {
+      "file": "air-force-feed.png",
+      "width": 1080,
+      "height": 1350,
+      "bytes": 927275,
+      "sha256": "d2aad80ab209235480e354750f0a7dc31dd0c4f6448e2019dd0e3eee215d6288"
+    },
+    {
+      "file": "air-force-story.jpg",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 356071,
+      "sha256": "78089ab74040a293dccf40c126f98486ef39d6d75689f3708d30f48b28cbbd98"
+    },
+    {
+      "file": "air-force-story.png",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 949510,
+      "sha256": "f5fd82df36199fd550e6978e742269b5745ce19ba38a5aa15a9c7953442876e2"
+    },
+    {
+      "file": "space-force-feed.jpg",
+      "width": 1080,
+      "height": 1350,
+      "bytes": 348272,
+      "sha256": "f35aaad508f553ae713664b808bbc46895266cd638a2e3ca57c9e5e71585ccf6"
+    },
+    {
+      "file": "space-force-feed.png",
+      "width": 1080,
+      "height": 1350,
+      "bytes": 930829,
+      "sha256": "97c04ac64d5524757883765f8238f6db2fdb2c3e15a586e358d7af6e101c9c15"
+    },
+    {
+      "file": "space-force-story.jpg",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 363681,
+      "sha256": "2fc7905df70edbb2087d1a990469b03e284b7dc03be3e53a5a861db84b7380b7"
+    },
+    {
+      "file": "space-force-story.png",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 950094,
+      "sha256": "6f95ff4e15461e74ce9a5f4e9bb3c6fdfe949e5eaea09b33f316a2185ea6132b"
+    },
+    {
+      "file": "coast-guard-feed.jpg",
+      "width": 1080,
+      "height": 1350,
+      "bytes": 322618,
+      "sha256": "a6a6e8d3f48331c981795044a2237fd44bfee56e34e6e36af4f943a8f01b4f87"
+    },
+    {
+      "file": "coast-guard-feed.png",
+      "width": 1080,
+      "height": 1350,
+      "bytes": 851675,
+      "sha256": "13009683d82506ce7e022d5d54d2cdea110436c00279db9886845f064c7c3535"
+    },
+    {
+      "file": "coast-guard-story.jpg",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 338881,
+      "sha256": "c6a9cd2377edf0b69cea9a2da12ebabf98f84d8a94726f1651a87f16784dfc80"
+    },
+    {
+      "file": "coast-guard-story.png",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 873400,
+      "sha256": "eedb98ceeb44091c2bd4d47877460ee9adf882420e26901acb800f328e5c7b3f"
+    }
+  ],
+  "publication": {
+    "record": "../publication.json",
+    "publishedDate": "2026-10-30",
+    "timeZone": "America/Detroit",
+    "adAccountId": "1947278579469729",
+    "campaignId": "120254721028370640",
+    "adSetId": "120254721028380640",
+    "adsPublished": 6,
+    "adStatus": "On",
+    "deliveryStatus": "Preparing"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "master": "gruntz-since-monday-1080x1920.mp4",
+  "duration_seconds": 21,
+  "frames": 630,
+  "size_bytes": 4577320,
+  "sha256": "a95b6c40ecee66c97b4c3ec00f2718e56b07ef53cf0027e2f84bbb16b7863811",
+  "video": "H.264 High / 1080x1920 / 30fps / yuv420p",
+  "audio": "Original score and SFX / AAC stereo 48kHz / loudnorm target -18 LUFS, -1.5dBTP",
+  "faststart": true,
+  "checks": [
+    "Full file decoded with ffmpeg without errors",
+    "Encoded-frame contact-sheet visual review",
+    "Independent dialogue, CTA, claim and safe-zone review",
+    "Genuine screens preserved proportionally",
+    "No third-party music or speech samples"
+  ],
+  "published_to_social": true,
+  "publication_record": "../publication.json"
+}

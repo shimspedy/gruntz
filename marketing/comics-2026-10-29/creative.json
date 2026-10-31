@@ -1,0 +1,116 @@
+[
+  {
+    "id": "army",
+    "branch": "U.S. Army",
+    "headline": "WHAT’S THE PLAN?",
+    "dialogue": [
+      "What’s the workout?",
+      "I was hoping you knew."
+    ],
+    "speaker": [
+      0.75,
+      0.28
+    ],
+    "hero": "Your workout.\nAlready planned.",
+    "body": "Open your plan.\nGet to work.",
+    "feature": "DAILY PLAN  /  WORKOUT LOG",
+    "screen": "train-current.png",
+    "caption": "The hardest part of training shouldn’t be figuring out what to do. Open Gruntz, follow your plan, and get to work.",
+    "metaHeadline": "Your workout. Already planned."
+  },
+  {
+    "id": "marines",
+    "branch": "U.S. Marine Corps",
+    "headline": "STILL WAITING?",
+    "dialogue": [
+      "Waiting for motivation?",
+      "Still waiting."
+    ],
+    "speaker": [
+      0.27,
+      0.76
+    ],
+    "hero": "Give the day\nsome structure.",
+    "body": "A training plan you can\nactually show up for.",
+    "feature": "YOUR PLAN  /  YOUR PROGRESS",
+    "screen": "train-current.png",
+    "caption": "Motivation takes its time. Your training plan is ready when you are. Build your routine with Gruntz.",
+    "metaHeadline": "Give the day some structure."
+  },
+  {
+    "id": "navy",
+    "branch": "U.S. Navy",
+    "headline": "LOST IN THE GYM?",
+    "dialogue": [
+      "Today’s workout?",
+      "Lost at sea."
+    ],
+    "speaker": [
+      0.27,
+      0.76
+    ],
+    "hero": "Find your\nnext session.",
+    "body": "Log the sets.\nKeep moving forward.",
+    "feature": "SETS  /  REPS  /  REST",
+    "screen": "workout-log.jpg",
+    "caption": "Find your next session, log the work, and keep moving forward. Gruntz brings structure to your training.",
+    "metaHeadline": "Find your next session."
+  },
+  {
+    "id": "air-force",
+    "branch": "U.S. Air Force",
+    "headline": "BRIEF. THEN LIFT.",
+    "dialogue": [
+      "We briefed the workout.",
+      "Did we do the workout?"
+    ],
+    "speaker": [
+      0.28,
+      0.75
+    ],
+    "hero": "Less planning.\nMore logging.",
+    "body": "Track each set,\nrep, and rest.",
+    "feature": "WORKOUT LOG  /  REST TIMER",
+    "screen": "workout-log.jpg",
+    "caption": "A good brief deserves a good training session. Log your sets, reps, and rest with Gruntz.",
+    "metaHeadline": "Less planning. More logging."
+  },
+  {
+    "id": "space-force",
+    "branch": "U.S. Space Force",
+    "headline": "LOG THE WORK.",
+    "dialogue": [
+      "Tracking everything?",
+      "Except my workouts."
+    ],
+    "speaker": [
+      0.75,
+      0.28
+    ],
+    "hero": "Earn XP.\nSee your progress.",
+    "body": "Make the work\npart of your record.",
+    "feature": "XP  /  RANKS  /  ACHIEVEMENTS",
+    "screen": "ranks-current.png",
+    "caption": "Put the training on the record. Earn XP, build your routine, and see your progress with Gruntz.",
+    "metaHeadline": "Earn XP. See your progress."
+  },
+  {
+    "id": "coast-guard",
+    "branch": "U.S. Coast Guard",
+    "headline": "STAY ON COURSE.",
+    "dialogue": [
+      "Who tracks our training?",
+      "I thought you did."
+    ],
+    "speaker": [
+      0.28,
+      0.76
+    ],
+    "hero": "Keep your\ntraining on course.",
+    "body": "Show up. Earn XP.\nSee what adds up.",
+    "feature": "TRAINING  /  XP  /  PROGRESS",
+    "screen": "ranks-current.png",
+    "caption": "Keep your training on course. Show up, earn XP, and see your progress in Gruntz.",
+    "metaHeadline": "Keep your training on course."
+  }
+]

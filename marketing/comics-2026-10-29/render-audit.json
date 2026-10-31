@@ -1,0 +1,259 @@
+{
+  "rendered": 6,
+  "expected": 6,
+  "draft": false,
+  "measurements": [
+    {
+      "screenInset": true,
+      "x": 737,
+      "y": 693,
+      "w": 266,
+      "h": 578.318407960199,
+      "sourceRatio": 0.459954233409611,
+      "insertRatio": 0.459954233409611,
+      "fullSource": true
+    },
+    {
+      "id": "army",
+      "format": "feed",
+      "width": 1080,
+      "height": 1350,
+      "artWidth": 1859,
+      "artHeight": 846,
+      "screen": "train-current.png",
+      "screenWidth": 402,
+      "screenHeight": 874
+    },
+    {
+      "screenInset": true,
+      "x": 704,
+      "y": 1048,
+      "w": 294,
+      "h": 639.1940298507462,
+      "sourceRatio": 0.459954233409611,
+      "insertRatio": 0.459954233409611,
+      "fullSource": true
+    },
+    {
+      "id": "army",
+      "format": "story",
+      "width": 1080,
+      "height": 1920,
+      "artWidth": 1859,
+      "artHeight": 846,
+      "screen": "train-current.png",
+      "screenWidth": 402,
+      "screenHeight": 874
+    },
+    {
+      "screenInset": true,
+      "x": 737,
+      "y": 693,
+      "w": 266,
+      "h": 578.318407960199,
+      "sourceRatio": 0.459954233409611,
+      "insertRatio": 0.459954233409611,
+      "fullSource": true
+    },
+    {
+      "id": "marines",
+      "format": "feed",
+      "width": 1080,
+      "height": 1350,
+      "artWidth": 1858,
+      "artHeight": 846,
+      "screen": "train-current.png",
+      "screenWidth": 402,
+      "screenHeight": 874
+    },
+    {
+      "screenInset": true,
+      "x": 704,
+      "y": 1048,
+      "w": 294,
+      "h": 639.1940298507462,
+      "sourceRatio": 0.459954233409611,
+      "insertRatio": 0.459954233409611,
+      "fullSource": true
+    },
+    {
+      "id": "marines",
+      "format": "story",
+      "width": 1080,
+      "height": 1920,
+      "artWidth": 1858,
+      "artHeight": 846,
+      "screen": "train-current.png",
+      "screenWidth": 402,
+      "screenHeight": 874
+    },
+    {
+      "screenInset": true,
+      "x": 737,
+      "y": 693,
+      "w": 266,
+      "h": 577.9454545454546,
+      "sourceRatio": 0.4602510460251046,
+      "insertRatio": 0.4602510460251046,
+      "fullSource": true
+    },
+    {
+      "id": "navy",
+      "format": "feed",
+      "width": 1080,
+      "height": 1350,
+      "artWidth": 1859,
+      "artHeight": 846,
+      "screen": "workout-log.jpg",
+      "screenWidth": 660,
+      "screenHeight": 1434
+    },
+    {
+      "screenInset": true,
+      "x": 704,
+      "y": 1048,
+      "w": 294,
+      "h": 638.7818181818182,
+      "sourceRatio": 0.4602510460251046,
+      "insertRatio": 0.46025104602510464,
+      "fullSource": true
+    },
+    {
+      "id": "navy",
+      "format": "story",
+      "width": 1080,
+      "height": 1920,
+      "artWidth": 1859,
+      "artHeight": 846,
+      "screen": "workout-log.jpg",
+      "screenWidth": 660,
+      "screenHeight": 1434
+    },
+    {
+      "screenInset": true,
+      "x": 737,
+      "y": 693,
+      "w": 266,
+      "h": 577.9454545454546,
+      "sourceRatio": 0.4602510460251046,
+      "insertRatio": 0.4602510460251046,
+      "fullSource": true
+    },
+    {
+      "id": "air-force",
+      "format": "feed",
+      "width": 1080,
+      "height": 1350,
+      "artWidth": 1859,
+      "artHeight": 846,
+      "screen": "workout-log.jpg",
+      "screenWidth": 660,
+      "screenHeight": 1434
+    },
+    {
+      "screenInset": true,
+      "x": 704,
+      "y": 1048,
+      "w": 294,
+      "h": 638.7818181818182,
+      "sourceRatio": 0.4602510460251046,
+      "insertRatio": 0.46025104602510464,
+      "fullSource": true
+    },
+    {
+      "id": "air-force",
+      "format": "story",
+      "width": 1080,
+      "height": 1920,
+      "artWidth": 1859,
+      "artHeight": 846,
+      "screen": "workout-log.jpg",
+      "screenWidth": 660,
+      "screenHeight": 1434
+    },
+    {
+      "screenInset": true,
+      "x": 737,
+      "y": 693,
+      "w": 266,
+      "h": 578.318407960199,
+      "sourceRatio": 0.459954233409611,
+      "insertRatio": 0.459954233409611,
+      "fullSource": true
+    },
+    {
+      "id": "space-force",
+      "format": "feed",
+      "width": 1080,
+      "height": 1350,
+      "artWidth": 1859,
+      "artHeight": 846,
+      "screen": "ranks-current.png",
+      "screenWidth": 402,
+      "screenHeight": 874
+    },
+    {
+      "screenInset": true,
+      "x": 704,
+      "y": 1048,
+      "w": 294,
+      "h": 639.1940298507462,
+      "sourceRatio": 0.459954233409611,
+      "insertRatio": 0.459954233409611,
+      "fullSource": true
+    },
+    {
+      "id": "space-force",
+      "format": "story",
+      "width": 1080,
+      "height": 1920,
+      "artWidth": 1859,
+      "artHeight": 846,
+      "screen": "ranks-current.png",
+      "screenWidth": 402,
+      "screenHeight": 874
+    },
+    {
+      "screenInset": true,
+      "x": 737,
+      "y": 693,
+      "w": 266,
+      "h": 578.318407960199,
+      "sourceRatio": 0.459954233409611,
+      "insertRatio": 0.459954233409611,
+      "fullSource": true
+    },
+    {
+      "id": "coast-guard",
+      "format": "feed",
+      "width": 1080,
+      "height": 1350,
+      "artWidth": 1859,
+      "artHeight": 846,
+      "screen": "ranks-current.png",
+      "screenWidth": 402,
+      "screenHeight": 874
+    },
+    {
+      "screenInset": true,
+      "x": 704,
+      "y": 1048,
+      "w": 294,
+      "h": 639.1940298507462,
+      "sourceRatio": 0.459954233409611,
+      "insertRatio": 0.459954233409611,
+      "fullSource": true
+    },
+    {
+      "id": "coast-guard",
+      "format": "story",
+      "width": 1080,
+      "height": 1920,
+      "artWidth": 1859,
+      "artHeight": 846,
+      "screen": "ranks-current.png",
+      "screenWidth": 402,
+      "screenHeight": 874
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "url": "https://gruntzfit.com",
+  "deployId": "6ae42cdf3ebf73a21afa4dea",
+  "deployUrl": "https://6ae42cdf3ebf73a21afa4dea--gruntz.netlify.app",
+  "date": "2026-10-30",
+  "sourceBranch": "main",
+  "sourceCommitted": true,
+  "checks": [
+    "Astro production build",
+    "Static asset and route audit",
+    "320/390/768/1440 responsive checks",
+    "EN/ES homepage",
+    "Six comic tabs and mobile panel controls",
+    "Feature previews and genuine screenshots",
+    "FAQ and App Store links",
+    "Production CSP and browser console"
+  ],
+  "preview": "home-live-final.jpg",
+  "note": "Website source is committed to main. Published Netlify commit matches main; Vite tsconfig discovery fix restores Git builds.",
+  "commit": "fcc96785fe0a3914cb83285c76e8dc2675d2c83d",
+  "deploymentMethod": "Netlify Git continuous deployment",
+  "state": "ready"
+}

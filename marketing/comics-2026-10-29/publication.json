@@ -1,0 +1,102 @@
+{
+  "status": "Published to Meta; delivery subject to Meta review/preparation",
+  "publishedDate": "2026-10-30",
+  "timeZone": "America/Detroit",
+  "adAccountId": "1947278579469729",
+  "campaignId": "120254721028370640",
+  "adSetId": "120254721028380640",
+  "verification": {
+    "source": "Meta Ads Manager after full page reload",
+    "allAdStatus": "On",
+    "allDeliveryStatus": "Processing or Preparing",
+    "proofScreenshot": "exports/meta-published-proof.jpg",
+    "creativePreservation": "All six ads have automatic image generation, Flex media, essential color adjustments and enhanced CTA copy disabled."
+  },
+  "retainedSettings": [
+    "original budget",
+    "original audience",
+    "original schedule",
+    "original destination"
+  ],
+  "distribution": "All six ads are in the same ad set. Meta optimizes distribution; equal or random delivery is not guaranteed.",
+  "ads": [
+    {
+      "creativeId": "army",
+      "branch": "U.S. Army",
+      "headline": "WHAT’S THE PLAN?",
+      "metaHeadline": "Your workout. Already planned.",
+      "metaAdId": "120254721028360640",
+      "status": "On",
+      "delivery": "Preparing",
+      "placements": {
+        "feed": "exports/army-feed.jpg",
+        "story": "exports/army-story.jpg"
+      }
+    },
+    {
+      "creativeId": "marines",
+      "branch": "U.S. Marine Corps",
+      "headline": "STILL WAITING?",
+      "metaHeadline": "Give the day some structure.",
+      "metaAdId": "120254721399300640",
+      "status": "On",
+      "delivery": "Preparing",
+      "placements": {
+        "feed": "exports/marines-feed.jpg",
+        "story": "exports/marines-story.jpg"
+      }
+    },
+    {
+      "creativeId": "navy",
+      "branch": "U.S. Navy",
+      "headline": "LOST IN THE GYM?",
+      "metaHeadline": "Find your next session.",
+      "metaAdId": "120254721384100640",
+      "status": "On",
+      "delivery": "Processing",
+      "placements": {
+        "feed": "exports/navy-feed.jpg",
+        "story": "exports/navy-story.jpg"
+      }
+    },
+    {
+      "creativeId": "air-force",
+      "branch": "U.S. Air Force",
+      "headline": "BRIEF. THEN LIFT.",
+      "metaHeadline": "Less planning. More logging.",
+      "metaAdId": "120254722474450640",
+      "status": "On",
+      "delivery": "Preparing",
+      "placements": {
+        "feed": "exports/air-force-feed.jpg",
+        "story": "exports/air-force-story.jpg"
+      }
+    },
+    {
+      "creativeId": "space-force",
+      "branch": "U.S. Space Force",
+      "headline": "LOG THE WORK.",
+      "metaHeadline": "Earn XP. See your progress.",
+      "metaAdId": "120254722474460640",
+      "status": "On",
+      "delivery": "Preparing",
+      "placements": {
+        "feed": "exports/space-force-feed.jpg",
+        "story": "exports/space-force-story.jpg"
+      }
+    },
+    {
+      "creativeId": "coast-guard",
+      "branch": "U.S. Coast Guard",
+      "headline": "STAY ON COURSE.",
+      "metaHeadline": "Keep your training on course.",
+      "metaAdId": "120254722474470640",
+      "status": "On",
+      "delivery": "Preparing",
+      "placements": {
+        "feed": "exports/coast-guard-feed.jpg",
+        "story": "exports/coast-guard-story.jpg"
+      }
+    }
+  ]
+}

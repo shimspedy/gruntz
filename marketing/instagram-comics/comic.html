@@ -1,0 +1,188 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Patrick+Hand&family=Inter:wght@600;800&display=block" rel="stylesheet">
+<style>
+  :root{--ink:#111;--olive:#4f5d23;--olive2:#3b4619;--sand:#e9d9a6;--gold:#f2c230}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:1080px;height:1350px;background:var(--olive2);overflow:hidden}
+  .page{width:1080px;height:1350px;position:relative;background:
+    repeating-linear-gradient(45deg,rgba(0,0,0,.05) 0 6px,transparent 6px 12px),var(--olive)}
+  .title{position:absolute;left:30px;right:30px;top:26px;height:110px;display:flex;align-items:center;justify-content:space-between}
+  .title h1{font-family:Bangers;font-size:76px;letter-spacing:2px;color:var(--gold);
+    -webkit-text-stroke:3px var(--ink);text-shadow:5px 5px 0 var(--ink);line-height:1}
+  .title .ep{font-family:Bangers;font-size:30px;color:var(--sand);letter-spacing:1px;text-align:right;line-height:1.1}
+  .grid{position:absolute;left:30px;top:150px;width:1020px;height:1000px;display:grid;
+    grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:18px}
+  .panel{position:relative;border:6px solid var(--ink);overflow:hidden;background:#d8c48c;
+    box-shadow:6px 6px 0 rgba(0,0,0,.45)}
+  .panel svg.art{position:absolute;inset:0;width:100%;height:100%}
+  .bub{position:absolute;background:#fff;border:4px solid var(--ink);border-radius:46% / 50%;
+    padding:16px 22px;font-family:'Patrick Hand';font-size:31px;line-height:1.05;text-align:center;
+    text-transform:uppercase;color:var(--ink);z-index:3}
+  .bub b{font-weight:400;font-family:Bangers;letter-spacing:1px;font-size:36px}
+  .cap{position:absolute;left:-6px;top:-6px;background:var(--gold);border:5px solid var(--ink);
+    font-family:Bangers;font-size:30px;letter-spacing:1px;padding:4px 14px 2px;z-index:4;color:var(--ink)}
+  .sfx{position:absolute;font-family:Bangers;color:var(--gold);-webkit-text-stroke:3px var(--ink);
+    text-shadow:4px 4px 0 var(--ink);z-index:4;transform:rotate(-8deg)}
+  .phone{position:absolute;background:#0d0d0f;border:5px solid var(--ink);border-radius:30px;padding:12px;z-index:2;
+    box-shadow:0 0 0 3px #555 inset}
+  .screen{background:#17181b;border-radius:18px;height:100%;padding:14px 14px;color:#fff;font-family:Inter;overflow:hidden}
+  .screen .hd{display:flex;align-items:center;gap:8px;font-weight:800;font-size:17px;letter-spacing:.5px}
+  .screen .hd img{width:26px;height:26px;border-radius:6px}
+  .screen .k{font-size:12px;color:#7fb2ff;font-weight:800;letter-spacing:1px;margin-top:12px}
+  .screen .m{font-size:21px;font-weight:800;line-height:1.1;margin-top:4px}
+  .screen .l{font-size:14px;color:#c9c9cf;margin-top:8px;line-height:1.35;font-weight:600}
+  .screen .btn{margin-top:12px;background:#fff;color:#111;border-radius:12px;text-align:center;font-weight:800;font-size:15px;padding:9px 0}
+  .screen .big{font-size:58px;font-weight:800;text-align:center;margin-top:10px;line-height:1}
+  .screen .sub{font-size:14px;text-align:center;color:#ffb648;font-weight:800;letter-spacing:1px}
+  .foot{position:absolute;left:30px;right:30px;top:1166px;height:158px;background:#0f0f10;border:6px solid var(--ink);
+    display:flex;align-items:center;gap:22px;padding:0 24px;box-shadow:6px 6px 0 rgba(0,0,0,.45)}
+  .foot img{width:104px;height:104px;border-radius:24px;border:3px solid #333}
+  .foot .t{flex:1;color:#fff}
+  .foot .t .a{font-family:Bangers;font-size:44px;letter-spacing:1.5px;color:#fff;line-height:1}
+  .foot .t .b{font-family:Inter;font-weight:600;font-size:17px;color:#bdbdbd;margin-top:8px;line-height:1.3}
+  .foot .cta{font-family:Bangers;font-size:36px;letter-spacing:1px;background:var(--gold);color:var(--ink);
+    border:4px solid var(--ink);padding:12px 20px 8px;box-shadow:4px 4px 0 #000;white-space:nowrap}
+</style></head>
+<body><div class="page" id="page"></div>
+<script>
+const ICON='icon.png';
+const SK={a:'#f1c9a5',b:'#c98e62',c:'#8a5a3b'};
+const defs=`<defs>
+<pattern id="cam" width="90" height="90" patternUnits="userSpaceOnUse">
+ <rect width="90" height="90" fill="#7b7a4a"/>
+ <path d="M5 10q20-12 30 4t-8 20q-20 4-22-24z" fill="#4d5a2c"/>
+ <path d="M50 40q24-8 32 10t-20 18q-18-2-12-28z" fill="#3a3524"/>
+ <path d="M30 60q10-6 18 6t-12 16q-14-4-6-22z" fill="#a39867"/>
+ <path d="M60 4q14 0 16 12t-14 8q-10-8-2-20z" fill="#a39867"/>
+ <path d="M8 50q8-4 12 4t-6 10q-10-2-6-14z" fill="#3a3524"/>
+</pattern>
+<pattern id="dots" width="10" height="10" patternUnits="userSpaceOnUse"><circle cx="5" cy="5" r="1.6" fill="rgba(0,0,0,.12)"/></pattern>
+</defs>`;
+
+// Bust character. cx,cy = head centre. s = scale. f = facing (1 right,-1 left)
+function guy(o){
+  const {cx,cy,s=1,f=1,skin='a',hair='hnt',shirt='cam',ex='n',stache=false,sweat=false,cap=false}=o;
+  const k=SK[skin], sw=5/s;
+  const top = shirt==='cam'?'url(#cam)':shirt==='pt'?'#5b6b2e':shirt==='hood'?'#2c3a4f':shirt==='grey'?'#8d8f93':shirt;
+  let g=`<g transform="translate(${cx} ${cy}) scale(${s})" stroke="#111" stroke-width="${sw}" stroke-linejoin="round" stroke-linecap="round">`;
+  // torso
+  g+=`<path d="M-150 330 Q-150 150 -60 118 L60 118 Q150 150 150 330 Z" fill="${top}"/>`;
+  if(shirt==='cam') g+=`<path d="M-60 118 L0 180 L60 118" fill="#7b7a4a"/><path d="M-60 118 L0 180 L60 118" fill="none"/>`;
+  if(shirt==='hood') g+=`<path d="M-80 125 Q0 175 80 125" fill="none"/><path d="M-20 160 l-6 70 M20 160 l6 70" fill="none" stroke-width="${3/s}"/>`;
+  if(shirt==='pt') g+=`<path d="M-48 118 Q0 150 48 118" fill="none"/>`;
+  // neck
+  g+=`<path d="M-30 70 L-32 125 Q0 140 32 125 L30 70 Z" fill="${k}"/>`;
+  // ears
+  g+=`<ellipse cx="-62" cy="5" rx="13" ry="20" fill="${k}"/><ellipse cx="62" cy="5" rx="13" ry="20" fill="${k}"/>`;
+  // head
+  g+=`<path d="M-60 -30 Q-62 -88 0 -90 Q62 -88 60 -30 L56 40 Q44 92 0 96 Q-44 92 -56 40 Z" fill="${k}"/>`;
+  // hair
+  if(hair==='hnt') g+=`<path d="M-50 -55 Q-40 -96 0 -97 Q40 -96 50 -55 Q20 -66 0 -64 Q-20 -66 -50 -55Z" fill="#3a2a1d"/>
+     <path d="M-60 -30 Q-58 -50 -50 -55 L-50 -20Z M60 -30 Q58 -50 50 -55 L50 -20Z" fill="rgba(60,40,30,.35)" stroke="none"/>`;
+  if(hair==='grey') g+=`<path d="M-52 -55 Q-40 -96 0 -97 Q40 -96 52 -55 Q20 -64 0 -62 Q-20 -64 -52 -55Z" fill="#9a9a9a"/>`;
+  if(hair==='mop') g+=`<path d="M-66 -10 Q-80 -100 0 -104 Q84 -100 66 -10 Q60 -50 30 -58 Q0 -40 -30 -58 Q-60 -50 -66 -10Z" fill="#2b1d14"/>`;
+  if(cap) g+=`<path d="M-64 -40 Q-60 -110 0 -110 Q60 -110 64 -40 Z" fill="url(#cam)"/><path d="M-64 -40 L${f*110} -36 L64 -40Z" fill="#5c5a35"/>`;
+  // face features offset by facing
+  const d=12*f;
+  const brow=(l,r)=>`<path d="M${-36+d} ${-28+l} L${-12+d} ${-28}" fill="none" stroke-width="${6/s}"/><path d="M${12+d} -28 L${36+d} ${-28+r}" fill="none" stroke-width="${6/s}"/>`;
+  if(ex==='n'){g+=brow(0,0)+`<circle cx="${-24+d}" cy="-8" r="6" fill="#111"/><circle cx="${24+d}" cy="-8" r="6" fill="#111"/><path d="M${-16+d} 52 L${16+d} 52" fill="none"/>`}
+  if(ex==='blank'){g+=brow(0,0)+`<circle cx="${-24+d}" cy="-6" r="4" fill="#111"/><circle cx="${24+d}" cy="-6" r="4" fill="#111"/><path d="M${-12+d} 54 L${12+d} 54" fill="none"/>`}
+  if(ex==='worry'){g+=brow(10,10).replace(/-28\+10/g,'-18')+`<path d="M${-36+d} -20 L${-12+d} -32 M${12+d} -32 L${36+d} -20" fill="none" stroke-width="${6/s}"/>`
+     +`<circle cx="${-24+d}" cy="-4" r="6" fill="#111"/><circle cx="${24+d}" cy="-4" r="6" fill="#111"/><path d="M${-20+d} 56 q10 -8 20 0 t20 0" fill="none"/>`}
+  if(ex==='panic'){g+=`<path d="M${-40+d} -44 L${-12+d} -50 M${12+d} -50 L${40+d} -44" fill="none" stroke-width="${6/s}"/>`
+     +`<circle cx="${-26+d}" cy="-10" r="17" fill="#fff"/><circle cx="${26+d}" cy="-10" r="17" fill="#fff"/><circle cx="${-26+d}" cy="-10" r="3.5" fill="#111"/><circle cx="${26+d}" cy="-10" r="3.5" fill="#111"/>`
+     +`<ellipse cx="${d}" cy="56" rx="16" ry="20" fill="#5a1414"/>`}
+  if(ex==='smile'){g+=brow(-4,-4)+`<path d="M${-34+d} -6 q10 -12 20 0 M${14+d} -6 q10 -12 20 0" fill="none" stroke-width="${6/s}"/><path d="M${-26+d} 44 Q${d} 70 ${26+d} 44" fill="#fff"/>`}
+  if(ex==='smug'){g+=`<path d="M${-36+d} -22 L${-12+d} -26 M${12+d} -26 L${36+d} -30" fill="none" stroke-width="${6/s}"/>`
+     +`<path d="M${-34+d} -6 L${-14+d} -6 M${14+d} -6 L${34+d} -6" fill="none" stroke-width="${7/s}"/><path d="M${-18+d} 52 Q${4+d} 60 ${22+d} 46" fill="none"/>`}
+  if(ex==='tired'){g+=brow(0,0)+`<path d="M${-34+d} -6 Q${-24+d} 2 ${-14+d} -6 M${14+d} -6 Q${24+d} 2 ${34+d} -6" fill="none" stroke-width="${5/s}"/>`
+     +`<path d="M${-34+d} 6 q10 6 20 0 M${14+d} 6 q10 6 20 0" fill="none" stroke="#8a5a3b" stroke-width="${3/s}"/><path d="M${-14+d} 54 L${14+d} 50" fill="none"/>`}
+  if(ex==='grit'){g+=`<path d="M${-38+d} -18 L${-12+d} -26 M${12+d} -26 L${38+d} -18" fill="none" stroke-width="${7/s}"/>`
+     +`<circle cx="${-24+d}" cy="-4" r="6" fill="#111"/><circle cx="${24+d}" cy="-4" r="6" fill="#111"/><rect x="${-24+d}" y="44" width="48" height="16" rx="4" fill="#fff"/><path d="M${-12+d} 44v16M${d} 44v16M${12+d} 44v16" fill="none" stroke-width="${2/s}"/>`}
+  // nose
+  g+=`<path d="M${4*f+d} 6 q${10*f} 16 ${-6*f} 22" fill="none" stroke-width="${4/s}"/>`;
+  if(stache) g+=`<path d="M${-30+d} 40 Q${d} 26 ${30+d} 40 Q${d} 50 ${-30+d} 40Z" fill="#7d7d7d"/>`;
+  if(sweat) g+=`<path d="M70 -50 q10 18 0 26 q-10 -8 0 -26Z M-78 -20 q8 14 0 20 q-8 -6 0 -20Z" fill="#9fd3ff" stroke-width="${3/s}"/>`;
+  g+='</g>';return g;
+}
+const hand=(x,y,s=1,skin='a')=>`<ellipse cx="${x}" cy="${y}" rx="${30*s}" ry="${24*s}" fill="${SK[skin]}" stroke="#111" stroke-width="5"/>`;
+function tail(x1,y1,x2,y2,w=26){const a=Math.atan2(y2-y1,x2-x1)+Math.PI/2,dx=Math.cos(a)*w/2,dy=Math.sin(a)*w/2;
+  return `<path d="M${x1-dx} ${y1-dy} L${x2} ${y2} L${x1+dx} ${y1+dy}Z" fill="#fff" stroke="#111" stroke-width="4" stroke-linejoin="round"/>`}
+
+// backgrounds
+const bg={
+  gym:`<rect width="507" height="491" fill="#cdb98a"/><rect y="330" width="507" height="161" fill="#8f7d58"/>
+   <g stroke="#111" stroke-width="5" fill="#6d6d70"><rect x="20" y="120" width="16" height="220"/><rect x="120" y="120" width="16" height="220"/><rect x="20" y="120" width="116" height="16"/>
+   <rect x="380" y="200" width="14" height="140"/><rect x="460" y="200" width="14" height="140"/><rect x="360" y="230" width="140" height="10"/>
+   <circle cx="360" cy="235" r="34" fill="#333"/><circle cx="500" cy="235" r="34" fill="#333"/></g><rect width="507" height="491" fill="url(#dots)"/>`,
+  room:`<rect width="507" height="491" fill="#b9a675"/><rect x="300" y="40" width="160" height="120" fill="#5f84a6" stroke="#111" stroke-width="5"/><path d="M380 40v120M300 100h160" stroke="#111" stroke-width="4"/><rect width="507" height="491" fill="url(#dots)"/>`,
+  couch:`<rect width="507" height="491" fill="#b9a675"/><rect x="330" y="40" width="140" height="110" fill="#e8e1c8" stroke="#111" stroke-width="5"/>
+   <rect width="507" height="491" fill="url(#dots)"/>`,
+  couchFront:`<path d="M0 380 Q0 330 40 330 L467 330 Q507 330 507 380 L507 491 L0 491Z" fill="#7a3b2a" stroke="#111" stroke-width="6"/><path d="M60 340 v150 M250 340 v150 M440 340 v150" stroke="#5a2a1e" stroke-width="4"/>`,
+  night:`<rect width="507" height="491" fill="#1b2233"/><rect x="330" y="40" width="130" height="110" fill="#0f1420" stroke="#111" stroke-width="5"/><circle cx="420" cy="80" r="18" fill="#f3efd2"/><rect y="390" width="507" height="101" fill="#262c3c"/>`,
+  shop:`<rect width="507" height="491" fill="#c9b47c"/><rect x="0" y="0" width="507" height="70" fill="#a8935e"/><path d="M0 70h507" stroke="#111" stroke-width="5"/>
+   <rect x="30" y="110" width="140" height="190" fill="#7a6a45" stroke="#111" stroke-width="5"/><path d="M30 170h140M30 230h140" stroke="#111" stroke-width="4"/><rect width="507" height="491" fill="url(#dots)"/>`,
+  door:`<rect width="507" height="491" fill="#b9a675"/><rect x="300" y="30" width="190" height="460" fill="#6b4a2c" stroke="#111" stroke-width="6"/><rect width="507" height="491" fill="url(#dots)"/>`,
+  burst:`<rect width="507" height="491" fill="#f2c230"/>${Array.from({length:24},(_,i)=>{const a=i*Math.PI/12,b=a+Math.PI/24;return `<path d="M253 245 L${253+600*Math.cos(a)} ${245+600*Math.sin(a)} L${253+600*Math.cos(b)} ${245+600*Math.sin(b)}Z" fill="#f7d660"/>`}).join('')}`,
+};
+
+const phone=(x,y,w,h,inner,rot=0)=>`<div class="phone" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px;transform:rotate(${rot}deg)"><div class="screen">${inner}</div></div>`;
+const hd=`<div class="hd"><img src="${ICON}">GRUNTZ</div>`;
+const panel=(svg,html='')=>`<div class="panel"><svg class="art" viewBox="0 0 507 491">${defs}${svg}</svg>${html}</div>`;
+const bub=(x,y,w,t,fs)=>`<div class="bub" style="left:${x}px;top:${y}px;width:${w}px;${fs?`font-size:${fs}px`:''}">${t}</div>`;
+const cap=t=>`<div class="cap">${t}</div>`;
+
+const ADS={
+ // 1 — First day as a civilian in a gym
+ orders:{title:'ORDERS',ep:'GRUNTZ COMICS<br>NO. 1',
+  foot:['ORDERS. FOR YOUR WORKOUT.','A new mission every day. No drill instructor required.'],
+  panels:[
+   panel(bg.gym+guy({cx:250,cy:300,s:.95,shirt:'hood',ex:'n'})+tail(170,150,220,200),
+     cap('DAY 1 AS A CIVILIAN')+bub(40,60,300,'OKAY. GYM.<br><b>EASY.</b>')),
+   panel(bg.gym+guy({cx:250,cy:300,s:.95,shirt:'hood',ex:'blank'})+tail(250,95,250,195),
+     bub(60,40,380,'...NOBODY’S YELLING AT ME.')),
+   panel(bg.gym+guy({cx:253,cy:250,s:1.35,shirt:'hood',ex:'panic',sweat:true})+tail(330,80,350,140),
+     bub(30,20,440,'DO I JUST... <b>PICK SOMETHING?!</b>',29)),
+   panel(bg.burst+guy({cx:150,cy:300,s:.85,shirt:'hood',ex:'smile'})+tail(140,150,150,195),
+     bub(20,40,250,'FINALLY.<br><b>ORDERS.</b>')+
+     phone(290,95,190,330,hd+`<div class="k">TODAY'S MISSION</div><div class="m">5 ROUNDS</div><div class="l">10 pull-ups<br>20 push-ups<br>30 air squats</div><div class="btn">START</div>`,6)),
+  ]},
+ // 2 — "I'll start Monday"
+ monday:{title:'START MONDAY',ep:'GRUNTZ COMICS<br>NO. 2',
+  foot:['NO MORE “MONDAY.”','Today’s mission is ready. Build the streak. Earn the rank.'],
+  panels:[
+   panel(bg.couch+guy({cx:250,cy:250,s:.95,shirt:'pt',ex:'smug'})+bg.couchFront+tail(200,150,230,175),
+     cap('6 WEEKS TO THE PFT')+bub(30,55,330,'I’LL START <b>MONDAY.</b>')),
+   panel(bg.couch+guy({cx:250,cy:250,s:.95,shirt:'pt',ex:'smug'})+bg.couchFront+tail(240,115,240,180),
+     cap('3 WEEKS TO THE PFT')+bub(110,60,250,'<b>MONDAY.</b>')),
+   panel(bg.door+guy({cx:395,cy:230,s:.8,f:-1,shirt:'cam',ex:'n'})+guy({cx:150,cy:330,s:.9,shirt:'pt',ex:'panic',sweat:true})+tail(360,140,385,155),
+     cap('1 DAY TO THE PFT')+bub(150,50,250,'PFT’S <b>TOMORROW.</b>',28)),
+   panel(bg.room+guy({cx:250,cy:290,s:.95,shirt:'pt',ex:'grit'})+tail(170,150,210,200),
+     cap('DON’T BE THAT GUY.')+bub(20,60,250,'STARTING<br><b>TODAY.</b>')+
+     phone(300,170,180,250,hd+`<div class="big">1</div><div class="sub">DAY STREAK</div><div class="btn">MISSION DONE</div>`,-5)),
+  ]},
+ // 3 — Motivation is temporary
+ streak:{title:'MOTIVATION',ep:'GRUNTZ COMICS<br>NO. 3',
+  foot:['DISCIPLINE, ON A STREAK.','Show up. Finish the mission. Don’t break the chain.'],
+  panels:[
+   panel(bg.shop+guy({cx:340,cy:290,s:.9,f:-1,hair:'grey',stache:true,ex:'tired'})+guy({cx:110,cy:330,s:.75,ex:'n'})+tail(320,110,335,195),
+     bub(150,30,330,'MOTIVATION IS TEMPORARY, DEVIL.',28)),
+   panel(bg.shop+guy({cx:250,cy:290,s:1,ex:'worry'})+tail(250,100,250,180),
+     bub(70,40,360,'SO WHAT LASTS, <b>GUNNY?</b>')),
+   panel(bg.shop+guy({cx:150,cy:300,s:.9,hair:'grey',stache:true,ex:'smug'})+tail(140,95,150,205),
+     bub(15,20,290,'A STREAK YOU’RE TOO PROUD TO BREAK.',26)+
+     phone(290,110,180,280,hd+`<div class="big">214</div><div class="sub">DAY STREAK</div><div class="l" style="text-align:center">Rank: Operator</div>`,6)),
+   panel(bg.night+guy({cx:250,cy:290,s:.95,ex:'grit',shirt:'pt'})+tail(250,120,250,185),
+     cap('0430. NEXT DAY.')+bub(110,60,280,'...DAY <b>ONE.</b>')),
+  ]},
+};
+
+const id=new URLSearchParams(location.search).get('ad')||'orders', A=ADS[id];
+document.getElementById('page').innerHTML=
+ `<div class="title"><h1>${A.title}</h1><div class="ep">${A.ep}</div></div>
+  <div class="grid">${A.panels.join('')}</div>
+  <div class="foot"><img src="${ICON}"><div class="t"><div class="a">${A.foot[0]}</div>
+   <div class="b">${A.foot[1]}<br><span style="color:#8a8a8a;font-size:14px">Built by a former U.S. Marine. Not affiliated with the USMC or DoD.</span></div></div>
+   <div class="cta">GET GRUNTZ</div></div>`;
+</script></body></html>
