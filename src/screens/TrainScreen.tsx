@@ -99,8 +99,8 @@ export default function TrainScreen() {
   const shorterSession = () => {
     useReadinessStore.getState().setTrainingChoice('shorter');
     trackRetentionEvent('comeback_started', { source: 'train', mode: 'shorter' });
-    if (activePlan) {
-      const day = nextPlanDay(activePlan, usePlanLibraryStore.getState().completedDayIds);
+    const day = activePlan ? nextPlanDay(activePlan, usePlanLibraryStore.getState().completedDayIds) : undefined;
+    if (activePlan && day) {
       navigation.navigate('LibraryPlanDay', { planId: activePlan.id, dayId: day.id });
     } else if (nextMission?.workout) {
       navigation.navigate('WorkoutDetail', { workoutId: nextMission.workout.id, dateKey: nextMission.dateKey });
@@ -299,6 +299,7 @@ function ActivePlanCard({ plan, onOpen, onOpenPlan }: { plan: WorkoutPlan; onOpe
   const completed = usePlanLibraryStore((s) => s.completedDayIds);
   const cycle = usePlanLibraryStore((s) => s.cycle);
   const day = nextPlanDay(plan, completed);
+  if (!day) return null;
   const doneCount = plan.days.filter((d) => completed.includes(d.id)).length;
   const w = Math.round(Math.min(width * 0.8, HERO_MAX_WIDTH));
   return (

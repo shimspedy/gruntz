@@ -21,6 +21,8 @@ import {
 import { useExerciseNotesStore } from '../store/useExerciseNotesStore';
 import { scheduleBackup } from './backup';
 
+const MAX_IMPORT_BYTES = 25 * 1024 * 1024;
+
 /**
  * Taking training history in and out of Gruntz, in Strong's CSV format.
  *
@@ -183,6 +185,8 @@ export async function pickImportFile(): Promise<PickResult> {
     if (picked.canceled || !picked.result) return { status: 'canceled' };
 
     const file = picked.result;
+    // Years of Strong history is a few megabytes; anything far larger is not a workout export.
+    if (typeof file.size === 'number' && file.size > MAX_IMPORT_BYTES) return { status: 'not-strong' };
     const text = await file.text();
     const { workouts, skipped } = parseStrongCsv(text);
 

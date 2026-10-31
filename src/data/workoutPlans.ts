@@ -169,11 +169,6 @@ export function getWorkoutPlan(id: string): WorkoutPlan | undefined {
   return byId().get(id);
 }
 
-export function getPlansInCategory(categoryId: string): WorkoutPlan[] {
-  const cat = planCategories().find((c) => c.id === categoryId);
-  return cat ? cat.plan_ids.map((id) => byId().get(id)).filter((p): p is WorkoutPlan => !!p) : [];
-}
-
 export function getPlanExercise(slot: PlanExerciseSlot): PlanExerciseInfo | undefined {
   return planExercises()[slot.exercise_id];
 }

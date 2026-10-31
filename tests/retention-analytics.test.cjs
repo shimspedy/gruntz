@@ -99,6 +99,8 @@ test('Sunday recap keeps its delivered week when opened on Monday, for iOS secon
   for (const at of [delivered, delivered / 1000]) assert.equal(resolveNotificationLink(data, at), 'gruntz://weekly-debrief?weekStart=2026-10-19');
   assert.equal(resolveNotificationLink({ type: 'weekly-recap', url: 'gruntz://stats' }, delivered), 'gruntz://weekly-debrief?weekStart=2026-10-19');
   assert.equal(resolveNotificationLink({ type: 'daily-reminder', url: 'gruntz://train' }, delivered), 'gruntz://train');
+  assert.equal(resolveNotificationLink({ type: 'daily-reminder', url: 'https://example.com' }, delivered), null);
+  assert.equal(resolveNotificationLink({ url: 'javascript:alert(1)' }, delivered), null);
 });
 
 test('native notification scheduling failure is reported instead of returning success', async () => {

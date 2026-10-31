@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { DailyChallenge } from '../data/dailyChallenges';
 import { summarizeChallengeHistory } from '../utils/challengeStats';
-import { getLocalDateKey, parseLocalDateKey } from '../utils/dateKey';
+import { getLocalDateKey } from '../utils/dateKey';
 import { useUserStore } from './useUserStore';
 
 export interface ChallengeProgressResult {
@@ -27,7 +27,6 @@ interface ChallengeState {
 }
 
 const STORAGE_KEY = '@gruntz_challenges';
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -74,22 +73,6 @@ function getTodayChallengeSnapshot(state: Pick<ChallengeState, 'activeDate' | 'c
     progressToday,
     todayCompleted: completedToday || (state.activeDate === todayKey && state.todayCompleted),
   };
-}
-
-/**
- * Check if two date strings are consecutive
- */
-function areConsecutiveDates(dateA: string, dateB: string): boolean {
-  const a = parseLocalDateKey(dateA);
-  const b = parseLocalDateKey(dateB);
-
-  if (!a || !b) {
-    return false;
-  }
-
-  // Daylight-saving days are 23 or 25 hours long, so an exact-millisecond comparison
-  // silently broke every challenge streak twice a year.
-  return Math.round(Math.abs(b.getTime() - a.getTime()) / DAY_MS) === 1;
 }
 
 export const useChallengeStore = create<ChallengeState>()(

@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActionSheetIOS, Alert, Platform, RefreshControl, ScrollView, Share, StyleSheet, TextInput, View } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
-import { fetchMyTeams, leaveTeam, removeTeamMember, setTeamVisibility, syncTeamStatus, type Team, type TeamFailure, type TeamMember } from '../services/teams';
+import { fetchMyTeams, leaveTeam, removeTeamMember, rotateInviteCode, setTeamVisibility, syncTeamStatus, type Team, type TeamFailure, type TeamMember } from '../services/teams';
 import { loadProfilePhotoLocation } from '../services/profilePhoto';
 import { useChromePrefs } from '../store/useUiStore';
 import type { RootStackParamList } from '../types/navigation';
@@ -98,11 +98,19 @@ export default function TeamScreen() {
     );
   };
 
+  const confirmResetCode = (team: Team) => {
+    Alert.alert('Reset invite code?', 'The current code stops working. Members stay in the team; share the new code with anyone still joining.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Reset code', style: 'destructive', onPress: () => void run(() => rotateInviteCode(team.id), 'New invite code ready') },
+    ]);
+  };
+
   /** Leaving and deleting sit behind the menu with the other team actions, never one tap from the page. */
   const teamOptions = (team: Team) => {
     haptic.light();
     const actions: { label: string; run: () => void; destructive?: boolean }[] = [
       { label: 'Share invite code', run: () => invite(team) },
+      ...(team.isLeader ? [{ label: 'Reset invite code', run: () => confirmResetCode(team) }] : []),
       ...(team.isLeader ? [{ label: team.isPublic ? 'Edit community listing' : 'Open to everyone', run: () => setVisibility({ team, description: team.description }) }] : []),
       ...(privacyDismissed ? [{ label: 'What a team sees', run: () => { setPrivacyDismissed(false); navigation.navigate('LeaderTools'); } }] : []),
       { label: team.members.length === 1 ? 'Delete team' : 'Leave team', run: () => confirmLeave(team), destructive: true },
@@ -123,7 +131,7 @@ export default function TeamScreen() {
   const memberOptions = (team: Team, member: TeamMember) => {
     haptic.light();
     const remove = () =>
-      Alert.alert(`Remove ${member.displayName}?`, 'They can join again with the invite code.', [
+      Alert.alert(`Remove ${member.displayName}?`, 'They can join again with the invite code unless you reset it.', [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Remove', style: 'destructive', onPress: () => void run(() => removeTeamMember(team.id, member.userId), `${member.displayName} removed`) },
       ]);

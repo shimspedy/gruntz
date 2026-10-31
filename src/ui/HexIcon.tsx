@@ -1,4 +1,3 @@
-import React from 'react';
 import Svg, { Path, Polygon } from 'react-native-svg';
 
 const s = 0.866;

@@ -1,5 +1,4 @@
 import { calculateDailyReadiness, type DailyReadinessCheckIn } from '../store/useReadinessStore';
-import { getLocalDateKey } from '../utils/dateKey';
 
 /**
  * The two training measures Gruntz can honestly report.
@@ -124,5 +123,3 @@ export function workoutDatesFromClaims(claimed: Set<string>): Set<string> {
   }
   return dates;
 }
-
-export const TODAY_KEY = getLocalDateKey;

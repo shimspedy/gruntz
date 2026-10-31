@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Body from 'react-native-body-highlighter';
 import type { ExtendedBodyPart, Slug } from 'react-native-body-highlighter';

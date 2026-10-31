@@ -1,4 +1,4 @@
-import type { TrainingProgram, IntervalSplits, UserProfile } from '../types';
+import type { TrainingProgram, UserProfile } from '../types';
 import { getBaseCampTrainingDays } from './baseCampWorkouts';
 
 // ============================================================
@@ -134,23 +134,10 @@ export const PROGRAMS: TrainingProgram[] = [
   },
 ];
 
-// Recon interval split reference based on 5-mile assessment
-export const RECON_INTERVAL_SPLITS: IntervalSplits[] = [
-  { mile_split_range: '6:30-7:00', splits_400m: '1:23-1:29', splits_800m: '2:46-2:58', splits_1200m: '4:09-4:27', splits_1600m: '5:32-5:56' },
-  { mile_split_range: '7:01-7:30', splits_400m: '1:29-1:35', splits_800m: '2:58-3:10', splits_1200m: '4:27-4:45', splits_1600m: '5:56-6:20' },
-  { mile_split_range: '7:31-8:00', splits_400m: '1:35-1:41', splits_800m: '3:10-3:22', splits_1200m: '4:45-5:03', splits_1600m: '6:20-6:44' },
-  { mile_split_range: '8:01-8:30', splits_400m: '1:41-1:47', splits_800m: '3:22-3:34', splits_1200m: '5:03-5:21', splits_1600m: '6:44-7:08' },
-  { mile_split_range: '8:31-9:00', splits_400m: '1:47-1:53', splits_800m: '3:34-3:46', splits_1200m: '5:21-5:39', splits_1600m: '7:08-7:32' },
-];
-
 export function getProgramById(id: string): TrainingProgram | undefined {
   return PROGRAMS.find(p => p.id === id);
 }
 
 export function getProgramTrainingDays(program: TrainingProgram, profile?: UserProfile | null): number {
   return program.id === 'basecamp' ? getBaseCampTrainingDays(profile) : program.days_per_week;
-}
-
-export function getAllPrograms(): TrainingProgram[] {
-  return PROGRAMS;
 }

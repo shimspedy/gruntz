@@ -3,6 +3,7 @@ import { Alert, AppState, BackHandler, Linking, Platform, StyleSheet, View } fro
 import * as Notifications from 'expo-notifications';
 import { startBackupLifecycle } from '../services/backup';
 import { startHealthSyncLifecycle } from '../services/healthSync';
+import { reportHandled } from '../services/crashReporting';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DarkTheme, NavigationContainer, type InitialState, type NavigationState } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -109,7 +110,7 @@ const getInitialLink = createInitialLinkResolver({
 });
 
 const linking = {
-  prefixes: ['gruntz://', 'https://gruntz.app'],
+  prefixes: ['gruntz://'],
   getInitialURL: getInitialLink,
   subscribe(listener: (url: string) => void) {
     const linkSub = Linking.addEventListener('url', ({ url }) => listener(url));
@@ -405,7 +406,7 @@ function useSavedNavigation(hydrated: boolean, onboarded: boolean) {
       timer.current = undefined;
       const state = pending.current;
       pending.current = undefined;
-      if (state && useUserStore.getState().isOnboarded) void AsyncStorage.setItem(NAV_KEY, JSON.stringify({ savedAt: Date.now(), state })).catch(() => undefined);
+      if (state && useUserStore.getState().isOnboarded) void AsyncStorage.setItem(NAV_KEY, JSON.stringify({ savedAt: Date.now(), state })).catch((e: unknown) => reportHandled(e, 'navigation.persist'));
     };
     const sub = AppState.addEventListener('change', (next) => {
       if (next !== 'active') flush();
@@ -425,7 +426,7 @@ function useSavedNavigation(hydrated: boolean, onboarded: boolean) {
       timer.current = undefined;
       const next = pending.current;
       pending.current = undefined;
-      if (next && useUserStore.getState().isOnboarded) void AsyncStorage.setItem(NAV_KEY, JSON.stringify({ savedAt: Date.now(), state: next })).catch(() => undefined);
+      if (next && useUserStore.getState().isOnboarded) void AsyncStorage.setItem(NAV_KEY, JSON.stringify({ savedAt: Date.now(), state: next })).catch((e: unknown) => reportHandled(e, 'navigation.persist'));
     }, NAV_SAVE_DEBOUNCE_MS);
   };
   return { ready, initial, save };

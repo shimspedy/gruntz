@@ -1,4 +1,4 @@
-import React, { forwardRef, useImperativeHandle, useMemo, useState } from 'react';
+import { forwardRef, useImperativeHandle, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Canvas, Circle, Path, Skia, useCanvasRef } from '@shopify/react-native-skia';
 import type { RoutePoint } from '../../types/activity';

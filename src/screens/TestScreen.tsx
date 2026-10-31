@@ -71,8 +71,6 @@ function daysUntil(date?: string | null) {
 /** How far out people actually schedule a test, plus a way to clear it. */
 const TEST_DATE_CHOICES = [0, 2, 4, 6, 8, 12, 16, 24];
 
-const toDateKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-
 function weeksOutLabel(weeks: number) {
   const d = new Date();
   d.setDate(d.getDate() + weeks * 7);
@@ -323,7 +321,7 @@ export default function TestScreen() {
                 if (profile) {
                   const next = new Date();
                   next.setDate(next.getDate() + weeks * 7);
-                  setProfile({ ...profile, fitness_test_date: weeks === 0 ? null : toDateKey(next) });
+                  setProfile({ ...profile, fitness_test_date: weeks === 0 ? null : getLocalDateKey(next) });
                 }
                 setDateSheet(false);
               }}

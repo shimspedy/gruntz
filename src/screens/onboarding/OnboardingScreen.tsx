@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BackHandler, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -40,6 +40,7 @@ import { trackRetentionEvent } from '../../services/retentionAnalytics';
 import { onboardingSteps, preferredOnboardingPlan, resumedOnboardingStep, type OnboardingStep } from './flow';
 import { PracticeSession } from './PracticeSession';
 import { Welcome } from './Welcome';
+import { getLocalDateKey } from '../../utils/dateKey';
 
 const GOALS: { label: string; icon: IconName }[] = [
   { label: 'Build Muscle', icon: 'dumbbell' },
@@ -171,7 +172,7 @@ function OnboardingFlow() {
     if (noDate || !military) return null;
     const date = new Date();
     date.setDate(date.getDate() + weeksOut * 7);
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    return getLocalDateKey(date);
   }, [noDate, weeksOut, military]);
 
   // Optional profile details can be filled in later. Preserve answers from older drafts.

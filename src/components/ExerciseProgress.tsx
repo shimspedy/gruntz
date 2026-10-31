@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
 import { estimated1RM, recordProgression, summarize, toUnit, useExerciseLogStore, type LoggedSet, type SessionSummary } from '../store/useExerciseLogStore';

@@ -89,7 +89,7 @@ export const militaryTests: Record<FitnessTestType, MilitaryTestDefinition> = {
   },
   general_readiness: {
     id: 'general_readiness', name: 'General Tactical Readiness', branch: 'general', effectiveLabel: 'Gruntz readiness benchmark',
-    sourceLabel: 'Gruntz training benchmark', sourceUrl: 'https://gruntz.app',
+    sourceLabel: 'Gruntz training benchmark', sourceUrl: 'https://gruntzfit.com',
     events: [
       { id: 'pushups', name: 'Strict Push-Ups', shortName: 'Push-Ups', unit: 'reps', direction: 'higher', baseline: 15, target: 50 },
       { id: 'plank', name: 'Plank', shortName: 'Plank', unit: 'seconds', direction: 'higher', baseline: 60, target: 180 },

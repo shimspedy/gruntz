@@ -127,6 +127,8 @@ export const useRoutineStore = create<RoutineState>()(
     {
       name: '@gruntz_routines',
       version: 1,
+      // Identity: every saved copy is version 1. Bumping `version` needs a real migration here.
+      migrate: (persisted) => persisted as Pick<RoutineState, 'routines'>,
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (s) => ({ routines: s.routines }),
     },

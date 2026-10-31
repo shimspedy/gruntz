@@ -2,18 +2,6 @@ import React from 'react';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-/** Pads a sheet's body by the live keyboard height, frame-synced on the UI thread. */
-export function KeyboardAwareSheetBody({ children }: { children: React.ReactNode }) {
-  const keyboard = useAnimatedKeyboard();
-  const insets = useSafeAreaInsets();
-  const style = useAnimatedStyle(() => ({
-    paddingBottom: Math.max(0, keyboard.height.get() - insets.bottom),
-  }));
-  // Shrinkable, so a body taller than the space left above the keyboard gives way to
-  // the sheet's cap and scrolls instead of pushing its last rows under the keys.
-  return <Animated.View style={[{ flexShrink: 1 }, style]}>{children}</Animated.View>;
-}
-
 /** Bottom-pinned footer (CTA bar) that rides up with the keyboard. */
 export function KeyboardLift({ children, offset = 0 }: { children: React.ReactNode; offset?: number }) {
   const keyboard = useAnimatedKeyboard();

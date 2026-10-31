@@ -909,13 +909,3 @@ export function getReconWorkoutDay(id: string): WorkoutDay | undefined {
 export function getReconWeek(week: number): WorkoutDay[] {
   return reconWorkouts.filter(w => w.week === week);
 }
-
-export function getReconPhase(phase: number): WorkoutDay[] {
-  const phaseWeeks: Record<number, number[]> = {
-    1: [1, 2, 3, 4],
-    2: [5, 6, 7, 8],
-    3: [9, 10, 11, 12],
-  };
-  const weeks = phaseWeeks[phase] || [];
-  return reconWorkouts.filter(w => weeks.includes(w.week));
-}

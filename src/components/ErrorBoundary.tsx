@@ -25,13 +25,13 @@ const RETRY_LIMIT = 2;
  * error message is shown; in production we keep it generic.
  */
 export class ErrorBoundary extends React.Component<Props, State> {
-  state: State = { error: null, retries: 0 };
+  override state: State = { error: null, retries: 0 };
 
   static getDerivedStateFromError(error: Error): Partial<State> {
     return { error } as State;
   }
 
-  componentDidCatch(error: Error, info: React.ErrorInfo) {
+  override componentDidCatch(error: Error, info: React.ErrorInfo) {
     // The boundary swallows the error, so the global handler never sees it.
     reportError(error, info.componentStack);
     if (__DEV__) {
@@ -65,7 +65,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
     );
   };
 
-  render() {
+  override render() {
     if (!this.state.error) return this.props.children;
 
     return (

@@ -46,6 +46,7 @@ export const FAILURE_MESSAGE: Record<TeamFailure, string> = {
   full: 'That team is full.',
   'already-in-team': 'You are already in that team.',
   'too-many-teams': `You can be in up to ${MAX_TEAMS} teams. Leave one to join another.`,
+  'rate-limited': 'Too many tries in a row. Wait a while, then try again.',
   error: 'That didn’t go through. Check your connection and try again.',
 };
 

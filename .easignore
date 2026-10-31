@@ -1,0 +1,84 @@
+# EAS uses this file INSTEAD of .gitignore when it exists, so it must carry every
+# .gitignore entry. Keep the two in sync; the second half only trims the upload.
+
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+!vendor/deepmerge/dist/
+!vendor/deepmerge/dist/cjs.js
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env
+.env*.local
+**/.env
+**/.env.*
+ai-proxy/node_modules/
+
+# typescript
+*.tsbuildinfo
+
+# generated native folders
+/ios
+/android
+marketing/play/build/
+
+secrets/
+
+# Local Netlify folder
+.netlify
+
+# editor swap files and Supabase CLI state
+*.swp
+supabase/.temp/
+.claude/worktrees/
+
+# --- EAS-only additions ---
+
+# Secrets and signing material (belt and braces; eas submit reads keys locally)
+secrets/
+.env*
+*.p8
+*.p12
+*.key
+*.pem
+*.jks
+*.keystore
+*.mobileprovision
+play-service-account.json
+
+# Not needed to build the native app; large and slow to upload
+/marketing/
+/screenshots/
+/docs/
+/website/
+/app-store-assets/
+/.claude/
+/.venv*/

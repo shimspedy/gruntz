@@ -7,6 +7,7 @@ import { clearRoutes, inlineRoute, saveRoute } from './activityRoutes';
 import { createFlushableStorage } from './flushableStorage';
 import { READINESS_STORAGE_KEY, readinessStorage } from './readinessStorage';
 import { militaryTests } from '../data/militaryTests';
+import { reportHandled } from '../services/crashReporting';
 import type { FitnessTestType } from '../types';
 import { isTestAttempt, isTrainingChoice, type TestAttempt, type TrainingChoice, type TrainingMode } from '../features/trainingFocus';
 
@@ -195,7 +196,7 @@ export const useReadinessStore = create<ReadinessState>()(
       // Deliberately not a persist `version` bump: an older build must still be able
       // to restore a backup made by this one.
       onRehydrateStorage: () => (_state, error) => {
-        if (!error) void Promise.resolve().then(migrateInlineRoutes).catch(() => undefined);
+        if (!error) void Promise.resolve().then(migrateInlineRoutes).catch((e: unknown) => reportHandled(e, 'readiness.migrateInlineRoutes'));
       },
     },
   ),

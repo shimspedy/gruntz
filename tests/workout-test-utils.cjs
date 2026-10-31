@@ -3,9 +3,14 @@ const path = require('node:path');
 const ts = require('typescript');
 const root = path.resolve(__dirname, '..');
 
+// The Sentry SDK is React Native code that cannot load under Node. Crash reporting is
+// off in tests anyway (no DSN), so a stub is enough; a test can still pass its own.
+const sentryStub = { init() {}, captureException() {}, withScope(fn) { fn({ setTag() {} }); } };
+
 // Runs actual TypeScript modules, replacing only native boundaries with deterministic
 // fakes. Each loader has its own module cache so stores cannot leak across tests.
 function createLoader(mocks = {}) {
+  mocks = { '@sentry/react-native': sentryStub, ...mocks };
   const cache = new Map();
   function load(file) {
     file = path.resolve(root, file);

@@ -248,3 +248,12 @@ test('typed reps carry to matching sets below, and a pyramid keeps its own numbe
   env.session.getState().updateSet(key, first, { reps: 8 });
   assert.deepEqual(reps(), [8, 10, 6]);
 });
+
+test('editing a set that no longer exists leaves the exercise untouched instead of crashing', () => {
+  const env = createWorkoutEnv();
+  env.session.getState().start(env.day(), DATE);
+  const ex = env.session.getState().exercises[0];
+  const before = env.session.getState().exercises;
+  assert.doesNotThrow(() => env.session.getState().updateSet(ex.key, 'missing-set-id', { weight: 100, reps: 5 }));
+  assert.deepEqual(env.session.getState().exercises, before);
+});

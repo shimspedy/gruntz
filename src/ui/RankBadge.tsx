@@ -1,4 +1,3 @@
-import React from 'react';
 import Svg, { Defs, G, LinearGradient, Path, Polygon, RadialGradient, Stop, Circle } from 'react-native-svg';
 import type { Rank } from '../types';
 

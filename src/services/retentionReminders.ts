@@ -24,7 +24,7 @@ export async function promptTrainingReminder(): Promise<boolean> {
       return false;
     }
     const savedTime = profile.settings.reminder_time || '07:00';
-    const [hours, minutes] = savedTime.split(':').map(Number);
+    const [hours = 7, minutes = 0] = savedTime.split(':').map(Number);
     setNotificationsEnabled(true);
     const daily = await scheduleDailyReminder(Number.isInteger(hours) && hours >= 0 && hours <= 23 ? hours : 7,
       Number.isInteger(minutes) && minutes >= 0 && minutes <= 59 ? minutes : 0,

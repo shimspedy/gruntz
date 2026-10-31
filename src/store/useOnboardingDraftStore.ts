@@ -38,7 +38,13 @@ export const useOnboardingDraftStore = create<OnboardingDraftState>()(
       save: (draft) => set({ draft }),
       clear: () => set({ draft: null }),
     }),
-    { name: '@gruntz_onboarding_draft', version: 1, storage: createJSONStorage(() => AsyncStorage) },
+    {
+      name: '@gruntz_onboarding_draft',
+      version: 1,
+      // Identity: every saved copy is version 1. Bumping `version` needs a real migration here.
+      migrate: (persisted) => persisted as OnboardingDraftState,
+      storage: createJSONStorage(() => AsyncStorage),
+    },
   ),
 );
 

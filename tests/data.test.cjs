@@ -5,7 +5,11 @@ const path = require('node:path');
 const vm = require('node:vm');
 const ts = require('typescript');
 
+// The Sentry SDK cannot load under Node; crash reporting is off in tests (no DSN).
+const sentryStub = { init() {}, captureException() {}, withScope(fn) { fn({ setTag() {} }); } };
+
 function load(file, mocks = {}) {
+  if (!Object.hasOwn(mocks, '@sentry/react-native')) mocks = { '@sentry/react-native': sentryStub, ...mocks };
   const filename = path.resolve(__dirname, '..', file);
   const code = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
@@ -41,6 +45,17 @@ const csv = load('src/features/strongCsv.ts');
 const row = (overrides = {}) => ({
   date: '2026-10-01 12:00:00', workoutName: 'Upper body', duration: '', exerciseName: 'Bench Press',
   setOrder: '1', weight: '0', reps: '10', distance: '', seconds: '', notes: '', workoutNotes: '', rpe: '', ...overrides,
+});
+
+test('CSV export cannot run as a spreadsheet formula, and reads back exactly as written', () => {
+  const notes = '=HYPERLINK("http://x","click")';
+  const exported = csv.toStrongCsv([row({ notes, workoutName: '+cmd' })]);
+  assert.ok(exported.includes(`"'=HYPERLINK(""http://x"",""click"")"`));
+  assert.ok(exported.includes("'+cmd"));
+  assert.ok(!csv.toStrongCsv([row({ rpe: '-1' })]).includes("'-1"));
+  const parsed = csv.parseStrongCsv(exported);
+  assert.equal(parsed.workouts[0].exercises[0].notes, notes);
+  assert.equal(parsed.workouts[0].name, '+cmd');
 });
 
 test('CSV export/import preserves quoted multiline notes and zero weight', () => {

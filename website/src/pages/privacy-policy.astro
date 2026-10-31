@@ -133,7 +133,9 @@ import { site } from '../data/site';
       Each team has a <strong>chat</strong>. Messages you send are stored with your display name
       and are visible to that team's members. You can delete your own messages; a team's leader can
       delete any message in that team. Members can report a message, and reports are reviewed by
-      Gruntz. Messages are deleted when the team is deleted.
+      Gruntz. Messages are deleted when the team is deleted. A report keeps a copy of the reported
+      message, its author's display name and the team, even if the message, account or team is
+      later deleted, so that abuse can still be reviewed.
     </li>
     <li>
       A leader can list a team as a <strong>public community</strong>. Then its name, description
@@ -226,7 +228,9 @@ import { site } from '../data/site';
   </p>
   <p>
     If you join a team, your team entry is retained until you leave the team, are removed from
-    it, or delete your account. A team with no members left is deleted.
+    it, or delete your account. A team with no members left is deleted. Reports of chat messages,
+    including the copy of the reported message, are kept only as long as needed for moderation
+    and safety.
   </p>
 
   <h2>5. Security</h2>

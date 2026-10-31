@@ -8,6 +8,7 @@ import { parsePlanSessionId, planSessionId, usePlanLibraryStore } from './usePla
 import { estimated1RM, toUnit, useExerciseLogStore } from './useExerciseLogStore';
 import { useUserStore } from './useUserStore';
 import { cancelRestDone } from '../services/notifications';
+import { reportHandled } from '../services/crashReporting';
 import type { PlanDay, WorkoutPlan } from '../data/workoutPlans';
 import type { CompletedExercise, CompletedMission, Exercise, WorkoutDay } from '../types';
 import { getTodaysTrainingChoice, getTrainingFocus, prioritizeWorkout, type TrainingMode } from '../features/trainingFocus';
@@ -153,7 +154,7 @@ const debouncedStorage = (() => {
     if (!pending) return;
     const [key, value] = pending;
     pending = null;
-    void AsyncStorage.setItem(key, value);
+    void AsyncStorage.setItem(key, value).catch((e: unknown) => reportHandled(e, 'session.persist'));
   };
   AppState.addEventListener('change', (next) => {
     if (next !== 'active') flush();
@@ -479,6 +480,7 @@ export const useSessionStore = create<SessionState>()(
             if (e.key !== exKey) return e;
             const at = e.sets.findIndex((st) => st.id === setId);
             const edited = e.sets[at];
+            if (!edited) return e;
             // A weight carries down to the sets still to do, so it is typed once rather
             // than once per set. Only sets that are empty or still hold the value this one
             // just had are touched: anything the athlete set differently, or already
@@ -790,6 +792,8 @@ export const useSessionStore = create<SessionState>()(
     {
       name: '@gruntz_session',
       version: 1,
+      // Identity: every saved copy is version 1. Bumping `version` needs a real migration here.
+      migrate: (persisted) => persisted as Partial<SessionState>,
       storage: createJSONStorage(() => debouncedStorage),
       partialize: (s) => ({
         active: s.active,

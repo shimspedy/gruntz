@@ -8,10 +8,11 @@ const root = path.resolve(__dirname, '..');
 
 function loadCrashReporting(dsn) {
   const filename = path.resolve(root, 'src/services/crashReporting.ts');
-  const calls = { init: [], capture: [] };
+  const calls = { init: [], capture: [], tags: [] };
   const sentry = {
     init: (options) => calls.init.push(options),
     captureException: (error, hint) => calls.capture.push([error, hint]),
+    withScope: (fn) => fn({ setTag: (key, value) => calls.tags.push([key, value]) }),
   };
   const module = { exports: {} };
   const code = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
@@ -33,7 +34,18 @@ test('crash reporting stays off in builds without a DSN', () => {
   assert.equal(calls.init.length, 0);
   assert.equal(api.crashReportingEnabled(), false);
   api.reportError(new Error('boom'));
+  api.reportHandled(new Error('handled'), 'backup.push');
   assert.equal(calls.capture.length, 0);
+  assert.equal(calls.tags.length, 0);
+});
+
+test('handled errors are reported with a tag once crash reporting is on', () => {
+  const { api, calls } = loadCrashReporting('https://key@example.ingest.sentry.io/1');
+  const error = new Error('push failed');
+  api.reportHandled(error, 'backup.push');
+  assert.equal(calls.capture.length, 1);
+  assert.equal(calls.capture[0][0], error);
+  assert.deepEqual(calls.tags, [['handled', 'backup.push']]);
 });
 
 test('crash reports carry no personal data', () => {
@@ -53,6 +65,13 @@ test('crash reports carry no personal data', () => {
   assert.equal(event.request.headers, undefined);
   assert.equal(event.request.cookies, undefined);
   assert.equal(event.request.url, 'https://x.supabase.co/rest/v1/backups');
+
+  const db = options.beforeSend({
+    message: 'push failed for alex.smith@mail.com',
+    exception: { values: [{ type: 'Error', value: 'Key (user_id)=(3f2a1b4c-1234-4abc-9def-0123456789ab) violates constraint' }] },
+  });
+  assert.equal(db.message, 'push failed for <email>');
+  assert.equal(db.exception.values[0].value, 'Key (user_id)=(<id>) violates constraint');
 
   assert.equal(options.beforeBreadcrumb({ category: 'console', message: 'typed text' }), null);
   const http = options.beforeBreadcrumb({ category: 'http', data: { url: 'https://x.co/a?user_id=eq.9#f', method: 'GET' } });

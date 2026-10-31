@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { AccessibilityInfo, Modal, Platform, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -9,7 +9,7 @@ import { useSessionStore } from '../store/useSessionStore';
 import { Icon, type IconName } from './Icon';
 import { Tap } from './Pressable';
 import { Text } from './Text';
-import { color, motion, space } from './tokens';
+import { motion, space } from './tokens';
 
 type Tone = 'success' | 'info' | 'error';
 type ToastOpts = { tone?: Tone; icon?: IconName; action?: { label: string; onPress: () => void } };

@@ -1,4 +1,3 @@
-import React from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Svg, { ClipPath, Defs, G, Polygon } from 'react-native-svg';
 import { Text } from './Text';

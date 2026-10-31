@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNow } from '../../hooks/useNow';
@@ -26,20 +26,32 @@ import { trackRetentionEvent } from '../../services/retentionAnalytics';
 /** "Workout completed!" — review, then commit the mission or discard it. */
 export function SessionSummary({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
   const insets = useSafeAreaInsets();
-  const s = useSessionStore();
+  // Only the fields this screen and `buildMission` read, so unrelated session writes
+  // (rest timer, current index) don't re-render it.
+  const exercises = useSessionStore((st) => st.exercises);
+  const startedAt = useSessionStore((st) => st.startedAt);
+  const title = useSessionStore((st) => st.title);
+  const active = useSessionStore((st) => st.active);
+  const workoutDayId = useSessionStore((st) => st.workoutDayId);
+  const missionDate = useSessionStore((st) => st.missionDate);
+  const estimatedMinutes = useSessionStore((st) => st.estimatedMinutes);
+  const rewardXp = useSessionStore((st) => st.rewardXp);
   const saving = useRef(false);
   const progress = useUserStore((u) => u.progress);
-  // Rebuilt at save time rather than reused: this memo only re-runs when the store
-  // object changes, so `duration_minutes` froze at whatever Date.now() was when it
+  // Rebuilt at save time rather than reused: this memo only re-runs when the session
+  // changes, so `duration_minutes` froze at whatever Date.now() was when it
   // last ran. Sitting on the completion screen for ten minutes showed "35 min" and
   // logged 25 — and which you got depended on an unrelated store write.
-  const mission = useMemo(() => s.buildMission(), [s]);
-  const doneExercises = s.exercises.filter(isExerciseDone);
-  const setsDone = s.exercises.reduce((sum, e) => sum + e.sets.filter((st) => st.done && !st.warmup).length, 0);
-  const reps = s.exercises.reduce((sum, e) => sum + (e.kind === 'reps' ? e.sets.filter((st) => st.done && !st.warmup).reduce((a, st) => a + (st.reps ?? 0), 0) : 0), 0);
+  const mission = useMemo(
+    () => useSessionStore.getState().buildMission(),
+    [exercises, startedAt, active, workoutDayId, missionDate, estimatedMinutes, rewardXp],
+  );
+  const doneExercises = exercises.filter(isExerciseDone);
+  const setsDone = exercises.reduce((sum, e) => sum + e.sets.filter((st) => st.done && !st.warmup).length, 0);
+  const reps = exercises.reduce((sum, e) => sum + (e.kind === 'reps' ? e.sets.filter((st) => st.done && !st.warmup).reduce((a, st) => a + (st.reps ?? 0), 0) : 0), 0);
   // Ticks while the summary is open; it used to freeze at whatever it read on mount.
   const now = useNow(true, 1000);
-  const minutes = s.startedAt ? Math.max(1, Math.round((now - s.startedAt) / 60000)) : 0;
+  const minutes = startedAt ? Math.max(1, Math.round((now - startedAt) / 60000)) : 0;
   const daysPerWeek = useUserStore((u) => u.profile?.workout_days_per_week);
   // Mirrors completeMission's own rule. Assuming +1 whenever the streak was alive
   // meant a second workout on the same day rendered a "7-day streak milestone +70"
@@ -114,7 +126,6 @@ export function SessionSummary({ onBack, onDone }: { onBack: () => void; onDone:
     }
     // Team rosters show sessions and streak; a no-op for anyone not in a team.
     void import('../../services/teams').then((teams) => teams.syncTeamStatus()).catch(() => undefined);
-    const title = s.title;
     useSessionStore.getState().finish();
     onDone();
     if (repeatOfToday) {
@@ -160,7 +171,7 @@ export function SessionSummary({ onBack, onDone }: { onBack: () => void; onDone:
     <View style={{ flex: 1 }}>
       <NavHeader title="Workout completed!" onBack={onBack} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={[styles.body, { paddingBottom: space.lg }]} showsVerticalScrollIndicator={false}>
-        <Field label="Workout name" value={s.title} />
+        <Field label="Workout name" value={title} />
         <Hairline />
         <View style={styles.stats}>
           <Stat label="Duration" value={`${minutes} min`} accent style={{ flex: 1 }} />
@@ -177,7 +188,7 @@ export function SessionSummary({ onBack, onDone }: { onBack: () => void; onDone:
           <Text variant="callout" tone="secondary">
             Rewards
           </Text>
-          <XpRow label={`Exercises · ${doneExercises.length} of ${s.exercises.length}`} value={mission?.total_xp ?? 0} />
+          <XpRow label={`Exercises · ${doneExercises.length} of ${exercises.length}`} value={mission?.total_xp ?? 0} />
           <XpRow label={mission?.is_perfect ? 'Perfect workout bonus' : 'Completion bonus'} value={mission?.completion_bonus ?? 0} />
           {mission?.has_personal_record ? (
             <XpRow
