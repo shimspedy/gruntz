@@ -18,8 +18,7 @@ function load(supabase, teamCount = 1) {
   const store = { teamCount, teamName: 'A', teamCode: 'X', checkIns: [], setTeam() {} };
   return createLoader({
     './supabaseClient': { getSupabase: () => supabase },
-    './profilePhoto': { loadProfilePhotoLocation: async () => null },
-    '../store/useUiStore': { useChromePrefs: { getState: () => ({ profilePhotoFile: null, teamAvatarSynced: null, setTeamAvatarSynced() {} }) } },
+    './profilePhotoCloud': { syncProfilePhoto: async () => {} },
     '../store/useReadinessStore': { useReadinessStore: { getState: () => store }, calculateDailyReadiness: () => 70, getTodaysCheckIn: () => undefined },
     '../store/useUserStore': { useUserStore: { getState: () => ({ progress: { workouts_completed: 3, streak_days: 2 }, profile: { display_name: 'Alex' } }) } },
     '../store/useTeamInboxStore': { useTeamInboxStore: { getState: () => ({ teamIds: [], setTeamIds() {} }) } },

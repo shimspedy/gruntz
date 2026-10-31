@@ -2,8 +2,7 @@ import { calculateDailyReadiness, getTodaysCheckIn, useReadinessStore } from '..
 import { useTeamInboxStore } from '../store/useTeamInboxStore';
 import { useUserStore } from '../store/useUserStore';
 import { getSupabase } from './supabaseClient';
-import { useChromePrefs } from '../store/useUiStore';
-import { loadProfilePhotoLocation } from './profilePhoto';
+import { syncProfilePhoto } from './profilePhotoCloud';
 
 /**
  * Teams ("Leader tools"): a leader creates a team, athletes join with its invite code,
@@ -217,9 +216,7 @@ export async function fetchPublicTeams(query: string): Promise<TeamResult<Public
 }
 
 export async function leaveTeam(teamId: string): Promise<TeamResult<null>> {
-  // The last team to go takes the photo with it, before the row does: afterwards the
-  // storage policy no longer lets the caller delete.
-  if (useReadinessStore.getState().teamCount <= 1) await removeTeamAvatar();
+  // The profile photo stays on the account; teammates lose access with the roster row.
   const result = await call('leave_team', { p_team_id: teamId });
   if (result.ok) {
     const { teamCount } = useReadinessStore.getState();
@@ -234,54 +231,11 @@ export async function syncTeamStatus(): Promise<TeamResult<null>> {
   if (!useReadinessStore.getState().teamCount) return { ok: true, value: null };
   const mine = localTeamStatus();
   const result = await call('update_team_status', { p_sessions: mine.sessions, p_streak: mine.streak, p_status: mine.status, p_display_name: mine.displayName });
-  if (result.ok) await syncTeamAvatar();
+  if (result.ok) await syncProfilePhoto();
   return result;
 }
 
 const AVATAR_BUCKET = 'team-avatars';
-const AVATAR_LINK_SECONDS = 60 * 60;
 const avatarPath = (userId: string) => `${userId}.jpg`;
+const AVATAR_LINK_SECONDS = 60 * 60;
 
-/**
- * Keeps the photo teammates see in step with the one on this phone. Nothing is
- * uploaded outside a team, and a photo set before joining goes up on the first
- * status sync after joining. Removing the photo takes it down again.
- */
-export async function syncTeamAvatar(): Promise<void> {
-  const prefs = useChromePrefs.getState();
-  if (!useReadinessStore.getState().teamCount || prefs.profilePhotoFile === prefs.teamAvatarSynced) return;
-  const user = await signedInUserId();
-  const supabase = getSupabase();
-  if (!user.ok || !supabase) return;
-  const path = avatarPath(user.value);
-  try {
-    if (prefs.profilePhotoFile) {
-      const uri = await loadProfilePhotoLocation();
-      if (!uri) return;
-      const { File } = await import('expo-file-system');
-      const bytes = await new File(uri).arrayBuffer();
-      const { error } = await supabase.storage.from(AVATAR_BUCKET).upload(path, bytes, { contentType: 'image/jpeg', upsert: true });
-      if (error) throw error;
-      const { error: rpcError } = await supabase.rpc('set_team_avatar_version', { p_version: Math.floor(Date.now() / 1000) });
-      if (rpcError) throw rpcError;
-      useChromePrefs.getState().setTeamAvatarSynced(prefs.profilePhotoFile);
-    } else {
-      await supabase.storage.from(AVATAR_BUCKET).remove([path]);
-      const { error } = await supabase.rpc('set_team_avatar_version', { p_version: 0 });
-      if (error) throw error;
-      useChromePrefs.getState().setTeamAvatarSynced(null);
-    }
-  } catch (error) {
-    // Tried again on the next status sync.
-    if (__DEV__) console.warn('[teams] avatar sync failed', error);
-  }
-}
-
-/** Best effort on the way out: teammates lose read access anyway once the row is gone. */
-async function removeTeamAvatar(): Promise<void> {
-  const user = await signedInUserId();
-  const supabase = getSupabase();
-  if (!user.ok || !supabase) return;
-  await supabase.storage.from(AVATAR_BUCKET).remove([avatarPath(user.value)]).catch(() => undefined);
-  useChromePrefs.getState().setTeamAvatarSynced(null);
-}

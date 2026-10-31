@@ -81,6 +81,9 @@ function store(overrides = {}) {
     '../services/subscription': serviceApi,
     '../services/notifications': { cancelTrialEndingReminder: async () => {}, scheduleTrialEndingReminder: async () => {} },
     './useUserStore': { useUserStore: { getState: () => ({ isOnboarded: true }) } },
+    'react-native': { AppState: { addEventListener: () => ({ remove() {} }) } },
+    '../services/entitlementStatus': load('src/services/entitlementStatus.ts', {}),
+    '../services/crashReporting': { logBreadcrumb() {} },
   });
   return { ...exports, persistence, serviceApi, keychain, state: () => exports.useSubscriptionStore.getState() };
 }
@@ -242,9 +245,48 @@ test('trial initialization queries customer info to find existing subscribers', 
 
 test('unknown entitlement results never revoke previously verified access', async () => {
   const s = store({ loadRevenueCatState: async () => ({ customerInfo: null, customerInfoKnown: false, configured: true }) });
-  s.useSubscriptionStore.setState({ entitlementActive: true });
+  s.useSubscriptionStore.setState({ entitlementActive: true, entitlementVerifiedAt: new Date(Date.now() - 71 * 3600e3).toISOString() });
   await s.state().initialize();
   assert.equal(s.state().entitlementActive, true);
+});
+
+test('offline, a cached subscription lasts 72 hours from its last confirmation, then waits for the store', async () => {
+  const s = store({ loadRevenueCatState: async () => ({ customerInfo: null, customerInfoKnown: false, configured: true }) });
+  s.useSubscriptionStore.setState({ entitlementActive: true, entitlementStatus: 'active', entitlementVerifiedAt: new Date(Date.now() - 73 * 3600e3).toISOString() });
+  await s.state().initialize();
+  assert.equal(s.state().entitlementActive, false);
+  assert.equal(s.state().entitlementStatus, 'active', 'the last known answer is kept; only the offline trust ran out');
+  // The store answering again turns it straight back on.
+  s.serviceApi.loadRevenueCatState = async () => ({ currentOffering: null, customerInfo: customer(true), customerInfoKnown: true, configured: true });
+  await s.state().initialize();
+  assert.equal(s.state().entitlementActive, true);
+});
+
+test('a subscription restored on another phone switches off here and raises one gentle notice', async () => {
+  const gone = { entitlements: { active: {}, all: {} }, managementURL: null };
+  const s = store({ loadRevenueCatState: async () => ({ currentOffering: null, customerInfo: gone, customerInfoKnown: true, configured: true }) });
+  s.useSubscriptionStore.setState({ entitlementActive: true, entitlementStatus: 'active', entitlementVerifiedAt: new Date().toISOString() });
+  await s.state().initialize();
+  assert.equal(s.state().entitlementActive, false);
+  assert.equal(s.state().entitlementStatus, 'moved');
+  assert.equal(s.state().movedNotice, true);
+  s.state().dismissMovedNotice();
+  await s.state().initialize();
+  assert.equal(s.state().entitlementStatus, 'moved', 'still moved on the next check');
+  assert.equal(s.state().movedNotice, false, 'a dismissed notice does not come back');
+  s.serviceApi.loadRevenueCatState = async () => ({ currentOffering: null, customerInfo: customer(true), customerInfoKnown: true, configured: true });
+  await s.state().initialize();
+  assert.equal(s.state().entitlementStatus, 'active');
+});
+
+test('a restore reports exactly what the store found', async () => {
+  const lapsed = { entitlements: { active: {}, all: { pro: { isActive: false, billingIssueDetectedAt: '2026-10-01T00:00:00Z' } } }, managementURL: null };
+  const s = store({ restoreRevenueCatPurchases: async () => ({ status: 'none', customerInfo: lapsed }) });
+  assert.equal(await s.state().restoreAccess(), 'billing-retry');
+  s.serviceApi.restoreRevenueCatPurchases = async () => ({ status: 'none', customerInfo: { entitlements: { active: {}, all: {} }, managementURL: null } });
+  assert.equal(await s.state().restoreAccess(), 'none', 'nothing on this account is "no purchases", never "moved"');
+  s.serviceApi.restoreRevenueCatPurchases = async () => ({ status: 'error', customerInfo: null });
+  assert.equal(await s.state().restoreAccess(), 'error');
 });
 
 test('known inactive entitlement revokes access while a purchase in pending state is not announced as purchased', async () => {
@@ -331,4 +373,24 @@ test('reinstalling does not restart the trial: the Keychain copy of the start da
   firstEver.state().startTrialIfNeeded();
   await new Promise((resolve) => setTimeout(resolve, 10));
   assert.equal(firstEver.keychain.get('gruntz_trial_started_at'), firstEver.state().trialStartedAt);
+});
+
+test('every subscription state has its own message, and no purchases names the account to check', () => {
+  const e = load('src/services/entitlementStatus.ts', {});
+  assert.equal(e.classifyEntitlement({ isActive: true }, false), 'active');
+  assert.equal(e.classifyEntitlement({ isActive: true, billingIssueDetectedAt: 'x' }, false), 'grace');
+  assert.equal(e.classifyEntitlement({ isActive: false, billingIssueDetectedAt: 'x' }, false), 'billing-retry');
+  assert.equal(e.classifyEntitlement({ isActive: false }, true), 'expired');
+  assert.equal(e.classifyEntitlement(null, true), 'moved');
+  assert.equal(e.classifyEntitlement(null, false), 'none');
+  const titles = new Set(['active', 'grace', 'billing-retry', 'expired', 'moved', 'none'].map((s) => e.entitlementMessage(s, 'ios').body));
+  assert.equal(titles.size, 6);
+  assert.match(e.entitlementMessage('none', 'ios').body, /same Apple ID/);
+  assert.match(e.entitlementMessage('none', 'android').body, /same Google account/);
+  assert.match(e.entitlementMessage('expired', 'ios').body, /refunded/);
+  const now = Date.parse('2026-10-31T12:00:00Z');
+  assert.equal(e.cacheStillValid('2026-10-28T13:00:00Z', now), true);
+  assert.equal(e.cacheStillValid('2026-10-28T11:00:00Z', now), false);
+  assert.equal(e.cacheStillValid('2026-11-30T00:00:00Z', now), false, 'a clock set back cannot stretch the window');
+  assert.equal(e.cacheStillValid(null, now), false);
 });

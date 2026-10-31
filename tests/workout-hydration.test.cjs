@@ -18,6 +18,8 @@ for (const kind of ['program', 'subscription']) {
       '../services/subscription': {},
       '../services/notifications': { scheduleTrialEndingReminder: async () => {}, cancelTrialEndingReminder: async () => {} },
       './useUserStore': { useUserStore: { getState: () => ({ isOnboarded: false }) } },
+      'react-native': { AppState: { addEventListener: () => ({ remove() {} }) } },
+      '../services/crashReporting': { logBreadcrumb() {} },
     });
     const store = kind === 'program'
       ? load('src/store/useProgramStore.ts').useProgramStore

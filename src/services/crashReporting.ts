@@ -65,6 +65,13 @@ export function reportError(error: unknown, componentStack?: string | null): voi
  * would otherwise vanish. Tagged so they group by where they came from. Same scrubbing
  * as every other report: they go through the same `beforeSend`.
  */
+/** A trail entry attached to any later crash report: never personal data. */
+export function logBreadcrumb(category: string, message: string, data?: Record<string, string | number | boolean | null>): void {
+  if (__DEV__) console.info(`[${category}] ${message}`, data ?? '');
+  if (!started) return;
+  Sentry.addBreadcrumb({ category, message, data, level: 'info' });
+}
+
 export function reportHandled(error: unknown, tag: string): void {
   if (!started) return;
   Sentry.withScope((scope) => {

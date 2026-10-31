@@ -68,6 +68,17 @@ build are restored by another (`src/services/backupRestoreStores.ts`).
 - **Activity tracking** (`activityTracking*.ts`): GPS run/ruck tracking, including in the background.
 - **Notifications and retention** (`notifications.ts`, `retention*.ts`): reminders, rest timers, trial nudges.
 
+## Subscriptions and restore
+
+Gruntz Pro is tied to the Apple ID / Google account through RevenueCat, which is the
+only source of truth. The app checks it at launch, live, and when it comes back to the
+foreground; offline, the last confirmed answer is trusted for 72 hours. "Restore
+purchases" is on the welcome screen, the paywall and in Settings. One device at a
+time: the RevenueCat dashboard must use **Restore Behavior → Transfer to new App User
+ID**, and a phone that loses Pro this way shows a sheet to move it back. Progress
+restores separately through the optional email backup. Details, dashboard settings,
+review notes and the test checklist: [docs/subscription-restore.md](docs/subscription-restore.md).
+
 ## Apple Watch
 
 `targets/watch` is a native watchOS app (via `@bacons/apple-targets`) that records workouts into Health; the

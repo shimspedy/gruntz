@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BackHandler, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, BackHandler, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -40,6 +40,8 @@ import { trackRetentionEvent } from '../../services/retentionAnalytics';
 import { onboardingSteps, preferredOnboardingPlan, resumedOnboardingStep, type OnboardingStep } from './flow';
 import { PracticeSession } from './PracticeSession';
 import { Welcome } from './Welcome';
+import { showRestoreResult } from '../../components/restoreResult';
+import { toast } from '../../ui/Toast';
 import { getLocalDateKey } from '../../utils/dateKey';
 
 const GOALS: { label: string; icon: IconName }[] = [
@@ -142,6 +144,37 @@ function OnboardingFlow() {
     setStep(nextStep);
   }, [step, steps, index]);
   const next = useCallback(() => go(1), [go]);
+  const openRestoreProgress = useCallback(() => navigation.navigate('Backup', { onboarding: true }), [navigation]);
+
+  /**
+   * Nothing is asked before Get Started. After it, the store is checked quietly: a
+   * returning subscriber gets Pro back with a toast and is offered their backup.
+   * Progress and purchases restore independently; either can be skipped.
+   */
+  const start = useCallback(() => {
+    next();
+    void (async () => {
+      await useSubscriptionStore.getState().refresh().catch(() => undefined);
+      if (!useSubscriptionStore.getState().entitlementActive) return;
+      toast('Gruntz Pro restored', { icon: 'check' });
+      if (!isBackupAvailable()) return;
+      Alert.alert('Welcome back', 'Restore your progress? Your plan, streak and training history come back from your backup.', [
+        { text: 'Start fresh', style: 'cancel' },
+        { text: 'Restore', onPress: openRestoreProgress },
+      ]);
+    })();
+  }, [next, openRestoreProgress]);
+
+  const [restoringPurchases, setRestoringPurchases] = useState(false);
+  const restorePurchases = useCallback(async () => {
+    if (restoringPurchases) return;
+    setRestoringPurchases(true);
+    try {
+      showRestoreResult(await useSubscriptionStore.getState().restoreAccess());
+    } finally {
+      setRestoringPurchases(false);
+    }
+  }, [restoringPurchases]);
   const goRef = useRef(go);
   goRef.current = go;
   const practiceComplete = useCallback(() => setPracticeReady(true), []);
@@ -235,7 +268,7 @@ function OnboardingFlow() {
     useUserStore.getState().setOnboarded(true);
   };
 
-  if (step === 'welcome') return <Welcome onStart={next} onRestore={isBackupAvailable() ? () => navigation.navigate('Backup', { onboarding: true }) : undefined} />;
+  if (step === 'welcome') return <Welcome onStart={start} onRestorePurchases={restorePurchases} />;
   let valid = true;
   let cta = 'Continue';
   switch (step) {
@@ -277,6 +310,11 @@ function OnboardingFlow() {
         return (
           <ScrollView contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
             <Question title="What are you training for?" subtitle="Pick everything that fits." />
+            {isBackupAvailable() ? (
+              <Tap feedback="opacity" hitSlop={8} onPress={openRestoreProgress} style={styles.restoreLink} accessibilityRole="button">
+                <Text variant="footnote" tone="secondary">Already use Gruntz? <Text variant="footnote" style={styles.restoreLinkStrong}>Restore your progress</Text></Text>
+              </Tap>
+            ) : null}
             <View style={os.list}>
               {GOALS.map((g, i) => (
                 <OptionRow key={g.label} index={i} label={g.label} icon={g.icon} multi selected={goals.includes(g.label)} onPress={() => { setChoice(null); toggle(goals, setGoals, g.label); }} />
@@ -424,6 +462,8 @@ function toggleExclusive(list: string[], v: string) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
+  restoreLink: { alignSelf: 'flex-start', marginTop: -space.sm, marginBottom: space.md },
+  restoreLinkStrong: { color: color.accent },
   page: { flex: 1 },
   header: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: space.md },
   back: {

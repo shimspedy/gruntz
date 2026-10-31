@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
@@ -30,6 +30,7 @@ import { Icon } from '../ui/Icon';
 import { Wordmark } from '../ui/Logo';
 import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
+import { showRestoreResult } from '../components/restoreResult';
 import { toast } from '../ui/Toast';
 import { space } from '../ui/tokens';
 import { color } from '../ui/tokens';
@@ -221,17 +222,7 @@ export default function SettingsScreen() {
             onPress={() => {
               if (restoring) return;
               setRestoring(true);
-              // Named per platform: this said "App Store"/"Apple ID" on Android too.
-              const store = Platform.OS === 'ios' ? 'App Store' : 'Google Play';
-              const account = Platform.OS === 'ios' ? 'Apple ID' : 'Google account';
-              void restore().finally(() => setRestoring(false)).then((r) => {
-                if (r === 'restored') toast('Purchases restored');
-                else if (r === 'none') Alert.alert('Nothing to restore', `No active Gruntz Pro subscription was found for this ${account}.`);
-                // "unavailable" is not a connectivity problem, and saying so sent
-                // users to check a connection that was never the issue.
-                else if (r === 'unavailable') Alert.alert('Purchases unavailable', `In-app purchases aren't available on this device right now, so there's nothing to restore.`);
-                else Alert.alert('Restore didn’t finish', `We couldn’t reach the ${store}. Check your connection and try again.`);
-              });
+              void restore().finally(() => setRestoring(false)).then((r) => showRestoreResult(r));
             }}
           />
         </Group>

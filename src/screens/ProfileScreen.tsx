@@ -9,7 +9,7 @@ import { claimedDates } from '../features/plan';
 import { useTabChromeInset } from '../navigation/TabBar';
 import { healthPlatformName } from '../services/healthSync';
 import { changeProfilePhoto, loadProfilePhotoLocation, removeProfilePhoto, type PhotoSource } from '../services/profilePhoto';
-import { syncTeamAvatar } from '../services/teams';
+import { syncProfilePhoto } from '../services/profilePhotoCloud';
 import { useChromePrefs } from '../store/useUiStore';
 import { useSignedIn } from '../hooks/useSignedIn';
 import type { Rank } from '../types';
@@ -133,7 +133,7 @@ export function photoOptions() {
   const hasPhoto = !!useChromePrefs.getState().profilePhotoFile;
   const change = async (source: PhotoSource) => {
     const outcome = await changeProfilePhoto(source);
-    if (outcome === 'saved') { haptic.success(); toast('Profile photo updated'); void syncTeamAvatar(); return; }
+    if (outcome === 'saved') { haptic.success(); toast('Profile photo updated'); void syncProfilePhoto(); return; }
     if (outcome === 'cancelled') return;
     if (outcome === 'denied') {
       Alert.alert(
@@ -145,7 +145,7 @@ export function photoOptions() {
     }
     toast(outcome === 'unavailable' ? 'Photos aren’t available on this device' : 'Couldn’t save that photo. Try another.', { tone: 'error', icon: 'alert' });
   };
-  const remove = async () => { await removeProfilePhoto(); haptic.selection(); toast('Profile photo removed'); void syncTeamAvatar(); };
+  const remove = async () => { await removeProfilePhoto(); haptic.selection(); toast('Profile photo removed'); void syncProfilePhoto(); };
   const actions: { label: string; run: () => void; destructive?: boolean }[] = [
     { label: 'Take photo', run: () => void change('camera') },
     { label: 'Choose from library', run: () => void change('library') },

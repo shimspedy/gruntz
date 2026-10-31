@@ -1,3 +1,4 @@
+import { MovedDeviceSheet } from '../components/MovedDeviceSheet';
 import React, { useEffect, useRef, useState } from 'react';
 import { Alert, AppState, BackHandler, Linking, Platform, StyleSheet, View } from 'react-native';
 import * as Notifications from 'expo-notifications';
@@ -645,6 +646,7 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
           <ChallengeSheet />
           <ReadinessSheet />
           <TeamInboxHost />
+          <MovedDeviceSheet />
         </>
       ) : null}
     </View>

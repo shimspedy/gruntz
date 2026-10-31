@@ -3,6 +3,7 @@ import { AppState, Platform } from 'react-native';
 import { BACKUP_DEBOUNCE_MS, BACKUP_SCHEMA_VERSION, isBackupAvailable } from '../config/backup';
 import { applySnapshot, captureSnapshot, snapshotWorkoutCount, type BackupSnapshot } from './backupSnapshot';
 import { getSupabase } from './supabaseClient';
+import { restoreProfilePhoto, syncProfilePhoto } from './profilePhotoCloud';
 import { reportHandled } from './crashReporting';
 import type { Session } from '@supabase/supabase-js';
 
@@ -406,6 +407,8 @@ async function restoreBackupNow(): Promise<RestoreBackupResult> {
     await AsyncStorage.setItem(BACKUP_OWNER_KEY, context.session.user.id);
     if (data.updated_at) await AsyncStorage.setItem(BACKUP_SYNCED_AT_KEY, data.updated_at);
     else await AsyncStorage.removeItem(BACKUP_SYNCED_AT_KEY);
+    // The photo is not in the snapshot; it comes back from the account on its own.
+    void restoreProfilePhoto().then(() => syncProfilePhoto());
     return 'restored';
   } catch (error) {
     if (__DEV__) console.warn('[backup] restoreBackup threw', error);

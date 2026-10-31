@@ -80,6 +80,22 @@ export async function changeProfilePhoto(source: PhotoSource): Promise<PhotoOutc
   }
 }
 
+/**
+ * Keeps a photo fetched from the account as this phone's photo. Returns its file
+ * name, or null when a photo was set on this phone in the meantime.
+ */
+export async function saveDownloadedProfilePhoto(bytes: ArrayBuffer): Promise<string | null> {
+  if (useChromePrefs.getState().profilePhotoFile) return null;
+  const { directory } = await documents();
+  documentDirectoryCache = directory;
+  const next = `${PHOTO_PREFIX}${Date.now()}.jpg`;
+  const { File } = await import('expo-file-system');
+  new File(`${directory}${next}`).write(new Uint8Array(bytes));
+  if (useChromePrefs.getState().profilePhotoFile) return null;
+  useChromePrefs.getState().setProfilePhotoFile(next);
+  return next;
+}
+
 /** Back to the initial. Removing the file after forgetting it means a failed delete costs disk, never a stale avatar. */
 export async function removeProfilePhoto(): Promise<void> {
   const previous = useChromePrefs.getState().profilePhotoFile;

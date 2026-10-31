@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+import { AppState } from 'react-native';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { GRUNTZ_TRIAL_DAYS, DEV_UNLOCK } from '../config/monetization';
@@ -22,6 +23,12 @@ import {
   scheduleTrialEndingReminder,
 } from '../services/notifications';
 import { useUserStore } from './useUserStore';
+import { cacheStillValid, classifyEntitlement, unlocks, type EntitlementStatus } from '../services/entitlementStatus';
+import { logBreadcrumb } from '../services/crashReporting';
+
+const ENTITLEMENT_STATUSES: readonly EntitlementStatus[] = ['active', 'grace', 'billing-retry', 'expired', 'moved', 'none'];
+/** What a restore found: a subscription state, or why the store could not be asked. */
+export type RestoreOutcome = EntitlementStatus | 'unavailable' | 'error';
 
 const STORAGE_KEY = '@gruntz_subscription';
 
@@ -74,6 +81,13 @@ interface SubscriptionState {
   hasHydrated: boolean;
   hydrationFailed: boolean;
   lastError: string | null;
+  /** The store's last confirmed answer; null before the first one on this install. */
+  entitlementStatus: EntitlementStatus | null;
+  /** When the store last confirmed it. Pro is only trusted offline for 72 hours after. */
+  entitlementVerifiedAt: string | null;
+  /** Pro moved to another phone and the athlete has not dealt with it yet. */
+  movedNotice: boolean;
+  dismissMovedNotice: () => void;
 
   startTrialIfNeeded: (startAt?: string) => void;
   adoptTrialStart: (startAt: string) => void;
@@ -82,7 +96,7 @@ interface SubscriptionState {
   loadOffering: () => Promise<void>;
   purchaseMonthly: () => Promise<PurchaseStatus>;
   purchaseAnnual: () => Promise<PurchaseStatus>;
-  restoreAccess: () => Promise<'restored' | 'none' | 'unavailable' | 'error'>;
+  restoreAccess: () => Promise<RestoreOutcome>;
   openCustomerCenter: () => Promise<'presented' | 'unavailable' | 'error'>;
   openSubscriptionManagement: () => Promise<void>;
   clearError: () => void;
@@ -108,6 +122,13 @@ function migratePersistedSubscriptionState(persistedState: unknown): Partial<Sub
         ? persistedState.entitlementProductIdentifier
         : null,
     managementUrl: typeof persistedState.managementUrl === 'string' ? persistedState.managementUrl : null,
+    entitlementStatus: ENTITLEMENT_STATUSES.includes(persistedState.entitlementStatus as EntitlementStatus)
+      ? persistedState.entitlementStatus as EntitlementStatus : null,
+    // Installs from before the offline limit start their 72 hours now, not in the past.
+    entitlementVerifiedAt: typeof persistedState.entitlementVerifiedAt === 'string' && Number.isFinite(Date.parse(persistedState.entitlementVerifiedAt))
+      ? persistedState.entitlementVerifiedAt
+      : persistedState.entitlementActive === true ? new Date().toISOString() : null,
+    movedNotice: persistedState.movedNotice === true,
     // Native package objects do not survive a restart. Pricing must be fetched
     // again before enabling a purchase, even when a previous screen was cached.
     currentOffering: null,
@@ -265,16 +286,58 @@ function syncEntitlementState(
   if (Number.isFinite(requestedAt)) latestCustomerInfoAt = requestedAt;
   latestAppliedOperation = operation;
   const entitlement = getEntitlementAccess(customerInfo);
-  const active = entitlement?.isActive === true;
+  const previous = useSubscriptionStore.getState();
+  // 'moved' stays 'moved' until a subscription shows up here again.
+  const hadAccessHere = previous.entitlementStatus
+    ? unlocks(previous.entitlementStatus) || previous.entitlementStatus === 'moved'
+    : previous.entitlementActive;
+  const status = classifyEntitlement(entitlement, hadAccessHere);
+  const active = unlocks(status);
+  if (status !== previous.entitlementStatus) {
+    logBreadcrumb('subscription', 'entitlement changed', { from: previous.entitlementStatus ?? 'unknown', to: status });
+  }
   set({
     entitlementActive: active,
+    entitlementStatus: status,
+    entitlementVerifiedAt: new Date().toISOString(),
     entitlementExpiresAt: entitlement?.expirationDate ?? null,
     entitlementProductIdentifier: entitlement?.productIdentifier ?? null,
     managementUrl: customerInfo?.managementURL ?? null,
+    // Raised once when Pro leaves for another phone; cleared when it comes back.
+    movedNotice: status === 'moved' && (previous.entitlementStatus !== 'moved' || previous.movedNotice),
   });
   if (active) {
     void cancelTrialEndingReminder();
   }
+}
+
+/**
+ * Offline, the last confirmed Pro is honoured for 72 hours, then switched off until the
+ * store answers again. Never turns Pro on, and never touches the app's own trial.
+ */
+export function applyOfflineGrace(now = Date.now()) {
+  const state = useSubscriptionStore.getState();
+  if (!state.entitlementActive || cacheStillValid(state.entitlementVerifiedAt, now)) return;
+  logBreadcrumb('subscription', 'offline grace ended', { verifiedAt: state.entitlementVerifiedAt });
+  useSubscriptionStore.setState({ entitlementActive: false });
+}
+
+const FOREGROUND_RECHECK_MS = 30 * 1000;
+let foregroundWatch = false;
+let lastForegroundCheck = 0;
+
+/** A subscription moved to another phone switches off here within the session. */
+function watchForeground() {
+  if (foregroundWatch) return;
+  foregroundWatch = true;
+  AppState.addEventListener('change', (next) => {
+    if (next !== 'active') return;
+    applyOfflineGrace();
+    const now = Date.now();
+    if (now - lastForegroundCheck < FOREGROUND_RECHECK_MS) return;
+    lastForegroundCheck = now;
+    void useSubscriptionStore.getState().refresh();
+  });
 }
 
 export const useSubscriptionStore = create<SubscriptionState>()(
@@ -291,6 +354,10 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       hasHydrated: false,
       hydrationFailed: false,
       lastError: null,
+      entitlementStatus: null,
+      entitlementVerifiedAt: null,
+      movedNotice: false,
+      dismissMovedNotice: () => set({ movedNotice: false }),
 
       startTrialIfNeeded: (startAt) => {
         if (get().trialStartedAt) {
@@ -324,6 +391,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         set({ isLoading: true, lastError: null, isConfigured: isRevenueCatAvailable() });
 
         try {
+          watchForeground();
           // Always attach the listener so mid-trial subscriptions are detected
           await addRevenueCatCustomerInfoListener((customerInfo) => {
             syncEntitlementState(set, customerInfo, true, ++entitlementOperation);
@@ -334,10 +402,13 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           // on another device or while the app was closed.
           const state = await loadRevenueCatState({ includeOfferings: false });
           syncEntitlementState(set, state.customerInfo, state.customerInfoKnown, operation);
+          // Could not ask the store: the cached answer holds, but only for 72 hours.
+          if (!state.customerInfoKnown) applyOfflineGrace();
           set({
             isConfigured: state.configured,
           });
         } catch (error) {
+          applyOfflineGrace();
           set({
             lastError: userFacingError(
               error instanceof Error ? error.message : null,
@@ -408,13 +479,16 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             set({ isLoading: false, isConfigured: configured, lastError: null });
           }
 
-          if (result.status === 'restored') {
+          if (result.status === 'error' || result.status === 'unavailable') return result.status;
+          // A restore that finds nothing is "no purchases", never "moved": the athlete asked.
+          const found = classifyEntitlement(getEntitlementAccess(result.customerInfo), false);
+          logBreadcrumb('subscription', 'restore finished', { status: found });
+          if (unlocks(found)) {
             get().refresh().catch((err) => {
               if (__DEV__) console.warn('[subscription] background refresh after restore failed', err);
             });
           }
-
-          return result.status;
+          return found;
         } catch (error) {
           set({
             isLoading: false,
@@ -470,6 +544,9 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         entitlementExpiresAt: state.entitlementExpiresAt,
         entitlementProductIdentifier: state.entitlementProductIdentifier,
         managementUrl: state.managementUrl,
+        entitlementStatus: state.entitlementStatus,
+        entitlementVerifiedAt: state.entitlementVerifiedAt,
+        movedNotice: state.movedNotice,
       }),
       onRehydrateStorage: () => (_state, error) => {
         if (error) {
@@ -480,6 +557,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         subscriptionStorageWritable = true;
         useSubscriptionStore.setState({ hasHydrated: true, hydrationFailed: false });
         reconcilePinnedTrialStart();
+        applyOfflineGrace();
       },
     }
   )

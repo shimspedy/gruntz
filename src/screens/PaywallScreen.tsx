@@ -13,6 +13,7 @@ import { Icon } from '../ui/Icon';
 import { Tap } from '../ui/Pressable';
 import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
+import { showRestoreResult } from '../components/restoreResult';
 import { toast } from '../ui/Toast';
 import { color, font, motion, radius, space } from '../ui/tokens';
 import { openExternalUrl } from '../utils/externalLinks';
@@ -145,25 +146,7 @@ export default function PaywallScreen() {
     if (billingBusy.current) return;
     billingBusy.current = true;
     try {
-      const r = await restoreAccess();
-      if (r === 'restored') {
-        toast('Purchases restored');
-        dismiss();
-      } else if (r === 'none') {
-        Alert.alert('Nothing to restore', `No active subscription was found for this account. Check that you are signed into the ${store} account used to subscribe.`);
-      } else if (r === 'unavailable') {
-        // Not a network problem, and retrying cannot help — offering "Try again" here
-        // invited an infinite loop against a guaranteed failure.
-        Alert.alert(
-          'Purchases unavailable',
-          `In-app purchases aren't available on this device right now, so there's nothing to restore. Try again after updating the app.`,
-        );
-      } else {
-        Alert.alert('Restore didn’t finish', `We couldn’t reach the ${store}. Check your connection and try again — you won’t be charged twice.`, [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Try again', onPress: () => void restore() },
-        ]);
-      }
+      showRestoreResult(await restoreAccess(), { onUnlocked: dismiss, retry: () => void restore() });
     } finally {
       billingBusy.current = false;
     }
