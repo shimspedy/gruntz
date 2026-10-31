@@ -41,11 +41,21 @@ export function classifyEntitlement(entitlement: EntitlementLike, hadAccessHere:
 
 export const unlocks = (status: EntitlementStatus) => status === 'active' || status === 'grace';
 
-/** Whether a cached "has Pro" may still be trusted without asking the store. */
-export function cacheStillValid(verifiedAt: string | null, now: number): boolean {
+/**
+ * Whether a cached "has Pro" may still be trusted without asking the store.
+ *
+ * `verifiedAt` is the store's own timestamp for its answer, not the phone's clock,
+ * so the store SDK's on-device cache cannot restart the window. `highWater` is the
+ * latest time this install has seen: setting the clock back makes the cache
+ * untrusted instead of extending it.
+ */
+export function cacheStillValid(verifiedAt: string | null, now: number, highWater = 0): boolean {
   const at = verifiedAt ? Date.parse(verifiedAt) : NaN;
-  // A clock set backwards must not stretch the window.
-  return Number.isFinite(at) && at <= now + 5 * 60 * 1000 && now - at < OFFLINE_GRACE_MS;
+  if (!Number.isFinite(at)) return false;
+  const skew = 5 * 60 * 1000;
+  if (now < highWater - skew) return false;
+  const effective = Math.max(now, highWater);
+  return at <= effective + skew && effective - at < OFFLINE_GRACE_MS;
 }
 
 export type Platform = 'ios' | 'android' | string;

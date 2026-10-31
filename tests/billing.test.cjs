@@ -90,8 +90,8 @@ function store(overrides = {}) {
 
 test('a stale startup response cannot revoke a more recent successful purchase', async () => {
   let completeStartup;
-  const oldInfo = { ...customer(false), requestDate: '2026-10-27T10:00:00.000Z' };
-  const newInfo = { ...customer(true), requestDate: '2026-10-27T10:01:00.000Z' };
+  const oldInfo = { ...customer(false), requestDate: new Date(Date.now() - 60e3).toISOString() };
+  const newInfo = { ...customer(true), requestDate: new Date().toISOString() };
   const env = store({
     loadRevenueCatState: () => new Promise((resolve) => { completeStartup = resolve; }),
     purchaseCurrentRevenueCatPackage: async () => ({ status: 'purchased', customerInfo: newInfo }),
@@ -106,7 +106,7 @@ test('a stale startup response cannot revoke a more recent successful purchase',
 });
 
 test('equal-second and missing RevenueCat dates cannot let an older startup undo a newer purchase', async () => {
-  for (const requestDate of ['2026-10-27T10:00:00Z', undefined]) {
+  for (const requestDate of [new Date(Math.floor(Date.now() / 1000) * 1000).toISOString(), undefined]) {
     let completeStartup;
     const env = store({
       loadRevenueCatState: () => new Promise((resolve) => { completeStartup = resolve; }),
@@ -122,7 +122,7 @@ test('equal-second and missing RevenueCat dates cannot let an older startup undo
 });
 
 test('a new purchase with the same requestDate as the previous snapshot still activates access', async () => {
-  const requestDate = '2026-10-27T10:00:00Z';
+  const requestDate = new Date(Math.floor(Date.now() / 1000) * 1000).toISOString();
   const env = store({
     loadRevenueCatState: async () => ({ customerInfo: { ...customer(false), requestDate }, customerInfoKnown: true, configured: true }),
     purchaseCurrentRevenueCatPackage: async () => ({ status: 'purchased', customerInfo: { ...customer(true), requestDate } }),
@@ -393,4 +393,26 @@ test('every subscription state has its own message, and no purchases names the a
   assert.equal(e.cacheStillValid('2026-10-28T11:00:00Z', now), false);
   assert.equal(e.cacheStillValid('2026-11-30T00:00:00Z', now), false, 'a clock set back cannot stretch the window');
   assert.equal(e.cacheStillValid(null, now), false);
+});
+
+test('an old answer from the store SDK cache does not restart the 72-hour offline window', async () => {
+  const tenDaysAgo = new Date(Date.now() - 10 * 24 * 3600e3).toISOString();
+  const cached = { ...customer(true), requestDate: tenDaysAgo };
+  const s = store({ loadRevenueCatState: async () => ({ currentOffering: null, customerInfo: cached, customerInfoKnown: true, configured: true }) });
+  await s.state().initialize();
+  assert.equal(s.state().entitlementActive, false, 'a ten-day-old cached answer does not unlock Pro');
+  assert.equal(s.state().entitlementVerifiedAt, tenDaysAgo, 'verified time is the store’s, not the phone’s');
+  const fresh = { ...customer(true), requestDate: new Date().toISOString() };
+  s.serviceApi.loadRevenueCatState = async () => ({ currentOffering: null, customerInfo: fresh, customerInfoKnown: true, configured: true });
+  await s.state().initialize();
+  assert.equal(s.state().entitlementActive, true, 'a live answer unlocks it again');
+});
+
+test('setting the clock back cannot stretch offline Pro', () => {
+  const e = load('src/services/entitlementStatus.ts', {});
+  const seen = Date.parse('2026-11-20T00:00:00Z');
+  // Verified Nov 1, phone already saw Nov 20, clock now wound back to Nov 2.
+  assert.equal(e.cacheStillValid('2026-11-01T00:00:00Z', Date.parse('2026-11-02T00:00:00Z'), seen), false);
+  // An honest clock inside the window still works.
+  assert.equal(e.cacheStillValid('2026-11-19T12:00:00Z', seen + 3600e3, seen), true);
 });

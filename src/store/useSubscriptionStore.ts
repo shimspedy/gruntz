@@ -85,6 +85,8 @@ interface SubscriptionState {
   entitlementStatus: EntitlementStatus | null;
   /** When the store last confirmed it. Pro is only trusted offline for 72 hours after. */
   entitlementVerifiedAt: string | null;
+  /** The latest time this install has seen, so a clock set back cannot extend offline Pro. */
+  clockHighWater: number;
   /** Pro moved to another phone and the athlete has not dealt with it yet. */
   movedNotice: boolean;
   dismissMovedNotice: () => void;
@@ -129,6 +131,8 @@ function migratePersistedSubscriptionState(persistedState: unknown): Partial<Sub
       ? persistedState.entitlementVerifiedAt
       : persistedState.entitlementActive === true ? new Date().toISOString() : null,
     movedNotice: persistedState.movedNotice === true,
+    clockHighWater: typeof persistedState.clockHighWater === 'number' && Number.isFinite(persistedState.clockHighWater)
+      ? persistedState.clockHighWater : 0,
     // Native package objects do not survive a restart. Pricing must be fetched
     // again before enabling a purchase, even when a previous screen was cached.
     currentOffering: null,
@@ -299,7 +303,9 @@ function syncEntitlementState(
   set({
     entitlementActive: active,
     entitlementStatus: status,
-    entitlementVerifiedAt: new Date().toISOString(),
+    // The store's time for this answer: an offline SDK cache keeps its old one.
+    entitlementVerifiedAt: new Date(Number.isFinite(requestedAt) ? Math.min(requestedAt, Date.now()) : Date.now()).toISOString(),
+    clockHighWater: Math.max(previous.clockHighWater ?? 0, Date.now()),
     entitlementExpiresAt: entitlement?.expirationDate ?? null,
     entitlementProductIdentifier: entitlement?.productIdentifier ?? null,
     managementUrl: customerInfo?.managementURL ?? null,
@@ -309,6 +315,8 @@ function syncEntitlementState(
   if (active) {
     void cancelTrialEndingReminder();
   }
+  // An answer from the SDK's on-device cache can be days old; it only counts for 72 hours.
+  applyOfflineGrace();
 }
 
 /**
@@ -317,7 +325,9 @@ function syncEntitlementState(
  */
 export function applyOfflineGrace(now = Date.now()) {
   const state = useSubscriptionStore.getState();
-  if (!state.entitlementActive || cacheStillValid(state.entitlementVerifiedAt, now)) return;
+  const highWater = state.clockHighWater ?? 0;
+  if (now > highWater) useSubscriptionStore.setState({ clockHighWater: now });
+  if (!state.entitlementActive || cacheStillValid(state.entitlementVerifiedAt, now, highWater)) return;
   logBreadcrumb('subscription', 'offline grace ended', { verifiedAt: state.entitlementVerifiedAt });
   useSubscriptionStore.setState({ entitlementActive: false });
 }
@@ -356,6 +366,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       lastError: null,
       entitlementStatus: null,
       entitlementVerifiedAt: null,
+      clockHighWater: 0,
       movedNotice: false,
       dismissMovedNotice: () => set({ movedNotice: false }),
 
@@ -546,6 +557,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         managementUrl: state.managementUrl,
         entitlementStatus: state.entitlementStatus,
         entitlementVerifiedAt: state.entitlementVerifiedAt,
+        clockHighWater: state.clockHighWater,
         movedNotice: state.movedNotice,
       }),
       onRehydrateStorage: () => (_state, error) => {

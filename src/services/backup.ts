@@ -330,6 +330,8 @@ async function pushBackupNow(appVersion: string | undefined, options: { replaceE
     await AsyncStorage.setItem(BACKUP_OWNER_KEY, userId);
     if (saved?.updated_at) await AsyncStorage.setItem(BACKUP_SYNCED_AT_KEY, saved.updated_at);
     else await AsyncStorage.removeItem(BACKUP_SYNCED_AT_KEY);
+    // Only once a backup really exists does a reinstall have something to offer back.
+    rememberBackupAccount(session.user.email);
     return 'ok';
   } catch (error) {
     if (__DEV__) console.warn('[backup] pushBackup threw', error);
@@ -410,6 +412,7 @@ async function restoreBackupNow(): Promise<RestoreBackupResult> {
     else await AsyncStorage.removeItem(BACKUP_SYNCED_AT_KEY);
     // The photo is not in the snapshot; it comes back from the account on its own.
     void restoreProfilePhoto().then(() => syncProfilePhoto());
+    rememberBackupAccount(context.session.user.email);
     return 'restored';
   } catch (error) {
     if (__DEV__) console.warn('[backup] restoreBackup threw', error);

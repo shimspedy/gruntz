@@ -33,11 +33,8 @@ test('anything in iCloud that is not an email is ignored', () => {
   assert.equal(kv.size, 0, 'an invalid value clears instead of storing');
 });
 
-test('a session that starts, including one already signed in at launch, is remembered', () => {
-  const { mod, fire } = setup();
+test('starting up only reads iCloud; it never writes an email by itself', () => {
+  const { mod, kv } = setup();
   mod.initializeReturningAthlete();
-  fire('INITIAL_SESSION', { user: { email: 'pat@example.com' } });
-  assert.equal(mod.rememberedBackupAccount(), 'pat@example.com');
-  fire('SIGNED_OUT', null);
-  assert.equal(mod.rememberedBackupAccount(), 'pat@example.com', 'signing out keeps the hint; the backup still exists');
+  assert.equal(kv.size, 0);
 });

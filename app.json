@@ -12,7 +12,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.gruntz.fitness",
       "appleTeamId": "YY96MFYC96",
-      "buildNumber": "54",
+      "buildNumber": "55",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSMotionUsageDescription": "Gruntz uses motion sensors to count workout reps and steps during runs, rucks and hikes.",

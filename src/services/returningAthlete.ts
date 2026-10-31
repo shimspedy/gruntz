@@ -1,5 +1,4 @@
 import { primeCloudHints, readCloudHint, writeCloudHint } from '../../modules/gruntz-cloud-hint';
-import { getSupabase } from './supabaseClient';
 
 /**
  * Recognises a returning athlete on a reinstall or a new iPhone without any login:
@@ -26,13 +25,13 @@ export function rememberedBackupAccount(): string | null {
 
 let started = false;
 
-/** Fetches iCloud values early, and remembers the account whenever a session starts. */
+/**
+ * Fetches iCloud values early. The email itself is written only after a backup is
+ * saved or restored (see backup.ts), and cleared when the backup or account is
+ * deleted, so it never points at a backup that does not exist.
+ */
 export function initializeReturningAthlete(): void {
   if (started) return;
   started = true;
   primeCloudHints();
-  const supabase = getSupabase();
-  supabase?.auth.onAuthStateChange((event, session) => {
-    if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && session?.user.email) rememberBackupAccount(session.user.email);
-  });
 }
