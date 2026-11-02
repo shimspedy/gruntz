@@ -10,8 +10,14 @@ can produce these events. Registering the Meta app alone does not add tracking t
   The owner reports normal launch and an enabled Ad measurement control. A fresh paired-phone
   inventory independently confirms build 59; its subsequent Gruntz-only crash listing contains
   no files newer than the known build 58 crash. The 20-gate signed-artifact check passed.
-- Actual Meta receipt remains **unverified**. A real owner-triggered close/reopen produced no
-  sanitized SDK warning/error matches, which is not proof of delivery. Read-only SDK requests
+- The owner also verified opt-out persistence: turn measurement off, fully close/reopen, confirm
+  it remains off and training works, then re-enable measurement.
+- Meta's **App Ads Helper confirms a received iOS install** for app `1742670326812925` (displayed
+  as 18 minutes ago when checked), with green iOS CPC and optimized-CPM checks. This is install
+  receipt evidence; it does not establish modern-iOS AEM eligibility or campaign delivery.
+  The Events Manager analytics/test views still lagged behind that helper result. A genuine
+  owner-triggered close/reopen produced no sanitized SDK warning/error matches, which alone
+  would not establish delivery. Read-only SDK requests
   confirm the client token is accepted, event collection is enabled, the event kill switch is
   false, and authorized activity routing uses the already-declared `ep1.facebook.com`.
 - The source audit passed. Two isolated Duo simulators failed runtime migration before any
