@@ -7,7 +7,50 @@ Registering the Meta app alone does not add tracking to existing builds. New App
 currently receive the functional build 55; measurement in ordinary public installs requires build
 59 to be released.
 
-## Current verification status — November 2, 2026
+## Latest ad recovery status — November 2, 2026
+
+The owner accidentally deleted the entire install campaign `120254780382490640`. Its replacement
+was published as campaign **`120254786100820640`** ("Gruntz - App Installs - All Branches - IG + Threads")
+and ad set **`120254786100890640`** ("Military bases - All branches - App Installs"). The latest fresh
+Meta reload shows the replacement campaign **On / Preparing**. The last individual-ad verification
+also shows exactly six replacement ads, all **On / Preparing**, with zero drafts and the November 6
+end date. Proof: `gruntz-restored-six-preparing.jpg`. These are pending delivery states; the
+replacement has not yet been verified Active.
+
+A fresh **Today, November 2** report for the exact replacement ad set verifies its first delivery:
+**36 impressions** across Navy (**28 impressions, reach 18, $0.08 rounded spend**), Coast Guard
+(**4 impressions, reach 3, $0.02 rounded spend**) and Marines (**4 impressions, reach 2, $0.00 rounded
+spend**). Air Force, Army and Space Force have no reported impressions in this reading. All six
+individual status labels still show **On / Preparing**. Mobile app installs remain a dash, so these
+impressions are delivery evidence, not attributed installs. Proof: `gruntz-restored-first-delivery.jpg`.
+
+| Branch | Replacement ad ID |
+| --- | --- |
+| Air Force | `120254786100830640` |
+| Marines | `120254786100840640` |
+| Army | `120254786100850640` |
+| Navy | `120254786100860640` |
+| Space Force | `120254786100870640` |
+| Coast Guard | `120254786100880640` |
+
+The owner increased the shared campaign budget to **$20/day total**. The end remains
+**November 6, 2026 at 12:00 AM EST**. Review verified saved audience **fitvete**, AEM, the seven
+Instagram and Threads placements listed below, and excluded-placement spending off. Every ad was
+verified with App Store app `6761699137`, Meta app `1742670326812925`, **Install now**, original
+branch feed/story creative, all creative enhancements off and multi-advertiser ads off.
+
+With the owner's explicit approval at deletion, cleanup removed **two inactive campaigns**,
+including the original Traffic campaign's **seven old ads** and **one test ad**. A fresh reload
+confirms only the enabled replacement campaign remains in the account's current campaign view,
+with **zero drafts** and Review and publish disabled. Deleted historical reporting rows may still
+appear when filtered; they are not enabled ads. The earlier four original draft items are no longer
+pending.
+
+**Historical record below:** earlier ad IDs, delivery observations and the **$10/day** budget refer
+to the pre-deletion rollout, not the replacement above. Earlier delivery does not establish
+delivery by the replacement. Operational monitoring must use the replacement IDs and $20/day total.
+
+## Pre-deletion verification snapshot — November 2, 2026
 
 - TestFlight **1.16.1 (59)** is processed and assigned to the existing internal **gruntz** group.
   The owner reports normal launch and an enabled Ad measurement control. A fresh paired-phone
