@@ -73,6 +73,7 @@ function environment({ hydrated = true, query, save, dataChangeFailure = false }
     './activityTracking': { stopActiveActivityForDataChange: async () => { if (dataChangeFailure) throw Error('native stop failed'); } },
     './profilePhoto': { deleteAllProfilePhotos: async () => {} },
     './retentionAnalytics': { clearRetentionAnalytics: async () => {} },
+    './metaInstallTracking': { disableMetaInstallTracking() {} },
     './notifications': Object.fromEntries(['cancelDailyReminder', 'cancelRestDone', 'cancelTrialEndingReminder', 'cancelWeeklyRecap', 'clearWorkoutProgress', 'setNotificationsEnabled'].map((name) => [name, async () => {}])),
     './backupRestoreStores': { prepareStoreRestore: async (values) => async () => readiness.setState(JSON.parse(values['@gruntz_readiness']).state) },
   };

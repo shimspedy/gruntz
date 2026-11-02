@@ -81,6 +81,7 @@ import { startInboxLifecycle } from '../services/teamInbox';
 import { startRetentionLifecycle } from '../services/retentionLifecycle';
 import { trackRetentionEvent } from '../services/retentionAnalytics';
 import { resolveNotificationLink } from './notificationLink';
+import { startMetaInstallTracking } from '../services/metaInstallTracking';
 
 /** Coalesce navigation-state writes; a tab tap should not cost a disk write. */
 const NAV_SAVE_DEBOUNCE_MS = 600;
@@ -456,6 +457,7 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   const programHydrationFailed = useProgramStore((s) => s.hydrationFailed);
   const subscriptionHydrationFailed = useSubscriptionStore((s) => s.hydrationFailed);
   const [retried, setRetried] = useState(false);
+  const [readyContainer, setReadyContainer] = useState<'app' | 'setup' | null>(null);
   useAndroidBack();
   const sessionHydrated = usePersistHydrated(useSessionStore);
   const routineHydrated = usePersistHydrated(useRoutineStore);
@@ -572,6 +574,12 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   // session, challenge and routine stores could render their defaults for a frame
   // and then jump once their own persisted state arrived.
   const waiting = !fontsReady || !hasHydrated || !nav.ready || launchedFromLink === null || !storesReady || !subscriptionHydrated;
+  useEffect(() => {
+    // Ask once after optional setup has finished and the normal app is usable.
+    // Declining has no effect on access, and no SDK initializes before consent.
+    if (waiting || !isOnboarded || readyContainer !== 'app' || !navigationRef.isReady() || hydrationFailed || programHydrationFailed || subscriptionHydrationFailed) return;
+    return startMetaInstallTracking();
+  }, [waiting, isOnboarded, readyContainer, hydrationFailed, programHydrationFailed, subscriptionHydrationFailed]);
   if (hydrationFailed || programHydrationFailed || subscriptionHydrationFailed || (waiting && timedOut)) {
     return (
       <View style={[styles.fill, styles.boot, { paddingHorizontal: 28, gap: 20 }]}>
@@ -632,6 +640,7 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
         theme={theme}
         linking={linking}
         initialState={isOnboarded && !launchedFromLink ? nav.initial : undefined}
+        onReady={() => setReadyContainer(isOnboarded ? 'app' : 'setup')}
         onStateChange={isOnboarded ? (state) => {
           nav.save(state);
           const screen = navigationRef.getCurrentRoute()?.name;

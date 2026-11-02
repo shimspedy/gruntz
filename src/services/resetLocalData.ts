@@ -17,9 +17,13 @@ import { useHealthStore } from '../store/useHealthStore';
 import { deleteAllProfilePhotos } from './profilePhoto';
 import { clearRetentionAnalytics } from './retentionAnalytics';
 import { suspendHealthSyncForDataChange } from './healthSyncGate';
+import { disableMetaInstallTracking } from './metaInstallTracking';
 
 /** Clear disk AND memory; otherwise the next store write resurrects deleted data. */
 export async function resetLocalData() {
+  // A pending permission prompt must not re-enable measurement after an erase.
+  // Consent lives in native preferences, outside the AsyncStorage key sweep.
+  disableMetaInstallTracking();
   // A device-only reset must never upload an empty profile over the cloud backup.
   await pauseAutomaticBackups();
   const resumeHealth = await suspendHealthSyncForDataChange();

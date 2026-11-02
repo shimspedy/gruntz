@@ -4,7 +4,7 @@
     "slug": "gruntz",
     "scheme": "gruntz",
     "owner": "blaqdu",
-    "version": "1.16.0",
+    "version": "1.16.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -56,6 +56,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "./plugins/withMetaInstallTracking",
       "./plugins/withReactCorePrebuiltEmbedFix",
       "./plugins/withSceneLifecycle",
       "./plugins/withOptionalCamera",
@@ -115,7 +116,8 @@
       "expo-sharing",
       "@maplibre/maplibre-react-native",
       "@bacons/apple-targets",
-      "@sentry/react-native"
+      "@sentry/react-native",
+      "./plugins/withReleaseBundleGuard"
     ],
     "extra": {
       "eas": {
