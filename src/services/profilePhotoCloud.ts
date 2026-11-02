@@ -36,6 +36,19 @@ export function photoVersion(file: string, now = Date.now()): number {
 }
 
 let running: Promise<void> | null = null;
+let held = 0;
+
+/**
+ * Stops photo uploads and waits for one in progress, so deleting the account cannot
+ * race an upload that lands after the server removed the photo. Returns the release.
+ */
+export async function holdProfilePhotoSync(): Promise<() => void> {
+  held += 1;
+  let released = false;
+  const release = () => { if (!released) { released = true; held -= 1; } };
+  try { await running; } catch { /* a failed sync is retried later */ }
+  return release;
+}
 
 /**
  * Brings the server copy in line with this phone: uploads a new photo, deletes a
@@ -48,6 +61,7 @@ export function syncProfilePhoto(): Promise<void> {
 }
 
 async function syncNow(): Promise<void> {
+  if (held) return;
   const userId = await signedInUser();
   const supabase = getSupabase();
   if (!userId || !supabase) return;
@@ -62,6 +76,7 @@ async function syncNow(): Promise<void> {
         if (!uri) return;
         const { File } = await import('expo-file-system');
         const bytes = await new File(uri).arrayBuffer();
+        if (held) return;
         const { error } = await supabase.storage.from(BUCKET).upload(pathFor(userId), bytes, { contentType: 'image/jpeg', upsert: true });
         if (error) throw error;
         useChromePrefs.getState().setTeamAvatarSynced(marker);

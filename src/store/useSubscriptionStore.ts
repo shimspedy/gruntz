@@ -55,7 +55,40 @@ function reconcilePinnedTrialStart() {
     const local = useSubscriptionStore.getState().trialStartedAt;
     if (validInstant(pinned)) useSubscriptionStore.getState().adoptTrialStart(pinned);
     else if (validInstant(local)) await SecureStore.setItemAsync(TRIAL_PIN_KEY, local);
+    const clock = Number(await SecureStore.getItemAsync(CLOCK_PIN_KEY));
+    if (Number.isFinite(clock) && clock > pinnedClock) pinnedClock = clock;
   }).catch(() => undefined);
+}
+
+/**
+ * The latest time this install has seen, also kept in the Keychain so a reinstall does
+ * not forget it. Only the trial reads it: with the trial start pinned there too, setting
+ * the clock back after a reinstall cannot reopen an ended trial. Written at most hourly.
+ */
+const CLOCK_PIN_KEY = 'gruntz_clock_high_water';
+const CLOCK_PIN_STEP_MS = 60 * 60 * 1000;
+let pinnedClock = 0;
+
+function pinClockHighWater(value: number) {
+  if (!Number.isFinite(value) || value < pinnedClock + CLOCK_PIN_STEP_MS) return;
+  pinnedClock = value;
+  trialPinQueue = trialPinQueue.then(async () => {
+    const stored = Number(await SecureStore.getItemAsync(CLOCK_PIN_KEY));
+    if (Number.isFinite(stored) && stored >= value) return;
+    await SecureStore.setItemAsync(CLOCK_PIN_KEY, String(value));
+  }).catch(() => undefined);
+}
+
+/**
+ * The time the trial is measured at: the latest time seen, so a clock set back cannot
+ * reopen or freeze it (the same rule as offline Pro). Null when the clock is behind
+ * what this install has already seen, which counts as no trial.
+ */
+function trialNow(highWater?: number): number | null {
+  const now = Date.now();
+  const seen = Math.max(highWater ?? useSubscriptionStore.getState().clockHighWater ?? 0, pinnedClock);
+  if (now < seen - TRIAL_CLOCK_SKEW_MS) return null;
+  return Math.max(now, seen);
 }
 const DAY_MS = 24 * 60 * 60 * 1000;
 const TRIAL_CLOCK_SKEW_MS = 5 * 60 * 1000;
@@ -153,41 +186,45 @@ export function getTrialEndsAt(trialStartedAt: string | null) {
   return new Date(endsAt).toISOString();
 }
 
-export function getTrialDaysRemaining(trialStartedAt: string | null) {
+export function getTrialDaysRemaining(trialStartedAt: string | null, highWater?: number) {
   if (!trialStartedAt) {
     return 0;
   }
   const endsAt = getTrialEndsAt(trialStartedAt);
-  if (!endsAt) {
+  const now = trialNow(highWater);
+  if (!endsAt || now === null) {
     return 0;
   }
-  const remainingMs = new Date(endsAt).getTime() - Date.now();
+  const remainingMs = new Date(endsAt).getTime() - now;
   if (remainingMs <= 0) {
     return 0;
   }
   return Math.ceil(remainingMs / DAY_MS);
 }
 
-export function hasTrialAccess(trialStartedAt: string | null) {
-  return getTrialDaysRemaining(trialStartedAt) > 0;
+export function hasTrialAccess(trialStartedAt: string | null, highWater?: number) {
+  return getTrialDaysRemaining(trialStartedAt, highWater) > 0;
 }
 
-export function hasTrainingAccess(state: Pick<SubscriptionState, 'trialStartedAt' | 'entitlementActive'>) {
-  return DEV_UNLOCK || state.entitlementActive || hasTrialAccess(state.trialStartedAt);
+type AccessInput = Pick<SubscriptionState, 'trialStartedAt' | 'entitlementActive'> & Partial<Pick<SubscriptionState, 'clockHighWater'>>;
+
+export function hasTrainingAccess(state: AccessInput) {
+  return DEV_UNLOCK || state.entitlementActive || hasTrialAccess(state.trialStartedAt, state.clockHighWater);
 }
 
 /** Whether Pro features (plans, programs, GPS tracking) are open: subscribed, or still inside the included trial. */
 export function useTrainingAccess() {
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
   const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
-  return hasTrainingAccess({ trialStartedAt, entitlementActive });
+  const clockHighWater = useSubscriptionStore((s) => s.clockHighWater);
+  return hasTrainingAccess({ trialStartedAt, entitlementActive, clockHighWater });
 }
 
-export function getAccessState(state: Pick<SubscriptionState, 'trialStartedAt' | 'entitlementActive'>): AccessState {
+export function getAccessState(state: AccessInput): AccessState {
   if (DEV_UNLOCK || state.entitlementActive) {
     return 'subscriber';
   }
-  if (hasTrialAccess(state.trialStartedAt)) {
+  if (hasTrialAccess(state.trialStartedAt, state.clockHighWater)) {
     return 'trial';
   }
   return 'locked';
@@ -327,6 +364,7 @@ export function applyOfflineGrace(now = Date.now()) {
   const state = useSubscriptionStore.getState();
   const highWater = state.clockHighWater ?? 0;
   if (now > highWater) useSubscriptionStore.setState({ clockHighWater: now });
+  pinClockHighWater(Math.max(now, highWater));
   if (!state.entitlementActive || cacheStillValid(state.entitlementVerifiedAt, now, highWater)) return;
   logBreadcrumb('subscription', 'offline grace ended', { verifiedAt: state.entitlementVerifiedAt });
   useSubscriptionStore.setState({ entitlementActive: false });
@@ -564,6 +602,8 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         if (error) {
           subscriptionStorageWritable = false;
           useSubscriptionStore.setState({ hasHydrated: true, hydrationFailed: true });
+          // Unreadable app storage must not hand out a fresh trial: the Keychain still has the start.
+          reconcilePinnedTrialStart();
           return;
         }
         subscriptionStorageWritable = true;

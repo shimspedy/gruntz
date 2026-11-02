@@ -1,10 +1,9 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import { ExerciseCharts, ExerciseHistory, ExerciseRecords, useExerciseSessions } from '../ExerciseProgress';
+import { ExerciseCharts, ExerciseHistory, ExerciseRecords, setLabel, useExerciseSessions } from '../ExerciseProgress';
 import { MuscleBodyMap } from '../MuscleBodyMap';
 import { EXERCISE_LIBRARY, appMuscles, getLibraryItem } from '../../data/exerciseLibrary';
 import { exerciseLogKey, libraryExerciseId } from '../../data/exercises';
-import { setLabel } from '../ExerciseProgress';
 import { useExerciseNotesStore } from '../../store/useExerciseNotesStore';
 import { useSessionStore } from '../../store/useSessionStore';
 import type { Exercise } from '../../types';

@@ -26,7 +26,7 @@ const BRAND = {
 function generateIcon(size, outputName, options = {}) {
   const canvas = createCanvas(size, size);
   const ctx = canvas.getContext('2d');
-  const { isAdaptive = false, isSplash = false } = options;
+  const { isSplash = false } = options;
 
   // Background
   if (isSplash) {

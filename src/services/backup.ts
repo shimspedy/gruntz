@@ -3,7 +3,7 @@ import { AppState, Platform } from 'react-native';
 import { BACKUP_DEBOUNCE_MS, BACKUP_SCHEMA_VERSION, isBackupAvailable } from '../config/backup';
 import { applySnapshot, captureSnapshot, snapshotWorkoutCount, type BackupSnapshot } from './backupSnapshot';
 import { getSupabase } from './supabaseClient';
-import { restoreProfilePhoto, syncProfilePhoto } from './profilePhotoCloud';
+import { holdProfilePhotoSync, restoreProfilePhoto, syncProfilePhoto } from './profilePhotoCloud';
 import { rememberBackupAccount } from './returningAthlete';
 import { reportHandled } from './crashReporting';
 import type { Session } from '@supabase/supabase-js';
@@ -471,6 +471,9 @@ async function deleteBackupNow(): Promise<'deleted' | 'signed-out' | 'unavailabl
 export async function deleteAccount(): Promise<'deleted' | 'signed-out' | 'unavailable' | 'error'> {
   const supabase = getSupabase();
   if (!supabase) return 'unavailable';
+  // No backup or photo upload may land after the server deleted them.
+  const resumeBackups = suspendAutomaticBackups();
+  const releasePhoto = await holdProfilePhotoSync();
   try {
     const { data } = await supabase.auth.getSession();
     const session = data.session;
@@ -523,6 +526,9 @@ export async function deleteAccount(): Promise<'deleted' | 'signed-out' | 'unava
     if (__DEV__) console.warn('[backup] deleteAccount threw', error);
     reportHandled(error, 'backup.deleteAccount');
     return 'error';
+  } finally {
+    releasePhoto();
+    resumeBackups();
   }
 }
 
