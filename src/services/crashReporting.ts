@@ -8,8 +8,9 @@ import * as Sentry from '@sentry/react-native';
  * Supabase keys.
  *
  * Reports carry the error, the stack and the app/device version, nothing about the
- * person: no email, name, IP address, screenshots or view hierarchy, and request
- * breadcrumbs lose their query strings (Supabase puts the account id there).
+ * person: no email, name, IP address, screenshots or view hierarchy. Account ids and
+ * emails are masked everywhere a report can carry text (message, exception, extra data,
+ * contexts, tags, breadcrumbs, URL paths), and URLs lose their query strings.
  */
 const DSN = process.env.EXPO_PUBLIC_SENTRY_DSN?.trim() || '';
 
@@ -36,20 +37,22 @@ export function initCrashReporting(): void {
       for (const exception of event.exception?.values ?? []) {
         if (exception.value) exception.value = redact(exception.value);
       }
+      // A non-Error value (a PostgREST error object) is serialized into `extra`.
+      if (event.extra) event.extra = redactDeep(event.extra) as typeof event.extra;
+      if (event.contexts) event.contexts = redactDeep(event.contexts) as typeof event.contexts;
+      if (event.tags) event.tags = redactDeep(event.tags) as typeof event.tags;
+      if (event.breadcrumbs) event.breadcrumbs = event.breadcrumbs.map(scrubBreadcrumb);
       if (event.request) {
         delete event.request.cookies;
         delete event.request.headers;
-        if (event.request.url) event.request.url = stripQuery(event.request.url);
+        if (event.request.url) event.request.url = cleanUrl(event.request.url);
       }
       return event;
     },
     beforeBreadcrumb(breadcrumb) {
       // Console output can echo user input; it is not needed to read a crash.
       if (breadcrumb.category === 'console') return null;
-      if (breadcrumb.data && typeof breadcrumb.data.url === 'string') {
-        breadcrumb.data = { ...breadcrumb.data, url: stripQuery(breadcrumb.data.url) };
-      }
-      return breadcrumb;
+      return scrubBreadcrumb(breadcrumb);
     },
   });
 }
@@ -89,6 +92,32 @@ export function redact(text: string): string {
 function stripQuery(url: string): string {
   const cut = url.search(/[?#]/);
   return cut === -1 ? url : url.slice(0, cut);
+}
+
+/** Query strings off, and ids out of the path (the profile photo is stored as `<account id>.jpg`). */
+function cleanUrl(url: string): string {
+  return redact(stripQuery(url));
+}
+
+/** Masks ids and emails in every string of a JSON-like value, without walking forever. */
+export function redactDeep(value: unknown, depth = 0): unknown {
+  if (typeof value === 'string') return redact(value);
+  if (!value || typeof value !== 'object' || depth > 8) return value;
+  if (Array.isArray(value)) return value.map((item) => redactDeep(item, depth + 1));
+  const out: Record<string, unknown> = {};
+  for (const [key, item] of Object.entries(value)) out[redact(key)] = redactDeep(item, depth + 1);
+  return out;
+}
+
+function scrubBreadcrumb<T extends { message?: string; data?: Record<string, unknown> }>(breadcrumb: T): T {
+  const next = { ...breadcrumb };
+  if (typeof next.message === 'string') next.message = redact(next.message);
+  if (next.data) {
+    const data = redactDeep(next.data) as Record<string, unknown>;
+    if (typeof next.data.url === 'string') data.url = cleanUrl(next.data.url);
+    next.data = data;
+  }
+  return next;
 }
 
 // Starts on import; `index.ts` imports this module before anything else.

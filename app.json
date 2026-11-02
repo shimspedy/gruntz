@@ -116,7 +116,14 @@
       "expo-sharing",
       "@maplibre/maplibre-react-native",
       "@bacons/apple-targets",
-      "@sentry/react-native",
+      [
+        "@sentry/react-native",
+        {
+          "url": "https://sentry.io/",
+          "organization": "john-hashim",
+          "project": "gruntz"
+        }
+      ],
       "./plugins/withReleaseBundleGuard"
     ],
     "extra": {

@@ -62,7 +62,6 @@ export async function maybeRequestReview(reason: string) {
       // best-effort
     }
     if (__DEV__) {
-      // eslint-disable-next-line no-console
       console.log(`[review] prompted (${reason})`);
     }
   }

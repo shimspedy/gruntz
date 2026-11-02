@@ -22,7 +22,7 @@ export const ActivityShareCard = forwardRef<ActivityShareCardRef, {
   const [mapUri, setMapUri] = useState<string | null>(null);
   const [artUri, setArtUri] = useState<string | null>(null);
   const loadedUri = useRef<string | null>(null);
-  const loadWaiters = useRef<Array<{ resolve: () => void; reject: (error: Error) => void }>>([]);
+  const loadWaiters = useRef<{ resolve: () => void; reject: (error: Error) => void }[]>([]);
   const locked = useRef(false);
   const hasRoute = useMemo(() => routeSegments(route).length > 0, [route]);
   const mapHeight = Math.round(width * 0.88);

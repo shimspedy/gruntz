@@ -93,3 +93,21 @@ test('a photo removed here but not yet deleted from the server is not brought ba
   assert.equal(await mod.restoreProfilePhoto(), 'none');
   assert.deepEqual(calls, []);
 });
+
+test('while account deletion holds photo sync, nothing is uploaded; releasing resumes it', async () => {
+  const { mod, calls } = setup({ file: 'profile-photo-1793000000000.jpg', teamCount: 0 });
+  const inFlight = mod.syncProfilePhoto();
+  const release = await mod.holdProfilePhotoSync();
+  await inFlight;
+  const before = calls.length;
+  await mod.syncProfilePhoto();
+  assert.equal(calls.length, before, 'no upload while held');
+  release();
+  release(); // idempotent
+  calls.length = 0;
+  const fresh = setup({ file: 'profile-photo-1793000000000.jpg', teamCount: 0 });
+  const r = await fresh.mod.holdProfilePhotoSync();
+  r();
+  await fresh.mod.syncProfilePhoto();
+  assert.deepEqual(fresh.calls, [['upload', 'team-avatars', 'u1.jpg']]);
+});

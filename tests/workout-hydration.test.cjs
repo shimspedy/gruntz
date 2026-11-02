@@ -5,7 +5,7 @@ const tick = () => new Promise(resolve => setImmediate(resolve));
 
 for (const kind of ['program', 'subscription']) {
   test(`${kind} hydration failure preserves disk data until successful retry`, async () => {
-    let raw = '{corrupt saved state', writes = 0, secureReads = 0;
+    let raw = '{corrupt saved state', writes = 0, secureReads = 0, secureWrites = 0;
     const storage = {
       getItem: async () => raw,
       setItem: async (_key, value) => { writes++; raw = value; },
@@ -13,7 +13,7 @@ for (const kind of ['program', 'subscription']) {
     };
     const load = createLoader({
       '@react-native-async-storage/async-storage': storage,
-      'expo-secure-store': { getItemAsync: async () => { secureReads++; return null; }, setItemAsync: async () => {} },
+      'expo-secure-store': { getItemAsync: async () => { secureReads++; return null; }, setItemAsync: async () => { secureWrites++; } },
       '../config/monetization': { GRUNTZ_TRIAL_DAYS: 15, DEV_UNLOCK: false },
       '../services/subscription': {},
       '../services/notifications': { scheduleTrialEndingReminder: async () => {}, cancelTrialEndingReminder: async () => {} },
@@ -28,7 +28,10 @@ for (const kind of ['program', 'subscription']) {
     assert.equal(store.getState().hydrationFailed, true);
     assert.equal(writes, 0);
     assert.equal(raw, '{corrupt saved state');
-    assert.equal(secureReads, 0);
+    // The subscription store may read its Keychain trial pin (so a failed read cannot
+    // hand out a fresh trial), but nothing is written from a failed read.
+    if (kind === 'program') assert.equal(secureReads, 0);
+    assert.equal(secureWrites, 0);
     // Subsequent state updates must also be unable to destroy the failed read.
     if (kind === 'program') store.getState().setHasSeenProgramSelect(true);
     else store.getState().clearError();

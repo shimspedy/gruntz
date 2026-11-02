@@ -416,3 +416,55 @@ test('setting the clock back cannot stretch offline Pro', () => {
   // An honest clock inside the window still works.
   assert.equal(e.cacheStillValid('2026-11-19T12:00:00Z', seen + 3600e3, seen), true);
 });
+
+test('setting the clock back cannot reopen an ended trial (audit run-4)', () => {
+  const s = store();
+  const day = 24 * 60 * 60 * 1000;
+  const start = new Date(Date.now() - 3 * day).toISOString();
+  s.state().adoptTrialStart(start);
+  // Honest clock, 3 days in: the trial is open.
+  assert.equal(s.hasTrialAccess(start, Date.now()), true);
+  assert.equal(s.getTrialDaysRemaining(start, Date.now()), 12);
+  // This install already saw day 30, so a clock now reading day 3 has been set back.
+  const seen = Date.now() + 27 * day;
+  assert.equal(s.hasTrialAccess(start, seen), false);
+  assert.equal(s.getTrialDaysRemaining(start, seen), 0);
+  assert.equal(s.hasTrainingAccess({ trialStartedAt: start, entitlementActive: false, clockHighWater: seen }), false);
+  assert.equal(s.getAccessState({ trialStartedAt: start, entitlementActive: false, clockHighWater: seen }), 'locked');
+  // A subscriber is never affected.
+  assert.equal(s.hasTrainingAccess({ trialStartedAt: start, entitlementActive: true, clockHighWater: seen }), true);
+  // Day 20 seen honestly: the trial has ended, measured at the latest time seen.
+  assert.equal(s.hasTrialAccess(start, Date.now() + 17 * day), false);
+  // Small clock drift (under 5 minutes) is tolerated.
+  assert.equal(s.hasTrialAccess(start, Date.now() + 60 * 1000), true);
+  // Without an explicit value the store's own high-water mark is used.
+  s.useSubscriptionStore.setState({ clockHighWater: seen });
+  assert.equal(s.hasTrialAccess(start), false);
+});
+
+test('reinstalling and setting the clock back cannot reopen an ended trial: the Keychain keeps the latest time seen', async () => {
+  const day = 24 * 60 * 60 * 1000;
+  const start = new Date(Date.now() - 3 * day).toISOString();
+  const keychain = new Map([['gruntz_trial_started_at', start], ['gruntz_clock_high_water', String(Date.now() + 27 * day)]]);
+  const fresh = store({ keychain });
+  fresh.persistence.onRehydrateStorage()(undefined, undefined);
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  assert.equal(fresh.state().trialStartedAt, start);
+  assert.equal(fresh.state().clockHighWater < Date.now() + day, true, 'app storage starts empty after a reinstall');
+  assert.equal(fresh.hasTrainingAccess(fresh.state()), false);
+
+  // The latest time seen is written to the Keychain as the app runs.
+  const firstEver = store();
+  firstEver.persistence.onRehydrateStorage()(undefined, undefined);
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  assert.ok(Number(firstEver.keychain.get('gruntz_clock_high_water')) >= Date.now() - 1000);
+});
+
+test('unreadable app storage still honors the trial start kept in the Keychain', async () => {
+  const start = '2026-01-01T00:00:00.000Z';
+  const s = store({ keychain: new Map([['gruntz_trial_started_at', start]]) });
+  s.persistence.onRehydrateStorage()(undefined, new Error('corrupt'));
+  s.state().startTrialIfNeeded();
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  assert.equal(s.state().trialStartedAt, start);
+});

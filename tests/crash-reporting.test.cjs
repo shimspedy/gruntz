@@ -78,6 +78,26 @@ test('crash reports carry no personal data', () => {
   assert.equal(http.data.url, 'https://x.co/a');
   assert.equal(http.data.method, 'GET');
 
+  const id = '3f2a1b4c-1234-4abc-9def-0123456789ab';
+  const photo = options.beforeBreadcrumb({ category: 'http', message: `GET for ${id}`, data: { url: `https://x.supabase.co/storage/v1/object/team-avatars/${id}.jpg?token=t`, status_code: 200 } });
+  assert.equal(photo.data.url, 'https://x.supabase.co/storage/v1/object/team-avatars/<id>.jpg');
+  assert.equal(photo.message, 'GET for <id>');
+  assert.equal(photo.data.status_code, 200);
+
+  // A plain PostgREST error object lands in `extra`; it gets the same scrubbing.
+  const plain = options.beforeSend({
+    extra: { __serialized__: { message: 'dup', details: `Key (user_id)=(${id}) from a@b.co`, nested: [{ hint: id }] } },
+    contexts: { state: { owner: id } },
+    tags: { who: 'x@y.org' },
+    breadcrumbs: [{ category: 'subscription', message: id, data: { url: `https://x.co/${id}?q=1` } }],
+  });
+  assert.equal(plain.extra.__serialized__.details, 'Key (user_id)=(<id>) from <email>');
+  assert.equal(plain.extra.__serialized__.nested[0].hint, '<id>');
+  assert.equal(plain.contexts.state.owner, '<id>');
+  assert.equal(plain.tags.who, '<email>');
+  assert.equal(plain.breadcrumbs[0].message, '<id>');
+  assert.equal(plain.breadcrumbs[0].data.url, 'https://x.co/<id>');
+
   api.initCrashReporting();
   assert.equal(calls.init.length, 1, 'a second init is ignored');
   api.reportError(new Error('render'), 'in Screen');
