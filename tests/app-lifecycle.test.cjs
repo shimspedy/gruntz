@@ -72,6 +72,7 @@ function resetHarness() {
     './activityTracking': { stopActiveActivityForDataChange: async () => events.push('tracking-stopped') },
     './profilePhoto': { deleteAllProfilePhotos: async () => events.push('photos-deleted') },
     './retentionAnalytics': { clearRetentionAnalytics: async () => events.push('events-cleared') },
+    './metaInstallTracking': { disableMetaInstallTracking: () => events.push('measurement-disabled') },
     './notifications': Object.fromEntries(['cancelDailyReminder','cancelRestDone','cancelTrialEndingReminder','cancelWeeklyRecap','clearWorkoutProgress','setNotificationsEnabled'].map(name => [name, async () => {}])),
   };
   for (const [name, store] of Object.entries(stores)) mocks[`../store/${name}`] = { [name]: store };
@@ -85,7 +86,8 @@ function resetHarness() {
 test('delete local data clears every live store and preserves billing plus cloud pause marker', async () => {
   const { resetLocalData, events, stores } = resetHarness();
   await resetLocalData();
-  assert.equal(events[0], 'backup-paused');
+  assert.equal(events[0], 'measurement-disabled');
+  assert.equal(events[1], 'backup-paused');
   assert.ok(events.includes('activity-files-cleared'));
   for (const [name, store] of Object.entries(stores)) if (name !== 'useUserStore') assert.equal(store.state.data, null, name);
   assert.deepEqual(events.at(-1), ['@gruntz_user','@gruntz_routines','@gruntz_readiness','@gruntz_route:run-1']);

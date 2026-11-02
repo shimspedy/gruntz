@@ -1,12 +1,14 @@
 ---
 import LegalLayout from '../layouts/LegalLayout.astro';
 import { site } from '../data/site';
+const updated = 'November 2, 2026';
 ---
 
 <LegalLayout
   title="Privacy Policy"
   description="How Gruntz handles training data, permissions, subscriptions, and support information for the current mobile app."
   kicker="Privacy Policy"
+  updated={updated}
 >
   <p>
     Gruntz is a local-first mobile fitness app focused on tactical-style training missions,
@@ -16,7 +18,7 @@ import { site } from '../data/site';
   </p>
 
   <div class="callout">
-    Effective date: {site.updated}. Contact: <a href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>.
+    Effective date: {updated}. Contact: <a href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>.
   </div>
 
   <h2>1. Information We Collect</h2>
@@ -188,6 +190,39 @@ import { site } from '../data/site';
     </li>
   </ul>
 
+  <h3>Optional advertising measurement on iPhone and iPad</h3>
+  <p>
+    Versions that include Meta install measurement ask for your permission through Apple's
+    App Tracking Transparency prompt after setup. If you allow it, Gruntz initializes the Meta
+    SDK and sends app-install, app-open and session information, an anonymous installation
+    identifier, basic app and device metadata, and network information such as your IP address
+    to Meta to measure and improve Gruntz ads.
+    Declining does not change your access to Gruntz. Builds without this measurement feature
+    do not show the prompt or send these events.
+  </p>
+  <p>
+    This integration does not send your profile, email, workouts, health data, fitness-test
+    answers, GPS location, purchases or subscription events to Meta. Automatic purchase/event
+    logging, Apple's advertising identifier (IDFA) collection, screen-title and link collection, and Meta
+    product-improvement collection are disabled. Meta processes the permitted measurement data
+    under its privacy policy and advertising terms.
+  </p>
+  <p>
+    If you allow this sharing, Meta may combine the install, app-open and related metadata
+    it receives with information from other advertisers and its own services. Under
+    <a href="https://m.facebook.com/legal/terms/businesstools">Meta's Business Tools Terms</a>,
+    Meta may also use that information to personalize ads and recommendations on and off Meta,
+    including ads from other advertisers. The collection limits described above do not limit
+    Meta's permitted use of the information you allow us to share.
+  </p>
+  <p>
+    You can turn off future manual measurement events in Gruntz (Profile → Settings →
+    Ad measurement), or change Apple's tracking permission in iOS Settings. Requests already
+    started may finish; the SDK is fully disabled on the next app launch. Deleting local app
+    data also turns off this preference. Events already received by Meta are subject to
+    <a href="https://www.facebook.com/privacy/policy/">Meta's Privacy Policy</a>.
+  </p>
+
   <h2>2. How We Use Information</h2>
   <ul>
     <li>Deliver the core mission flow, progress system, and training reference content.</li>
@@ -199,16 +234,18 @@ import { site } from '../data/site';
     <li>Store and restore your backed-up training history, if you enable progress backup.</li>
     <li>Show your name, session count, streak and readiness status to your team, if you join one.</li>
     <li>Respond to support requests you send to us.</li>
+    <li>Measure our app-install ads through Meta, only if you allow optional ad measurement.</li>
   </ul>
 
   <h2>3. Sharing and Service Providers</h2>
   <p>
-    We do not sell personal information from the current Gruntz app, and the current build does
-    not include third-party advertising SDKs.
+    We do not sell personal information. Versions with optional ad measurement include the
+    Meta SDK under the permission controls described above; earlier versions do not include it.
   </p>
   <p>We may rely on the following categories of third parties to operate the app:</p>
   <ul>
     <li>RevenueCat for subscription and entitlement management.</li>
+    <li>Meta for optional app-install and app-open advertising measurement, after your permission.</li>
     <li>
       Supabase for optional account sign-in, progress backup storage and team rosters, and Resend
       for delivering sign-in code emails — only if you enable progress backup or use teams.

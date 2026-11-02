@@ -1,10 +1,9 @@
 import React from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 import { GRUNTZ_PRIVACY_POLICY_URL, GRUNTZ_SUPPORT_URL, GRUNTZ_TERMS_OF_USE_URL } from '../config/legal';
-import { Linking } from 'react-native';
 import {
   cancelDailyReminder,
   cancelRestDone,
@@ -32,11 +31,11 @@ import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
 import { showRestoreResult } from '../components/restoreResult';
 import { toast } from '../ui/Toast';
-import { space } from '../ui/tokens';
-import { color } from '../ui/tokens';
+import { color, space } from '../ui/tokens';
 import { openExternalUrl } from '../utils/externalLinks';
 import { maybeRequestReview } from '../utils/socialActions';
 import { resetLocalData } from '../services/resetLocalData';
+import { disableMetaInstallTracking, enableMetaInstallTracking, getMetaInstallTrackingState, subscribeMetaInstallTracking } from '../services/metaInstallTracking';
 
 /** Times people actually train. Settings said "change it anytime" while 07:00 was hardcoded. */
 const REMINDER_TIMES = ['05:30', '06:00', '06:30', '07:00', '08:00', '12:00', '17:00', '18:00', '19:00', '20:00'];
@@ -52,6 +51,9 @@ export default function SettingsScreen() {
   const [timeSheet, setTimeSheet] = React.useState(false);
   const [restoring, setRestoring] = React.useState(false);
   const [remindersBusy, setRemindersBusy] = React.useState(false);
+  const [measurementBusy, setMeasurementBusy] = React.useState(false);
+  const [measurement, setMeasurement] = React.useState(getMetaInstallTrackingState);
+  React.useEffect(() => subscribeMetaInstallTracking(() => setMeasurement(getMetaInstallTrackingState())), []);
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const profile = useUserStore((s) => s.profile);
@@ -151,6 +153,29 @@ export default function SettingsScreen() {
     );
   };
 
+  const toggleMeasurement = async (enabled: boolean) => {
+    if (!enabled) {
+      disableMetaInstallTracking();
+      toast('Ad measurement off. Pending requests may finish; fully disabled next launch.', { icon: 'eye' });
+      return;
+    }
+    if (measurementBusy) return;
+    setMeasurementBusy(true);
+    try {
+      const next = await enableMetaInstallTracking();
+      if (!next.enabled && (next.permission === 'denied' || next.permission === 'restricted')) {
+        Alert.alert('Ad measurement is off', 'To share app installs and openings with Meta, allow tracking for Gruntz in iOS Settings, then turn this option on. Training works either way.', [
+          { text: 'Not now', style: 'cancel' },
+          { text: 'Open Settings', onPress: () => void Linking.openSettings().catch(() => undefined) },
+        ]);
+      }
+    } catch {
+      Alert.alert('Ad measurement unavailable', 'You can keep training. Try again later if you want to enable it.');
+    } finally {
+      setMeasurementBusy(false);
+    }
+  };
+
   return (
     <View style={styles.screen}>
       <NavHeader title="Settings" />
@@ -235,6 +260,18 @@ export default function SettingsScreen() {
         {__DEV__ ? (
           <Group label="Development" style={styles.group}>
             <Row icon="gauge" title="Retention diagnostics" subtitle="Local activation and training events" onPress={() => navigation.navigate('RetentionDiagnostics')} />
+          </Group>
+        ) : null}
+
+        {measurement.available ? (
+          <Group label="Privacy" style={styles.group}>
+            <Row
+              icon="eye"
+              title="Ad measurement"
+              subtitle="Optional. Share installs, app openings and basic device information with Meta to measure and improve Gruntz ads. Workouts, health data, GPS routes and purchases are not shared."
+              toggle={measurement.enabled}
+              onToggle={(enabled) => void toggleMeasurement(enabled)}
+            />
           </Group>
         ) : null}
 

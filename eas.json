@@ -28,7 +28,7 @@
         "image": "macos-tahoe-26.6-xcode-27.1"
       },
       "env": {
-        "SENTRY_ALLOW_FAILURE": "true"
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
     "release-simulator": {

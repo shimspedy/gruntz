@@ -8,9 +8,10 @@ interface Props {
   title: string;
   description: string;
   kicker?: string;
+  updated?: string;
 }
 
-const { title, description, kicker = 'Legal' } = Astro.props as Props;
+const { title, description, kicker = 'Legal', updated = site.updated } = Astro.props as Props;
 ---
 
 <BaseLayout title={`${title} | ${site.name}`} description={description}>
@@ -20,7 +21,7 @@ const { title, description, kicker = 'Legal' } = Astro.props as Props;
       <div class="site-shell">
         <p class="eyebrow">{kicker}</p>
         <h1>{title}</h1>
-        <p class="legal-meta">Last updated {site.updated}</p>
+        <p class="legal-meta">Last updated {updated}</p>
         <p class="legal-summary">{description}</p>
       </div>
     </section>
