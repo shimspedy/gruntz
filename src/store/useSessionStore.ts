@@ -608,8 +608,13 @@ export const useSessionStore = create<SessionState>()(
           exercises: s.exercises.map((e) => {
             if (e.key !== exKey) return e;
             const last = [...e.sets].reverse().find((st) => !st.warmup) ?? e.sets[e.sets.length - 1];
+            // An added set is part of the exercise, so it raises the bar the same way
+            // `removeSet` lowers it. Leaving `requiredSets` alone meant ticking the
+            // last ORIGINAL set already satisfied `isExerciseDone`, so the pager
+            // auto-advanced and the athlete had to swipe back to log the extra set.
             return {
               ...e,
+              requiredSets: e.requiredSets + 1,
               sets: [...e.sets, { id: newSetId(), reps: last?.reps, weight: last?.weight, seconds: last?.seconds, distance: last?.distance, done: false }],
             };
           }),

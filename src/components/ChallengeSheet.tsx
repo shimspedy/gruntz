@@ -30,11 +30,19 @@ export function useChallengePillVisible() {
 
 /** Floating pill above the tab bar — the day's challenge at a glance. Swipe sideways to hide it for today. */
 export function ChallengePill() {
-  const { challenge, ratio, done, progress } = useDailyChallenge();
+  const { challenge, ratio, done, progress, hasBonus, bonusDone, bonusRemaining } = useDailyChallenge();
   const open = useUiStore((s) => s.setChallenge);
   const { width } = useContentSize();
   const x = useSharedValue(0);
-  const subtitle = done ? `Complete · +${challenge.xpReward} XP earned` : progress > 0 ? `${formatAmount(progress, challenge)} logged` : `Earn ${challenge.xpReward} XP today`;
+  const subtitle = bonusDone
+    ? `Complete · +${challenge.xpReward + challenge.bonusXp} XP earned`
+    : done && hasBonus
+      ? `Target hit · ${formatAmount(bonusRemaining, challenge)} more for +${challenge.bonusXp} XP`
+      : done
+        ? `Complete · +${challenge.xpReward} XP earned`
+        : progress > 0
+          ? `${formatAmount(progress, challenge)} logged`
+          : `Earn ${challenge.xpReward} XP today`;
 
   const dismiss = () => {
     haptic.light();
@@ -104,10 +112,14 @@ export function ChallengePill() {
 export function ChallengeSheet() {
   const visible = useUiStore((s) => s.challengeOpen);
   const setOpen = useUiStore((s) => s.setChallenge);
-  const { challenge, ratio, done, remaining, progress, add, markComplete } = useDailyChallenge();
+  const { challenge, ratio, done, remaining, progress, add, markComplete, hasBonus, bonusDone, bonusRemaining } = useDailyChallenge();
   const [custom, setCustom] = useState('');
   const mode = challengeMode(challenge);
-  const quick = done ? [] : quickAdds(challenge, remaining);
+  // Once the personal target is hit, logging stays open while the full target is
+  // still worth a bonus; after that there is nothing left to log today.
+  const chasingBonus = done && hasBonus && !bonusDone;
+  const canLog = !done || chasingBonus;
+  const quick = canLog ? quickAdds(challenge, chasingBonus ? bonusRemaining : remaining) : [];
 
   const submitCustom = () => {
     const v = Number.parseFloat(custom.replace(',', '.'));
@@ -134,7 +146,13 @@ export function ChallengeSheet() {
             {challenge.name}
           </Text>
           <Text variant="subhead" tone="accent" style={{ marginTop: 3 }}>
-            {done ? 'Completed today' : `${formatAmount(remaining, challenge)} to go`}
+            {bonusDone
+              ? 'Completed · bonus earned'
+              : chasingBonus
+                ? `${formatAmount(bonusRemaining, challenge)} to the full target`
+                : done
+                  ? 'Completed today'
+                  : `${formatAmount(remaining, challenge)} to go`}
           </Text>
         </View>
       </View>
@@ -152,16 +170,26 @@ export function ChallengeSheet() {
           <Metric label="Reward" value={`${challenge.xpReward} XP`} accent />
         </View>
 
+        {hasBonus ? (
+          <Text variant="footnote" tone="tertiary" style={{ marginTop: space.sm }}>
+            {`Scaled to you. The full challenge is ${formatAmount(challenge.fullTarget, challenge)} for +${challenge.bonusXp} XP more, and your target climbs each time you hit it.`}
+          </Text>
+        ) : null}
+
         {done ? (
           <Animated.View entering={FadeIn.duration(240)} style={styles.doneRow}>
             <View style={styles.doneCheck}>
               <Icon name="check" size={16} color="#FFFFFF" weight="bold" />
             </View>
             <Text variant="bodyMedium" style={{ flex: 1 }}>
-              XP added. A new challenge unlocks tomorrow.
+              {chasingBonus
+                ? `Target hit, XP added. Keep logging to reach ${formatAmount(challenge.fullTarget, challenge)} for +${challenge.bonusXp} XP.`
+                : 'XP added. A new challenge unlocks tomorrow.'}
             </Text>
           </Animated.View>
-        ) : (
+        ) : null}
+
+        {canLog ? (
           <>
             <Text variant="overline" tone="secondary" style={{ marginTop: space.xl, marginBottom: 10 }}>
               Quick add
@@ -190,9 +218,9 @@ export function ChallengeSheet() {
               />
               <Button title="Add" size="md" variant="secondary" onPress={submitCustom} disabled={!custom} style={{ width: 96 }} />
             </View>
-            <Button title="Mark as complete" onPress={markComplete} style={{ marginTop: space.lg }} />
+            {chasingBonus ? null : <Button title="Mark as complete" onPress={markComplete} style={{ marginTop: space.lg }} />}
           </>
-        )}
+        ) : null}
       </View>
     </Sheet>
   );

@@ -40,6 +40,8 @@ interface UserState {
     xpAmount: number;
     completedDates: string[];
   }) => string[];
+  /** Bonus XP for reaching the full target of a scaled challenge. Returns newly unlocked achievement ids. */
+  recordChallengeBonus: (params: { xpAmount: number }) => string[];
   syncChallengeStats: (completedDates: string[]) => void;
   completeMission: (mission: CompletedMission) => void;
   updateStreak: () => void;
@@ -354,6 +356,19 @@ export const useUserStore = create<UserState>()(
           return [];
         }
 
+        return get().checkAchievements();
+      },
+
+      recordChallengeBonus: ({ xpAmount }) => {
+        const safeXP = Math.max(0, Math.round(xpAmount));
+        if (safeXP <= 0) return [];
+        set((state) => ({
+          progress: {
+            ...state.progress,
+            ...applyXP(state.progress, safeXP),
+            challenge_xp_earned: roundMetric(state.progress.challenge_xp_earned + safeXP),
+          },
+        }));
         return get().checkAchievements();
       },
 

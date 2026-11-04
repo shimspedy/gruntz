@@ -1,18 +1,13 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { achievements } from '../data/achievements';
-import { formatChallengeAmount, getTodaysChallenge, type DailyChallenge } from '../data/dailyChallenges';
-import { useChallengeStore } from '../store/useChallengeStore';
+import { challengeMode, formatChallengeAmount, getChallengeTemplateForDate, scaleChallenge, type DailyChallenge } from '../data/dailyChallenges';
+import { challengeScale, useChallengeStore } from '../store/useChallengeStore';
+import { useUserStore } from '../store/useUserStore';
 import { haptic } from '../ui/haptics';
 import { toast } from '../ui/Toast';
 import { getLocalDateKey } from '../utils/dateKey';
 
-export type ChallengeMode = 'reps' | 'time' | 'distance';
-
-export function challengeMode(c: DailyChallenge): ChallengeMode {
-  if (c.unit === 'seconds' || c.unit === 'minutes' || c.type === 'time') return 'time';
-  if (c.unit === 'km' || c.unit === 'miles' || c.type === 'distance') return 'distance';
-  return 'reps';
-}
+export { challengeMode, type ChallengeMode } from '../data/dailyChallenges';
 
 const roundToStep = (v: number, step: number) => (step <= 0 ? v : Math.max(step, Math.round(v / step) * step));
 
@@ -48,33 +43,48 @@ export function formatQuick(value: number, c: DailyChallenge) {
   return c.unit === 'seconds' ? formatChallengeAmount(value, c) : `+${formatChallengeAmount(value, c)}`;
 }
 
-/** Today's challenge plus progress, with the reward side effects wired in one place. */
+/**
+ * Today's challenge at the athlete's scale, plus progress, with the reward side
+ * effects wired in one place. `target` is the personal number; `fullTarget` is the
+ * unscaled one a bonus is paid for.
+ */
 export function useDailyChallenge() {
-  const challenge = getTodaysChallenge();
   const progressRaw = useChallengeStore((s) => s.currentProgress);
   const activeDate = useChallengeStore((s) => s.activeDate);
   const completedDates = useChallengeStore((s) => s.completedDates);
+  const bonusDates = useChallengeStore((s) => s.bonusDates);
   const todayCompletedFlag = useChallengeStore((s) => s.todayCompleted);
+  const scaleByMode = useChallengeStore((s) => s.scaleByMode);
   const addProgress = useChallengeStore((s) => s.addProgress);
   const complete = useChallengeStore((s) => s.completeChallenge);
+  const level = useUserStore((s) => s.profile?.fitness_level);
 
   const key = getLocalDateKey();
+  const template = getChallengeTemplateForDate(new Date());
+  const scale = challengeScale(scaleByMode, challengeMode(template), level);
+  const challenge = useMemo(() => scaleChallenge(template, scale), [template, scale]);
+
   const done = completedDates.includes(key) || (activeDate === key && todayCompletedFlag);
-  const progress = done ? challenge.target : activeDate === key ? Math.min(progressRaw, challenge.target) : 0;
-  const ratio = challenge.target > 0 ? progress / challenge.target : 0;
+  const bonusDone = bonusDates.includes(key);
+  const hasBonus = challenge.bonusXp > 0 && challenge.fullTarget > challenge.target;
+  const logged = activeDate === key ? progressRaw : 0;
+  // Progress never reads below a state that has already been reached.
+  const progress = Math.min(challenge.fullTarget, bonusDone ? challenge.fullTarget : done ? Math.max(logged, challenge.target) : logged);
+  const ratio = challenge.target > 0 ? Math.min(1, progress / challenge.target) : 0;
+  const bonusRatio = hasBonus ? Math.min(1, progress / challenge.fullTarget) : ratio;
 
   const celebrate = useCallback((ids: string[]) => {
     haptic.success();
     const unlocked = ids.map((id) => achievements.find((x) => x.id === id)).filter(Boolean);
     if (unlocked.length) setTimeout(() => toast(`Achievement unlocked · ${unlocked[0]!.name}`, { icon: 'trophy' }), 2900);
-  }, [challenge.xpReward]);
+  }, []);
 
   const add = useCallback(
     (amount: number) => {
       if (amount <= 0) return;
       haptic.selection();
       const r = addProgress(amount, challenge);
-      if (r.completedNow) celebrate(r.unlockedAchievementIds);
+      if (r.completedNow || r.bonusNow) celebrate(r.unlockedAchievementIds);
     },
     [addProgress, challenge, celebrate],
   );
@@ -84,5 +94,17 @@ export function useDailyChallenge() {
     if (r.completedNow) celebrate(r.unlockedAchievementIds);
   }, [complete, challenge, celebrate]);
 
-  return { challenge, progress, ratio, done, remaining: Math.max(0, challenge.target - progress), add, markComplete };
+  return {
+    challenge,
+    progress,
+    ratio,
+    bonusRatio,
+    done,
+    hasBonus,
+    bonusDone,
+    remaining: Math.max(0, challenge.target - progress),
+    bonusRemaining: hasBonus ? Math.max(0, challenge.fullTarget - progress) : 0,
+    add,
+    markComplete,
+  };
 }

@@ -100,6 +100,28 @@ test('adding a distance set retains its distance and invalid toggles cannot star
   assert.equal(env.session.getState().restEndsAt, null);
 });
 
+test('an added set must be logged before the exercise counts as done', () => {
+  const env = createWorkoutEnv();
+  env.session.getState().start(env.day(['bench_press']), DATE);
+  const ex = env.session.getState().exercises[0];
+  const planned = ex.sets.filter((s) => !s.warmup);
+  env.session.getState().addSet(ex.key);
+  assert.equal(env.session.getState().exercises[0].requiredSets, planned.length + 1);
+  for (const set of planned) {
+    const r = env.session.getState().toggleSet(ex.key, set.id);
+    assert.equal(r.completedExercise, false);
+  }
+  assert.equal(env.isExerciseDone(env.session.getState().exercises[0]), false);
+  const added = env.session.getState().exercises[0].sets.at(-1);
+  assert.equal(env.session.getState().toggleSet(ex.key, added.id).completedExercise, true);
+  assert.equal(env.isExerciseDone(env.session.getState().exercises[0]), true);
+  // Removing the extra set again drops the bar back to the plan.
+  env.session.getState().toggleSet(ex.key, added.id);
+  env.session.getState().removeSet(ex.key, added.id);
+  assert.equal(env.session.getState().exercises[0].requiredSets, planned.length);
+  assert.equal(env.isExerciseDone(env.session.getState().exercises[0]), true);
+});
+
 test('partial plan workouts remain incomplete; a full day is credited to the followed plan after switching away', () => {
   const env = createWorkoutEnv();
   const [plan, other] = env.load('src/data/workoutPlans.ts').allPlans();
