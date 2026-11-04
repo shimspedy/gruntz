@@ -7,22 +7,40 @@ Registering the Meta app alone does not add tracking to existing builds. New App
 currently receive the functional build 55; measurement in ordinary public installs requires build
 59 to be released.
 
-## Latest ad recovery status — November 2, 2026
+## Latest ad recovery status — November 2, 2026 (Detroit)
 
 The owner accidentally deleted the entire install campaign `120254780382490640`. Its replacement
 was published as campaign **`120254786100820640`** ("Gruntz - App Installs - All Branches - IG + Threads")
-and ad set **`120254786100890640`** ("Military bases - All branches - App Installs"). The latest fresh
-Meta reload shows the replacement campaign **On / Preparing**. The last individual-ad verification
-also shows exactly six replacement ads, all **On / Preparing**, with zero drafts and the November 6
-end date. Proof: `gruntz-restored-six-preparing.jpg`. These are pending delivery states; the
-replacement has not yet been verified Active.
+and ad set **`120254786100890640`** ("Military bases - All branches - App Installs"). At approximately
+**November 3, 02:10 UTC**, the fresh **Today, November 2** Detroit report verifies all six replacement
+ads **On / Active**. The campaign is also **On / Active**, with **$20/day total**, **$6.64 spent**,
+**1,576 impressions**, **reach 1,234**, the November 6 end date, one remaining campaign and zero drafts
+(Review and publish disabled). Ad proof: `gruntz-restored-all-six-active.jpg`; campaign proof:
+`gruntz-campaign-active-all-six-20.jpg`.
 
-A fresh **Today, November 2** report for the exact replacement ad set verifies its first delivery:
+Individual results are Air Force (**239 impressions, reach 202, $1.50 rounded spend**), Coast Guard
+(**41 impressions, reach 38, $0.13 rounded spend**), Space Force (**42 impressions, reach 42, $0.17
+rounded spend**), Marines (**75 impressions, reach 68, $0.27 rounded spend**) and Navy (**1,179
+impressions, reach 992, $4.57 rounded spend**). Army is Active but still has dashes for impressions
+and reach, with **$0.00 spent**. Mobile app installs remain a dash for every ad; no ad-attributed
+install is verified. The fresh US public Apple lookup at **November 3, 02:08:45.616283 UTC** still
+shows **1.16.0**, so public release of the tested tracking update remains pending.
+
+After the restart, `/tmp/gruntz-meta-build/rollout-status.json` was missing and no backup was found.
+Reconstruction of the private operational record uses the fresh verified UI and known rollout
+history; the earlier temporary record is not treated as freshly verified evidence.
+
+Earlier, the Air Force **Preparing** tooltip was inspected without edits: it said this ad successfully
+passed review and Meta was matching its bid and audience. The tooltip described preparation as
+typically two hours and sometimes up to twelve hours; this is Meta's guidance, not a guaranteed
+delivery time. No actionable error was shown. Proof: `gruntz-air-force-preparing-approved.jpg`.
+
+The earlier **Today, November 2** report for the exact replacement ad set verified its first delivery:
 **36 impressions** across Navy (**28 impressions, reach 18, $0.08 rounded spend**), Coast Guard
 (**4 impressions, reach 3, $0.02 rounded spend**) and Marines (**4 impressions, reach 2, $0.00 rounded
-spend**). Air Force, Army and Space Force have no reported impressions in this reading. All six
-individual status labels still show **On / Preparing**. Mobile app installs remain a dash, so these
-impressions are delivery evidence, not attributed installs. Proof: `gruntz-restored-first-delivery.jpg`.
+spend**). Air Force, Army and Space Force had no reported impressions in that reading, and all six
+individual status labels then showed **On / Preparing**. Those impressions established delivery,
+not attributed installs. Proof: `gruntz-restored-first-delivery.jpg`.
 
 | Branch | Replacement ad ID |
 | --- | --- |
