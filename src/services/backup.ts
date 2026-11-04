@@ -249,6 +249,28 @@ async function signOutNow(): Promise<void> {
     await supabase.auth.signOut({ scope: 'local' });
   } catch (error) {
     if (__DEV__) console.warn('[backup] signOut failed', error);
+  } finally {
+    await forgetAccountTeams();
+  }
+}
+
+/**
+ * Roster state came from the server for the account that just left: the first team's
+ * name and invite code, and the inbox's team ids. Left in place, the next account on
+ * this phone saw them and its first backup carried the invite code into its own cloud
+ * row, where that account could read it and join the previous account's private team.
+ */
+async function forgetAccountTeams(): Promise<void> {
+  try {
+    const [{ useReadinessStore }, { useTeamInboxStore }] = await Promise.all([
+      import('../store/useReadinessStore'),
+      import('../store/useTeamInboxStore'),
+    ]);
+    useReadinessStore.getState().setTeam('', '', 0);
+    useTeamInboxStore.getState().setTeamIds([]);
+    useTeamInboxStore.setState({ lastReadAt: {} });
+  } catch (error) {
+    if (__DEV__) console.warn('[backup] forgetAccountTeams failed', error);
   }
 }
 
@@ -519,8 +541,10 @@ export async function deleteAccount(): Promise<'deleted' | 'signed-out' | 'unava
       if (__DEV__) console.warn('[backup] deleted account local cleanup failed', cleanupError);
       reportHandled(cleanupError, 'backup.deleteAccountCleanup');
     }
-    // The account is gone, so a reinstall has nothing to offer back.
+    // The account is gone, so a reinstall has nothing to offer back, and its teams
+    // are no longer this phone's business.
     rememberBackupAccount(null);
+    await forgetAccountTeams();
     return 'deleted';
   } catch (error) {
     if (__DEV__) console.warn('[backup] deleteAccount threw', error);

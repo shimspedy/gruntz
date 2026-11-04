@@ -102,6 +102,12 @@ export async function captureSnapshot(): Promise<BackupSnapshot> {
     if (key === '@gruntz_readiness') {
       const parsed: unknown = JSON.parse(value);
       if (isRecord(parsed) && isRecord(parsed.state) && Array.isArray(parsed.state.trackedSessions)) {
+        // Team identity is server-authoritative and is fetched again on sign-in. It may
+        // also belong to a previous account on this phone, and the invite code is a
+        // credential for that team, so it never travels in a backup.
+        delete parsed.state.teamName;
+        delete parsed.state.teamCode;
+        delete parsed.state.teamCount;
         // Existing backup users have never consented to precise location uploads.
         // Only the cloud copy loses routes; local history remains complete.
         const include = parsed.state.includeActivityRoutesInBackup === true;
@@ -253,7 +259,7 @@ export function validateSnapshot(value: unknown): [string, string][] {
     const arrayKeys: Record<string, string[]> = {
       '@gruntz_user': ['achievements'], '@gruntz_readiness': ['checkIns', 'trackedSessions', 'testAttempts'],
       '@gruntz_plan_library': ['completedDayIds'], '@gruntz_routines': ['routines'],
-      '@gruntz_challenges': ['completedDates'],
+      '@gruntz_challenges': ['completedDates', 'bonusDates'],
     };
     for (const field of recordKeys[key] ?? []) {
       if (field in state && !isRecord(state[field])) throw new Error('That backup contains invalid records.');

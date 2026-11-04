@@ -277,3 +277,19 @@ test('workouts and heart rate read from a health platform never reach a cloud ba
   assert.ok(!/HeartRate|Apple Watch|health:/.test(JSON.stringify(captured)));
   assert.equal(cloud[0].distanceMiles, 1);
 });
+
+test('a backup never carries the team name, invite code or count (audit run-5)', async () => {
+  const disk = storage();
+  const load = loader(disk);
+  const { useReadinessStore, flushReadinessPersistence } = load('src/store/useReadinessStore.ts');
+  const { captureSnapshot } = load('src/services/backupSnapshot.ts');
+  await tick();
+  useReadinessStore.getState().setTeam('Alpha', 'ABC123', 1);
+  await flushReadinessPersistence();
+  assert.ok(disk.data.get('@gruntz_readiness').includes('ABC123'), 'the code is cached locally for the Team screen');
+  const captured = JSON.parse((await captureSnapshot()).stores['@gruntz_readiness']).state;
+  assert.equal(captured.teamCode, undefined);
+  assert.equal(captured.teamName, undefined);
+  assert.equal(captured.teamCount, undefined);
+  assert.ok(!JSON.stringify(captured).includes('ABC123'));
+});

@@ -468,3 +468,33 @@ test('unreadable app storage still honors the trial start kept in the Keychain',
   await new Promise((resolve) => setTimeout(resolve, 10));
   assert.equal(s.state().trialStartedAt, start);
 });
+
+test('a live store answer corrects a clock mark that once ran ahead, instead of being overridden by it (audit run-5)', async () => {
+  const day = 24 * 60 * 60 * 1000;
+  const start = new Date(Date.now() - 3 * day).toISOString();
+  const bogus = Date.now() + 30 * day;
+  const keychain = new Map([['gruntz_trial_started_at', start], ['gruntz_clock_high_water', String(bogus)]]);
+  const live = { ...customer(true), requestDate: new Date().toISOString() };
+  const s = store({ keychain, loadRevenueCatState: async () => ({ currentOffering: null, customerInfo: live, customerInfoKnown: true, configured: true }) });
+  s.useSubscriptionStore.setState({ clockHighWater: bogus, trialStartedAt: start });
+  s.persistence.onRehydrateStorage()(undefined, undefined);
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  await s.state().initialize();
+  assert.equal(s.state().entitlementActive, true, 'the store just confirmed Pro; a stale mark cannot switch it off');
+  assert.ok(s.state().clockHighWater < Date.now() + day, 'the mark now reads the store\'s time');
+  assert.ok(Number(s.keychain.get('gruntz_clock_high_water')) < Date.now() + day, 'and so does the Keychain copy');
+  assert.equal(s.hasTrainingAccess(s.state()), true);
+  assert.equal(s.getTrialDaysRemaining(start), 12, 'the trial is measured at the real time again');
+
+  // An old cached answer is not the store\'s current clock and leaves the mark alone.
+  const cached = { ...customer(true), requestDate: new Date(Date.now() - 10 * day).toISOString() };
+  const c = store({ loadRevenueCatState: async () => ({ currentOffering: null, customerInfo: cached, customerInfoKnown: true, configured: true }) });
+  c.useSubscriptionStore.setState({ clockHighWater: bogus });
+  await c.state().initialize();
+  assert.equal(c.state().clockHighWater, bogus);
+  assert.equal(c.state().entitlementActive, false);
+
+  // A persisted mark from the far future is clamped on read.
+  const migrated = s.persistence.migrate({ clockHighWater: Date.now() + 5 * 366 * day }, 0);
+  assert.ok(migrated.clockHighWater <= Date.now() + 366 * day + 1000);
+});

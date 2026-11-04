@@ -80,6 +80,22 @@ function pinClockHighWater(value: number) {
 }
 
 /**
+ * The store's own clock, from a live answer, replaces the mark even when that lowers
+ * it. The mark only ever rose, so a phone whose clock once ran ahead (a manual date
+ * change, a bad carrier time) kept a future mark that every later check measured
+ * against: a paying subscriber was switched off moments after the store confirmed
+ * them, and the trial read 0 days, until real time caught up with the bogus mark.
+ */
+function resetClockHighWater(value: number) {
+  if (!Number.isFinite(value)) return;
+  pinnedClock = value;
+  trialPinQueue = trialPinQueue.then(() => SecureStore.setItemAsync(CLOCK_PIN_KEY, String(value))).catch(() => undefined);
+}
+
+/** A persisted mark can only be as far ahead as a clock could plausibly have been. */
+const CLOCK_HIGH_WATER_MAX_AHEAD_MS = 366 * 24 * 60 * 60 * 1000;
+
+/**
  * The time the trial is measured at: the latest time seen, so a clock set back cannot
  * reopen or freeze it (the same rule as offline Pro). Null when the clock is behind
  * what this install has already seen, which counts as no trial.
@@ -165,7 +181,7 @@ function migratePersistedSubscriptionState(persistedState: unknown): Partial<Sub
       : persistedState.entitlementActive === true ? new Date().toISOString() : null,
     movedNotice: persistedState.movedNotice === true,
     clockHighWater: typeof persistedState.clockHighWater === 'number' && Number.isFinite(persistedState.clockHighWater)
-      ? persistedState.clockHighWater : 0,
+      ? Math.min(persistedState.clockHighWater, Date.now() + CLOCK_HIGH_WATER_MAX_AHEAD_MS) : 0,
     // Native package objects do not survive a restart. Pricing must be fetched
     // again before enabling a purchase, even when a previous screen was cached.
     currentOffering: null,
@@ -337,12 +353,18 @@ function syncEntitlementState(
   if (status !== previous.entitlementStatus) {
     logBreadcrumb('subscription', 'entitlement changed', { from: previous.entitlementStatus ?? 'unknown', to: status });
   }
+  // A fresh answer carries the store's clock. Within the skew of this phone's clock it
+  // is the truth about the time as well as the subscription, and it corrects a mark
+  // that ran ahead. An old SDK cache keeps its old request time and never gets here.
+  const now = Date.now();
+  const liveAnswer = Number.isFinite(requestedAt) && Math.abs(now - requestedAt) <= TRIAL_CLOCK_SKEW_MS;
+  const clockHighWater = liveAnswer ? Math.max(requestedAt, now) : Math.max(previous.clockHighWater ?? 0, now);
   set({
     entitlementActive: active,
     entitlementStatus: status,
     // The store's time for this answer: an offline SDK cache keeps its old one.
-    entitlementVerifiedAt: new Date(Number.isFinite(requestedAt) ? Math.min(requestedAt, Date.now()) : Date.now()).toISOString(),
-    clockHighWater: Math.max(previous.clockHighWater ?? 0, Date.now()),
+    entitlementVerifiedAt: new Date(Number.isFinite(requestedAt) ? Math.min(requestedAt, now) : now).toISOString(),
+    clockHighWater,
     entitlementExpiresAt: entitlement?.expirationDate ?? null,
     entitlementProductIdentifier: entitlement?.productIdentifier ?? null,
     managementUrl: customerInfo?.managementURL ?? null,
@@ -351,6 +373,11 @@ function syncEntitlementState(
   });
   if (active) {
     void cancelTrialEndingReminder();
+  }
+  if (liveAnswer) {
+    // The store just confirmed the answer at this time; nothing cached to bound.
+    resetClockHighWater(clockHighWater);
+    return;
   }
   // An answer from the SDK's on-device cache can be days old; it only counts for 72 hours.
   applyOfflineGrace();

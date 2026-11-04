@@ -51,7 +51,19 @@ async function installedAuth({ initialUser = null, deferLogout = false } = {}) {
   return { client, service, requests, events, disk, storageKey, close: () => subscription.unsubscribe() };
 }
 
-function account({ memberships = ['one', 'two'], leaveError = false, signOutError = false } = {}) {
+function teamCaches() {
+  const readiness = { teamName: 'Alpha', teamCode: 'ABC123', teamCount: 1 };
+  const inbox = { teamIds: ['one'], lastReadAt: { one: '2026-10-27T12:00:00Z' } };
+  return {
+    readiness, inbox,
+    mocks: {
+      '../store/useReadinessStore': { useReadinessStore: { getState: () => ({ setTeam: (teamName, teamCode, teamCount) => Object.assign(readiness, { teamName, teamCode, teamCount }) }) } },
+      '../store/useTeamInboxStore': { useTeamInboxStore: { getState: () => ({ setTeamIds: (teamIds) => { inbox.teamIds = teamIds; } }), setState: (patch) => Object.assign(inbox, patch) } },
+    },
+  };
+}
+
+function account({ memberships = ['one', 'two'], leaveError = false, signOutError = false, caches = teamCaches() } = {}) {
   const state = { userId: 'athlete', memberships: [...memberships], removedWithAccount: [], deletes: 0, otp: [] };
   const api = {
     auth: {
@@ -77,8 +89,9 @@ function account({ memberships = ['one', 'two'], leaveError = false, signOutErro
     'react-native': { Platform: { OS: 'ios' }, AppState: {} },
     '../config/backup': { BACKUP_SCHEMA_VERSION: 2, BACKUP_DEBOUNCE_MS: 1000, isBackupAvailable: () => true },
     './backupSnapshot': {}, './supabaseClient': { getSupabase: () => api }, './profilePhotoCloud': { holdProfilePhotoSync: async () => () => {}, restoreProfilePhoto: async () => 'none', syncProfilePhoto: async () => {} }, './returningAthlete': { rememberBackupAccount() {} },
+      ...caches.mocks,
   })('src/services/backup.ts');
-  return { state, api, service };
+  return { state, api, service, caches };
 }
 
 test('account deletion leaves every team before deleting its owner instead of cascading the remaining teams', async () => {
@@ -220,4 +233,21 @@ test('installed Supabase lookup, RPC and function transports preserve the pinned
   assert.equal(requests.length, 3);
   assert.deepEqual(requests.map((request) => new URL(request.url).pathname), ['/rest/v1/team_members', '/rest/v1/rpc/leave_team', '/functions/v1/delete-account']);
   assert.ok(requests.every((request) => request.headers.get('authorization') === 'Bearer mock-confirmed-token'));
+});
+
+test('signing out forgets the previous account\'s team name, invite code and inbox so the next account cannot back them up (audit run-5)', async () => {
+  const env = account();
+  await env.service.signOut();
+  assert.equal(env.state.userId, null);
+  assert.deepEqual(env.caches.readiness, { teamName: '', teamCode: '', teamCount: 0 });
+  assert.deepEqual(env.caches.inbox, { teamIds: [], lastReadAt: {} });
+  // A failed local sign-out still clears the caches.
+  const failing = account({ signOutError: true });
+  await failing.service.signOut();
+  assert.equal(failing.caches.readiness.teamCode, '');
+  // So does a confirmed account deletion.
+  const deleted = account({ memberships: [] });
+  assert.equal(await deleted.service.deleteAccount(), 'deleted');
+  assert.equal(deleted.caches.readiness.teamCode, '');
+  assert.deepEqual(deleted.caches.inbox.teamIds, []);
 });

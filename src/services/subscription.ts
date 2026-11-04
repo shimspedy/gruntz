@@ -544,7 +544,9 @@ export async function openManagementUrl(url: string | null) {
     : Platform.OS === 'android'
       ? 'https://play.google.com/store/account/subscriptions'
       : null);
-  if (!destination) {
+  // The persisted value came from the store SDK, but it is read back from app storage;
+  // only a web link is ever opened, never an arbitrary app scheme.
+  if (!destination || !/^https:\/\//i.test(destination)) {
     return false;
   }
   try {
