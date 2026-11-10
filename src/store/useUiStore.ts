@@ -39,6 +39,9 @@ interface ChromePrefs {
   /** The photo file name last uploaded for teammates to see; null when none is up there. */
   teamAvatarSynced: string | null;
   setTeamAvatarSynced: (file: string | null) => void;
+  /** The end-of-rest chime is on unless the athlete turned it off. */
+  restSoundOff: boolean;
+  setRestSoundOff: (off: boolean) => void;
 }
 
 export const useChromePrefs = create<ChromePrefs>()(
@@ -57,6 +60,8 @@ export const useChromePrefs = create<ChromePrefs>()(
       setProfilePhotoFile: (profilePhotoFile) => set({ profilePhotoFile }),
       teamAvatarSynced: null,
       setTeamAvatarSynced: (teamAvatarSynced) => set({ teamAvatarSynced }),
+      restSoundOff: false,
+      setRestSoundOff: (restSoundOff) => set({ restSoundOff }),
     }),
     { name: '@gruntz_chrome', storage: createJSONStorage(() => AsyncStorage) },
   ),

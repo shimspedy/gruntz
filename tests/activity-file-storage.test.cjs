@@ -126,6 +126,7 @@ function androidLoader(env) {
       },
     },
     './backupRestoreStores': { prepareStoreRestore: async () => async () => {} },
+    './watchLink': { resetWatchLink: () => {} },
     './activityTracking': { stopActiveActivityForDataChange: async () => {} },
   });
 }

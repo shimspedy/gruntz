@@ -2,9 +2,14 @@ import Foundation
 import HealthKit
 import Combine
 
-/// What the wrist can record. A ruck is a hike to HealthKit, tagged so the phone can tell them apart.
+/// What the wrist can record. A ruck is a hike to HealthKit, tagged so the phone can tell them apart;
+/// an indoor walk is tagged too, so the phone keeps it and leaves everyday strolls alone.
+/// `strength` is the session that runs alongside a workout logged set by set.
 enum WristActivity: String, CaseIterable, Identifiable {
-    case run, ruck, hike
+    case run, ruck, hike, walk, strength
+
+    /// The ones the athlete starts by themselves from the home screen.
+    static let cardio: [WristActivity] = [.run, .ruck, .hike, .walk]
 
     var id: String { rawValue }
 
@@ -13,14 +18,20 @@ enum WristActivity: String, CaseIterable, Identifiable {
         case .run: return "Run"
         case .ruck: return "Ruck"
         case .hike: return "Hike"
+        case .walk: return "Indoor Walk"
+        case .strength: return "Workout"
         }
     }
+
+    var indoor: Bool { self == .walk || self == .strength }
 
     var symbol: String {
         switch self {
         case .run: return "figure.run"
         case .ruck: return "backpack"
         case .hike: return "figure.hiking"
+        case .walk: return "figure.walk"
+        case .strength: return "dumbbell.fill"
         }
     }
 
@@ -28,6 +39,8 @@ enum WristActivity: String, CaseIterable, Identifiable {
         switch self {
         case .run: return .running
         case .ruck, .hike: return .hiking
+        case .walk: return .walking
+        case .strength: return .traditionalStrengthTraining
         }
     }
 }
@@ -52,6 +65,10 @@ final class WorkoutManager: NSObject, ObservableObject {
     private var session: HKWorkoutSession?
     private var builder: HKLiveWorkoutBuilder?
     private var timer: AnyCancellable?
+    private var workoutTitle: String?
+    private var discarding = false
+    /// Set when the session ends without a summary screen of its own.
+    private var quiet = false
 
     var available: Bool { HKHealthStore.isHealthDataAvailable() }
 
@@ -71,10 +88,16 @@ final class WorkoutManager: NSObject, ObservableObject {
         }
     }
 
-    func start(_ activity: WristActivity) {
+    /// True while a session of any kind is open, recording or paused.
+    var busy: Bool { session != nil && !finished }
+
+    func start(_ activity: WristActivity, title: String? = nil) {
+        guard !busy else { return }
         let configuration = HKWorkoutConfiguration()
         configuration.activityType = activity.hkType
-        configuration.locationType = .outdoor
+        configuration.locationType = activity.indoor ? .indoor : .outdoor
+        workoutTitle = title
+        discarding = false
         do {
             let session = try HKWorkoutSession(healthStore: store, configuration: configuration)
             let builder = session.associatedWorkoutBuilder()
@@ -108,6 +131,15 @@ final class WorkoutManager: NSObject, ObservableObject {
         session?.end()
     }
 
+    /// Ends the session alongside a set-by-set workout. A workout discarded on the phone
+    /// leaves nothing in Health; a finished one is saved without stopping on a summary.
+    func endStrength(save: Bool) {
+        guard activity == .strength, session != nil else { return }
+        discarding = !save
+        quiet = true
+        session?.end()
+    }
+
     /// Back to the start screen once the summary has been read.
     func reset() {
         activity = nil
@@ -116,6 +148,12 @@ final class WorkoutManager: NSObject, ObservableObject {
         builder = nil
         timer = nil
         elapsed = 0
+        heartRate = 0
+        distanceMeters = 0
+        activeCalories = 0
+        workoutTitle = nil
+        discarding = false
+        quiet = false
     }
 
     private func startClock() {
@@ -152,16 +190,32 @@ extension WorkoutManager: HKWorkoutSessionDelegate {
         guard toState == .ended, let builder else { return }
         // Name the workout so the phone app can show where it came from, and keep the ruck/hike distinction.
         var metadata: [String: Any] = [HKMetadataKeyWorkoutBrandName: Self.brand]
-        if let activity { metadata[Self.activityKey] = activity.rawValue }
-        builder.addMetadata(metadata) { [weak self] _, _ in
-            builder.endCollection(withEnd: date) { [weak self] _, _ in
-                builder.finishWorkout { [weak self] _, err in
-                    DispatchQueue.main.async {
-                        if let err { self?.error = err.localizedDescription }
-                        self?.timer = nil
-                        self?.finished = true
-                    }
-                }
+        if let activity {
+            metadata[Self.activityKey] = activity.rawValue
+            if activity.indoor { metadata[HKMetadataKeyIndoorWorkout] = true }
+        }
+        if let workoutTitle { metadata["GruntzWorkout"] = String(workoutTitle.prefix(80)) }
+        let discarding = self.discarding
+        let quiet = self.quiet
+        let done: (Error?) -> Void = { [weak self] err in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                if let err { self.error = err.localizedDescription }
+                self.timer = nil
+                // A session that ran beside a workout has no summary here: straight back to idle.
+                if quiet { self.quiet = false; self.reset() } else { self.finished = true }
+            }
+        }
+        if discarding {
+            builder.endCollection(withEnd: date) { _, _ in
+                builder.discardWorkout()
+                done(nil)
+            }
+            return
+        }
+        builder.addMetadata(metadata) { _, _ in
+            builder.endCollection(withEnd: date) { _, _ in
+                builder.finishWorkout { _, err in done(err) }
             }
         }
     }

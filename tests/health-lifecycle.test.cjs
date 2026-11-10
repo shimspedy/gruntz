@@ -70,6 +70,7 @@ function environment({ hydrated = true, query, save, dataChangeFailure = false }
     '../store/activityRoutes': { loadRoute: async () => null, stageRoutes: async () => ({ rollback: async () => {} }), pruneRoutes: async () => {} },
     '../store/readinessStorage': { READINESS_STORAGE_KEY: '@gruntz_readiness', readinessStorage: storage },
     './backup': { pauseAutomaticBackups: async () => {} },
+    './watchLink': { resetWatchLink: () => {} },
     './activityTracking': { stopActiveActivityForDataChange: async () => { if (dataChangeFailure) throw Error('native stop failed'); } },
     './profilePhoto': { deleteAllProfilePhotos: async () => {} },
     './retentionAnalytics': { clearRetentionAnalytics: async () => {} },

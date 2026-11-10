@@ -18,6 +18,7 @@ import {
   cancelTrainingReminders,
 } from '../services/notifications';
 import { useReadinessStore } from '../store/useReadinessStore';
+import { useChromePrefs } from '../store/useUiStore';
 import { convertSessionWeights } from '../store/useSessionStore';
 import { getAccessState, getTrialEndsAt, useSubscriptionStore } from '../store/useSubscriptionStore';
 import { useUserStore } from '../store/useUserStore';
@@ -63,6 +64,8 @@ export default function SettingsScreen() {
   const keepScreenAwake = useReadinessStore((s) => s.keepScreenAwake);
   const batterySaver = useReadinessStore((s) => s.batterySaver);
   const setField = useReadinessStore((s) => s.setFieldPreference);
+  const restSoundOff = useChromePrefs((s) => s.restSoundOff);
+  const setRestSoundOff = useChromePrefs((s) => s.setRestSoundOff);
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
   const entitlementActive = useSubscriptionStore((s) => s.entitlementActive);
   const restore = useSubscriptionStore((s) => s.restoreAccess);
@@ -234,6 +237,7 @@ export default function SettingsScreen() {
         <Group label="Field mode" style={styles.group}>
           <Row icon="sun" title="Field mode" subtitle="High contrast, simplified controls" toggle={fieldMode} onToggle={(v) => setField('fieldMode', v)} />
           <Row icon="speaker" title="Audio cues" subtitle="Spoken splits during runs and rucks" toggle={audioCues} onToggle={(v) => setField('audioCues', v)} />
+          <Row icon="timer" title="Rest timer sound" subtitle="Chimes when your rest ends, over your music" toggle={!restSoundOff} onToggle={(v) => setRestSoundOff(!v)} />
           <Row icon="eye" title="Keep screen awake" subtitle="During workouts and tracked sessions" toggle={keepScreenAwake} onToggle={(v) => setField('keepScreenAwake', v)} />
           <Row icon="battery" title="Battery saver" subtitle="Lighter GPS sampling" toggle={batterySaver} onToggle={(v) => setField('batterySaver', v)} />
         </Group>

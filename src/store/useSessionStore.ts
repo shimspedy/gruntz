@@ -399,7 +399,7 @@ export const useSessionStore = create<SessionState>()(
           const id = libraryExerciseId(it.key);
           const ex = getExerciseById(id);
           if (!ex) return [];
-          const sets = Array.from({ length: Math.max(1, it.sets) }, (_, n) => {
+          const sets = Array.from({ length: Math.min(50, Math.max(1, it.sets)) }, (_, n) => {
             const prev = previous[id]?.[n] ?? previous[id]?.[previous[id].length - 1];
             return { id: newSetId(), reps: ex.reps ? it.reps : undefined, seconds: ex.duration_seconds, distance: ex.distance, weight: previousWeight(prev), done: false };
           });

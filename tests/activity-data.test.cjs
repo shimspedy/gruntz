@@ -35,6 +35,7 @@ function loader(disk, overrides = {}) {
     'expo-secure-store': { getItemAsync: async () => null, setItemAsync: async () => {} },
     '../services/notifications': { cancelRestDone: async () => {} },
     './notifications': { cancelRestDone: async () => {}, clearWorkoutProgress: async () => {} },
+    './watchLink': { resetWatchLink: () => {} },
     './activityTracking': { stopActiveActivityForDataChange: async () => {
       disk.events.push('tracking-stopped');
       await disk.removeItem('@gruntz_active_activity');

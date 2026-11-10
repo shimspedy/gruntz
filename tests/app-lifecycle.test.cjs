@@ -69,6 +69,7 @@ function resetHarness() {
     },
     'expo-secure-store': { deleteItemAsync: async key => events.push(key) },
     './backup': { pauseAutomaticBackups: async () => events.push('backup-paused') },
+    './watchLink': { resetWatchLink: () => {} },
     './activityTracking': { stopActiveActivityForDataChange: async () => events.push('tracking-stopped') },
     './profilePhoto': { deleteAllProfilePhotos: async () => events.push('photos-deleted') },
     './retentionAnalytics': { clearRetentionAnalytics: async () => events.push('events-cleared') },

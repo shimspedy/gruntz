@@ -37,6 +37,7 @@ async function resetLocalDataNow() {
   setNotificationsEnabled(false);
   await Promise.all([cancelDailyReminder(), cancelWeeklyRecap(), cancelTrialEndingReminder(), cancelRestDone(), clearWorkoutProgress()]);
   await SecureStore.deleteItemAsync('gruntz_assessment');
+  (await import('./watchLink')).resetWatchLink();
   useSessionStore.getState().discard();
   useSessionStore.setState(useSessionStore.getInitialState());
   useRoutineStore.setState(useRoutineStore.getInitialState());

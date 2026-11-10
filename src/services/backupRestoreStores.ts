@@ -60,7 +60,7 @@ export async function prepareStoreRestore(values: Record<string, string>): Promi
       }
       // Never allow a payload to replace store actions or transient hydration flags.
       const state = Object.fromEntries(Object.entries(persisted as Record<string, unknown>)
-        .filter(([key]) => key in initial && typeof initial[key] !== 'function'
+        .filter(([key]) => Object.prototype.hasOwnProperty.call(initial, key) && typeof initial[key] !== 'function'
           && key !== 'hasHydrated' && key !== 'hydrationFailed'));
       if (options.name === '@gruntz_readiness' && state.trackedSessions !== undefined
         && (!Array.isArray(state.trackedSessions) || state.trackedSessions.some((activity: unknown) => !isTrackedSession(activity)))) {

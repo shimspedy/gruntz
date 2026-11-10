@@ -101,13 +101,15 @@ export async function captureSnapshot(): Promise<BackupSnapshot> {
     if (typeof value !== 'string' || !value.length) continue;
     if (key === '@gruntz_readiness') {
       const parsed: unknown = JSON.parse(value);
-      if (isRecord(parsed) && isRecord(parsed.state) && Array.isArray(parsed.state.trackedSessions)) {
-        // Team identity is server-authoritative and is fetched again on sign-in. It may
-        // also belong to a previous account on this phone, and the invite code is a
-        // credential for that team, so it never travels in a backup.
+      // Team identity is server-authoritative and is fetched again on sign-in. It may
+      // also belong to a previous account on this phone, and the invite code is a
+      // credential for that team, so it never travels in a backup, whatever shape the rest has.
+      if (isRecord(parsed) && isRecord(parsed.state)) {
         delete parsed.state.teamName;
         delete parsed.state.teamCode;
         delete parsed.state.teamCount;
+      }
+      if (isRecord(parsed) && isRecord(parsed.state) && Array.isArray(parsed.state.trackedSessions)) {
         // Existing backup users have never consented to precise location uploads.
         // Only the cloud copy loses routes; local history remains complete.
         const include = parsed.state.includeActivityRoutesInBackup === true;
@@ -132,6 +134,8 @@ export async function captureSnapshot(): Promise<BackupSnapshot> {
         stores[key] = JSON.stringify(parsed);
         continue;
       }
+      stores[key] = JSON.stringify(parsed);
+      continue;
     }
     stores[key] = value;
   }

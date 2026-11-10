@@ -49,6 +49,15 @@ function pace(minPerMile: number | null, metric: boolean) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
+const TITLES: Record<ActivityType, { idle: string; live: string; noun: string }> = {
+  run: { idle: 'Run', live: 'Running', noun: 'run' },
+  ruck: { idle: 'Ruck', live: 'Rucking', noun: 'ruck' },
+  hike: { idle: 'Hike', live: 'Hiking', noun: 'hike' },
+  walk: { idle: 'Indoor walk', live: 'Walking indoors', noun: 'indoor walk' },
+};
+/** A treadmill session longer than this is a typo, not a walk. */
+const MAX_INDOOR_MILES = 100;
+
 /** What each system calls the permission level that keeps location on with the screen locked. */
 const ALWAYS_LOCATION = Platform.OS === 'android' ? '"Allow all the time"' : 'Always';
 
@@ -69,6 +78,10 @@ export default function RunTrackerScreen() {
   const [terrain, setTerrain] = useState('Mixed');
   const [backgroundTracking, setBackgroundTracking] = useState(true);
   const [savedId, setSavedId] = useState<string | null>(null);
+  /** The treadmill's own reading, typed in the athlete's unit; it replaces the step estimate when saved. */
+  const [treadmill, setTreadmill] = useState('');
+  const indoor = type === 'walk';
+  const noun = TITLES[type].noun;
   /** `packWeightPounds` is stored in pounds whatever unit the athlete typed in. */
   const packToPounds = (raw: string, isMetric: boolean) => {
     const n = Number(raw);
@@ -78,7 +91,7 @@ export default function RunTrackerScreen() {
 
   const bodyWeightLbs = useUserStore((st) => st.profile?.body_weight_lbs) ?? DEFAULT_BODY_WEIGHT_LBS;
   const loadedWeightLbs = bodyWeightLbs + (type === 'ruck' ? packToPounds(pack, metric) ?? 0 : 0);
-  const recorder = useRunTracker({ batterySaver, loadedWeightLbs, activityType: type, backgroundTracking, packWeightPounds: type === 'ruck' ? packToPounds(pack, metric) : undefined, terrain: type !== 'run' ? terrain : undefined });
+  const recorder = useRunTracker({ batterySaver, loadedWeightLbs, activityType: type, backgroundTracking, packWeightPounds: type === 'ruck' ? packToPounds(pack, metric) : undefined, terrain: type === 'ruck' || type === 'hike' ? terrain : undefined });
   const announced = useRef(0);
   const [finished, setFinished] = useState(false);
   const [finishedMetrics, setFinishedMetrics] = useState<RunTrackerState | null>(null);
@@ -97,6 +110,15 @@ export default function RunTrackerScreen() {
   const dist = metric ? tracker.distanceMiles * 1.609 : tracker.distanceMiles;
   const unit = metric ? 'km' : 'mi';
   const elev = tracker.elevationGainFt;
+  /** Recording has stopped and the activity is waiting to be saved (just ended, or recovered). */
+  const unsaved = !!tracker.sessionId && !tracker.isTracking && !finished;
+  // Offer the step estimate as the starting point; the athlete overwrites it with the belt's number.
+  const prefilled = useRef<string | null>(null);
+  useEffect(() => {
+    if (!unsaved || !indoor || prefilled.current === tracker.sessionId) return;
+    prefilled.current = tracker.sessionId;
+    setTreadmill(dist > 0 ? dist.toFixed(2) : '');
+  }, [unsaved, indoor, tracker.sessionId, dist]);
   // An interrupted activity restores its original mode and pack, not the new
   // route's defaults. Setup cannot relabel a recording already in progress.
   const recoveredId = useRef<string | null>(null);
@@ -157,7 +179,7 @@ export default function RunTrackerScreen() {
       const ok = await tracker.start({ backgroundTracking: recordInBackground });
       if (!mounted.current) return;
       if (!ok) {
-        Alert.alert('Unable to start', tracker.error ?? `Check location access and GPS availability, then try your ${type} again.`);
+        Alert.alert('Unable to start', tracker.error ?? (type === 'walk' ? 'Your indoor walk could not start. Try again.' : `Check location access and GPS availability, then try your ${type} again.`));
         return;
       }
     } finally {
@@ -171,7 +193,8 @@ export default function RunTrackerScreen() {
     // Only a new recording is gated. An activity already in progress or waiting to be
     // saved never reaches this handler, so nothing recorded can be locked away.
     if (!unlocked) return navigation.navigate('Paywall');
-    if (!backgroundTracking) return begin(false);
+    // Indoors there is no route to record, so no location prompt of any kind.
+    if (indoor || !backgroundTracking) return begin(false);
     promptOpen.current = true;
     const permission = await Location.getBackgroundPermissionsAsync().catch(() => null);
     if (permission?.granted) { promptOpen.current = false; return begin(true); }
@@ -188,7 +211,7 @@ export default function RunTrackerScreen() {
     setPending(true);
     try {
       const ok = await recorder.resume(enableBackground === true ? { backgroundTracking: true } : undefined);
-      if (mounted.current && !ok) Alert.alert('Can’t resume', 'Check location access and try again.');
+      if (mounted.current && !ok) Alert.alert('Can’t resume', indoor ? 'Try again. Your walk is still saved on this device.' : 'Check location access and try again.');
     } finally {
       pendingRef.current = false;
       if (mounted.current) setPending(false);
@@ -213,9 +236,25 @@ export default function RunTrackerScreen() {
     pendingRef.current = true;
     setPending(true);
     try {
-      const final = await tracker.stop();
-      const id = final.sessionId;
+      const recorded = await tracker.stop();
+      const id = recorded.sessionId;
       if (!id) throw new Error('No recorded activity was found.');
+      // A treadmill measures its belt; steps only estimate it. What the athlete typed wins,
+      // and the calorie estimate follows the corrected distance.
+      let final = recorded;
+      if (recorded.activityType === 'walk') {
+        const typed = Number(treadmill.replace(',', '.'));
+        const miles = Number.isFinite(typed) && typed >= 0 ? Math.min(MAX_INDOOR_MILES, metric ? typed / 1.609344 : typed) : null;
+        if (miles !== null && treadmill.trim() !== '' && Math.abs(miles - recorded.distanceMiles) >= 0.005) {
+          const rounded = Math.round(miles * 100) / 100;
+          final = {
+            ...recorded,
+            distanceMiles: rounded,
+            paceMinPerMile: rounded > 0.05 ? Math.round((recorded.durationMs / 60000 / rounded) * 10) / 10 : null,
+            caloriesEstimate: recorded.distanceMiles > 0 ? Math.round(recorded.caloriesEstimate * (rounded / recorded.distanceMiles)) : Math.round(rounded * (bodyWeightLbs / 1.9)),
+          };
+        }
+      }
       // The route is written to its own storage before the summary joins history. A
       // failed write throws here: nothing is credited and the draft stays for a retry.
       const added = await saveTrackedActivity({
@@ -250,16 +289,25 @@ export default function RunTrackerScreen() {
       pendingRef.current = false;
       if (mounted.current) setPending(false);
     }
-  }, [tracker, recordTrackedSession]);
+  }, [tracker, recordTrackedSession, treadmill, metric, bodyWeightLbs]);
+
+  /** Ends an indoor walk without saving yet, so the distance can be matched to the treadmill first. */
+  const stopForReview = async () => {
+    if (pendingRef.current) return;
+    pendingRef.current = true;
+    setPending(true);
+    try { await tracker.stop(); }
+    catch { if (mounted.current) Alert.alert('Couldn’t end the walk', 'Try again. Your recording is still available.'); }
+    finally { pendingRef.current = false; if (mounted.current) setPending(false); }
+  };
 
   const end = () => {
-    const label = type;
-    Alert.alert(`End ${label}?`, 'Your route and stats will be saved to Activity history.', [
+    Alert.alert(`End ${noun}?`, indoor ? 'Next you can match the distance to your treadmill, then save it to Activity history.' : 'Your route and stats will be saved to Activity history.', [
       { text: 'Keep going', style: 'cancel' },
       {
-        text: `End ${label}`,
+        text: `End ${noun}`,
         style: 'destructive',
-        onPress: () => void stopAndSave(),
+        onPress: () => void (indoor ? stopForReview() : stopAndSave()),
       },
     ]);
   };
@@ -267,10 +315,10 @@ export default function RunTrackerScreen() {
   const close = () => {
     if (pendingRef.current) return;
     if (!tracker.isTracking) return navigation.goBack();
-    Alert.alert('Activity in progress', tracker.isPaused ? 'Your activity will stay paused. Open the + menu to return and resume.' : tracker.backgroundEnabled ? 'Recording will continue. Open the + menu to return to your activity.' : 'Your activity stays open in Gruntz. Keep the app in the foreground to record location.', [
+    Alert.alert('Activity in progress', tracker.isPaused ? 'Your activity will stay paused. Open the + menu to return and resume.' : indoor ? 'Your walk keeps timing. Open the + menu to return to it.' : tracker.backgroundEnabled ? 'Recording will continue. Open the + menu to return to your activity.' : 'Your activity stays open in Gruntz. Keep the app in the foreground to record location.', [
       { text: 'Stay here', style: 'cancel' },
       { text: tracker.isPaused ? 'Leave paused' : 'Keep recording', onPress: () => navigation.goBack() },
-      { text: 'End & save', onPress: () => void stopAndSave() },
+      { text: indoor ? 'End walk' : 'End & save', onPress: () => void (indoor ? stopForReview() : stopAndSave()) },
     ]);
   };
 
@@ -281,17 +329,17 @@ export default function RunTrackerScreen() {
         <View style={styles.titleRow}>
           {tracker.isTracking ? <Animated.View style={[styles.live, dotStyle, tracker.isPaused && { backgroundColor: color.flame }]} /> : null}
           <Text variant="headline" style={{ fontSize: 18 }}>
-            {finished ? 'Activity saved' : tracker.isPaused ? 'Paused' : tracker.isTracking ? (type === 'ruck' ? 'Rucking' : type === 'hike' ? 'Hiking' : 'Running') : type === 'ruck' ? 'Ruck' : type === 'hike' ? 'Hike' : 'Run'}
+            {finished ? 'Activity saved' : tracker.isPaused ? 'Paused' : tracker.isTracking ? TITLES[type].live : TITLES[type].idle}
           </Text>
         </View>
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 180 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 180 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets showsVerticalScrollIndicator={false}>
         {idle ? (
           <Animated.View entering={FadeIn.duration(240)} style={styles.setup}>
-            <Segmented value={type} onChange={setType} options={[{ value: 'run', label: 'Run' }, { value: 'ruck', label: 'Ruck' }, { value: 'hike', label: 'Hike' }]} />
-            {type !== 'run' ? (
+            <Segmented value={type} onChange={setType} options={[{ value: 'run', label: 'Run' }, { value: 'ruck', label: 'Ruck' }, { value: 'hike', label: 'Hike' }, { value: 'walk', label: 'Indoor' }]} />
+            {type === 'ruck' || type === 'hike' ? (
               <Animated.View entering={FadeInDown.duration(260)} style={styles.ruck}>
                 {type === 'ruck' ? <View style={styles.packBox}>
                   <Text variant="subhead" tone="secondary">
@@ -320,16 +368,44 @@ export default function RunTrackerScreen() {
                 </View>
               </Animated.View>
             ) : null}
-            <View style={styles.backgroundRow}>
-              <View style={{ flex: 1 }}>
-                <Text variant="bodyMedium">Record with screen locked</Text>
-                <Text variant="caption" tone="tertiary" style={{ marginTop: 3 }}>Uses background location during this activity</Text>
+            {indoor ? (
+              <Animated.View entering={FadeInDown.duration(260)} style={styles.backgroundRow}>
+                <View style={{ flex: 1 }}>
+                  <Text variant="bodyMedium">Treadmill or indoor track</Text>
+                  <Text variant="caption" tone="tertiary" style={{ marginTop: 3 }}>No GPS. Distance comes from your steps, and you can match it to the treadmill when you finish</Text>
+                </View>
+              </Animated.View>
+            ) : (
+              <View style={styles.backgroundRow}>
+                <View style={{ flex: 1 }}>
+                  <Text variant="bodyMedium">Record with screen locked</Text>
+                  <Text variant="caption" tone="tertiary" style={{ marginTop: 3 }}>Uses background location during this activity</Text>
+                </View>
+                <Switch value={backgroundTracking} onValueChange={setBackgroundTracking} trackColor={{ true: color.accent }} accessibilityLabel="Record with screen locked" />
               </View>
-              <Switch value={backgroundTracking} onValueChange={setBackgroundTracking} trackColor={{ true: color.accent }} accessibilityLabel="Record with screen locked" />
-            </View>
+            )}
           </Animated.View>
         ) : null}
 
+        {/* First on screen, so the number pad never covers the field it types into. */}
+        {unsaved && indoor ? (
+          <View style={styles.statusBox}>
+            <Text variant="subhead">Treadmill distance ({unit})</Text>
+            <Text variant="caption" tone="tertiary" style={{ marginTop: 5 }}>Steps estimated {dist.toFixed(2)} {unit}. Enter what the treadmill shows if it differs</Text>
+            <TextInput
+              maxFontSizeMultiplier={1.8}
+              value={treadmill}
+              onChangeText={(next) => setTreadmill(next.replace(/[^0-9.,]/g, '').slice(0, 6))}
+              keyboardType="decimal-pad"
+              placeholder="0.00"
+              placeholderTextColor={color.textQuaternary}
+              style={styles.treadmillInput}
+              selectionColor={color.accent}
+              editable={!pending}
+              accessibilityLabel={`Treadmill distance in ${metric ? 'kilometers' : 'miles'}`}
+            />
+          </View>
+        ) : null}
         <View style={styles.clockWrap}>
           <Text variant="subhead" tone="secondary">
             Time
@@ -344,24 +420,38 @@ export default function RunTrackerScreen() {
           <View style={styles.vr} />
           <Big label={`Pace /${unit}`} value={pace(tracker.paceMinPerMile, metric)} />
           <View style={styles.vr} />
-          <Big label={metric ? 'km/h' : 'mph'} value={tracker.currentSpeedMph != null ? (metric ? tracker.currentSpeedMph * 1.609 : tracker.currentSpeedMph).toFixed(1) : '--'} />
+          {indoor
+            // No GPS speed indoors: the average over the walk so far is the honest number.
+            ? <Big label={metric ? 'Avg km/h' : 'Avg mph'} value={dist > 0 && tracker.durationMs > 0 ? (dist / (tracker.durationMs / 3_600_000)).toFixed(1) : '--'} />
+            : <Big label={metric ? 'km/h' : 'mph'} value={tracker.currentSpeedMph != null ? (metric ? tracker.currentSpeedMph * 1.609 : tracker.currentSpeedMph).toFixed(1) : '--'} />}
         </View>
 
         <View style={styles.secondary}>
           <Small label={tracker.stepsLimited ? 'Steps (partial)' : 'Steps'} value={tracker.steps.toLocaleString()} />
           {/* Recorded GPS ascent is kept in feet; display the athlete's unit. */}
-          <Small label="Elevation" value={metric ? `${Math.round(elev * 0.3048)} m` : `${elev} ft`} />
+          {indoor ? null : <Small label="Elevation" value={metric ? `${Math.round(elev * 0.3048)} m` : `${elev} ft`} />}
           <Small label="Calories (est.)" value={String(tracker.caloriesEstimate)} />
         </View>
 
         {tracker.route.length > 0 ? <View style={styles.routePanel}><ActivityRouteMap route={tracker.route} tint={color.accent} height={250} fitRoute /></View> : null}
 
-        {idle ? (
+        {idle && indoor ? (
+          <Text variant="footnote" tone="tertiary" align="center" style={styles.note}>
+            {Platform.OS === 'ios' ? 'Time keeps running with your screen locked, and the steps you take are added when you come back.' : 'Time keeps running with your screen locked. Keep Gruntz open to count every step.'}
+          </Text>
+        ) : idle ? (
           <Text variant="footnote" tone="tertiary" align="center" style={styles.note}>
             {batterySaver ? 'Battery saver: balanced GPS sampling.' : 'Precision GPS.'} {backgroundTracking ? `Keep your route recording while your screen is locked. ${ALWAYS_LOCATION} location access is required.` : 'Foreground recording pauses when you leave the app.'}
           </Text>
         ) : null}
-        {tracker.sessionId && !finished ? (
+        {tracker.sessionId && !finished && indoor ? (
+          <View style={styles.statusBox}>
+            <Text variant="subhead" tone={tracker.isTracking && !tracker.isPaused ? 'accent' : 'secondary'}>{!tracker.isTracking ? 'Walk ended. Save it to keep it' : tracker.isPaused ? 'Walk paused' : 'Walk in progress'}</Text>
+            <Text variant="caption" tone="tertiary" style={{ marginTop: 5 }}>{!tracker.isTracking ? 'Your walk is kept on this device until you save it to Activity history.' : tracker.isPaused ? 'Resume when you are ready. Paused time and steps are excluded.' : Platform.OS === 'ios' && !tracker.stepsLimited ? 'You can lock your screen or use another app. Steps taken meanwhile are added when you return.' : Platform.OS === 'ios' ? 'You can lock your screen or use another app. The clock keeps running.' : 'You can lock your screen and the clock keeps running. Steps are counted while Gruntz is open.'}</Text>
+            {tracker.recoveryNotice ? <Text variant="caption" tone="secondary" style={{ marginTop: 8 }}>{tracker.recoveryNotice}</Text> : null}
+            {tracker.error ? <Text variant="caption" tone="secondary" style={{ marginTop: 8 }}>{tracker.error}</Text> : null}
+          </View>
+        ) : tracker.sessionId && !finished ? (
           <View style={styles.statusBox}>
             <Text variant="subhead" tone={tracker.isTracking && tracker.backgroundEnabled ? 'accent' : 'secondary'}>{!tracker.isTracking ? 'Recording ended — save your activity' : tracker.isPaused ? 'Recording paused' : tracker.backgroundEnabled ? 'Background recording on' : 'Foreground recording only'}</Text>
             <Text variant="caption" tone="tertiary" style={{ marginTop: 5 }}>{!tracker.isTracking ? 'Your recorded route is kept on this device. Save it to add it to Activity history.' : tracker.isPaused ? 'Resume when you are ready. Paused movement is excluded.' : tracker.backgroundEnabled ? 'You can lock your screen or use another app. End this activity to stop location recording.' : 'Keep Gruntz open to record GPS. Pause, then enable background recording below to continue with the screen locked.'}</Text>
@@ -393,9 +483,9 @@ export default function RunTrackerScreen() {
             <Button title="Done" variant="secondary" onPress={() => navigation.goBack()} />
           </View>
         ) : tracker.sessionId && !tracker.isTracking ? (
-          <Button title="Save recovered activity" icon="check" loading={pending} onPress={() => void stopAndSave()} />
+          <Button title={indoor ? 'Save indoor walk' : 'Save recovered activity'} icon="check" loading={pending} onPress={() => void stopAndSave()} />
         ) : !tracker.isTracking ? (
-          <Button title={tracker.ready ? `Start ${type}` : 'Loading activity…'} icon="play" loading={pending || !tracker.ready} disabled={!tracker.ready} onPress={() => void start()} />
+          <Button title={tracker.ready ? `Start ${noun}` : 'Loading activity…'} icon="play" loading={pending || !tracker.ready} disabled={!tracker.ready} onPress={() => void start()} />
         ) : (
           <View style={{ flexDirection: 'row', gap: 12 }}>
             {tracker.isPaused ? (
@@ -475,6 +565,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     textAlign: 'center',
   },
+  treadmillInput: { height: 52, marginTop: 12, paddingHorizontal: space.md, borderRadius: radius.sm, backgroundColor: color.surface, color: color.text, fontFamily: font.semibold, fontSize: 24 },
   clockWrap: { alignItems: 'center', marginTop: space.xxl },
   clock: { fontFamily: font.heavy, fontSize: 84, lineHeight: 96, color: color.text, letterSpacing: -2 },
   primary: { flexDirection: 'row', marginHorizontal: space.md, marginTop: space.xl, paddingVertical: space.lg, borderRadius: radius.lg, backgroundColor: color.surface },

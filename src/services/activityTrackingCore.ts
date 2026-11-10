@@ -10,6 +10,11 @@ const MAX_FIX_ACCURACY_M = 35;
 const MAX_SPEED_MPS = 12;
 const ALTITUDE_SMOOTHING = 0.2;
 const DRAFT_READ_ERROR = 'Your saved activity could not be read. Retry after freeing storage; discard it only if you no longer need it.';
+/** An average walking stride. A treadmill reads the belt, so the athlete can correct the total at the end. */
+export const DEFAULT_WALK_STRIDE_METERS = 0.74;
+/** Past this an indoor walk found still "recording" by a fresh launch was forgotten, not walked. */
+const MAX_UNATTENDED_INDOOR_MS = 6 * 60 * 60 * 1000;
+const NO_STEPS_NOTICE = 'Step counting is unavailable, so distance stays at zero. Enter the treadmill distance when you finish.';
 const WAITING_FOR_GPS_NOTICE = 'Waiting for a precise GPS signal. Recording will continue when location is available; the missing route will not add distance.';
 
 export interface ActivityTrackingOptions {
@@ -19,7 +24,11 @@ export interface ActivityTrackingOptions {
   packWeightPounds?: number;
   terrain?: string;
   backgroundTracking?: boolean;
+  /** Metres per step for an indoor walk, where distance comes from the step count. */
+  strideMeters?: number;
 }
+/** An indoor walk has no route: time comes from the clock and distance from steps. */
+export const isIndoorActivity = (type: ActivityType | undefined) => type === 'walk';
 export interface RunTrackerState {
   isTracking: boolean;
   isPaused: boolean;
@@ -100,7 +109,8 @@ function validPoint(point: unknown): point is RoutePoint {
 function parseDraft(raw: string): Draft {
   const d = JSON.parse(raw) as Draft;
   if (!d || d.schema !== 1 || typeof d.id !== 'string' || !['recording', 'paused', 'finished'].includes(d.status)
-      || !d.options || !['run', 'ruck', 'hike'].includes(d.options.activityType ?? '')
+      || !d.options || !['run', 'ruck', 'hike', 'walk'].includes(d.options.activityType ?? '')
+      || !(d.options.strideMeters === undefined || (positive(d.options.strideMeters) && d.options.strideMeters > 0 && d.options.strideMeters <= 2))
       || !(d.options.loadedWeightLbs === undefined || (positive(d.options.loadedWeightLbs) && d.options.loadedWeightLbs > 0))
       || !(d.options.packWeightPounds === undefined || positive(d.options.packWeightPounds))
       || !(d.options.terrain === undefined || typeof d.options.terrain === 'string')
@@ -164,9 +174,12 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
     queue = result.catch(() => {});
     return result;
   };
+  const indoor = () => isIndoorActivity(draft?.options.activityType);
   const elapsed = (at = deps.now()) => draft ? draft.elapsedMs + (draft.activeSince === null ? 0 : Math.max(0, at - draft.activeSince)) : 0;
   function publish(patch: Partial<RunTrackerState> = {}, origin: 'draft-read' | 'recording' = 'recording') {
     if ('error' in patch) errorOrigin = patch.error ? origin : null;
+    // Indoors the belt moves, not the phone: every counted step is one stride of distance.
+    if (draft && indoor()) draft.distanceMeters = (draft.stepsBanked + draft.stepsCurrent) * (draft.options.strideMeters ?? DEFAULT_WALK_STRIDE_METERS);
     const miles = (draft?.distanceMeters ?? 0) * METERS_TO_MILES;
     const duration = elapsed(stopCutoff ?? deps.now());
     state = { ...state, ...(draft ? {
@@ -176,7 +189,8 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
       paceMinPerMile: miles > 0.05 ? Math.round((duration / 60000 / miles) * 10) / 10 : null,
       steps: Math.round(draft.stepsBanked + draft.stepsCurrent), elevationGainFt: Math.round(draft.elevationMeters * FEET_PER_METER),
       route: draft.route, backgroundEnabled: draft.backgroundEnabled, stepsLimited: draft.stepsLimited,
-      caloriesEstimate: Math.round(miles * ((draft.options.loadedWeightLbs ?? DEFAULT_BODY_WEIGHT_LBS) / 1.6)),
+      // Walking a mile costs less than running one: about 0.53 kcal per pound against 0.63.
+      caloriesEstimate: Math.round(miles * ((draft.options.loadedWeightLbs ?? DEFAULT_BODY_WEIGHT_LBS) / (indoor() ? 1.9 : 1.6))),
     } : {}), ...patch, savedDraftRecoveryRequired: readBlocked };
     listeners.forEach((listener) => listener());
   }
@@ -244,7 +258,16 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
       // live then; treating it as an interrupted one paused it and stopped the GPS.
       if (draft?.status === 'recording' && source === 'ui' && deps.isForeground && !deps.isForeground()
         && await deps.hasBackground().catch(() => false)) source = 'task';
-      if (draft && source === 'ui' && draft.status === 'recording') {
+      // An indoor walk needs no hardware to keep going: its clock is the wall clock and iOS
+      // hands back the steps taken meanwhile. The system routinely ends a suspended app
+      // during a long treadmill session, and pausing there threw the rest of the walk away.
+      if (draft && source === 'ui' && draft.status === 'recording' && indoor() && deps.now() - draft.updatedAt <= MAX_UNATTENDED_INDOOR_MS) {
+        recovering = false;
+        await detachNative();
+        await reconcileSteps(deps.now());
+        await attachSteps(generation);
+        await persist();
+      } else if (draft && source === 'ui' && draft.status === 'recording') {
         // A fresh JS process cannot know when the OS/user stopped the old run.
         // Keep only the last durable duration; explicit Resume starts a new leg.
         await reconcileSteps(Math.min(deps.now(), draft.updatedAt));
@@ -275,6 +298,7 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
     try {
       if (!await deps.stepsAvailable() || token !== generation || !draft) {
         if (draft) draft.stepsLimited = true;
+        if (draft && token === generation && indoor()) state = { ...state, recoveryNotice: NO_STEPS_NOTICE };
         return;
       }
       const id = draft.id;
@@ -291,6 +315,7 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
   }
   async function attachLocation(token: number): Promise<boolean> {
     if (!draft) return false;
+    if (indoor()) { draft.backgroundEnabled = false; return true; }
     const options = draft.options;
     let backgroundWarning: string | null = null;
     if (options.backgroundTracking !== false) {
@@ -441,7 +466,7 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
       if (readBlocked || token !== generation || (draft && draft.status !== 'finished')) return false;
       if (draft?.status === 'finished') { publish({ error: 'Save or discard the finished activity before starting another one.' }); return false; }
       try {
-        if (!await deps.foregroundPermission() || token !== generation) {
+        if (!isIndoorActivity(options.activityType) && (!await deps.foregroundPermission() || token !== generation)) {
           if (token === generation) publish({ error: 'Location permission is required to record your route. Enable it in Settings and retry.' });
           return false;
         }
@@ -450,7 +475,8 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
         const type = options.activityType ?? 'run';
         draft = { schema: 1, id: `activity-${now}-${Math.random().toString(36).slice(2, 10)}`, status: 'paused',
           options: { ...options, activityType: type, loadedWeightLbs: positive(options.loadedWeightLbs) && options.loadedWeightLbs > 0 ? options.loadedWeightLbs : DEFAULT_BODY_WEIGHT_LBS,
-            packWeightPounds: positive(options.packWeightPounds) ? options.packWeightPounds : 0 },
+            packWeightPounds: positive(options.packWeightPounds) ? options.packWeightPounds : 0,
+            ...(isIndoorActivity(type) ? { backgroundTracking: false, strideMeters: positive(options.strideMeters) && options.strideMeters > 0 && options.strideMeters <= 2 ? options.strideMeters : DEFAULT_WALK_STRIDE_METERS } : {}) },
           startedAt: now, activeSince: null, elapsedMs: 0, segmentStartedAt: now, segment: 0, distanceMeters: 0, elevationMeters: 0,
           stepsBanked: 0, stepsCurrent: 0, route: [], anchor: null, altitudeAnchor: null, lastTimestamp: 0, updatedAt: now,
           backgroundEnabled: false, stepsLimited: deps.platform !== 'ios' };
@@ -499,13 +525,13 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
       await hydrateInside('ui');
       if (!draft || readBlocked || draft.status !== 'paused' || token !== generation) return false;
       try {
-        if (!await deps.foregroundPermission() || token !== generation) {
+        if (!indoor() && (!await deps.foregroundPermission() || token !== generation)) {
           publish({ error: 'Location permission is required. Enable it in Settings and resume.' }); return false;
         }
         if (backgroundDirty && !await detachNative()) return false;
         draft.stepsBanked += draft.stepsCurrent;
         draft.stepsCurrent = 0;
-        draft.options = { ...draft.options, ...overrides };
+        draft.options = { ...draft.options, ...(indoor() ? {} : overrides) };
         publish({ error: null, recoveryNotice: null });
         if (!await persist() || token !== generation || !await attachLocation(token) || token !== generation) return false;
         draft.activeSince = deps.now();
@@ -564,13 +590,13 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
   }
   function handleAppState(next: string): Promise<void> {
     backgrounded = next !== 'active';
-    if (next === 'background' && draft?.status === 'recording' && !draft.backgroundEnabled) {
+    if (next === 'background' && draft?.status === 'recording' && !draft.backgroundEnabled && !indoor()) {
       return pause().then(() => { publish({ recoveryNotice: 'Foreground recording paused when you left Gruntz. Resume with the app open, or enable background location.' }); });
     }
     return serial(async () => {
       await hydrateInside('ui');
       if (!draft || draft.status !== 'recording') return;
-      if (next === 'background' && !draft.backgroundEnabled) {
+      if (next === 'background' && !draft.backgroundEnabled && !indoor()) {
         generation += 1;
         await reconcileSteps(deps.now());
         freeze(deps.now());
@@ -591,7 +617,7 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
         }
       } else if (next === 'active') {
         let recordingAvailable = true;
-        if (draft.backgroundEnabled) {
+        if (draft.backgroundEnabled && !indoor()) {
           try { recordingAvailable = await deps.hasBackground(); }
           catch { recordingAvailable = false; }
         }

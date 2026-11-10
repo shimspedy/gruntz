@@ -37,6 +37,8 @@ const DISTANCE = 'HKQuantityTypeIdentifierDistanceWalkingRunning';
 const ENERGY = 'HKQuantityTypeIdentifierActiveEnergyBurned';
 const WORKOUT = 'HKWorkoutTypeIdentifier';
 const WORKOUT_ROUTE = 'HKWorkoutRouteTypeIdentifier';
+/** The most route points history accepts for one recording (see activityHistory). */
+const MAX_ROUTE_POINTS_READ = 100_000;
 
 function appleHealth(): PlatformAdapter {
   const hk = require('@kingstinct/react-native-healthkit') as HealthKit;
@@ -72,7 +74,8 @@ function appleHealth(): PlatformAdapter {
         return {
           id: workout.uuid,
           // The Gruntz watch app files rucks as hikes (Health has no ruck type) and tags them.
-          kind: workout.metadata?.GruntzActivity === 'ruck' ? 'ruck' : kinds[workout.workoutActivityType] ?? 'other',
+          // Its treadmill walks are tagged too: an untagged walk is a stroll and stays out of history.
+          kind: workout.metadata?.GruntzActivity === 'ruck' ? 'ruck' : workout.metadata?.GruntzActivity === 'walk' ? 'indoorWalk' : kinds[workout.workoutActivityType] ?? 'other',
           startMs: workout.startDate.getTime(),
           endMs: workout.endDate.getTime(),
           activeSeconds: workout.duration?.quantity,
@@ -87,7 +90,8 @@ function appleHealth(): PlatformAdapter {
     workoutDetails: async () => ({}),
     async workoutRoute(id) {
       const routes = await seen.get(id)?.getWorkoutRoutes();
-      return (routes ?? []).flatMap((route) => route.locations).map((location): RoutePoint => ({
+      // History refuses a longer route outright; keeping the first stretch beats losing the workout.
+      return (routes ?? []).flatMap((route) => route.locations).slice(0, MAX_ROUTE_POINTS_READ).map((location): RoutePoint => ({
         latitude: location.latitude,
         longitude: location.longitude,
         altitude: Number.isFinite(location.altitude) ? location.altitude : null,
@@ -107,7 +111,7 @@ function appleHealth(): PlatformAdapter {
       const startDate = new Date(workout.startMs);
       const endDate = new Date(workout.endMs);
       const saved = await hk.saveWorkoutSample(
-        workout.kind === 'run' ? hk.WorkoutActivityType.running : hk.WorkoutActivityType.hiking,
+        workout.kind === 'run' ? hk.WorkoutActivityType.running : workout.kind === 'walk' ? hk.WorkoutActivityType.walking : hk.WorkoutActivityType.hiking,
         [
           ...(workout.distanceMeters > 0 ? [{ startDate, endDate, quantityType: DISTANCE, quantity: workout.distanceMeters, unit: 'm' } as const] : []),
           ...(workout.calories ? [{ startDate, endDate, quantityType: ENERGY, quantity: workout.calories, unit: 'kcal' } as const] : []),
@@ -115,7 +119,7 @@ function appleHealth(): PlatformAdapter {
         startDate,
         endDate,
         { distance: workout.distanceMeters, ...(workout.calories ? { energyBurned: workout.calories } : {}) },
-        { HKExternalUUID: workout.activityId },
+        { HKExternalUUID: workout.activityId, ...(workout.kind === 'walk' ? { HKIndoorWorkout: true } : {}) },
       );
       // The workout is saved either way; a refused route only costs the map.
       if (workout.route && workout.route.length > 1) {
@@ -267,7 +271,7 @@ function healthConnect(): PlatformAdapter {
       const metadata = { clientRecordId: workout.activityId, recordingMethod: 1 };
       const session = {
         recordType: 'ExerciseSession' as const, ...span, title: workout.title, metadata,
-        exerciseType: workout.kind === 'run' ? hc.ExerciseType.RUNNING : hc.ExerciseType.HIKING,
+        exerciseType: workout.kind === 'run' ? hc.ExerciseType.RUNNING : workout.kind === 'walk' ? hc.ExerciseType.WALKING : hc.ExerciseType.HIKING,
       };
       // Health Connect rejects a session whose route strays outside its own times.
       const route = (workout.route ?? [])

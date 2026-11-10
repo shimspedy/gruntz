@@ -9,6 +9,7 @@ import { Ring } from '../../ui/Progress';
 import { Tap } from '../../ui/Pressable';
 import { Text } from '../../ui/Text';
 import { haptic } from '../../ui/haptics';
+import { playRestDone } from '../../services/restSound';
 import { color, radius, space } from '../../ui/tokens';
 
 /** Floating rest countdown. Non-blocking: the set table stays usable underneath. */
@@ -39,6 +40,8 @@ export function RestBanner({ bottom }: { bottom: number }) {
     if (remaining <= 0 && !fired.current) {
       fired.current = true;
       haptic.warning();
+      // Deduped against the app-wide timer by the deadline, so it rings once.
+      playRestDone(restEndsAt);
       setOver(true);
       end();
     }

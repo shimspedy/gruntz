@@ -10,6 +10,7 @@ import { EmptyState, NavHeader } from '../ui/Layout';
 import { Bar } from '../ui/Progress';
 import { Text } from '../ui/Text';
 import { Tap } from '../ui/Pressable';
+import { activityLabel } from '../utils/activityDisplay';
 import { color, font, radius, space } from '../ui/tokens';
 
 function duration(seconds: number) {
@@ -82,11 +83,11 @@ export default function StatsScreen() {
             {sessions.slice(0, 8).map((s, i) => (
               <Tap key={s.id} onPress={() => navigation.navigate('ActivityDetail', { sessionId: s.id })} style={[styles.line, i > 0 && styles.divider]} accessibilityLabel={`View ${s.type} activity`}>
                 <View style={styles.lineIcon}>
-                  <Icon name={s.type === 'ruck' ? 'ruck' : s.type === 'hike' ? 'elevation' : 'run'} size={20} color={color.text} />
+                  <Icon name={s.type === 'ruck' ? 'ruck' : s.type === 'hike' ? 'elevation' : s.type === 'walk' ? 'steps' : 'run'} size={20} color={color.text} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text variant="headline">
-                    {s.type === 'ruck' ? 'Ruck' : s.type === 'hike' ? 'Hike' : 'Run'} · {dist(s.distanceMiles)}
+                    {activityLabel(s.type)} · {dist(s.distanceMiles)}
                   </Text>
                   <Text variant="subhead" tone="tertiary" style={{ marginTop: 2 }}>
                     {new Date(s.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}

@@ -22,6 +22,8 @@ import { useShellSideColor } from './src/ui/SideBleed';
 import { color } from './src/ui/tokens';
 import { initializeActivityTracking } from './src/services/activityTracking';
 import { initializeLiveActivity } from './src/services/liveActivity';
+import { initializeRestSound } from './src/services/restSound';
+import { initializeWatchLink } from './src/services/watchLink';
 import { initializeWorkoutPresence } from './src/services/workoutPresence';
 import { initializeProfilePhotoCloud } from './src/services/profilePhotoCloud';
 import { initializeReturningAthlete } from './src/services/returningAthlete';
@@ -77,6 +79,8 @@ export default function App() {
     // Lock Screen logs are applied before the Live Activity is next updated.
     initializeLiveActivity();
     initializeWorkoutPresence();
+    initializeRestSound();
+    initializeWatchLink();
     initializeProfilePhotoCloud();
     initializeReturningAthlete();
   }, []);

@@ -100,7 +100,9 @@ export const ActivityShareCard = forwardRef<ActivityShareCardRef, {
       <View style={styles.stats}>
         <CardStat label="TIME" value={activityDuration(session.durationSeconds)} />
         <CardStat label={`PACE ${pace.unit}`} value={pace.value} />
-        <CardStat label="ASCENT" value={activityAscent(session.elevationFeet, units)} />
+        {session.type === 'walk'
+          ? <CardStat label="STEPS" value={typeof session.steps === 'number' ? Math.max(0, session.steps).toLocaleString() : '—'} />
+          : <CardStat label="ASCENT" value={activityAscent(session.elevationFeet, units)} />}
       </View>
       <View style={styles.footer}>
         <Wordmark height={22} />

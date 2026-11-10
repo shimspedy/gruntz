@@ -98,6 +98,7 @@ function snapshotModule(disk, prepare = async () => () => {}) {
     '@react-native-async-storage/async-storage': disk,
     '../config/backup': { BACKUP_SCHEMA_VERSION: 1 },
     './backupRestoreStores': { prepareStoreRestore: prepare },
+    './watchLink': { resetWatchLink: () => {} },
     './activityTracking': { stopActiveActivityForDataChange: async () => {} },
   });
 }

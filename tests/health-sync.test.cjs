@@ -244,3 +244,23 @@ test('heart rate readings outside a plausible range are dropped', () => {
   assert.equal(cleanHeartRate({ average: 150, max: 400 }), null);
   assert.deepEqual(cleanHeartRate({ average: 150.4, max: 149 }), { average: 150, max: 150 });
 });
+
+test('an indoor walk is written as an indoor walk, and only the Gruntz watch app\'s walks come back', () => {
+  const walk = activity({ type: 'walk', distanceMiles: 1.5, elevationFeet: 0, steps: 3200 });
+  assert.equal(isTrackedSession(walk), true);
+  assert.equal(toHealthExport(walk).kind, 'walk');
+  assert.equal(toHealthExport(walk).title, 'Gruntz Indoor Walk');
+  const found = importableWorkouts([workout({ id: 'stroll', kind: 'walk' }), workout({ id: 'treadmill', kind: 'indoorWalk', startMs: NOW - 3 * HOUR, endMs: NOW - 2 * HOUR })], []);
+  assert.deepEqual(found.map((item) => item.id), ['treadmill']);
+  const imported = toImportedActivity(found[0]);
+  assert.equal(imported.type, 'walk');
+  assert.equal(isTrackedSession(imported), true);
+});
+
+test('one sync takes at most the newest 200 workouts, and a claimed distance is capped', () => {
+  const flood = Array.from({ length: 450 }, (_, i) => workout({ id: `f${i}`, kind: 'run', startMs: NOW - (i + 1) * HOUR, endMs: NOW - (i + 1) * HOUR + 20 * 60_000 }));
+  const imported = importableWorkouts(flood, []);
+  assert.equal(imported.length, 200);
+  assert.equal(imported[imported.length - 1].id, 'f0');
+  assert.equal(toImportedActivity(workout({ id: 'far', kind: 'run', startMs: NOW - HOUR, endMs: NOW, distanceMeters: 1e12 })).distanceMiles, 1000);
+});

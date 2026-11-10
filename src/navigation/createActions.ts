@@ -81,7 +81,7 @@ export function useCreateActions(): CreateAction[] {
     },
     {
       icon: 'run',
-      title: activity.sessionId ? `${activity.isTracking ? 'Resume' : 'Save'} ${activity.activityType}` : 'Run, ruck or hike',
+      title: activity.sessionId ? `${activity.isTracking ? 'Resume' : 'Save'} ${activity.activityType === 'walk' ? 'indoor walk' : activity.activityType}` : 'Run, ruck, hike or indoor walk',
       subtitle: activity.sessionId ? 'Return to your current activity' : 'Record your route and share the finish',
       onPress: () => {
         close();

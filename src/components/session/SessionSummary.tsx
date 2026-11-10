@@ -3,25 +3,17 @@ import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNow } from '../../hooks/useNow';
 import { getLocalDateKey } from '../../utils/dateKey';
-import { navigationRef } from '../../navigation/ref';
-import { scheduleBackup } from '../../services/backup';
 import { clearWorkoutProgress } from '../../services/notifications';
 import { isExerciseDone, useSessionStore } from '../../store/useSessionStore';
 import { useUserStore } from '../../store/useUserStore';
-import { useProgramStore } from '../../store/useProgramStore';
 import { Button } from '../../ui/Button';
 import { Hairline, NavHeader, Stat } from '../../ui/Layout';
 import { Tap } from '../../ui/Pressable';
 import { Text } from '../../ui/Text';
-import { toast } from '../../ui/Toast';
 import { haptic } from '../../ui/haptics';
 import { color, space } from '../../ui/tokens';
 import { calculateMissionXP, calculateStreakBonus, isStreakAlive } from '../../utils/xp';
-import { maybeRequestReview } from '../../utils/socialActions';
-import { exerciseLogKey, getExerciseById } from '../../data/exercises';
-import { useExerciseLogStore } from '../../store/useExerciseLogStore';
-import { sessionWin } from '../../features/retention';
-import { trackRetentionEvent } from '../../services/retentionAnalytics';
+import { commitSession, presentCommit } from '../../services/sessionCommit';
 
 /** "Workout completed!" — review, then commit the mission or discard it. */
 export function SessionSummary({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
@@ -70,85 +62,11 @@ export function SessionSummary({ onBack, onDone }: { onBack: () => void; onDone:
 
   const save = () => {
     if (saving.current || !canSave) return;
-    const fresh = useSessionStore.getState().buildMission();
-    if (!fresh) return;
+    const outcome = commitSession();
+    if (!outcome) return;
     saving.current = true;
-    const before = useUserStore.getState().progress;
-    // completeMission dedupes on mission_date + workout_day_id and returns state
-    // unchanged, but save() used to carry on regardless: it wiped the session and
-    // pushed a celebration reading "+0 XP" with no explanation. The sets still reach
-    // the exercise log either way, so say that plainly instead of celebrating nothing.
-    const repeatOfToday = before.claimed_missions?.has(`${fresh.mission_date}:${fresh.workout_day_id}`) ?? false;
-    const levelBefore = before.current_level;
-    const rankBefore = before.current_rank;
-    const xpBefore = before.current_xp;
-    const session = useSessionStore.getState();
-    const firstWorkout = before.workouts_completed === 0;
-    const unit = useUserStore.getState().profile?.settings.units === 'metric' ? 'kg' : 'lb';
-    const win = sessionWin(session.exercises.map((item) => {
-      const exercise = getExerciseById(item.exerciseId);
-      return {
-        name: item.prescribedName ?? exercise?.name ?? 'Movement',
-        exerciseId: item.exerciseId,
-        logKey: exercise ? exerciseLogKey(exercise) : item.exerciseId,
-        kind: item.kind,
-        comparable: !!exercise && !item.prescribedName,
-        sets: item.sets,
-      };
-    }), useExerciseLogStore.getState().logs, unit, firstWorkout);
-    const debrief = {
-      ...win,
-      sets: session.exercises.reduce((total, item) => total + item.sets.filter((set) => set.done && !set.warmup).length, 0),
-      minutes: fresh.duration_minutes,
-      firstWorkout,
-    };
-    useUserStore.getState().completeMission(fresh);
-    void clearWorkoutProgress();
-    // Worth keeping: queue a backup for anyone who has opted into one.
-    scheduleBackup();
-    // If that was the last workout of the program week, move to the next one.
-    useProgramStore.getState().advanceWeekIfComplete();
-    // The celebration screen presents XP and unlocks; no system banners while the app is open.
-    const ids = useUserStore.getState().checkAchievements();
-    // Snapshotted AFTER checkAchievements, because achievement rewards are XP this
-    // workout earned. Reading it first meant the celebration showed "+150 XP · Level 5"
-    // over an XP bar already displaying level 6's numbers, and a level-up caused by an
-    // achievement got no celebration at all.
-    const after = useUserStore.getState().progress;
-    // Record the explicit save action, never a hydration/backup store replacement.
-    if (!repeatOfToday && after.workouts_completed === before.workouts_completed + 1) {
-      trackRetentionEvent('workout_completed', {
-        first: firstWorkout,
-        sessions: after.workouts_completed,
-        source: fresh.workout_day_id.startsWith('plan:') ? 'library' : fresh.workout_day_id.startsWith('routine:') ? 'routine' : 'program',
-        mode: session.adaptation?.mode ?? 'planned',
-      });
-    }
-    // Team rosters show sessions and streak; a no-op for anyone not in a team.
-    void import('../../services/teams').then((teams) => teams.syncTeamStatus()).catch(() => undefined);
-    useSessionStore.getState().finish();
     onDone();
-    if (repeatOfToday) {
-      // Otherwise the celebration screen owns the success haptic; firing one here as
-      // well stacked three buzzes inside half a second.
-      haptic.success();
-      toast('Saved to your history · already counted today', { tone: 'info', icon: 'check' });
-      return;
-    }
-    if (navigationRef.isReady()) {
-      navigationRef.navigate('Celebration', {
-        xpEarned: after.current_xp - xpBefore,
-        levelBefore,
-        levelAfter: after.current_level,
-        rankBefore,
-        rankAfter: after.current_rank,
-        streak: after.streak_days,
-        achievementIds: ids,
-        title,
-        debrief,
-      });
-    }
-    void maybeRequestReview('mission_complete');
+    presentCommit(outcome);
   };
 
   const discard = () => {

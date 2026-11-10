@@ -562,3 +562,52 @@ test('successful read retry retains native stop errors and unrelated write error
   await env.engine.hydrate();
   assert.match(env.engine.getSnapshot().error, /could not be saved/);
 });
+
+test('an indoor walk needs no location, measures distance from steps and keeps timing in the background', async () => {
+  const env = trackerHarness({ platform: 'ios' });
+  env.setForegroundGranted(false);
+  assert.equal(await env.engine.start({ activityType: 'walk', backgroundTracking: true, loadedWeightLbs: 190 }), true);
+  assert.deepEqual(env.permissionOrder, []);
+  assert.equal(env.backgroundStarts, 0);
+  assert.equal(env.watches.length, 0);
+  env.advance(600000); env.steps(1000);
+  await env.flush();
+  let state = env.engine.getSnapshot();
+  assert.equal(state.activityType, 'walk');
+  assert.equal(state.isPaused, false);
+  assert.equal(state.distanceMiles, 0.46); // 1,000 steps at 0.74 m
+  assert.equal(state.caloriesEstimate, 46); // 0.46 mi at 190 lb / 1.9
+  // Leaving the app pauses a foreground-only GPS recording; an indoor walk carries on.
+  await env.engine.handleAppState('background');
+  env.advance(1200000); env.setQuerySteps(3000);
+  await env.engine.handleAppState('active');
+  state = env.engine.getSnapshot();
+  assert.equal(state.isPaused, false);
+  assert.equal(state.steps, 3000);
+  assert.equal(state.durationMs, 1800000);
+  const final = await env.engine.stop();
+  assert.equal(final.distanceMiles, 1.38);
+  assert.deepEqual(final.route, []);
+});
+
+test('an indoor walk still recording when the app is relaunched keeps going; a forgotten one is paused', async () => {
+  const disk = new Map();
+  const first = trackerHarness({ platform: 'ios', disk });
+  await first.engine.start({ activityType: 'walk' });
+  first.advance(60000); first.steps(100);
+  await first.flush();
+  const relaunched = trackerHarness({ platform: 'ios', disk });
+  relaunched.advance(900000); relaunched.setQuerySteps(1500);
+  await relaunched.engine.hydrate();
+  let state = relaunched.engine.getSnapshot();
+  assert.equal(state.isTracking, true);
+  assert.equal(state.isPaused, false);
+  assert.equal(state.steps, 1500);
+  assert.equal(state.durationMs, 900000);
+  const forgotten = trackerHarness({ platform: 'ios', disk });
+  forgotten.advance(8 * 3600000);
+  await forgotten.engine.hydrate();
+  state = forgotten.engine.getSnapshot();
+  assert.equal(state.isPaused, true);
+  assert.ok(state.durationMs <= 900000);
+});

@@ -1,5 +1,5 @@
-/** Outdoor activities and their locally recorded GPS samples. */
-export type ActivityType = 'run' | 'ruck' | 'hike';
+/** Tracked activities. A `walk` is an indoor (treadmill) walk: steps and time, no GPS route. */
+export type ActivityType = 'run' | 'ruck' | 'hike' | 'walk';
 
 export interface RoutePoint {
   latitude: number;

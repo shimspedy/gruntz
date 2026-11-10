@@ -39,7 +39,7 @@ export default function ActivityHistoryScreen() {
           <View style={styles.intro}>
             <Text variant="overline" style={styles.eyebrow}>MILES THAT STAY WITH YOU</Text>
             <Text variant="display" style={{ marginTop: 6 }}>Your time outside.</Text>
-            <Text variant="callout" tone="secondary" style={{ marginTop: 10 }}>Runs, rucks and hikes. Saved here, ready to look back on or share.</Text>
+            <Text variant="callout" tone="secondary" style={{ marginTop: 10 }}>Runs, rucks, hikes and indoor walks. Saved here, ready to look back on or share.</Text>
           </View>
           <View style={styles.totals}>
             <View style={{ flex: 1.4 }}><Text variant="caption" tone="secondary">TOTAL DISTANCE</Text><Text style={styles.totalNumber} tabular>{distance.value}<Text variant="headline" tone="secondary"> {distance.unit}</Text></Text></View>
@@ -47,12 +47,12 @@ export default function ActivityHistoryScreen() {
             <View style={{ flex: 1 }}><Text variant="caption" tone="secondary">TIME</Text><Text style={[styles.totalNumber, { fontSize: 21 }]} tabular>{activityDuration(totals.durationSeconds)}</Text></View>
           </View>
           <View style={styles.filters}>
-            {(['all', 'run', 'ruck', 'hike'] as const).map((value) => <Chip key={value} label={value === 'all' ? 'All' : activityLabel(value)} active={filter === value} onPress={() => setFilter(value)} />)}
+            {(['all', 'run', 'ruck', 'hike', 'walk'] as const).map((value) => <Chip key={value} label={value === 'all' ? 'All' : activityLabel(value)} active={filter === value} onPress={() => setFilter(value)} />)}
           </View>
         </>}
         ListEmptyComponent={<EmptyState icon="location" title={filter === 'all' ? 'Your next adventure starts here' : `No ${activityLabel(filter).toLowerCase()}s yet`}
           body="Track an activity to save its route, distance and time. Your field notes build with every finish.">
-          <Button title={filter === 'all' ? 'Track an activity' : `Start a ${activityLabel(filter).toLowerCase()}`} icon="plus" onPress={() => navigation.navigate('RunTracker', { type: filter === 'all' ? 'run' : filter })} />
+          <Button title={filter === 'all' ? 'Track an activity' : `Start ${filter === 'walk' ? 'an' : 'a'} ${activityLabel(filter).toLowerCase()}`} icon="plus" onPress={() => navigation.navigate('RunTracker', { type: filter === 'all' ? 'run' : filter })} />
         </EmptyState>}
         renderItem={({ item }) => <HistoryCard session={item} units={units} onOpen={open} />}
         ItemSeparatorComponent={Separator} />
@@ -72,7 +72,7 @@ const HistoryCard = React.memo(function HistoryCard({ session, units, onOpen }: 
     <Tap onPress={() => onOpen(session.id)} accessibilityLabel={`${activityLabel(session.type)}, ${distance.value} ${distance.unit}, ${activityDateLabel(session)}, open activity`} style={styles.card} feedback="scale" scaleTo={0.985}>
       <View style={styles.cardHeader}>
         <View style={[styles.typeBadge, { backgroundColor: `${tint}16` }]}>
-          <Icon name={session.type === 'ruck' ? 'ruck' : session.type === 'hike' ? 'elevation' : 'run'} size={15} color={tint} />
+          <Icon name={session.type === 'ruck' ? 'ruck' : session.type === 'hike' ? 'elevation' : session.type === 'walk' ? 'steps' : 'run'} size={15} color={tint} />
           <Text variant="caption" style={{ color: tint }}>{activityLabel(session.type).toUpperCase()}</Text>
         </View>
         <Text variant="footnote" tone="secondary">{activityDateLabel(session)}</Text>

@@ -45,6 +45,7 @@ function launch(disk) {
     'expo-secure-store': { getItemAsync: async () => null, setItemAsync: async () => {} },
     '../services/notifications': { cancelRestDone: async () => {} },
     './notifications': { cancelRestDone: async () => {}, clearWorkoutProgress: async () => {} },
+    './watchLink': { resetWatchLink: () => {} },
     './activityTracking': { stopActiveActivityForDataChange: async () => {} },
   });
   return {

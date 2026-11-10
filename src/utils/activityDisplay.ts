@@ -2,8 +2,8 @@ import type { ActivityType } from '../types/activity';
 import type { TrackedSession } from '../store/useReadinessStore';
 
 export type ActivityUnits = 'metric' | 'imperial';
-export const activityLabel = (type: ActivityType) => ({ run: 'Run', ruck: 'Ruck', hike: 'Hike' })[type];
-export const activityAccent = (type: ActivityType) => type === 'run' ? '#A8F16A' : type === 'ruck' ? '#55B8FF' : '#FFC879';
+export const activityLabel = (type: ActivityType) => ({ run: 'Run', ruck: 'Ruck', hike: 'Hike', walk: 'Indoor walk' })[type];
+export const activityAccent = (type: ActivityType) => type === 'run' ? '#A8F16A' : type === 'ruck' ? '#55B8FF' : type === 'walk' ? '#7FE0D0' : '#FFC879';
 const safe = (value: number) => Number.isFinite(value) ? Math.max(0, value) : 0;
 
 export function activityDistance(miles: number, units: ActivityUnits) {

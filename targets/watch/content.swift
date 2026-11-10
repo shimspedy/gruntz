@@ -1,60 +1,29 @@
 import SwiftUI
 
-/// Start screen → live numbers while recording → a short summary. One activity at a time.
+/// Home → a workout logged set by set, or a run/ruck/hike/walk recorded on its own → a short summary.
 struct ContentView: View {
     @EnvironmentObject private var workout: WorkoutManager
+    @EnvironmentObject private var link: PhoneLink
 
     var body: some View {
         NavigationStack {
             if workout.finished {
                 SummaryView()
-            } else if workout.activity != nil {
+            } else if let activity = workout.activity, activity != .strength {
                 LiveView()
+            } else if link.inSession, link.live != nil {
+                StrengthSessionView()
             } else {
-                StartView()
+                HomeView()
             }
         }
-    }
-}
-
-struct StartView: View {
-    @EnvironmentObject private var workout: WorkoutManager
-
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 8) {
-                if workout.authorized == false {
-                    Text("Allow Health access on this watch to record.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.bottom, 4)
-                }
-                ForEach(WristActivity.allCases) { activity in
-                    Button {
-                        workout.start(activity)
-                    } label: {
-                        HStack {
-                            Image(systemName: activity.symbol)
-                                .font(.title3)
-                                .frame(width: 28)
-                            Text(activity.title)
-                                .font(.headline)
-                            Spacer()
-                        }
-                        .padding(.vertical, 6)
-                    }
-                    .tint(.accentColor)
-                    .disabled(workout.authorized == false)
-                }
-                Text("Saves to Apple Health. Gruntz on your phone picks it up from there.")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 6)
+        // Heart rate and calories run beside a set-by-set workout for as long as it is open,
+        // and the session is what keeps the rest timer alive with the wrist down.
+        .onChange(of: link.live?.id) { previous, current in
+            if let previous, current == nil {
+                workout.endStrength(save: link.result?.session == previous)
             }
         }
-        .navigationTitle("Gruntz")
     }
 }
 

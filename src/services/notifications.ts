@@ -3,6 +3,9 @@ import { Platform } from 'react-native';
 
 // ─── Configuration ──────────────────────────────────────────────
 
+/** Bundled by the expo-notifications plugin (app.json `sounds`). */
+const REST_SOUND = 'rest_done.wav';
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldPlaySound: false,
@@ -69,6 +72,14 @@ export async function setupNotificationChannels() {
       sound: undefined,
       vibrationPattern: [0, 100, 50, 100],
       lightColor: '#00FF41',
+    });
+
+    // A channel's sound is fixed when it is created, so the chime gets its own.
+    await Notifications.setNotificationChannelAsync('rest-timer', {
+      name: 'Rest Timer',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: REST_SOUND,
+      vibrationPattern: [0, 200, 100, 200],
     });
 
     await Notifications.setNotificationChannelAsync('daily-reminder', {
@@ -194,8 +205,9 @@ export async function scheduleRestDone(endsAt: number, nextLabel?: string) {
         title: 'Rest’s up',
         body: nextLabel ? `Time for your next set: ${nextLabel}` : 'Time for your next set.',
         data: { type: 'rest-done', url: 'gruntz://train' },
-        sound: true,
-        ...(Platform.OS === 'android' && { channelId: 'workout-progress' }),
+        // The same chime the app plays in the foreground. Android takes it from the channel.
+        sound: REST_SOUND,
+        ...(Platform.OS === 'android' && { channelId: 'rest-timer' }),
       },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: new Date(endsAt) },
     });

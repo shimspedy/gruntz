@@ -25,7 +25,7 @@ export function isRoutePoint(value: unknown): value is RoutePoint {
 /** Legacy run/ruck records do not need any of the optional map or sensor fields. */
 export function isTrackedSession(value: unknown, maxRoutePoints = MAX_SAVED_ROUTE_POINTS): value is RecordedActivity {
   if (!record(value) || typeof value.id !== 'string' || !value.id.length || value.id.length > 200
-    || !['run', 'ruck', 'hike'].includes(value.type as string) || !date(value.date)
+    || !['run', 'ruck', 'hike', 'walk'].includes(value.type as string) || !date(value.date)
     || !nonnegative(value.distanceMiles) || !nonnegative(value.durationSeconds) || !nonnegative(value.elevationFeet)
     || (value.packWeightPounds !== undefined && !nonnegative(value.packWeightPounds))
     || !optionalText(value.terrain, 200) || !optionalText(value.notes, 20_000) || !optionalText(value.title, 300)

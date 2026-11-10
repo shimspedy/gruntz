@@ -265,8 +265,8 @@ export const useUserStore = create<UserState>()(
             total_distance_miles: roundMetric(state.progress.total_distance_miles + safeMiles),
             credited_activity_ids: id ? [...credited, id] : credited,
           };
-          // Hikes contribute to distance without creating running or loaded-ruck records.
-          if (type === 'hike') return { progress };
+          // Hikes and indoor walks contribute to distance without creating running or loaded-ruck records.
+          if (type === 'hike' || type === 'walk') return { progress };
           const key = type === 'ruck' ? 'best_ruck_times' : 'best_run_times';
           const bests = { ...state.progress[key] };
           if (safeSeconds > 0) {

@@ -13,8 +13,12 @@ const MIN_IMPORT_SECONDS = 60;
 /** A watch can deliver heart rate hours after the activity; asking again daily catches it. */
 const HEART_RATE_RECHECK_MS = DAY_MS;
 
-/** A ruck only exists as a hike in Apple Health; the Gruntz watch app tags its rucks so they come back as rucks. */
-export type HealthWorkoutKind = 'run' | 'ruck' | 'hike' | 'walk' | 'other';
+/**
+ * A ruck only exists as a hike in Apple Health; the Gruntz watch app tags its rucks so they come back as rucks.
+ * `indoorWalk` is a treadmill walk recorded by the Gruntz watch app, tagged the same way. A plain `walk` is
+ * anyone's stroll and is never imported.
+ */
+export type HealthWorkoutKind = 'run' | 'ruck' | 'hike' | 'walk' | 'indoorWalk' | 'other';
 
 /** A workout read from Apple Health or Health Connect, reduced to what Gruntz keeps. */
 export interface HealthWorkout {
@@ -41,8 +45,8 @@ export interface HeartRateSummary { average: number; max: number }
 /** What Gruntz writes to the health platform for one finished activity. */
 export interface HealthExport {
   activityId: string;
-  /** Neither platform has a ruck type; a ruck is filed as a hike. */
-  kind: 'run' | 'hike';
+  /** Neither platform has a ruck type; a ruck is filed as a hike. `walk` is an indoor walk. */
+  kind: 'run' | 'hike' | 'walk';
   title: string;
   startMs: number;
   endMs: number;
@@ -107,7 +111,7 @@ export function activityWindow(session: TrackedSession): { startMs: number; endM
 
 export const isImported = (session: Pick<TrackedSession, 'id'>) => session.id.startsWith(HEALTH_ID_PREFIX);
 
-const TITLES = { run: 'Run', ruck: 'Ruck', hike: 'Hike' } as const;
+const TITLES = { run: 'Run', ruck: 'Ruck', hike: 'Hike', walk: 'Indoor Walk' } as const;
 
 /** Null for anything that should not be written: imported workouts and undatable records. */
 export function toHealthExport(activity: RecordedActivity): HealthExport | null {
@@ -116,7 +120,7 @@ export function toHealthExport(activity: RecordedActivity): HealthExport | null 
   if (!window) return null;
   return {
     activityId: activity.id,
-    kind: activity.type === 'run' ? 'run' : 'hike',
+    kind: activity.type === 'run' ? 'run' : activity.type === 'walk' ? 'walk' : 'hike',
     title: activity.title?.trim() || `Gruntz ${TITLES[activity.type]}`,
     ...window,
     distanceMeters: Math.round(activity.distanceMiles * METERS_PER_MILE),
@@ -131,6 +135,11 @@ function sameOuting(a: { startMs: number; endMs: number }, b: { startMs: number;
   return overlap > 0 && overlap >= Math.min(a.endMs - a.startMs, b.endMs - b.startMs) / 2;
 }
 
+/** More workouts than this in one sync is another app misbehaving, not a month of training. */
+export const MAX_IMPORTS_PER_SYNC = 200;
+/** No outing on foot is longer; a sample claiming more is a bad record. */
+const MAX_IMPORT_MILES = 1000;
+
 /**
  * Workouts worth adding to history, oldest first. Walks are left out: a watch logs
  * every stroll, and that is not what Activity history is for. A workout that covers
@@ -141,7 +150,7 @@ export function importableWorkouts(workouts: HealthWorkout[], existing: TrackedS
   const taken = existing.map(activityWindow).filter((window) => window !== null);
   const imported: HealthWorkout[] = [];
   for (const workout of [...workouts].sort((a, b) => a.endMs - b.endMs)) {
-    if (workout.fromGruntz || (workout.kind !== 'run' && workout.kind !== 'ruck' && workout.kind !== 'hike')) continue;
+    if (workout.fromGruntz || (workout.kind !== 'run' && workout.kind !== 'ruck' && workout.kind !== 'hike' && workout.kind !== 'indoorWalk')) continue;
     if (!workout.id || !finite(workout.startMs) || !finite(workout.endMs)) continue;
     if ((workout.endMs - workout.startMs) / 1000 < MIN_IMPORT_SECONDS) continue;
     const id = `${HEALTH_ID_PREFIX}${workout.id}`;
@@ -150,7 +159,8 @@ export function importableWorkouts(workouts: HealthWorkout[], existing: TrackedS
     taken.push({ startMs: workout.startMs, endMs: workout.endMs });
     imported.push(workout);
   }
-  return imported;
+  // The newest first when another app filed far more than a person trains; the rest follow on later syncs.
+  return imported.slice(-MAX_IMPORTS_PER_SYNC);
 }
 
 /** The history record for a workout; passes the same validation as a recorded activity. */
@@ -161,10 +171,10 @@ export function toImportedActivity(workout: HealthWorkout, details: HealthWorkou
   const source = merged.source?.trim().slice(0, 100);
   return {
     id: `${HEALTH_ID_PREFIX}${merged.id}`,
-    type: merged.kind === 'run' ? 'run' : merged.kind === 'ruck' ? 'ruck' : 'hike',
+    type: merged.kind === 'run' ? 'run' : merged.kind === 'ruck' ? 'ruck' : merged.kind === 'indoorWalk' ? 'walk' : 'hike',
     date: new Date(merged.endMs).toISOString(),
     startedAt: new Date(merged.startMs).toISOString(),
-    distanceMiles: Math.round((Math.max(0, finite(merged.distanceMeters) ? merged.distanceMeters : 0) / METERS_PER_MILE) * 100) / 100,
+    distanceMiles: Math.min(MAX_IMPORT_MILES, Math.round((Math.max(0, finite(merged.distanceMeters) ? merged.distanceMeters : 0) / METERS_PER_MILE) * 100) / 100),
     durationSeconds: Math.round(active),
     elevationFeet: Math.round(Math.max(0, finite(merged.elevationMeters) ? merged.elevationMeters : 0) * FEET_PER_METER),
     ...(finite(merged.calories) && merged.calories > 0 ? { caloriesEstimate: Math.round(merged.calories) } : {}),

@@ -40,11 +40,11 @@ export default function ActivityDetailScreen({ route, navigation }: NativeStackS
         <View style={styles.heroDistance}><Text tabular style={styles.distance}>{distance.value}</Text><Text variant="section" tone="secondary" style={{ paddingBottom: 9 }}>{distance.unit}</Text></View>
         {savedRoute.length ? <ActivityRouteMap route={savedRoute} tint={tint} />
           : routeStatus === 'loading' ? <View style={styles.routeLoading} accessibilityLabel="Loading route"><ActivityIndicator color={tint} /></View>
-            : <View style={styles.legacy}><Icon name="location" size={24} color={color.textSecondary} /><Text variant="callout" tone="secondary" style={{ flex: 1 }}>{routeStatus === 'missing' ? 'This activity’s route couldn’t be loaded. Its stats are saved.' : 'This activity has saved stats but no GPS route. New tracked activities include their route.'}</Text></View>}
+            : <View style={styles.legacy}><Icon name="location" size={24} color={color.textSecondary} /><Text variant="callout" tone="secondary" style={{ flex: 1 }}>{routeStatus === 'missing' ? 'This activity’s route couldn’t be loaded. Its stats are saved.' : session.type === 'walk' ? 'Indoor walk. Distance comes from your steps or the treadmill, so there is no route to map.' : 'This activity has saved stats but no GPS route. New tracked activities include their route.'}</Text></View>}
         <View style={styles.stats}>
           <Stat label="Active time" value={activityDuration(session.durationSeconds)} style={styles.stat} />
           <Stat label={`Average pace ${pace.unit}`} value={pace.value} style={styles.stat} />
-          <Stat label="Ascent" value={activityAscent(session.elevationFeet, units)} style={styles.stat} />
+          {session.type === 'walk' ? null : <Stat label="Ascent" value={activityAscent(session.elevationFeet, units)} style={styles.stat} />}
           {typeof session.steps === 'number' ? <Stat label="Steps" value={Math.max(0, session.steps).toLocaleString()} style={styles.stat} /> : null}
           {typeof session.caloriesEstimate === 'number' ? <Stat label="Est. calories" value={`${Math.max(0, Math.round(session.caloriesEstimate)).toLocaleString()} kcal`} style={styles.stat} /> : null}
           {typeof session.averageHeartRate === 'number' ? <Stat label="Avg heart rate" value={`${Math.round(session.averageHeartRate)} bpm`} style={styles.stat} /> : null}
