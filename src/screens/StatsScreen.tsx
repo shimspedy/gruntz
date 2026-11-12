@@ -12,6 +12,7 @@ import { Text } from '../ui/Text';
 import { Tap } from '../ui/Pressable';
 import { activityLabel } from '../utils/activityDisplay';
 import { color, font, radius, space } from '../ui/tokens';
+import { KG_PER_LB, KM_PER_MILE } from '../utils/units';
 
 function duration(seconds: number) {
   if (!Number.isFinite(seconds) || seconds <= 0) return '–';
@@ -29,7 +30,7 @@ export default function StatsScreen() {
   const units = useUserStore((s) => s.profile?.settings.units ?? 'imperial');
   const sessions = useReadinessStore((s) => s.trackedSessions);
   const km = units === 'metric';
-  const dist = (mi: number) => (km ? `${(mi * 1.609).toFixed(1)} km` : `${mi.toFixed(1)} mi`);
+  const dist = (mi: number) => (km ? `${(mi * KM_PER_MILE).toFixed(1)} km` : `${mi.toFixed(1)} mi`);
 
   const tiles = [
     { label: 'Workouts', value: p.workouts_completed.toLocaleString() },
@@ -91,7 +92,7 @@ export default function StatsScreen() {
                   </Text>
                   <Text variant="subhead" tone="tertiary" style={{ marginTop: 2 }}>
                     {new Date(s.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                    {s.packWeightPounds ? ` · ${km ? `${Math.round(s.packWeightPounds * 0.45359237)} kg` : `${s.packWeightPounds} lb`}` : ''}
+                    {s.packWeightPounds ? ` · ${km ? `${Math.round(s.packWeightPounds * KG_PER_LB)} kg` : `${s.packWeightPounds} lb`}` : ''}
                     {s.terrain ? ` · ${s.terrain}` : ''}
                   </Text>
                 </View>

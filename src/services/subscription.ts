@@ -355,12 +355,20 @@ export async function loadRevenueCatState(options?: {
  * reviews are full of "something went wrong" with no next step; these say what
  * happened and what to do.
  */
+const ON_ANDROID = Platform.OS === 'android';
+/** Named for the store this build bills through: Play users were told to check their Apple ID. */
+export const STORE_NAME = ON_ANDROID ? 'Google Play' : 'the App Store';
+const STORE_ACCOUNT = ON_ANDROID ? 'Google account' : 'Apple ID';
+const sentence = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
 export const PURCHASE_ERROR_TEXT = {
-  notAllowed: 'Purchases are turned off on this device. Check Screen Time > Content & Privacy Restrictions, then try again.',
-  alreadyOwned: 'You already have Gruntz Pro on this Apple ID. Tap Restore to turn it on here. You won’t be charged again.',
-  storeProblem: 'The App Store had a problem completing this. You were not charged. Try again in a few minutes.',
-  network: 'Couldn’t reach the App Store. Check your connection and try again.',
-  invalid: 'The App Store couldn’t process this payment. Check the payment method on your Apple ID and try again.',
+  notAllowed: ON_ANDROID
+    ? 'Purchases are turned off on this device. Check the purchase settings in Google Play, then try again.'
+    : 'Purchases are turned off on this device. Check Screen Time > Content & Privacy Restrictions, then try again.',
+  alreadyOwned: `You already have Gruntz Pro on this ${STORE_ACCOUNT}. Tap Restore to turn it on here. You won’t be charged again.`,
+  storeProblem: `${sentence(STORE_NAME)} had a problem completing this. You were not charged. Try again in a few minutes.`,
+  network: `Couldn’t reach ${STORE_NAME}. Check your connection and try again.`,
+  invalid: `${sentence(STORE_NAME)} couldn’t process this payment. Check the payment method on your ${STORE_ACCOUNT} and try again.`,
 } as const;
 
 function purchaseErrorText(

@@ -10,7 +10,6 @@ import {
   type DailyChallenge,
   type FitnessLevel,
 } from '../data/dailyChallenges';
-import { summarizeChallengeHistory } from '../utils/challengeStats';
 import { getLocalDateKey } from '../utils/dateKey';
 import { useUserStore } from './useUserStore';
 
@@ -42,7 +41,6 @@ interface ChallengeState {
   addProgress: (amount: number, challenge: DailyChallenge) => ChallengeProgressResult;
   completeChallenge: (challenge: DailyChallenge) => ChallengeProgressResult;
   resetDaily: () => void;
-  getStreak: () => number; // consecutive days of completed challenges
   scaleFor: (mode: ChallengeMode, level: FitnessLevel | undefined) => number;
 }
 
@@ -250,10 +248,6 @@ export const useChallengeStore = create<ChallengeState>()(
           };
         });
       },
-
-      // One streak algorithm, shared with the profile summary: two implementations
-      // over the same dates drifted apart and could disagree between screens.
-      getStreak: () => summarizeChallengeHistory(get().completedDates).challengeStreakDays,
 
       scaleFor: (mode, level) => challengeScale(get().scaleByMode, mode, level),
     }),

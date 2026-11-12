@@ -78,8 +78,9 @@ export function getProgramWorkoutForDate(
     return null;
   }
 
-  const weekDays = getWorkoutDaysForWeek(week);
-  return weekDays.find((day) => day.day === targetDay) ?? weekDays[0] ?? null;
+  // A week with no entry for this day is resting (weeks 6, 8 and 10 rest on Thursday).
+  // Falling back to Monday re-offered a workout that had already been claimed.
+  return getWorkoutDaysForWeek(week).find((day) => day.day === targetDay) ?? null;
 }
 
 export function getNextProgramWorkout(

@@ -105,8 +105,14 @@ test('sets logged from the Lock Screen are applied in order with their own time 
 
 test('syncing starts once per change and ends with the workout', async () => {
   const env = setup();
-  env.session.getState().start(env.day(['pushups']), DATE);
   const { mod, calls } = loadLive(env);
+  // Before the saved session is read back, "no workout" is not yet known to be true.
+  if (!env.session.persist.hasHydrated()) {
+    await mod.syncLiveActivity(env.session.getState());
+    assert.equal(calls.end, 0, 'an activity is never ended on un-hydrated state');
+    await new Promise((resolve) => env.session.persist.onFinishHydration(resolve));
+  }
+  env.session.getState().start(env.day(['pushups']), DATE);
   await mod.syncLiveActivity(env.session.getState());
   await mod.syncLiveActivity(env.session.getState());
   assert.equal(calls.sync.length, 1);

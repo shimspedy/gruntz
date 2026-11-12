@@ -428,7 +428,10 @@ async function restoreBackupNow(): Promise<RestoreBackupResult> {
     localRestoreCommit = commit;
     try { await commit; }
     finally { if (localRestoreCommit === commit) localRestoreCommit = null; }
-    if (!await contextIsCurrent(supabase, context) || !contextGenerationIsCurrent(context)) return 'error';
+    // The backup is on the device from here on. If the session changed meanwhile, say so
+    // truthfully and leave the owner marks alone: reporting an error here told the athlete
+    // "nothing on this device has changed" about data that had just been replaced.
+    if (!await contextIsCurrent(supabase, context) || !contextGenerationIsCurrent(context)) return 'restored';
     await AsyncStorage.setItem(BACKUP_OWNER_KEY, context.session.user.id);
     if (data.updated_at) await AsyncStorage.setItem(BACKUP_SYNCED_AT_KEY, data.updated_at);
     else await AsyncStorage.removeItem(BACKUP_SYNCED_AT_KEY);
@@ -592,8 +595,15 @@ export function startBackupLifecycle(): () => void {
     pendingPush = null;
     void pushBackup();
   });
+  // A revoked token or an account deleted elsewhere signs this phone out without going
+  // through `signOut`, and the previous account's team name stayed cached for the next one.
+  const auth = getSupabase()?.auth.onAuthStateChange((event) => {
+    // Outside the auth callback: Supabase calls made inside it can deadlock its lock.
+    if (event === 'SIGNED_OUT') setTimeout(() => { void forgetAccountTeams(); }, 0);
+  });
   return () => {
     subscription.remove();
+    auth?.data.subscription.unsubscribe();
     backgroundListenerAttached = false;
   };
 }

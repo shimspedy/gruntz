@@ -2,6 +2,7 @@ import { Alert } from 'react-native';
 import { useUserStore } from '../store/useUserStore';
 import { getTrialEndsAt, useSubscriptionStore } from '../store/useSubscriptionStore';
 import { notificationWeekdays } from '../utils/trainingDays';
+import { currentSchedule } from '../features/trainingSchedule';
 import { toast } from '../ui/Toast';
 import { trackRetentionEvent } from './retentionAnalytics';
 import { cancelTrainingReminders, requestNotificationPermission, scheduleDailyReminder, scheduleTrialEndingReminder, scheduleWeeklyRecap, setNotificationsEnabled, setupNotificationChannels } from './notifications';
@@ -28,7 +29,7 @@ export async function promptTrainingReminder(): Promise<boolean> {
     setNotificationsEnabled(true);
     const daily = await scheduleDailyReminder(Number.isInteger(hours) && hours >= 0 && hours <= 23 ? hours : 7,
       Number.isInteger(minutes) && minutes >= 0 && minutes <= 59 ? minutes : 0,
-      notificationWeekdays(profile.workout_days_per_week));
+      notificationWeekdays(currentSchedule(profile)));
     const weekly = await scheduleWeeklyRecap();
     if (!daily || !weekly) {
       useUserStore.getState().updateSettings({ notifications_enabled: false });

@@ -121,6 +121,7 @@ test('reminder opt-in never claims success when scheduling fails after permissio
   const changes = [], toasts = [], canceled = [];
   const load = createLoader({
     'react-native': { Alert: { alert() {} } },
+    '../features/trainingSchedule': { currentSchedule: (profile) => profile?.workout_days_per_week },
     '../store/useUserStore': { useUserStore: { getState: () => ({ profile: { settings: { reminder_time: '07:00', notifications_enabled: false }, workout_days_per_week: 3 }, updateSettings: (patch) => changes.push(patch) }) } },
     '../store/useSubscriptionStore': { useSubscriptionStore: { getState: () => ({ entitlementActive: false, trialStartedAt: null }) }, getTrialEndsAt: () => null },
     '../ui/Toast': { toast: (message) => toasts.push(message) },

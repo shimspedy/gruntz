@@ -8,7 +8,7 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as Speech from 'expo-speech';
 import * as Location from 'expo-location';
 import { useRunTracker, type RunTrackerState } from '../hooks/useRunTracker';
-import { discardActiveActivity, initializeActivityTracking } from '../services/activityTracking';
+import { activityTracker, discardActiveActivity, initializeActivityTracking } from '../services/activityTracking';
 import { useTrainingAccess } from '../store/useSubscriptionStore';
 import { scheduleBackup } from '../services/backup';
 import { requestNotificationPermission } from '../services/notifications';
@@ -26,6 +26,9 @@ import { Segmented } from '../ui/Segmented';
 import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
 import { color, font, radius, space } from '../ui/tokens';
+import { KM_PER_MILE } from '../utils/units';
+import { useHardwareBack } from '../hooks/useHardwareBack';
+import { correctedIndoorWalk } from '../features/indoorWalk';
 
 const AWAKE = 'gruntz-field-session';
 
@@ -39,7 +42,7 @@ function clock(ms: number) {
 
 function pace(minPerMile: number | null, metric: boolean) {
   if (minPerMile == null || minPerMile <= 0 || minPerMile > 60) return '--:--';
-  const v = metric ? minPerMile / 1.609 : minPerMile;
+  const v = metric ? minPerMile / KM_PER_MILE : minPerMile;
   let m = Math.floor(v);
   let s = Math.round((v - m) * 60);
   if (s === 60) {
@@ -55,8 +58,6 @@ const TITLES: Record<ActivityType, { idle: string; live: string; noun: string }>
   hike: { idle: 'Hike', live: 'Hiking', noun: 'hike' },
   walk: { idle: 'Indoor walk', live: 'Walking indoors', noun: 'indoor walk' },
 };
-/** A treadmill session longer than this is a typo, not a walk. */
-const MAX_INDOOR_MILES = 100;
 
 /** What each system calls the permission level that keeps location on with the screen locked. */
 const ALWAYS_LOCATION = Platform.OS === 'android' ? '"Allow all the time"' : 'Always';
@@ -93,6 +94,7 @@ export default function RunTrackerScreen() {
   const loadedWeightLbs = bodyWeightLbs + (type === 'ruck' ? packToPounds(pack, metric) ?? 0 : 0);
   const recorder = useRunTracker({ batterySaver, loadedWeightLbs, activityType: type, backgroundTracking, packWeightPounds: type === 'ruck' ? packToPounds(pack, metric) : undefined, terrain: type === 'ruck' || type === 'hike' ? terrain : undefined });
   const announced = useRef(0);
+  const cuesFor = useRef<string | null>(null);
   const [finished, setFinished] = useState(false);
   const [finishedMetrics, setFinishedMetrics] = useState<RunTrackerState | null>(null);
   const tracker = finished && finishedMetrics ? { ...recorder, ...finishedMetrics } : recorder;
@@ -107,7 +109,7 @@ export default function RunTrackerScreen() {
   }, []);
 
   const idle = tracker.ready && !tracker.isTracking && !tracker.sessionId && !finished;
-  const dist = metric ? tracker.distanceMiles * 1.609 : tracker.distanceMiles;
+  const dist = metric ? tracker.distanceMiles * KM_PER_MILE : tracker.distanceMiles;
   const unit = metric ? 'km' : 'mi';
   const elev = tracker.elevationGainFt;
   /** Recording has stopped and the activity is waiting to be saved (just ended, or recovered). */
@@ -144,6 +146,13 @@ export default function RunTrackerScreen() {
       return;
     }
     const whole = Math.floor(dist);
+    // Coming back to a recording already under way: start from where it is, rather than
+    // announcing a split that was passed (and spoken) before this screen was reopened.
+    if (cuesFor.current !== tracker.sessionId) {
+      cuesFor.current = tracker.sessionId;
+      announced.current = whole;
+      return;
+    }
     if (audioCues && whole > announced.current) {
       announced.current = whole;
       Speech.speak(`${metric ? 'Kilometer' : 'Mile'} ${whole}. Pace ${pace(tracker.paceMinPerMile, metric)}.`, {
@@ -153,7 +162,7 @@ export default function RunTrackerScreen() {
       });
       haptic.success();
     }
-  }, [tracker.isTracking, dist, tracker.paceMinPerMile, audioCues, metric]);
+  }, [tracker.isTracking, tracker.sessionId, dist, tracker.paceMinPerMile, audioCues, metric]);
 
   // The live dot breathes while GPS is recording.
   const pulse = useSharedValue(1);
@@ -179,7 +188,8 @@ export default function RunTrackerScreen() {
       const ok = await tracker.start({ backgroundTracking: recordInBackground });
       if (!mounted.current) return;
       if (!ok) {
-        Alert.alert('Unable to start', tracker.error ?? (type === 'walk' ? 'Your indoor walk could not start. Try again.' : `Check location access and GPS availability, then try your ${type} again.`));
+        // The reason is published during the await; the render-time `tracker` predates it.
+        Alert.alert('Unable to start', activityTracker.getSnapshot().error ?? (type === 'walk' ? 'Your indoor walk could not start. Try again.' : `Check location access and GPS availability, then try your ${type} again.`));
         return;
       }
     } finally {
@@ -241,26 +251,17 @@ export default function RunTrackerScreen() {
       if (!id) throw new Error('No recorded activity was found.');
       // A treadmill measures its belt; steps only estimate it. What the athlete typed wins,
       // and the calorie estimate follows the corrected distance.
-      let final = recorded;
-      if (recorded.activityType === 'walk') {
-        const typed = Number(treadmill.replace(',', '.'));
-        const miles = Number.isFinite(typed) && typed >= 0 ? Math.min(MAX_INDOOR_MILES, metric ? typed / 1.609344 : typed) : null;
-        if (miles !== null && treadmill.trim() !== '' && Math.abs(miles - recorded.distanceMiles) >= 0.005) {
-          const rounded = Math.round(miles * 100) / 100;
-          final = {
-            ...recorded,
-            distanceMiles: rounded,
-            paceMinPerMile: rounded > 0.05 ? Math.round((recorded.durationMs / 60000 / rounded) * 10) / 10 : null,
-            caloriesEstimate: recorded.distanceMiles > 0 ? Math.round(recorded.caloriesEstimate * (rounded / recorded.distanceMiles)) : Math.round(rounded * (bodyWeightLbs / 1.9)),
-          };
-        }
-      }
+      const final = recorded.activityType === 'walk'
+        ? { ...recorded, ...correctedIndoorWalk(recorded, treadmill, metric, bodyWeightLbs) }
+        : recorded;
       // The route is written to its own storage before the summary joins history. A
       // failed write throws here: nothing is credited and the draft stays for a retry.
       const added = await saveTrackedActivity({
         id,
         type: final.activityType,
-        date: new Date().toISOString(),
+        // When recording stopped, not when Save was tapped: a run saved the next morning
+        // was exported to Health as a fourteen-hour workout.
+        date: new Date(final.endedAt ?? Date.now()).toISOString(),
         startedAt: new Date(final.startedAt ?? Date.now()).toISOString(),
         distanceMiles: final.distanceMiles,
         durationSeconds: Math.round(final.durationMs / 1000),
@@ -321,6 +322,9 @@ export default function RunTrackerScreen() {
       { text: indoor ? 'End walk' : 'End & save', onPress: () => void (indoor ? stopForReview() : stopAndSave()) },
     ]);
   };
+
+  // Android back asks the same question the close button does, instead of just leaving.
+  useHardwareBack(close);
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
@@ -423,7 +427,7 @@ export default function RunTrackerScreen() {
           {indoor
             // No GPS speed indoors: the average over the walk so far is the honest number.
             ? <Big label={metric ? 'Avg km/h' : 'Avg mph'} value={dist > 0 && tracker.durationMs > 0 ? (dist / (tracker.durationMs / 3_600_000)).toFixed(1) : '--'} />
-            : <Big label={metric ? 'km/h' : 'mph'} value={tracker.currentSpeedMph != null ? (metric ? tracker.currentSpeedMph * 1.609 : tracker.currentSpeedMph).toFixed(1) : '--'} />}
+            : <Big label={metric ? 'km/h' : 'mph'} value={tracker.currentSpeedMph != null ? (metric ? tracker.currentSpeedMph * KM_PER_MILE : tracker.currentSpeedMph).toFixed(1) : '--'} />}
         </View>
 
         <View style={styles.secondary}>

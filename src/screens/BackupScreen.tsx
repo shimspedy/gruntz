@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -57,13 +57,19 @@ export default function BackupScreen() {
   const includeRoutes = useReadinessStore((state) => state.includeActivityRoutesInBackup);
   const setIncludeRoutes = useReadinessStore((state) => state.setIncludeActivityRoutesInBackup);
 
+  const refreshTicket = useRef(0);
   const refresh = useCallback(async () => {
+    // Only the newest request may write: an older answer arriving late put a signed-out
+    // email back on screen.
+    const ticket = ++refreshTicket.current;
     const current = await getSignedInEmail();
+    const nextMeta = current ? await fetchBackupMeta() : null;
+    if (ticket !== refreshTicket.current) return;
     setSignedInEmail(current);
-    setMeta(current ? await fetchBackupMeta() : null);
+    setMeta(nextMeta);
   }, []);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  // Focus covers the first mount too; a second fetch there could land out of order.
   useFocusEffect(useCallback(() => { void refresh(); }, [refresh]));
 
   // A build without Supabase keys is a supported state, not a broken one.

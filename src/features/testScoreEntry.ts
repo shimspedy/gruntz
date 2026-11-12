@@ -7,15 +7,25 @@ export function hasTestScoreChanges(scores: Record<string, number>, saved: Recor
   return keys.length > 0 && (keys.length !== Object.keys(saved).length || keys.some((key) => scores[key] !== saved[key]));
 }
 
-/** A blank field means no measurement; malformed nonempty input must never become a score. */
-export function parseTestScoreValue(text: string, unit: TestEventDefinition['unit']): number | null {
+/** Events at least this long are entered as minutes:seconds only. */
+const CLOCK_ONLY_FROM_SECONDS = 300;
+
+/**
+ * A blank field means no measurement; malformed nonempty input must never become a score.
+ *
+ * A bare number in a timed field is seconds, which is right for a 90-second plank and
+ * badly wrong for a run: "15" for a two-mile was stored as fifteen seconds and scored
+ * 100%. Pass the event's `target` and a bare number is refused for events that long.
+ */
+export function parseTestScoreValue(text: string, unit: TestEventDefinition['unit'], target?: number): number | null {
   const clean = text.trim().replace(',', '.');
   let value = 0;
   if (unit === 'seconds' && /^\d+:\d{1,2}$/.test(clean)) {
     const [minutes, seconds] = clean.split(':').map(Number);
     if (seconds >= 60) return null;
     value = minutes * 60 + seconds;
-  } else if (/^\d+(?:\.\d+)?$/.test(clean)) value = Number(clean);
+  } else if (unit === 'seconds' && target !== undefined && target >= CLOCK_ONLY_FROM_SECONDS) return null;
+  else if (/^\d+(?:\.\d+)?$/.test(clean)) value = Number(clean);
   return Number.isFinite(value) && value > 0 ? value : null;
 }
 
@@ -25,10 +35,11 @@ export function prepareTestScoreEntry(events: TestEventDefinition[], draft: Reco
   const targets: Record<string, number> = {};
   for (const event of events) {
     const fields = draft[event.id] ?? { current: '', target: '' };
-    const current = parseTestScoreValue(fields.current, event.unit);
-    const target = parseTestScoreValue(fields.target, event.unit);
-    if (fields.current.trim() && current === null) return { scores, targets, error: `Enter a valid score for ${event.shortName}` };
-    if (fields.target.trim() && target === null) return { scores, targets, error: `Enter a valid target for ${event.shortName}` };
+    const current = parseTestScoreValue(fields.current, event.unit, event.target);
+    const target = parseTestScoreValue(fields.target, event.unit, event.target);
+    const clock = event.unit === 'seconds' && event.target >= CLOCK_ONLY_FROM_SECONDS ? ' as minutes:seconds, like 15:30' : '';
+    if (fields.current.trim() && current === null) return { scores, targets, error: `Enter a valid score for ${event.shortName}${clock}` };
+    if (fields.target.trim() && target === null) return { scores, targets, error: `Enter a valid target for ${event.shortName}${clock}` };
     if (current !== null) scores[event.id] = current;
     targets[event.id] = target ?? event.target;
   }

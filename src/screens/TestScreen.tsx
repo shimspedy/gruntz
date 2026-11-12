@@ -32,6 +32,7 @@ import { trackRetentionEvent } from '../services/retentionAnalytics';
 import { hasTestScoreChanges, prepareTestScoreEntry } from '../features/testScoreEntry';
 import { formatEventValue, testCardModel } from '../features/shareCards';
 import { ShareCardSheet } from '../components/share/ShareCardSheet';
+import { KG_PER_LB } from '../utils/units';
 
 /** Opening a URL can fail (no browser, malformed link); say so instead of doing nothing. */
 async function openSource(url: string) {
@@ -53,7 +54,6 @@ export { formatEventValue };
 
 const unitLabel = (u: TestEventDefinition['unit']) => (u === 'seconds' ? 'min:sec' : u === 'pounds' ? 'lb' : u);
 
-const KG_PER_LB = 0.45359237;
 
 /**
  * Whole calendar days until the test. Measuring elapsed milliseconds against noon
@@ -134,7 +134,7 @@ export default function TestScreen() {
                 reading "No test date set" with nothing to tap. */}
             <Tap feedback="opacity" hitSlop={8} onPress={() => setDateSheet(true)} accessibilityLabel="Set test date">
               <Text variant="callout" tone={countdown == null ? 'accent' : 'secondary'} style={{ marginTop: 4 }}>
-                {countdown == null ? 'Set a test date' : countdown === 0 ? 'Test day' : countdown < 0 ? 'Set your next test date' : `${countdown} days to test`}
+                {countdown == null ? 'Set a test date' : countdown === 0 ? 'Test day' : countdown < 0 ? 'Set your next test date' : `${countdown} ${countdown === 1 ? 'day' : 'days'} to test`}
               </Text>
             </Tap>
           </View>

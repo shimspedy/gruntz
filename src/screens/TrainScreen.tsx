@@ -35,10 +35,11 @@ import { useContentSize } from '../ui/useContentSize';
 import { useExerciseLogStore } from '../store/useExerciseLogStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { comebackDays, nextTrainingDay, summarizeTrainingWeek, trainingDateKeys } from '../features/retention';
+import { scheduleFor } from '../features/trainingSchedule';
 import { getTodaysTrainingChoice, getTrainingFocus } from '../features/trainingFocus';
 import { trackRetentionEvent } from '../services/retentionAnalytics';
 import { useNow } from '../hooks/useNow';
-import { getLocalDateKey } from '../utils/dateKey';
+import { getLocalDateKey, parseLocalDateKey } from '../utils/dateKey';
 
 const CATEGORIES: { id: MovementCard['category']; label: string }[] = [
   { id: 'total_body', label: 'Total body' },
@@ -72,8 +73,10 @@ export default function TrainScreen() {
   const [category, setCategory] = useState<MovementCard['category']>('total_body');
   const now = useNow(true, 60000);
   const dateKey = getLocalDateKey(new Date(now));
+  // The plan and the focus only change with the calendar day, not with each minute tick.
+  const day = useMemo(() => parseLocalDateKey(dateKey) ?? new Date(), [dateKey]);
 
-  const days = useMemo(() => (program ? getPlanWeek(program, week, profile, claimed, new Date(now)) : []), [program, week, profile, claimed, dateKey]);
+  const days = useMemo(() => (program ? getPlanWeek(program, week, profile, claimed, day) : []), [program, week, profile, claimed, day]);
   const cards = useMemo(() => [...getAllMovementCards(), ...getAllSwimCards()], []);
   const quick = cards.filter((c) => c.category === category).slice(0, 3);
   const today = getTodaysCheckIn(checkIns);
@@ -82,11 +85,12 @@ export default function TrainScreen() {
   const { plan: activePlan, pending: planPending } = useActivePlanDeferred();
   const justCompleted = usePlanLibraryStore((s) => s.justCompleted);
   const dates = useMemo(() => trainingDateKeys(logs, activities), [logs, activities]);
-  const weekSummary = summarizeTrainingWeek(dates, profile?.workout_days_per_week, new Date(now));
-  const next = nextTrainingDay(profile?.workout_days_per_week, dates, new Date(now));
+  const schedule = useMemo(() => scheduleFor({ program, week, profile, onLibraryPlan: !!activePlan || planPending }), [program, week, profile, activePlan, planPending]);
+  const weekSummary = summarizeTrainingWeek(dates, schedule, new Date(now));
+  const next = nextTrainingDay(schedule, dates, new Date(now));
   const gap = comebackDays(dates, new Date(now));
   const showComeback = gap !== null && !sessionActive;
-  const focus = useMemo(() => getTrainingFocus(profile, testScores, targets, new Date(now)), [profile, testScores, targets, dateKey]);
+  const focus = useMemo(() => getTrainingFocus(profile, testScores, targets, day), [profile, testScores, targets, day]);
   const focusMission = useMemo(() => program && focus && !activePlan && !planPending ? getFocusedProgramWorkout(program, week, profile, focus) : null, [program, week, profile, focus, activePlan, planPending]);
   const todayMission = days.find((day) => day.isToday && day.workout && !day.completed);
   const nextMission = todayMission ?? days.find((day) => !day.isPast && day.workout && !day.completed);

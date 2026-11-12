@@ -23,6 +23,7 @@ import { convertSessionWeights } from '../store/useSessionStore';
 import { getAccessState, getTrialEndsAt, useSubscriptionStore } from '../store/useSubscriptionStore';
 import { useUserStore } from '../store/useUserStore';
 import { notificationWeekdays, trainingWeekdays } from '../utils/trainingDays';
+import { currentSchedule } from '../features/trainingSchedule';
 import { Group, NavHeader, Row } from '../ui/Layout';
 import { Sheet } from '../ui/Sheet';
 import { Tap } from '../ui/Pressable';
@@ -100,7 +101,7 @@ export default function SettingsScreen() {
         const savedTime = profile?.settings.reminder_time || '07:00';
         const [savedHour, savedMinute] = savedTime.split(':').map(Number);
         setNotificationsEnabled(true);
-        const daily = await scheduleDailyReminder(savedHour, savedMinute, notificationWeekdays(profile?.workout_days_per_week));
+        const daily = await scheduleDailyReminder(savedHour, savedMinute, notificationWeekdays(currentSchedule(profile)));
         const weekly = await scheduleWeeklyRecap();
         if (!daily || !weekly) {
           updateSettings({ notifications_enabled: false });
@@ -191,7 +192,7 @@ export default function SettingsScreen() {
             icon="bell"
             title="Workout reminders"
             subtitle={notifications
-              ? `${trainingWeekdays(profile?.workout_days_per_week).length}× a week at ${formatTime(profile?.settings.reminder_time ?? '07:00')}, weekly recap`
+              ? `${trainingWeekdays(currentSchedule(profile)).length}× a week at ${formatTime(profile?.settings.reminder_time ?? '07:00')}, weekly recap`
               : 'Off'}
             toggle={notifications}
             onToggle={(v) => void toggleNotifications(v)}
@@ -316,7 +317,7 @@ export default function SettingsScreen() {
                   haptic.selection();
                   const [h, m] = t.split(':').map(Number);
                   try {
-                    const scheduled = await scheduleDailyReminder(h, m, notificationWeekdays(profile?.workout_days_per_week));
+                    const scheduled = await scheduleDailyReminder(h, m, notificationWeekdays(currentSchedule(profile)));
                     if (!scheduled) {
                       updateSettings({ notifications_enabled: false });
                       await cancelTrainingReminders();

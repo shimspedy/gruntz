@@ -44,8 +44,10 @@ export const useHealthStore = create<HealthState>()(
       markExported: (id) => set((state) => (state.exportedIds.includes(id)
         ? state : { exportedIds: [...state.exportedIds, id].slice(-MAX_EXPORTED_IDS) })),
       noteHeartRateChecked: (id, at) => set((state) => {
-        const heartRateChecked: Record<string, number> = { [id]: at };
+        const heartRateChecked: Record<string, number> = {};
         for (const [key, when] of Object.entries(state.heartRateChecked)) if (at - when < HEART_RATE_MEMORY_MS) heartRateChecked[key] = when;
+        // Last, so a repeat check moves the stamp forward instead of keeping the old one.
+        heartRateChecked[id] = at;
         return { heartRateChecked };
       }),
       finishedSync: (lastSyncAt) => set({ lastSyncAt }),

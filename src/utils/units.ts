@@ -1,5 +1,8 @@
 export const METERS_PER_MILE = 1609.344;
 export const FEET_PER_METER = 3.28084;
+/** Exact by definition. The one copy: screens used to carry their own, some rounded to 1.609. */
+export const KM_PER_MILE = 1.609344;
+export const KG_PER_LB = 0.45359237;
 
 /**
  * Which measurement system to start someone on.

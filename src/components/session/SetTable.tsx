@@ -7,6 +7,7 @@ import { Tap } from '../../ui/Pressable';
 import { Text } from '../../ui/Text';
 import { haptic } from '../../ui/haptics';
 import { color, font, motion, radius, space } from '../../ui/tokens';
+import { KG_PER_LB } from '../../utils/units';
 
 interface Props {
   exercise: SessionExercise;
@@ -44,7 +45,6 @@ function parseSeconds(text: string) {
   return Number(text.replace(/[^0-9]/g, '')) || 0;
 }
 
-const KG_PER_LB = 0.45359237;
 
 function prevLabel(p: PreviousSet | undefined, ex: SessionExercise, unit: 'lb' | 'kg') {
   if (!p) return '–';

@@ -1,8 +1,9 @@
 import { getChallengeForDate } from '../data/dailyChallenges';
 import type { DailyChallenge } from '../data/dailyChallenges';
 import { getLocalDayDiffFromToday, parseLocalDateKey } from './dateKey';
+import { KM_PER_MILE } from './units';
 
-const KM_TO_MILES = 0.621371;
+const KM_TO_MILES = 1 / KM_PER_MILE;
 
 export interface ChallengeHistorySummary {
   challengesCompleted: number;
@@ -41,7 +42,9 @@ export function summarizeChallengeHistory(completedDates: string[]): ChallengeHi
   const latestDate = normalizedDates[0];
   let challengeStreakDays = 0;
 
-  if (getLocalDayDiffFromToday(latestDate) <= 1) {
+  const sinceLatest = getLocalDayDiffFromToday(latestDate);
+  // A date in the future (clock change, bad import) must not hold a streak open.
+  if (sinceLatest >= 0 && sinceLatest <= 1) {
     challengeStreakDays = 1;
 
     for (let index = 1; index < normalizedDates.length; index += 1) {
@@ -115,7 +118,7 @@ export function getTrackedChallengeExerciseId(challengeId: string) {
   if (challengeId.startsWith('situp_')) return 'strict_situps';
   if (challengeId.startsWith('crunch_')) return 'usmc_crunches';
   if (challengeId.startsWith('mountain_climber_')) return 'mountain_climbers';
-  if (challengeId.startsWith('plank_')) return 'forward_plank';
+  // Timed holds are left out: their amount is seconds, and this feeds a rep counter.
 
   return null;
 }

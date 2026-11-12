@@ -356,11 +356,6 @@ export function applyImport(plan: ImportPlan, unit: Unit): ImportResult {
     }
   }
 
-  const before = useExerciseLogStore.getState().logs;
-  const newSets = Object.entries(incoming).reduce((total, [key, entries]) => {
-    const ids = new Set((before[key] ?? []).map((entry) => entry.id));
-    return total + entries.filter((entry) => !ids.has(entry.id)).reduce((sum, entry) => sum + entry.sets.length, 0);
-  }, 0);
   const report = useExerciseLogStore.getState().mergeEntries(incoming);
   if (report.entries) scheduleBackup();
   return {
@@ -368,8 +363,9 @@ export function applyImport(plan: ImportPlan, unit: Unit): ImportResult {
     sets: report.sets,
     exercises: report.exercises,
     skippedExercises: plan.rows.filter((r) => !r.match).length,
-    // `sets` here was the number built; the report's is the number kept.
-    droppedSets: Math.max(0, newSets - report.sets),
+    // Counted by the merge itself, which knows a duplicate from a set the caps discarded.
+    // Working it out here from ids alone reported every re-imported session as "didn't fit".
+    droppedSets: report.droppedSets ?? 0,
     evictedEntries: report.evictedEntries,
     evictedExercises: report.evictedExercises,
   };

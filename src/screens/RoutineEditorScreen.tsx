@@ -99,6 +99,7 @@ export default function RoutineEditorScreen() {
           value={draft.name}
           onChangeText={(name) => updateDraft({ name })}
           placeholder="Workout name"
+          accessibilityLabel="Workout name"
           placeholderTextColor={color.textQuaternary}
           style={styles.name}
           selectionColor={color.accent}

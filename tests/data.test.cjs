@@ -302,6 +302,7 @@ test('re-importing the same file in another timezone does not duplicate its sess
     assert.notEqual(home.bench[0].at, away.bench[0].at);
     assert.equal(home.bench[0].source, away.bench[0].source);
     const { mergeLogs } = load('src/store/useExerciseLogStore.ts', {
+      'react-native': { Platform: { OS: 'ios' } },
       '@react-native-async-storage/async-storage': {}, zustand: { create: () => () => ({}) },
       'zustand/middleware': { createJSONStorage: () => ({}), persist: (initializer) => initializer },
     });

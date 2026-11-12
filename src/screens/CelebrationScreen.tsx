@@ -31,6 +31,8 @@ import { trackRetentionEvent } from '../services/retentionAnalytics';
 import { toast } from '../ui/Toast';
 import { ShareCardSheet } from '../components/share/ShareCardSheet';
 import { missionCardModel } from '../features/shareCards';
+import { currentSchedule } from '../features/trainingSchedule';
+import { useHardwareBack } from '../hooks/useHardwareBack';
 
 /** After a mission: what moved. Rank-ups get the big moment; everything else stays calm. */
 export default function CelebrationScreen() {
@@ -43,8 +45,9 @@ export default function CelebrationScreen() {
   const activities = useReadinessStore((s) => s.trackedSessions);
   const grace = streakGraceDays(profile?.workout_days_per_week);
   const dates = React.useMemo(() => trainingDateKeys(logs, activities), [logs, activities]);
-  const week = summarizeTrainingWeek(dates, profile?.workout_days_per_week);
-  const next = nextTrainingDay(profile?.workout_days_per_week, dates);
+  const schedule = currentSchedule(profile);
+  const week = summarizeTrainingWeek(dates, schedule);
+  const next = nextTrainingDay(schedule, dates);
   const reducedMotion = useReducedMotion();
   const [reminding, setReminding] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -100,6 +103,10 @@ export default function CelebrationScreen() {
       toast('Could not set reminders. Try again in Settings.', { tone: 'info', icon: 'bell' });
     } finally { setReminding(false); }
   };
+
+  const backToTrain = () => navigation.dispatch(StackActions.popTo('Tabs', { screen: 'Train' }));
+  // Android back leaves the same way the button does, not onto the workout just finished.
+  useHardwareBack(backToTrain);
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top + space.xl }]}>
@@ -208,7 +215,7 @@ export default function CelebrationScreen() {
         model={sharing ? missionCardModel({ ...params, minutes: params.debrief?.minutes, sets: params.debrief?.sets }) : null}
       />
       <View style={[styles.footer, { paddingBottom: insets.bottom + space.xs }]}>
-        <Button title="Back to Train" onPress={() => navigation.dispatch(StackActions.popTo('Tabs', { screen: 'Train' }))} />
+        <Button title="Back to Train" onPress={backToTrain} />
       </View>
     </View>
   );

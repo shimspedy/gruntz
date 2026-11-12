@@ -43,7 +43,8 @@ function parse(raw: string | null, slot: number): Revision | null {
  * Two complete revisions avoid Android SQLite's row/database limits. The previous
  * intact revision remains readable if a process dies in the middle of a write.
  */
-export function createDurableFileStorage(key: string, legacy: LegacyStorage, files: StorageSlots) {
+export function createDurableFileStorage(key: string, legacy: LegacyStorage, files: StorageSlots, what = 'activity history') {
+  const What = what.charAt(0).toUpperCase() + what.slice(1);
   let queue: Promise<unknown> = Promise.resolve();
   const serialize = <T>(operation: () => Promise<T>): Promise<T> => {
     const next = queue.then(operation, operation);
@@ -64,7 +65,7 @@ export function createDurableFileStorage(key: string, legacy: LegacyStorage, fil
     const next: Revision = { format: 1, revision, payload, checksum: checksum(payload, revision), slot };
     await files.write(slot, JSON.stringify(next));
     const saved = parse(await files.read(slot), slot);
-    if (!saved || saved.revision !== revision || saved.payload !== payload) throw new Error('Activity history could not be saved completely. Please retry.');
+    if (!saved || saved.revision !== revision || saved.payload !== payload) throw new Error(`${What} could not be saved completely. Please retry.`);
     return saved;
   };
   const read = async (): Promise<Revision | null> => {
@@ -72,13 +73,13 @@ export function createDurableFileStorage(key: string, legacy: LegacyStorage, fil
     if (current) return current;
     const old = await legacy.getItem(key);
     if (old !== null) {
-      if (!validPayload(old)) throw new Error('Saved activity history is unreadable. Your existing data has been kept.');
+      if (!validPayload(old)) throw new Error(`Saved ${what} is unreadable. Your existing data has been kept.`);
       const migrated = await write(old, null);
       // Remove the SQLite copy only after the new file has been reread successfully.
       await legacy.removeItem(key);
       return migrated;
     }
-    if (occupied) throw new Error('Saved activity history is unreadable. Your existing files have been kept.');
+    if (occupied) throw new Error(`Saved ${what} is unreadable. Your existing files have been kept.`);
     return null;
   };
   return {
@@ -89,7 +90,7 @@ export function createDurableFileStorage(key: string, legacy: LegacyStorage, fil
     setItem(requested: string, payload: string): Promise<void> {
       checkKey(requested);
       return serialize(async () => {
-        if (!validPayload(payload)) throw new Error('Activity history is not a complete store payload.');
+        if (!validPayload(payload)) throw new Error(`${What} is not a complete store payload.`);
         await write(payload, await read());
         await legacy.removeItem(key);
       });

@@ -57,6 +57,21 @@ export const toast = (message: string, opts?: ToastOpts) => useToast.getState().
 const tones: Record<Tone, string> = { success: '#198840', info: '#2676D7', error: '#DA3B32' };
 
 /** Full-width banner that drops from under the status bar, then retreats. */
+/**
+ * How many native windows are open above the app root right now (a sheet, a full-screen
+ * share view). A toast drawn at the root is hidden behind those on Android.
+ */
+const useCovers = create<{ count: number }>(() => ({ count: 0 }));
+
+/** Call from anything presented in its own native window, for as long as it is showing. */
+export function useCoversToasts(showing = true) {
+  useEffect(() => {
+    if (!showing) return undefined;
+    useCovers.setState((s) => ({ count: s.count + 1 }));
+    return () => useCovers.setState((s) => ({ count: Math.max(0, s.count - 1) }));
+  }, [showing]);
+}
+
 export function ToastHost() {
   const current = useToast((t) => t.queue[0]);
   const clear = useToast((t) => t.clear);
@@ -87,6 +102,7 @@ export function ToastHost() {
   // While the workout is open its own top bar owns the top of the screen; sliding the toast
   // under it stops the banner hiding Finish for three seconds.
   const sessionOpen = useSessionStore((st) => st.active && !st.minimized);
+  const covered = useCovers((s) => s.count > 0);
   const style = useAnimatedStyle(() => ({ transform: [{ translateY: y.get() }] }));
   if (!message) return null;
 
@@ -127,8 +143,11 @@ export function ToastHost() {
   // painted underneath them and never seen. On iOS a window-level overlay sits above
   // them and, unlike a Modal, lets touches through: a Modal swallowed every tap for
   // the three seconds the banner was up (Finish, the input it asked you to fill) and
-  // dropped the keyboard. Android has no equivalent, so it keeps the Modal.
+  // dropped the keyboard. Android has no such overlay, so there the banner is drawn in
+  // place, where it blocks nothing, and only moves into a Modal while a native window
+  // is open that would otherwise hide it.
   if (Platform.OS === 'ios') return <FullWindowOverlay>{banner}</FullWindowOverlay>;
+  if (!covered) return banner;
   return (
     <Modal transparent visible statusBarTranslucent animationType="none" onRequestClose={clear}>
       {banner}

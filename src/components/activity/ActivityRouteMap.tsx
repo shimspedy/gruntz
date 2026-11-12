@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, AppState, StyleSheet, View } from 'react-native';
 import { Map, Camera, GeoJSONSource, Layer, type CameraRef } from '@maplibre/maplibre-react-native';
 import type { RoutePoint } from '../../types/activity';
@@ -8,7 +8,8 @@ import { Text } from '../../ui/Text';
 import { Tap } from '../../ui/Pressable';
 import { ActivityRouteArt } from './ActivityRouteArt';
 
-export function ActivityRouteMap({ route, tint, height = 320, fitRoute = true }: { route: RoutePoint[]; tint: string; height?: number; fitRoute?: boolean }) {
+/** Memoized: the tracker re-renders every second, and the map only changes with a new fix. */
+export const ActivityRouteMap = memo(function ActivityRouteMap({ route, tint, height = 320, fitRoute = true }: { route: RoutePoint[]; tint: string; height?: number; fitRoute?: boolean }) {
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -72,7 +73,7 @@ export function ActivityRouteMap({ route, tint, height = 320, fitRoute = true }:
       <Text variant="caption" style={styles.credits}>{activityMapAttribution}</Text>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   wrap: { backgroundColor: '#111B21', borderRadius: 20, overflow: 'hidden' },

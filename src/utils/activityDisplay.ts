@@ -1,5 +1,6 @@
 import type { ActivityType } from '../types/activity';
 import type { TrackedSession } from '../store/useReadinessStore';
+import { KM_PER_MILE } from './units';
 
 export type ActivityUnits = 'metric' | 'imperial';
 export const activityLabel = (type: ActivityType) => ({ run: 'Run', ruck: 'Ruck', hike: 'Hike', walk: 'Indoor walk' })[type];
@@ -7,7 +8,7 @@ export const activityAccent = (type: ActivityType) => type === 'run' ? '#A8F16A'
 const safe = (value: number) => Number.isFinite(value) ? Math.max(0, value) : 0;
 
 export function activityDistance(miles: number, units: ActivityUnits) {
-  return { value: (safe(miles) * (units === 'metric' ? 1.609344 : 1)).toFixed(2), unit: units === 'metric' ? 'km' : 'mi' };
+  return { value: (safe(miles) * (units === 'metric' ? KM_PER_MILE : 1)).toFixed(2), unit: units === 'metric' ? 'km' : 'mi' };
 }
 
 export function activityDuration(seconds: number) {
@@ -19,7 +20,7 @@ export function activityDuration(seconds: number) {
 }
 
 export function activityPace(session: Pick<TrackedSession, 'distanceMiles' | 'durationSeconds'>, units: ActivityUnits) {
-  const distance = safe(session.distanceMiles) * (units === 'metric' ? 1.609344 : 1);
+  const distance = safe(session.distanceMiles) * (units === 'metric' ? KM_PER_MILE : 1);
   return { value: distance > 0 && safe(session.durationSeconds) > 0 ? activityDuration(session.durationSeconds / distance) : '—', unit: units === 'metric' ? '/km' : '/mi' };
 }
 

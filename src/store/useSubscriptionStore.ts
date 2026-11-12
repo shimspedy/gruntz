@@ -16,6 +16,7 @@ import {
   type PurchaseStatus,
   presentRevenueCatCustomerCenter,
   PURCHASE_ERROR_TEXT,
+  STORE_NAME,
   restoreRevenueCatPurchases,
 } from '../services/subscription';
 import {
@@ -254,7 +255,7 @@ function userFacingError(raw: string | undefined | null, fallback: string): stri
   if (raw.includes('configuration') || raw.includes('products registered'))
     return 'Subscription is temporarily unavailable. Please try again later.';
   if (raw.includes('network') || raw.includes('NSURLError') || raw.includes('internet'))
-    return 'Unable to reach the App Store. Check your connection and try again.';
+    return `Unable to reach ${STORE_NAME}. Check your connection and try again.`;
   if (raw.includes('paywall') || raw.includes('not_presented'))
     return 'Subscription setup is in progress. Please try again shortly.';
   return fallback;
@@ -273,11 +274,32 @@ let latestCustomerInfoAt: number | null = null;
 let entitlementOperation = 0;
 let latestAppliedOperation = 0;
 
+/**
+ * Billing operations in flight. `isLoading` is true while any of them is: with one shared
+ * boolean, the foreground recheck that follows a closing purchase sheet switched the
+ * paywall back to idle while the purchase was still posting.
+ */
+let pendingOperations = 0;
+
+/** Marks an operation started. Call the result once it ends; it returns what `isLoading` should now be. */
+function beginOperation(): () => boolean {
+  pendingOperations += 1;
+  let finished = false;
+  return () => {
+    if (!finished) {
+      finished = true;
+      pendingOperations = Math.max(0, pendingOperations - 1);
+    }
+    return pendingOperations > 0;
+  };
+}
+
 async function runPurchase(
   set: (partial: Partial<SubscriptionState>) => void,
   runner: PurchaseRunner,
 ): Promise<PurchaseStatus> {
   const operation = ++entitlementOperation;
+  const finish = beginOperation();
   set({ isLoading: true, lastError: null });
 
   try {
@@ -291,7 +313,7 @@ async function runPurchase(
 
     if (result.status === 'error' || result.status === 'unavailable') {
       set({
-        isLoading: false,
+        isLoading: finish(),
         isConfigured: configured,
         lastError: userFacingError(
           result.message,
@@ -301,12 +323,12 @@ async function runPurchase(
       return result.status === 'error' ? 'error' : 'unavailable';
     }
 
-    set({ isLoading: false, isConfigured: configured, lastError: null });
+    set({ isLoading: finish(), isConfigured: configured, lastError: null });
 
     return result.status;
   } catch (error) {
     set({
-      isLoading: false,
+      isLoading: finish(),
       isConfigured: isRevenueCatAvailable(),
       lastError: userFacingError(
         error instanceof Error ? error.message : null,
@@ -331,6 +353,8 @@ function syncEntitlementState(
   customerInfo: Awaited<ReturnType<typeof loadRevenueCatState>>['customerInfo'],
   known: boolean,
   operation: number,
+  /** Overrides what the stored status implies. A restore passes false: the athlete asked, so finding nothing is "none", never "moved". */
+  hadAccessOverride?: boolean,
 ) {
   if (!known) return;
   const milliseconds = (customerInfo as { requestDateMillis?: unknown } | null)?.requestDateMillis;
@@ -345,9 +369,9 @@ function syncEntitlementState(
   const entitlement = getEntitlementAccess(customerInfo);
   const previous = useSubscriptionStore.getState();
   // 'moved' stays 'moved' until a subscription shows up here again.
-  const hadAccessHere = previous.entitlementStatus
+  const hadAccessHere = hadAccessOverride ?? (previous.entitlementStatus
     ? unlocks(previous.entitlementStatus) || previous.entitlementStatus === 'moved'
-    : previous.entitlementActive;
+    : previous.entitlementActive);
   const status = classifyEntitlement(entitlement, hadAccessHere);
   const active = unlocks(status);
   if (status !== previous.entitlementStatus) {
@@ -464,7 +488,11 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           get().startTrialIfNeeded();
         }
 
-        set({ isLoading: true, lastError: null, isConfigured: isRevenueCatAvailable() });
+        // A recheck that starts while a purchase or restore is running must not wipe the
+        // error that operation is about to show, or has just shown.
+        const alone = pendingOperations === 0;
+        const finish = beginOperation();
+        set({ isLoading: true, ...(alone ? { lastError: null } : {}), isConfigured: isRevenueCatAvailable() });
 
         try {
           watchForeground();
@@ -493,7 +521,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             isConfigured: isRevenueCatAvailable(),
           });
         } finally {
-          set({ isLoading: false });
+          set({ isLoading: finish() });
         }
       },
 
@@ -503,6 +531,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
       loadOffering: async () => {
         const operation = ++entitlementOperation;
+        const finish = beginOperation();
         set({ isLoading: true, lastError: null });
 
         try {
@@ -525,7 +554,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             isConfigured: isRevenueCatAvailable(),
           });
         } finally {
-          set({ isLoading: false });
+          set({ isLoading: finish() });
         }
       },
 
@@ -534,25 +563,28 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
       restoreAccess: async () => {
         const operation = ++entitlementOperation;
+        const finish = beginOperation();
         set({ isLoading: true, lastError: null });
 
         try {
           const result = await restoreRevenueCatPurchases();
 
           if (result.customerInfo) {
-            syncEntitlementState(set, result.customerInfo, true, operation);
+            // Classified the same way as the answer returned below, so the store can never
+            // say "moved to another device" while the alert says "no purchases found".
+            syncEntitlementState(set, result.customerInfo, true, operation, false);
           }
 
           const configured = isRevenueCatAvailable();
 
           if (result.status === 'error' || result.status === 'unavailable') {
             set({
-              isLoading: false,
+              isLoading: finish(),
               isConfigured: configured,
               lastError: userFacingError(result.message, 'Unable to restore purchases right now. Please try again.'),
             });
           } else {
-            set({ isLoading: false, isConfigured: configured, lastError: null });
+            set({ isLoading: finish(), isConfigured: configured, lastError: null });
           }
 
           if (result.status === 'error' || result.status === 'unavailable') return result.status;
@@ -567,7 +599,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           return found;
         } catch (error) {
           set({
-            isLoading: false,
+            isLoading: finish(),
             isConfigured: isRevenueCatAvailable(),
             lastError: userFacingError(
               error instanceof Error ? error.message : null,
@@ -580,6 +612,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
       openCustomerCenter: async () => {
         const operation = ++entitlementOperation;
+        const finish = beginOperation();
         set({ isLoading: true, lastError: null });
         try {
           const result = await presentRevenueCatCustomerCenter();
@@ -594,7 +627,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           set({ lastError: 'Unable to open subscription management right now.' });
           return 'error';
         } finally {
-          set({ isLoading: false, isConfigured: isRevenueCatAvailable() });
+          set({ isLoading: finish(), isConfigured: isRevenueCatAvailable() });
         }
       },
 

@@ -76,7 +76,6 @@ interface ReadinessState {
   teamCode: string;
   teamCount: number;
   saveCheckIn: (checkIn: DailyReadinessCheckIn) => void;
-  setTestScore: (eventId: string, value: number) => void;
   saveTestAttempt: (testId: FitnessTestType, scores: Record<string, number>, recordedAt?: string) => boolean;
   setTrainingChoice: (mode: TrainingMode, date?: string) => void;
   setTargetScore: (eventId: string, value: number) => void;
@@ -124,7 +123,6 @@ export const useReadinessStore = create<ReadinessState>()(
       saveCheckIn: (checkIn) => set((state) => ({
         checkIns: [checkIn, ...state.checkIns.filter((item) => item.date !== checkIn.date)].slice(0, MAX_CHECKINS),
       })),
-      setTestScore: (eventId, value) => set((state) => ({ testScores: { ...state.testScores, [eventId]: value } })),
       saveTestAttempt: (testId, scores, recordedAt = new Date().toISOString()) => {
         const test = militaryTests[testId];
         if (!test || !Number.isFinite(Date.parse(recordedAt))) return false;

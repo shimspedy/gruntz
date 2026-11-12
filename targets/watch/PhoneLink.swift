@@ -28,6 +28,8 @@ final class PhoneLink: NSObject, ObservableObject {
     private var restTask: Task<Void, Never>?
     private var waitTask: Task<Void, Never>?
     private var lastRequestAt: Double = 0
+    /// When the phone last came back into reach; nil while it is out of reach.
+    private var reachableSince: Date?
 
     override init() {
         super.init()
@@ -233,7 +235,11 @@ final class PhoneLink: NSObject, ObservableObject {
                 // Confirmed, gone, or from another workout: nothing left to show.
                 guard log.session == live.id, done[id] == false else { return false }
                 // In touch with the phone and still not accepted after this long: it refused the set.
-                return !(reachable && now.timeIntervalSince(log.at) > 20)
+                // The wait runs from when contact returned, not from when the set was logged. A set
+                // logged out of range is already "old" on reconnect, and the phone's first answer
+                // can arrive before the queued log does, which used to un-tick it on the wrist.
+                let waitingSince = max(log.at, reachableSince ?? log.at)
+                return !(reachable && now.timeIntervalSince(waitingSince) > 20)
             }
             if kept != pending { pending = kept; savePending() }
             if previous != live.id {
@@ -272,11 +278,20 @@ final class PhoneLink: NSObject, ObservableObject {
     }
 }
 
+extension PhoneLink {
+    /// Records reachability, and the moment it was regained.
+    fileprivate func noteReachable(_ now: Bool) {
+        if now && !reachable { reachableSince = Date() }
+        if !now { reachableSince = nil }
+        reachable = now
+    }
+}
+
 extension PhoneLink: WCSessionDelegate {
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
         let context = session.receivedApplicationContext
         DispatchQueue.main.async {
-            self.reachable = session.isReachable
+            self.noteReachable(session.isReachable)
             let waiting = self.backlog
             self.backlog = []
             for body in waiting { self.deliver(body, durable: true) }
@@ -287,7 +302,7 @@ extension PhoneLink: WCSessionDelegate {
 
     func sessionReachabilityDidChange(_ session: WCSession) {
         DispatchQueue.main.async {
-            self.reachable = session.isReachable
+            self.noteReachable(session.isReachable)
             if session.isReachable { self.refresh() }
         }
     }

@@ -15,6 +15,7 @@ import { getTodaysTrainingChoice, getTrainingFocus, prioritizeWorkout, type Trai
 import { useReadinessStore } from './useReadinessStore';
 import { getLocalDateKey } from '../utils/dateKey';
 import { isSameCanonicalMovement } from '../features/exerciseProvenance';
+import { KG_PER_LB } from '../utils/units';
 
 /**
  * The live workout. Lives outside navigation so the session can collapse into the
@@ -239,7 +240,6 @@ export function buildSessionExercises(day: WorkoutDay, previous: Record<string, 
   return list;
 }
 
-const KG_PER_LB = 0.45359237;
 
 /** Converts the running workout's weights when the user changes units mid-session. */
 export function convertSessionWeights(to: 'lb' | 'kg') {
@@ -778,14 +778,14 @@ export const useSessionStore = create<SessionState>()(
         // Every completed set goes into the exercise's own history (History, Charts, Records).
         const at = new Date().toISOString();
         const unit = useUserStore.getState().profile?.settings.units === 'metric' ? 'kg' : 'lb';
-        const log = useExerciseLogStore.getState();
-        get().exercises.forEach((e) => {
+        // One write for the whole workout: a write per exercise re-serialised the full log each time.
+        useExerciseLogStore.getState().recordMany(get().exercises.flatMap((e) => {
           const sets = e.sets.filter((st) => st.done && !st.warmup).map(({ reps, weight, seconds, distance }) => ({ reps, weight, seconds, distance }));
-          if (!sets.length) return;
+          if (!sets.length) return [];
           const logged = getExerciseById(e.exerciseId);
           const key = logged ? exerciseLogKey(logged) : e.exerciseId;
-          log.record(key, { id: `${get().startedAt ?? at}:${e.key}`, at, workoutTitle: get().title, unit, sets, movement: { exerciseId: e.exerciseId, ...(e.prescribedName ? { prescribedName: e.prescribedName } : {}) } });
-        });
+          return [{ key, entry: { id: `${get().startedAt ?? at}:${e.key}`, at, workoutTitle: get().title, unit, sets, movement: { exerciseId: e.exerciseId, ...(e.prescribedName ? { prescribedName: e.prescribedName } : {}) } } }];
+        }));
 
         const planDay = parsePlanSessionId(get().workoutDayId);
         if (planDay && get().exercises.length && get().exercises.every(isExerciseDone)) {
@@ -845,7 +845,7 @@ export const useSessionStore = create<SessionState>()(
       onRehydrateStorage: () => (state) => {
         if (!state?.active) return;
         const patch: Partial<SessionState> = {};
-        if (state.restEndsAt && state.restEndsAt <= Date.now()) Object.assign(patch, { restEndsAt: null, restTotal: 0 });
+        if (state.restEndsAt && state.restEndsAt <= Date.now()) Object.assign(patch, { restEndsAt: null, restTotal: 0, restSetId: null });
         // A workout left open overnight comes back as the mini bar, not full screen.
         if (state.startedAt && Date.now() - state.startedAt > STALE_SESSION_MS) patch.minimized = true;
         if (Object.keys(patch).length) useSessionStore.setState(patch);

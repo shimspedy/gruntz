@@ -82,6 +82,7 @@ function environment({ hydrated = true, query, save, dataChangeFailure = false }
     const fake = dummy(); fake.persist.clearStorage = async () => {};
     mocks[`../store/${name}`] = { [name]: fake };
   }
+  mocks['../store/useExerciseLogStore'].clearExerciseLogPersistence = async () => {};
   mocks['../store/useUiStore'] = { useUiStore: dummy(), useChromePrefs: dummy() };
   const load = createLoader(mocks);
   const restoreSnapshot = { schema_version: 1, captured_at: new Date(now).toISOString(), stores: { '@gruntz_readiness': JSON.stringify({ state: { trackedSessions: [] }, version: 0 }) } };

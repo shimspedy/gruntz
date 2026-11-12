@@ -14,6 +14,8 @@ const DRAFT_READ_ERROR = 'Your saved activity could not be read. Retry after fre
 export const DEFAULT_WALK_STRIDE_METERS = 0.74;
 /** Past this an indoor walk found still "recording" by a fresh launch was forgotten, not walked. */
 const MAX_UNATTENDED_INDOOR_MS = 6 * 60 * 60 * 1000;
+/** With the app open, how long new fixes may wait in memory before the draft is rewritten. */
+const ROUTE_WRITE_INTERVAL_MS = 10_000;
 const NO_STEPS_NOTICE = 'Step counting is unavailable, so distance stays at zero. Enter the treadmill distance when you finish.';
 const WAITING_FOR_GPS_NOTICE = 'Waiting for a precise GPS signal. Recording will continue when location is available; the missing route will not add distance.';
 
@@ -42,6 +44,8 @@ export interface RunTrackerState {
   caloriesEstimate: number;
   sessionId: string | null;
   startedAt: number | null;
+  /** When recording last stopped. Null while it is running, or on a draft from before this was kept. */
+  endedAt: number | null;
   activityType: ActivityType;
   packWeightPounds: number;
   terrain: string | null;
@@ -95,6 +99,8 @@ interface Draft {
   altitudeAnchor: number | null;
   lastTimestamp: number;
   updatedAt: number;
+  /** When recording last stopped; optional so drafts written before it existed still load. */
+  endedAt?: number;
   backgroundEnabled: boolean;
   stepsLimited: boolean;
 }
@@ -142,7 +148,7 @@ function compactRoute(route: RoutePoint[]): RoutePoint[] {
 }
 function emptyState(): RunTrackerState {
   return { isTracking: false, isPaused: false, distanceMiles: 0, durationMs: 0, paceMinPerMile: null, currentSpeedMph: null,
-    steps: 0, elevationGainFt: 0, route: [], caloriesEstimate: 0, sessionId: null, startedAt: null, activityType: 'run',
+    steps: 0, elevationGainFt: 0, route: [], caloriesEstimate: 0, sessionId: null, startedAt: null, endedAt: null, activityType: 'run',
     packWeightPounds: 0, terrain: null, backgroundEnabled: false, stepsLimited: false, recoveryNotice: null, error: null, savedDraftRecoveryRequired: false, ready: false };
 }
 
@@ -168,6 +174,8 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
   let pedometer: Subscription | null = null;
   let stepGeneration = 0;
   let backgrounded = false;
+  let latestAppState = 'active';
+  let lastRouteWriteAt = 0;
   const listeners = new Set<() => void>();
   const serial = <T>(operation: () => Promise<T>): Promise<T> => {
     const result = queue.then(operation, operation);
@@ -184,6 +192,7 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
     const duration = elapsed(stopCutoff ?? deps.now());
     state = { ...state, ...(draft ? {
       isTracking: draft.status !== 'finished', isPaused: draft.status === 'paused', sessionId: draft.id, startedAt: draft.startedAt,
+      endedAt: draft.status === 'recording' ? null : draft.endedAt ?? null,
       activityType: draft.options.activityType ?? 'run', packWeightPounds: draft.options.packWeightPounds ?? 0, terrain: draft.options.terrain ?? null,
       distanceMiles: Math.round(miles * 100) / 100, durationMs: duration,
       paceMinPerMile: miles > 0.05 ? Math.round((duration / 60000 / miles) * 10) / 10 : null,
@@ -205,6 +214,7 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
     if (!draft) return;
     draft.elapsedMs = elapsed(at);
     draft.activeSince = null;
+    draft.endedAt = at;
     draft.status = 'paused';
     breakSegment();
     publish({ currentSpeedMph: null });
@@ -377,7 +387,8 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
         point.segment = draft.segment;
         state = { ...state, recoveryNotice: 'GPS resumed after a signal gap. The missing route was not added to your distance.' };
       } else if (meters / seconds > MAX_SPEED_MPS || (positive(p.speed) && p.speed > MAX_SPEED_MPS)) {
-        // Throw away the implausible fix rather than using it as the next origin.
+        // Throw away the implausible fix rather than using it as the next origin. The segment
+        // breaks too, so the next fix never bridges back across the jump.
         breakSegment();
         return;
       } else if (meters > Math.max(2, previous.accuracy, accuracy)) {
@@ -427,7 +438,14 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
       draft.route = [...draft.route];
       sorted.forEach(addLocation);
       draft.route = compactRoute(draft.route);
-      await persist();
+      // Every write re-serialises the whole route, so a write per fix was about 1.5 GB over
+      // a three-hour run. With the app open a checkpoint follows within seconds anyway, so
+      // fixes are batched there. In the background there is no checkpoint and the process
+      // can be ended at any moment, so each delivery is still saved as it arrives.
+      const foreground = deps.isForeground ? deps.isForeground() : !backgrounded;
+      if (!foreground || deps.now() - lastRouteWriteAt >= ROUTE_WRITE_INTERVAL_MS) {
+        if (await persist()) lastRouteWriteAt = deps.now();
+      }
       publish();
     });
   }
@@ -590,11 +608,17 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
   }
   function handleAppState(next: string): Promise<void> {
     backgrounded = next !== 'active';
-    if (next === 'background' && draft?.status === 'recording' && !draft.backgroundEnabled && !indoor()) {
+    latestAppState = next;
+    // Not while Start or Resume is still in flight: on Android their own permission dialogs
+    // report 'background', and pausing on that cancelled the recording being started.
+    if (next === 'background' && !actionPending && draft?.status === 'recording' && !draft.backgroundEnabled && !indoor()) {
       return pause().then(() => { publish({ recoveryNotice: 'Foreground recording paused when you left Gruntz. Resume with the app open, or enable background location.' }); });
     }
     return serial(async () => {
       await hydrateInside('ui');
+      // Queued behind a start, this can run after the app is already back. Act on where
+      // the app is now, not on a dialog that has since closed.
+      if (next !== latestAppState) return;
       if (!draft || draft.status !== 'recording') return;
       if (next === 'background' && !draft.backgroundEnabled && !indoor()) {
         generation += 1;
@@ -615,6 +639,12 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
           draft.stepsCurrent = 0;
           draft.stepsLimited = true;
         }
+      } else if (next === 'active' && indoor() && deps.now() - draft.updatedAt > MAX_UNATTENDED_INDOOR_MS) {
+        // The same limit a relaunch applies: a walk left running for most of a day is
+        // forgotten, not trained, whether or not the process survived.
+        await reconcileSteps(draft.updatedAt);
+        freeze(draft.updatedAt);
+        publish({ recoveryNotice: 'Your interrupted activity was recovered and paused at its last saved update. Resume to record a new segment.' });
       } else if (next === 'active') {
         let recordingAvailable = true;
         if (draft.backgroundEnabled && !indoor()) {

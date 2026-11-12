@@ -1,5 +1,6 @@
 import { cancelTrainingReminders, scheduleDailyReminder } from '../services/notifications';
 import { notificationWeekdays } from '../utils/trainingDays';
+import { currentSchedule } from '../features/trainingSchedule';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -12,6 +13,7 @@ import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
 import { toast } from '../ui/Toast';
 import { color, space } from '../ui/tokens';
+import { KG_PER_LB } from '../utils/units';
 
 const GOALS = ['Build Muscle', 'Get Stronger', 'Lose Fat', 'Improve Endurance', 'Start Moving', 'Build Discipline', 'Military Prep'];
 const LEVELS: UserProfile['fitness_level'][] = ['beginner', 'intermediate', 'advanced'];
@@ -93,7 +95,7 @@ export default function TrainingPreferencesScreen() {
     });
     if (profile.settings.notifications_enabled) {
       const [hour, minute] = (profile.settings.reminder_time || '07:00').split(':').map(Number);
-      void scheduleDailyReminder(hour, minute, notificationWeekdays(days)).then(async (scheduled) => {
+      void scheduleDailyReminder(hour, minute, notificationWeekdays(currentSchedule({ ...profile, workout_days_per_week: days }))).then(async (scheduled) => {
         if (scheduled) return;
         useUserStore.getState().updateSettings({ notifications_enabled: false });
         await cancelTrainingReminders();
@@ -155,7 +157,7 @@ export default function TrainingPreferencesScreen() {
         <Section title={metric ? 'Body weight (kg)' : 'Body weight (lb)'}>
           {(metric ? BODY_WEIGHT_KG : BODY_WEIGHT_LBS).map((w) => {
             // Stored in pounds either way, so the metric options convert on save.
-            const lbs = metric ? Math.round(w / 0.45359237) : w;
+            const lbs = metric ? Math.round(w / KG_PER_LB) : w;
             return (
               <Chip
                 key={w}

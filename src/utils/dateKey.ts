@@ -13,7 +13,9 @@ export function parseLocalDateKey(dateKey: string) {
   if (!year || !month || !day) {
     return null;
   }
-  return new Date(year, month - 1, day);
+  const parsed = new Date(year, month - 1, day);
+  // `new Date` rolls impossible dates forward (Feb 31 becomes Mar 3); those are not keys.
+  return parsed.getFullYear() === year && parsed.getMonth() === month - 1 && parsed.getDate() === day ? parsed : null;
 }
 
 export function getLocalDayDiffFromToday(dateKey: string, today = new Date()) {

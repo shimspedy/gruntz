@@ -130,6 +130,8 @@ let ended = false;
 /** Keeps the Live Activity in step with the running workout. Safe to call on every store change. */
 export async function syncLiveActivity(s: SessionView) {
   if (!liveActivitySupported()) return;
+  // Before hydration the store reads as "no workout", which would end a real activity.
+  if (!useSessionStore.persist.hasHydrated()) return;
   try {
     const unit = useUserStore.getState().profile?.settings.units === 'metric' ? 'kg' : 'lb';
     const payload = liveWorkoutPayload(s, unit, Date.now());
@@ -158,6 +160,9 @@ export function initializeLiveActivity() {
   if (started) return;
   started = true;
   const drain = () => {
+    // Draining is destructive on the native side, and the sets can only be applied to a
+    // session that has been read back from disk.
+    if (!useSessionStore.persist.hasHydrated()) return;
     try {
       applyLoggedSets(drainNativeLoggedSets(), Date.now());
     } catch (error) {
@@ -165,6 +170,10 @@ export function initializeLiveActivity() {
     }
   };
   drain();
+  useSessionStore.persist.onFinishHydration(() => {
+    drain();
+    void syncLiveActivity(useSessionStore.getState());
+  });
   AppState.addEventListener('change', (next) => {
     if (next === 'active') drain();
   });

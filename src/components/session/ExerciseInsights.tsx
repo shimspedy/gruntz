@@ -44,7 +44,8 @@ export function ExerciseInsights({
   const sessions = useExerciseSessions(logKey, unit);
   const lib = exercise?.media_key ? getLibraryItem(exercise.media_key) : undefined;
   const steps = exercise?.steps?.length ? exercise.steps : (lib?.instructions ?? []);
-  const muscles = exercise?.muscle_groups?.length ? exercise.muscle_groups : lib ? appMuscles(lib) : [];
+  const ownMuscles = exercise?.muscle_groups;
+  const muscles = useMemo(() => (ownMuscles?.length ? ownMuscles : lib ? appMuscles(lib) : []), [ownMuscles, lib]);
   const primaryMuscles = useMemo(() => new Set(lib ? appMuscles({ ...lib, secondary: [] }) : muscles.slice(0, 2)), [lib, muscles]);
   const heat = useMemo(() => Object.fromEntries(muscles.map((m) => [m, primaryMuscles.has(m) ? 3 : 1])), [muscles, primaryMuscles]);
   // Show the side the main movers are on, not any side that appears at all.

@@ -30,6 +30,29 @@ export function mergeMessages(existing: TeamMessage[], incoming: TeamMessage[]):
   return [...byId.values()].sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
 }
 
+/**
+ * Fold the newest page from the server into what is on screen.
+ *
+ * A plain merge was wrong in two ways after time away. More than a page of new lines
+ * left a hole between the old messages and the new ones that paging could never reach,
+ * so the list restarts from the new page instead. And a merge only ever adds, so a line
+ * deleted while the socket was down stayed visible: anything on screen inside the page's
+ * own time span that the server no longer returns is dropped.
+ */
+export function reconcileLatestPage(existing: TeamMessage[], page: TeamMessage[]): { messages: TeamMessage[]; restarted: boolean } {
+  if (!page.length) return { messages: existing, restarted: false };
+  const times = page.map((message) => message.createdAt).sort();
+  const oldest = times[0];
+  const newest = times[times.length - 1];
+  const full = page.length >= PAGE;
+  const lastShown = existing.length ? existing[existing.length - 1].createdAt : null;
+  if (full && lastShown !== null && oldest > lastShown) return { messages: mergeMessages([], page), restarted: true };
+  const returned = new Set(page.map((message) => message.id));
+  // A page that is not full is the whole chat, so its span reaches back to the start.
+  const kept = existing.filter((message) => returned.has(message.id) || message.createdAt > newest || (full && message.createdAt < oldest));
+  return { messages: mergeMessages(kept, page), restarted: false };
+}
+
 async function me(): Promise<string | null> {
   const supabase = getSupabase();
   if (!supabase) return null;

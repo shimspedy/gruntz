@@ -3,7 +3,7 @@ import { ActionSheetIOS, Alert, FlatList, KeyboardAvoidingView, Platform, StyleS
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   cleanMessage, deleteMessage, fetchMessages, MAX_MESSAGE_LENGTH, mergeMessages, reportMessage, sendMessage, subscribeToMessages, type TeamMessage,
-} from '../services/teamChat';
+ reconcileLatestPage } from '../services/teamChat';
 import type { Team } from '../services/teams';
 import { useTeamInboxStore } from '../store/useTeamInboxStore';
 import { Image } from 'expo-image';
@@ -38,7 +38,12 @@ export function TeamChatView({ team }: { team: Team }) {
     const page = await fetchMessages(teamId);
     if (!page.ok) { setFailed(true); return; }
     setFailed(false);
-    setMessages((current) => mergeMessages(current ?? [], page.value));
+    setMessages((current) => {
+      const next = reconcileLatestPage(current ?? [], page.value);
+      // A restarted list has older lines to page back into again.
+      if (next.restarted) exhausted.current = false;
+      return next.messages;
+    });
   }, [teamId]);
 
   // Whatever is on screen has been read: the header badge for this team clears.
@@ -76,15 +81,16 @@ export function TeamChatView({ team }: { team: Team }) {
     const text = cleanMessage(draft);
     if (!text || sending) return;
     setSending(true);
-    const result = await sendMessage(teamId, text);
-    setSending(false);
+    // Cleared up front, so anything typed while this is in flight is a new draft and survives.
+    setDraft('');
+    const result = await sendMessage(teamId, text).finally(() => setSending(false));
     if (!result.ok) {
+      setDraft((current) => (current ? current : text));
       haptic.warning();
       toast(result.reason === 'not-found' ? 'You are no longer in this team.' : FAILURE_MESSAGE[result.reason], { tone: 'error', icon: 'alert' });
       return;
     }
     haptic.light();
-    setDraft('');
     setMessages((current) => mergeMessages(current ?? [], [result.value]));
   };
 

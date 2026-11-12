@@ -234,7 +234,7 @@ const challenges: ChallengeTemplate[] = [
   {
     id: 'run_5k',
     name: '{n}K Run Challenge',
-    description: 'Run {n} kilometers as fast as you can.',
+    description: 'Run {km} as fast as you can.',
     icon: 'running',
     type: 'distance',
     target: 5,
@@ -258,7 +258,7 @@ const challenges: ChallengeTemplate[] = [
   {
     id: 'ruck_3mi',
     name: '{n}-Mile Ruck',
-    description: 'Ruck {n} miles with weight. Build mental toughness.',
+    description: 'Ruck {mi} with weight. Build mental toughness.',
     icon: 'ruck',
     type: 'distance',
     target: 3,
@@ -282,7 +282,7 @@ const challenges: ChallengeTemplate[] = [
   {
     id: 'run_2mi',
     name: '{n}-Mile Run',
-    description: 'Run {n} miles - solid training distance.',
+    description: 'Run {mi} - solid training distance.',
     icon: 'running',
     type: 'distance',
     target: 2,
@@ -401,6 +401,8 @@ function renderTemplate(text: string, target: number): string {
   const n = formatChallengeAmount(target, { type: 'reps', unit: 'reps' });
   return text
     .replace(/\{n\}/g, n)
+    .replace(/\{mi\}/g, `${n} ${target === 1 ? 'mile' : 'miles'}`)
+    .replace(/\{km\}/g, `${n} ${target === 1 ? 'kilometer' : 'kilometers'}`)
     .replace(/\{half\}/g, formatChallengeAmount(target / 2, { type: 'reps', unit: 'reps' }))
     .replace(/\{dur\}/g, durationTitle(target))
     .replace(/\{durw\}/g, durationWords(target))
@@ -422,14 +424,6 @@ export function scaleChallenge(template: ChallengeTemplate, scale: number): Dail
     fullTarget: template.target,
     bonusXp: scaled ? Math.max(10, Math.round((template.xpReward * 0.5) / 10) * 10) : 0,
   };
-}
-
-/**
- * Get today's daily challenge based on the current date
- */
-export function getTodaysChallenge(scale = 1): DailyChallenge {
-  const now = new Date();
-  return getChallengeForDate(now, scale);
 }
 
 /**

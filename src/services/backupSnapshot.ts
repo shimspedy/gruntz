@@ -4,6 +4,7 @@ import { prepareStoreRestore } from './backupRestoreStores';
 import { isTrackedSession, splitTrackedSession } from '../features/activityHistory';
 import { HEALTH_ID_PREFIX } from '../features/healthSync';
 import { READINESS_STORAGE_KEY, readinessStorage } from '../store/readinessStorage';
+import { EXERCISE_LOG_STORAGE_KEY, exerciseLogStorage } from '../store/exerciseLogStorage';
 import { loadRoute, pruneRoutes, stageRoutes } from '../store/activityRoutes';
 import type { RoutePoint } from '../types/activity';
 import { isTestAttempt, isTrainingChoice } from '../features/trainingFocus';
@@ -73,24 +74,30 @@ export type BackupSnapshot = {
   stores: Record<string, string>;
 };
 
+/** Stores that live in files on Android. Each is read and written through its own storage, never the key sweep. */
+const OWN_STORAGE: Record<string, Pick<typeof AsyncStorage, 'getItem' | 'setItem' | 'removeItem'>> = {
+  [READINESS_STORAGE_KEY]: readinessStorage,
+  [EXERCISE_LOG_STORAGE_KEY]: exerciseLogStorage,
+};
+// On iOS these are AsyncStorage itself, and stay in the one batched read or write.
+const ordinaryKey = (key: string) => !Object.hasOwn(OWN_STORAGE, key) || OWN_STORAGE[key] === AsyncStorage;
+
 async function readStores(keys: readonly string[]): Promise<[string, string | null][]> {
-  const values: [string, string | null][] = (await AsyncStorage.multiGet(keys.filter((key) => key !== READINESS_STORAGE_KEY)))
-    .map(([key, value]) => [key, value]);
-  if (keys.includes(READINESS_STORAGE_KEY)) values.push([READINESS_STORAGE_KEY, await readinessStorage.getItem(READINESS_STORAGE_KEY)]);
+  const values: [string, string | null][] = (await AsyncStorage.multiGet(keys.filter(ordinaryKey))).map(([key, value]) => [key, value]);
+  for (const key of keys) if (!ordinaryKey(key)) values.push([key, await OWN_STORAGE[key].getItem(key)]);
   return values;
 }
 
 async function writeStores(pairs: [string, string][]): Promise<void> {
-  const ordinary = pairs.filter(([key]) => key !== READINESS_STORAGE_KEY);
+  const ordinary = pairs.filter(([key]) => ordinaryKey(key));
   if (ordinary.length) await AsyncStorage.multiSet(ordinary);
-  const readiness = pairs.find(([key]) => key === READINESS_STORAGE_KEY);
-  if (readiness) await readinessStorage.setItem(...readiness);
+  for (const [key, value] of pairs) if (!ordinaryKey(key)) await OWN_STORAGE[key].setItem(key, value);
 }
 
 async function removeStores(keys: string[]): Promise<void> {
-  const ordinary = keys.filter((key) => key !== READINESS_STORAGE_KEY);
+  const ordinary = keys.filter(ordinaryKey);
   if (ordinary.length) await AsyncStorage.multiRemove(ordinary);
-  if (keys.includes(READINESS_STORAGE_KEY)) await readinessStorage.removeItem(READINESS_STORAGE_KEY);
+  for (const key of keys) if (!ordinaryKey(key)) await OWN_STORAGE[key].removeItem(key);
 }
 
 export async function captureSnapshot(): Promise<BackupSnapshot> {

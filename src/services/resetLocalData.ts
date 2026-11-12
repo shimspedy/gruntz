@@ -9,7 +9,7 @@ import { useRoutineStore } from '../store/useRoutineStore';
 import { useChallengeStore } from '../store/useChallengeStore';
 import { clearReadinessPersistence, flushReadinessPersistence, useReadinessStore } from '../store/useReadinessStore';
 import { usePlanLibraryStore } from '../store/usePlanLibraryStore';
-import { useExerciseLogStore } from '../store/useExerciseLogStore';
+import { clearExerciseLogPersistence, useExerciseLogStore } from '../store/useExerciseLogStore';
 import { useExerciseNotesStore } from '../store/useExerciseNotesStore';
 import { useOnboardingDraftStore } from '../store/useOnboardingDraftStore';
 import { useChromePrefs, useUiStore } from '../store/useUiStore';
@@ -56,6 +56,8 @@ async function resetLocalDataNow() {
   await Promise.all([flushUserPersistence(), flushReadinessPersistence()]);
   // Also deletes every saved GPS route, which on Android are files the key sweep below cannot see.
   await clearReadinessPersistence();
+  // The workout history is a file on Android as well, out of reach of the key sweep.
+  await clearExerciseLogPersistence();
   await deleteAllProfilePhotos();
   await useSessionStore.persist.clearStorage();
   const keys = await AsyncStorage.getAllKeys();

@@ -201,6 +201,7 @@ export default function ExerciseLibraryScreen() {
           value={query}
           onChangeText={setQuery}
           placeholder={`Search ${EXERCISE_LIBRARY.length} exercises or muscles`}
+          accessibilityLabel="Search exercises or muscles"
           placeholderTextColor={color.textTertiary}
           style={styles.input}
           selectionColor={color.accent}

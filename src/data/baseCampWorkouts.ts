@@ -23,7 +23,8 @@ function wantsGoal(profile: UserProfile | null | undefined, text: string) {
 }
 
 export function getBaseCampTrainingDays(profile?: UserProfile | null): number {
-  return clamp(profile?.workout_days_per_week ?? 4, 3, 5);
+  const days = Number(profile?.workout_days_per_week);
+  return clamp(Number.isFinite(days) ? Math.round(days) : 4, 3, 5);
 }
 
 export function getBaseCampReadiness(profile?: UserProfile | null): BaseCampReadiness {

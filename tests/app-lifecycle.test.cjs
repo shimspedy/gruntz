@@ -80,6 +80,7 @@ function resetHarness() {
   mocks['../store/useUserStore'].flushUserPersistence = async () => {};
   mocks['../store/useReadinessStore'].flushReadinessPersistence = async () => {};
   mocks['../store/useReadinessStore'].clearReadinessPersistence = async () => { events.push('activity-files-cleared'); };
+  mocks['../store/useExerciseLogStore'].clearExerciseLogPersistence = async () => { events.push('workout-history-cleared'); };
   mocks['../store/useUiStore'] = { useUiStore: stores.useUiStore, useChromePrefs: stores.useChromePrefs };
   return { ...load('src/services/resetLocalData.ts', mocks), events, stores };
 }
@@ -90,6 +91,7 @@ test('delete local data clears every live store and preserves billing plus cloud
   assert.equal(events[0], 'measurement-disabled');
   assert.equal(events[1], 'backup-paused');
   assert.ok(events.includes('activity-files-cleared'));
+  assert.ok(events.includes('workout-history-cleared'), 'the Android workout-history files are outside the key sweep');
   for (const [name, store] of Object.entries(stores)) if (name !== 'useUserStore') assert.equal(store.state.data, null, name);
   assert.deepEqual(events.at(-1), ['@gruntz_user','@gruntz_routines','@gruntz_readiness','@gruntz_route:run-1']);
   assert.equal(stores.useProgramStore.state.hasHydrated, true);

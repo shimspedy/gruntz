@@ -225,6 +225,7 @@ test('cold UI launch recovers a paused draft at its last durable time with origi
   const env = trackerHarness();
   await env.engine.start({ activityType: 'ruck', packWeightPounds: 35, loadedWeightLbs: 210, terrain: 'trail' });
   await env.fix(0); env.advance(3000); await env.fix(20);
+  await env.engine.checkpoint(); // the periodic save that makes those three seconds durable
   const reopened = trackerHarness({ disk: env.disk }); reopened.advance(300000);
   await reopened.engine.hydrate();
   const state = reopened.engine.getSnapshot();
@@ -239,11 +240,32 @@ test('cold UI launch recovers a paused draft at its last durable time with origi
 test('cold headless delivery after a killed gap excludes missing duration and distance', async () => {
   const env = trackerHarness(); await env.engine.start(); await env.fix(0);
   env.advance(3000); await env.fix(20);
+  await env.engine.checkpoint();
   const reopened = trackerHarness({ disk: env.disk }); reopened.advance(300000);
   await reopened.fix(1000);
   assert.equal(reopened.engine.getSnapshot().durationMs, 3000);
   assert.equal(reopened.engine.getSnapshot().distanceMiles, env.engine.getSnapshot().distanceMiles);
   assert.match(reopened.engine.getSnapshot().recoveryNotice, /unrecorded gap/);
+});
+
+test('with the app open fixes are written in batches; in the background every delivery is written', async () => {
+  const saved = (env) => JSON.parse(env.disk.get(env.key)).route.length;
+  const open = trackerHarness(); await open.engine.start();
+  await open.fix(0);
+  assert.equal(saved(open), 1, 'the first fix is written at once');
+  open.advance(3000); await open.fix(10);
+  open.advance(3000); await open.fix(20);
+  assert.equal(saved(open), 1, 'fixes inside the interval wait for the next write');
+  assert.equal(open.engine.getSnapshot().route.length, 3, 'and are all on screen meanwhile');
+  open.advance(6000); await open.fix(30);
+  assert.equal(saved(open), 4, 'the interval has passed: everything so far is written together');
+  open.advance(2000); await open.fix(40);
+  await open.engine.checkpoint();
+  assert.equal(saved(open), 5, 'the periodic checkpoint also flushes waiting fixes');
+
+  const away = trackerHarness({ isForeground: () => false, backgroundStarted: true }); await away.engine.start({ backgroundTracking: true });
+  await away.fix(0); away.advance(3000); await away.fix(10); away.advance(3000); await away.fix(20);
+  assert.equal(saved(away), 3, 'nothing waits in memory while the app can be ended at any moment');
 });
 
 test('disk write failure pauses the recorder, stops native GPS and surfaces that route is not durable', async () => {

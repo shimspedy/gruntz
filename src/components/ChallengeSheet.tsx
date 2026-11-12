@@ -208,6 +208,7 @@ export function ChallengeSheet() {
                 maxFontSizeMultiplier={1.8}
                 value={custom}
                 onChangeText={setCustom}
+                accessibilityLabel="Custom amount"
                 placeholder={mode === 'distance' ? 'Distance' : mode === 'time' ? 'Seconds' : 'Reps'}
                 placeholderTextColor={color.textTertiary}
                 keyboardType={mode === 'distance' ? 'decimal-pad' : 'number-pad'}

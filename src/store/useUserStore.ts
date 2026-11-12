@@ -31,7 +31,6 @@ interface UserState {
   updateSettings: (settings: Partial<UserSettings>) => void;
   setOnboarded: (onboarded: boolean) => void;
   setHydrated: (hydrated: boolean) => void;
-  addXP: (amount: number) => void;
   recordChallengeActivity: (challenge: Pick<DailyChallenge, 'id' | 'type' | 'unit'>, amount: number) => void;
   /** Credit a run/ruck tracked in the app toward lifetime distance and personal bests. */
   recordTrackedSession: (input: { id?: string; type: ActivityType; miles: number; seconds: number }) => void;
@@ -239,12 +238,6 @@ export const useUserStore = create<UserState>()(
 
       setOnboarded: (onboarded) => set({ isOnboarded: onboarded }),
       setHydrated: (hydrated) => set({ hasHydrated: hydrated }),
-
-      addXP: (amount) => {
-        const safe = Number.isFinite(amount) ? Math.max(0, Math.round(amount)) : 0;
-        if (!safe) return;
-        set((state) => ({ progress: { ...state.progress, ...applyXP(state.progress, safe) } }));
-      },
 
       // A tracked run or ruck. Without this the only writer of total_distance_miles
       // was recordChallengeActivity, so the Stats Distance tile read 0.0 mi no matter

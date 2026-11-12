@@ -60,6 +60,8 @@ final class WorkoutManager: NSObject, ObservableObject {
     @Published var finished = false
     @Published var authorized: Bool? = nil
     @Published var error: String?
+    /// Whether the last workout failed to save, so the summary does not claim it did.
+    @Published var saveFailed = false
 
     private let store = HKHealthStore()
     private var session: HKWorkoutSession?
@@ -93,6 +95,9 @@ final class WorkoutManager: NSObject, ObservableObject {
 
     func start(_ activity: WristActivity, title: String? = nil) {
         guard !busy else { return }
+        // An error belongs to the workout it happened in; it used to follow every later one.
+        error = nil
+        saveFailed = false
         let configuration = HKWorkoutConfiguration()
         configuration.activityType = activity.hkType
         configuration.locationType = activity.indoor ? .indoor : .outdoor
@@ -154,6 +159,8 @@ final class WorkoutManager: NSObject, ObservableObject {
         workoutTitle = nil
         discarding = false
         quiet = false
+        error = nil
+        saveFailed = false
     }
 
     private func startClock() {
@@ -200,7 +207,10 @@ extension WorkoutManager: HKWorkoutSessionDelegate {
         let done: (Error?) -> Void = { [weak self] err in
             DispatchQueue.main.async {
                 guard let self else { return }
-                if let err { self.error = err.localizedDescription }
+                if let err {
+                    self.error = err.localizedDescription
+                    self.saveFailed = true
+                }
                 self.timer = nil
                 // A session that ran beside a workout has no summary here: straight back to idle.
                 if quiet { self.quiet = false; self.reset() } else { self.finished = true }

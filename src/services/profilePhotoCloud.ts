@@ -36,6 +36,7 @@ export function photoVersion(file: string, now = Date.now()): number {
 }
 
 let running: Promise<void> | null = null;
+let again = false;
 let held = 0;
 
 /**
@@ -56,7 +57,15 @@ export async function holdProfilePhotoSync(): Promise<() => void> {
  * failures are retried on the next call.
  */
 export function syncProfilePhoto(): Promise<void> {
-  running ??= syncNow().finally(() => { running = null; });
+  if (running) {
+    // The run in flight started before this change; go round once more when it ends.
+    again = true;
+    return running;
+  }
+  running = syncNow().finally(() => {
+    running = null;
+    if (again) { again = false; void syncProfilePhoto(); }
+  });
   return running;
 }
 

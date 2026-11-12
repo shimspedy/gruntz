@@ -88,6 +88,7 @@ test('run tracker shows saved-draft recovery only for a failed draft read, prese
   const h = harness({
     '@react-navigation/native': { useNavigation: () => ({}), useRoute: () => ({ params: {} }) },
     '../hooks/useRunTracker': { useRunTracker: () => snapshot, DEFAULT_BODY_WEIGHT_LBS: 160 },
+    '../hooks/useHardwareBack': { useHardwareBack() {} },
     '../store/useSubscriptionStore': { useTrainingAccess: () => true },
     '../store/useReadinessStore': { useReadinessStore: selector => selector({}) },
     '../store/useUserStore': { useUserStore },

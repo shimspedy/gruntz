@@ -19,12 +19,15 @@ import { Icon } from '../ui/Icon';
 import { Text } from '../ui/Text';
 import { color, font, space } from '../ui/tokens';
 import { useContentSize } from '../ui/useContentSize';
+import { KG_PER_LB } from '../utils/units';
+import { useCoversToasts } from '../ui/Toast';
 
 export default function ActivityDetailScreen({ route, navigation }: NativeStackScreenProps<RootStackParamList, 'ActivityDetail'>) {
   const insets = useSafeAreaInsets();
   const session = useReadinessStore((state) => state.trackedSessions.find((item) => item.id === route.params?.sessionId));
   const units = useUserStore((state) => state.profile?.settings.units ?? 'imperial');
   const [shareOpen, setShareOpen] = useState(false);
+  useCoversToasts(shareOpen);
   const { route: savedRoute, status: routeStatus } = useActivityRoute(session);
   if (!session) return <View style={styles.screen}><NavHeader title="Activity" /><EmptyState icon="location" title="Activity unavailable" body="This activity may have been removed or replaced by a backup."><Button title="Open field history" onPress={() => navigation.replace('ActivityHistory')} /></EmptyState></View>;
   const distance = activityDistance(session.distanceMiles, units);
@@ -49,7 +52,7 @@ export default function ActivityDetailScreen({ route, navigation }: NativeStackS
           {typeof session.caloriesEstimate === 'number' ? <Stat label="Est. calories" value={`${Math.max(0, Math.round(session.caloriesEstimate)).toLocaleString()} kcal`} style={styles.stat} /> : null}
           {typeof session.averageHeartRate === 'number' ? <Stat label="Avg heart rate" value={`${Math.round(session.averageHeartRate)} bpm`} style={styles.stat} /> : null}
           {typeof session.maxHeartRate === 'number' ? <Stat label="Max heart rate" value={`${Math.round(session.maxHeartRate)} bpm`} style={styles.stat} /> : null}
-          {session.packWeightPounds ? <Stat label="Pack weight" value={`${Math.round(session.packWeightPounds * (units === 'metric' ? 0.45359237 : 1))} ${units === 'metric' ? 'kg' : 'lb'}`} style={styles.stat} /> : null}
+          {session.packWeightPounds ? <Stat label="Pack weight" value={`${Math.round(session.packWeightPounds * (units === 'metric' ? KG_PER_LB : 1))} ${units === 'metric' ? 'kg' : 'lb'}`} style={styles.stat} /> : null}
         </View>
         {session.stepsLimited ? <Text variant="footnote" tone="secondary" style={{ marginTop: 4, marginBottom: 16 }}>Step count may be incomplete while the app was in the background.</Text> : null}
         {session.terrain ? <Text variant="callout" tone="secondary" style={{ marginBottom: 12 }}>Terrain · {session.terrain}</Text> : null}

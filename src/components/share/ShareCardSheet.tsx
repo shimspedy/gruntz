@@ -13,6 +13,7 @@ import { color, space } from '../../ui/tokens';
 import { useContentSize } from '../../ui/useContentSize';
 import { activityCaptureSize } from '../../utils/activityCapture';
 import { SHARE_CARD_RATIO, ShareCard } from './ShareCard';
+import { useCoversToasts } from '../../ui/Toast';
 
 /** Room the header, caption and Share button take around the card. */
 const CHROME = 210;
@@ -55,6 +56,8 @@ export function ShareCardSheet({ model, visible, onClose, source }: {
       setSharing(false);
     }
   };
+
+  useCoversToasts(visible);
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => { if (!sharing) onClose(); }}>

@@ -1,4 +1,5 @@
-import { StyleSheet, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
 import { getExerciseById } from '../../data/exercises';
 import { useSessionStore } from '../../store/useSessionStore';
 import { Icon } from '../../ui/Icon';
@@ -22,6 +23,23 @@ export function RestSheet({ exerciseId, slotKey, onClose }: { exerciseId: string
   const startRest = useSessionStore((s) => s.startRest);
   const resting = useSessionStore((s) => !!s.restEndsAt);
   const current = override ?? ex?.rest_seconds ?? 0;
+
+  // On Android the sheet is drawn inside the navigator, which the full-screen workout
+  // covers, so it opened where nobody could see it. The workout steps down to its mini bar
+  // while the sheet is up and comes back when it closes. iOS presents above everything.
+  const open = !!ex;
+  const steppedAside = useRef(false);
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const session = useSessionStore.getState();
+    if (open && session.active && !session.minimized) {
+      steppedAside.current = true;
+      session.minimize();
+    } else if (!open && steppedAside.current) {
+      steppedAside.current = false;
+      if (session.active) session.expand();
+    }
+  }, [open]);
 
   return (
     <Sheet visible={!!ex} onClose={onClose} title="Rest timer">

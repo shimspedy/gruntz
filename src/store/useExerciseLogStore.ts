@@ -1,7 +1,8 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { EXERCISE_LOG_STORAGE_KEY, exerciseLogStorage } from './exerciseLogStorage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { LoggedMovement } from '../features/exerciseProvenance';
+import { KG_PER_LB } from '../utils/units';
 
 /** One completed set, as logged. Weight is in `unit` (the user's setting when they lifted it). */
 export interface LoggedSet {
@@ -37,9 +38,10 @@ interface ExerciseLogState {
   /** Keyed by the exercise's clip key (library slug) so an app exercise and its clip share history. */
   logs: Record<string, ExerciseLogEntry[]>;
   record: (key: string, entry: ExerciseLogEntry) => void;
+  /** `record` for a whole workout in one write, so finishing serialises the log once. */
+  recordMany: (items: { key: string; entry: ExerciseLogEntry }[]) => void;
   /** Merge many entries at once — see `mergeEntries`. */
   mergeEntries: (incoming: Record<string, ExerciseLogEntry[]>) => MergeReport;
-  removeEntry: (key: string, entryId: string) => void;
 }
 
 /**
@@ -55,6 +57,8 @@ export type MergeReport = {
   sets: number;
   /** Exercises that gained at least one entry. */
   exercises: number;
+  /** Sets that were new to the log but the caps discarded. Duplicates are not counted: they were never new. */
+  droppedSets: number;
   /** Previously-stored entries the caps pushed out to make room. */
   evictedEntries: number;
   /** Previously-tracked exercises dropped whole to make room. */
@@ -75,6 +79,7 @@ export function mergeLogs(
 ): { logs: Record<string, ExerciseLogEntry[]>; report: MergeReport } {
   const logs = { ...before };
   const freshIds = new Map<string, Set<string>>();
+  let freshSets = 0;
 
   for (const [key, entries] of Object.entries(incoming)) {
     if (!entries.length) continue;
@@ -83,7 +88,8 @@ export function mergeLogs(
     // Ids differ between a session logged here and the same session read back from an
     // export, so an id match alone re-imported every workout as a second copy. The
     // same instant with the same sets is the same session whatever it is called.
-    const content = (e: ExerciseLogEntry) => `${Date.parse(e.at)}|${JSON.stringify(e.sets.map((st) => [st.reps ?? null, st.weight ?? null, st.seconds ?? null, st.distance ?? null]))}`;
+    // To the second: an export writes whole seconds, so milliseconds never survive the round trip.
+    const content = (e: ExerciseLogEntry) => `${Math.floor(Date.parse(e.at) / 1000)}|${JSON.stringify(e.sets.map((st) => [st.reps ?? null, st.weight ?? null, st.seconds ?? null, st.distance ?? null]))}`;
     const seenContent = new Set(existing.map(content));
     const seenSource = new Set(existing.map((e) => e.source).filter((source): source is string => !!source));
     // Sessions imported before `source` existed pick it up the next time the same file
@@ -96,8 +102,7 @@ export function mergeLogs(
     for (const entry of entries) {
       // Deduped against the batch as well as against storage: two source workouts
       // can normalise onto one instant (a CSV whose dates lost their clock time),
-      // and writing both would store one entry twice under a single id, which
-      // `removeEntry` would then delete in pairs.
+      // and writing both would store one entry twice under a single id.
       if (seen.has(entry.id) || seenContent.has(content(entry)) || (entry.source && seenSource.has(entry.source))) continue;
       seen.add(entry.id);
       seenContent.add(content(entry));
@@ -106,6 +111,7 @@ export function mergeLogs(
     }
     if (!fresh.length) continue;
     freshIds.set(key, new Set(fresh.map((e) => e.id)));
+    freshSets += fresh.reduce((sum, entry) => sum + entry.sets.length, 0);
     logs[key] = [...known, ...fresh]
       .sort((a, b) => a.at.localeCompare(b.at))
       .slice(-MAX_ENTRIES_PER_EXERCISE);
@@ -146,28 +152,37 @@ export function mergeLogs(
     for (const entry of was) if (!surviving.has(entry.id)) evictedEntries += 1;
   }
 
-  return { logs, report: { entries, sets, exercises, evictedEntries, evictedExercises } };
+  return { logs, report: { entries, sets, exercises, droppedSets: Math.max(0, freshSets - sets), evictedEntries, evictedExercises } };
+}
+
+/** Removes the saved log itself. On Android that is a pair of files no AsyncStorage key sweep can see. */
+export const clearExerciseLogPersistence = () => exerciseLogStorage.removeItem(EXERCISE_LOG_STORAGE_KEY);
+
+/** One entry into the log: replaces a same-id entry, keeps date order and applies both caps. */
+function recordEntry(before: Record<string, ExerciseLogEntry[]>, key: string, entry: ExerciseLogEntry): Record<string, ExerciseLogEntry[]> {
+  const list = [...(before[key] ?? []).filter((e) => e.id !== entry.id), entry];
+  list.sort((a, b) => a.at.localeCompare(b.at));
+  const logs = { ...before, [key]: list.slice(-MAX_ENTRIES_PER_EXERCISE) };
+  const keys = Object.keys(logs);
+  if (keys.length > MAX_TRACKED_EXERCISES) {
+    // Drop whichever exercise was trained longest ago, never the one being logged.
+    const oldest = keys
+      .filter((k) => k !== key)
+      .sort((a, b) => (logs[a][logs[a].length - 1]?.at ?? '').localeCompare(logs[b][logs[b].length - 1]?.at ?? ''))[0];
+    if (oldest) delete logs[oldest];
+  }
+  return logs;
 }
 
 export const useExerciseLogStore = create<ExerciseLogState>()(
   persist(
     (set, get) => ({
       logs: {},
-      record: (key, entry) =>
-        set((s) => {
-          const list = [...(s.logs[key] ?? []).filter((e) => e.id !== entry.id), entry];
-          list.sort((a, b) => a.at.localeCompare(b.at));
-          const logs = { ...s.logs, [key]: list.slice(-MAX_ENTRIES_PER_EXERCISE) };
-          const keys = Object.keys(logs);
-          if (keys.length > MAX_TRACKED_EXERCISES) {
-            // Drop whichever exercise was trained longest ago, never the one being logged.
-            const oldest = keys
-              .filter((k) => k !== key)
-              .sort((a, b) => (logs[a][logs[a].length - 1]?.at ?? '').localeCompare(logs[b][logs[b].length - 1]?.at ?? ''))[0];
-            if (oldest) delete logs[oldest];
-          }
-          return { logs };
-        }),
+      record: (key, entry) => set((s) => ({ logs: recordEntry(s.logs, key, entry) })),
+      recordMany: (items) => {
+        if (!items.length) return;
+        set((s) => ({ logs: items.reduce((logs, { key, entry }) => recordEntry(logs, key, entry), s.logs) }));
+      },
       /**
        * Merge a batch of entries in one write — the import path.
        *
@@ -195,22 +210,20 @@ export const useExerciseLogStore = create<ExerciseLogState>()(
         set({ logs });
         return report;
       },
-      removeEntry: (key, entryId) =>
-        set((s) => ({ logs: { ...s.logs, [key]: (s.logs[key] ?? []).filter((e) => e.id !== entryId) } })),
     }),
     {
-      name: '@gruntz_exercise_log',
+      name: EXERCISE_LOG_STORAGE_KEY,
       version: 1,
       // Identity: every saved copy is version 1. Bumping `version` needs a real migration here.
       migrate: (persisted) => persisted as ExerciseLogState,
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => exerciseLogStorage),
     },
   ),
 );
 
 // ─── Derived numbers (all computed from the log, never stored) ─────────────
 
-export const KG_PER_LB = 0.45359237;
+export { KG_PER_LB };
 
 export function toUnit(weight: number, from: 'lb' | 'kg', to: 'lb' | 'kg'): number {
   if (from === to) return weight;

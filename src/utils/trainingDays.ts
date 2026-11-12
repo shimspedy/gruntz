@@ -21,8 +21,16 @@ const WEEKDAYS_BY_COUNT: Record<number, number[]> = {
   7: [0, 1, 2, 3, 4, 5, 6],
 };
 
+/** Either how many days a week, or the exact weekdays when a program fixes them. */
+export type TrainingSchedule = number | null | undefined | readonly number[];
+
 /** JavaScript weekday indexes (0 = Sunday), as `Date.getDay()` reports them. */
-export function trainingWeekdays(daysPerWeek: number | null | undefined): number[] {
+export function trainingWeekdays(schedule: TrainingSchedule): number[] {
+  if (typeof schedule === 'object' && schedule !== null) {
+    const days = [...new Set(schedule.filter((day) => Number.isInteger(day) && day >= 0 && day <= 6))].sort((a, b) => a - b);
+    if (days.length) return days;
+  }
+  const daysPerWeek = typeof schedule === 'number' ? schedule : null;
   const count = Math.max(1, Math.min(7, Math.round(daysPerWeek ?? 3)));
   return WEEKDAYS_BY_COUNT[count] ?? WEEKDAYS_BY_COUNT[3]!;
 }
@@ -33,6 +41,6 @@ export function trainingWeekdays(daysPerWeek: number | null | undefined): number
  * Off by one from `Date.getDay()`, which is exactly the kind of mismatch that
  * silently reminds people on the wrong day, so the conversion lives here once.
  */
-export function notificationWeekdays(daysPerWeek: number | null | undefined): number[] {
-  return trainingWeekdays(daysPerWeek).map((day) => day + 1);
+export function notificationWeekdays(schedule: TrainingSchedule): number[] {
+  return trainingWeekdays(schedule).map((day) => day + 1);
 }

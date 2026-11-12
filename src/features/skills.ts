@@ -1,4 +1,5 @@
 import { calculateDailyReadiness, type DailyReadinessCheckIn } from '../store/useReadinessStore';
+import { getLocalDateKey, parseLocalDateKey } from '../utils/dateKey';
 
 /**
  * The two training measures Gruntz can honestly report.
@@ -33,6 +34,17 @@ const DAY_MS = 86400000;
 const WINDOW_DAYS = 28;
 
 /**
+ * Whether a local day key falls in the `days` ending today. Keys are compared as
+ * days, not instants: parsing them as noon made today's workout "in the future"
+ * until midday, so a morning session scored nothing until the afternoon.
+ */
+function dayWindow(days: number, now: Date) {
+  const last = getLocalDateKey(now);
+  const first = getLocalDateKey(new Date(now.getFullYear(), now.getMonth(), now.getDate() - days));
+  return (key: string) => parseLocalDateKey(key) !== null && key >= first && key <= last;
+}
+
+/**
  * Sessions completed against sessions planned over the last four weeks.
  *
  * Capped at 100 so training more than planned reads as 100 rather than a number
@@ -56,11 +68,10 @@ export function consistencyScore(input: {
   if (daysSinceJoin < 7) return null;
 
   const days = Math.min(WINDOW_DAYS, Math.max(7, daysSinceJoin));
-  const cutoff = new Date(now.getTime() - days * DAY_MS);
+  const inWindow = dayWindow(days, now);
   let done = 0;
   for (const key of input.workoutDates) {
-    const date = new Date(`${key}T12:00:00`);
-    if (!Number.isNaN(date.getTime()) && date >= cutoff && date <= now) done += 1;
+    if (inWindow(key)) done += 1;
   }
 
   const planned = (days / 7) * perWeek;
@@ -76,11 +87,8 @@ export function consistencyScore(input: {
  * a check-in are skipped, and no check-ins at all means no number.
  */
 export function recoveryScore(checkIns: DailyReadinessCheckIn[], now = new Date()): number | null {
-  const cutoff = new Date(now.getTime() - WINDOW_DAYS * DAY_MS);
-  const recent = checkIns.filter((entry) => {
-    const date = new Date(`${entry.date}T12:00:00`);
-    return !Number.isNaN(date.getTime()) && date >= cutoff && date <= now;
-  });
+  const inWindow = dayWindow(WINDOW_DAYS, now);
+  const recent = checkIns.filter((entry) => inWindow(entry.date));
   if (!recent.length) return null;
   const total = recent.reduce((sum, entry) => sum + calculateDailyReadiness(entry), 0);
   return Math.round(total / recent.length);

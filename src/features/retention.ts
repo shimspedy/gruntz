@@ -1,8 +1,9 @@
 import type { ExerciseLogEntry } from '../store/useExerciseLogStore';
 import type { SessionSet } from '../store/useSessionStore';
 import { getLocalDateKey } from '../utils/dateKey';
-import { trainingWeekdays } from '../utils/trainingDays';
+import { trainingWeekdays, type TrainingSchedule } from '../utils/trainingDays';
 import { isSameCanonicalMovement } from './exerciseProvenance';
+import { KG_PER_LB } from '../utils/units';
 
 function validDay(value: string): string | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
@@ -53,7 +54,7 @@ export function previousWeekStart(now = new Date()): Date {
 }
 
 /** Historical attendance is compared; today's preference is explicitly only the current target. */
-export function summarizeTrainingWeek(dates: Iterable<string>, daysPerWeek: number | null | undefined, anchor = new Date()) {
+export function summarizeTrainingWeek(dates: Iterable<string>, schedule: TrainingSchedule, anchor = new Date()) {
   const start = mondayOfWeek(anchor);
   const end = new Date(start);
   end.setDate(end.getDate() + 7);
@@ -65,12 +66,12 @@ export function summarizeTrainingWeek(dates: Iterable<string>, daysPerWeek: numb
   const unique = new Set(Array.from(dates).filter((date) => validDay(date)));
   const trainingDays = Array.from(unique).filter((date) => date >= startKey && date < endKey).length;
   const previousTrainingDays = Array.from(unique).filter((date) => date >= previousKey && date < startKey).length;
-  return { start, end, startKey, trainingDays, previousTrainingDays, currentTarget: trainingWeekdays(daysPerWeek).length };
+  return { start, end, startKey, trainingDays, previousTrainingDays, currentTarget: trainingWeekdays(schedule).length };
 }
 
-export function nextTrainingDay(daysPerWeek: number | null | undefined, trained: Iterable<string>, now = new Date()) {
+export function nextTrainingDay(schedule: TrainingSchedule, trained: Iterable<string>, now = new Date()) {
   const dates = new Set(trained);
-  const scheduled = trainingWeekdays(daysPerWeek);
+  const scheduled = trainingWeekdays(schedule);
   for (let offset = 0; offset < 8; offset += 1) {
     const date = new Date(now);
     date.setHours(12, 0, 0, 0);
@@ -105,7 +106,7 @@ export interface DebriefExercise {
 
 export interface SessionWin { winTitle: string; winDetail: string; }
 const positive = (value: number | undefined): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0;
-const weightIn = (weight: number, from: 'lb' | 'kg', to: 'lb' | 'kg') => from === to ? weight : from === 'lb' ? weight * 0.45359237 : weight / 0.45359237;
+const weightIn = (weight: number, from: 'lb' | 'kg', to: 'lb' | 'kg') => from === to ? weight : from === 'lb' ? weight * KG_PER_LB : weight / KG_PER_LB;
 const readable = (value: number) => Number(value.toFixed(1)).toLocaleString();
 
 /** Compare performed sets to saved history BEFORE this session is written. Never infer fitness gains from XP. */

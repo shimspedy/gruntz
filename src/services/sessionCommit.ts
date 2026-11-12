@@ -37,6 +37,8 @@ export function onSessionCommitted(listener: (outcome: CommitOutcome) => void) {
  * Null when there is nothing to save (no workout open, or no working set logged).
  */
 export function commitSession(): CommitOutcome | null {
+  // Recording into a log that has not been read back yet would overwrite the saved history.
+  if (!useExerciseLogStore.persist.hasHydrated()) return null;
   const fresh = useSessionStore.getState().buildMission();
   if (!fresh || !fresh.exercises.length) return null;
   const before = useUserStore.getState().progress;

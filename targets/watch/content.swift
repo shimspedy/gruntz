@@ -101,7 +101,7 @@ struct SummaryView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
-                Text("Saved to Health")
+                Text(workout.saveFailed ? "Not saved to Health" : "Saved to Health")
                     .font(.headline)
                 row("Time", value: elapsedLabel)
                 row("Distance", value: String(format: "%.2f mi", workout.distanceMeters / 1609.344))

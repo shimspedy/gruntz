@@ -100,7 +100,8 @@ export default function OnboardingScreen() {
 
 function OnboardingFlow() {
   const navigation = useNavigation<NativeStackNavigationProp<OnboardingStackParamList>>();
-  const saved = useRef(useOnboardingDraftStore.getState().draft).current;
+  // Read once: the draft seeds the answers, it does not drive them afterwards.
+  const [saved] = useState(() => useOnboardingDraftStore.getState().draft);
   const insets = useSafeAreaInsets();
   const [goals, setGoals] = useState<string[]>(saved?.goals ?? []);
   const [level, setLevel] = useState<UserProfile['fitness_level'] | null>(saved?.level ?? null);

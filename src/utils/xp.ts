@@ -19,15 +19,16 @@ export function getLevelForXP(xp: number): number {
 }
 
 export function getXPToNextLevel(currentXP: number): { current: number; required: number; progress: number } {
-  const level = getLevelForXP(currentXP);
+  const xp = Number.isFinite(currentXP) ? Math.max(0, currentXP) : 0;
+  const level = getLevelForXP(xp);
   const currentLevelXP = getXPForLevel(level);
   const nextLevelXP = getXPForLevel(level + 1);
   const required = nextLevelXP - currentLevelXP;
-  const current = currentXP - currentLevelXP;
+  const current = xp - currentLevelXP;
   return {
     current,
     required,
-    progress: required > 0 ? current / required : 1,
+    progress: required > 0 ? Math.min(1, current / required) : 1,
   };
 }
 
@@ -69,10 +70,12 @@ export function calculateStreakBonus(streakDays: number, previousStreakDays = st
 /**
  * How many days may pass before a streak breaks, based on how often the user plans to train.
  * A 3-day-a-week plan has two rest days between sessions, so a strict 1-day rule punished
- * people for following their own plan.
+ * people for following their own plan. Six days a week still has one rest day (Sunday),
+ * so only a seven-day schedule is held to consecutive days.
  */
 export function streakGraceDays(daysPerWeek?: number | null): number {
-  if (!daysPerWeek || daysPerWeek >= 6) return 1;
+  if (!daysPerWeek || daysPerWeek >= 7) return 1;
+  if (daysPerWeek >= 6) return 2;
   return Math.min(4, Math.ceil(7 / daysPerWeek) + 1);
 }
 

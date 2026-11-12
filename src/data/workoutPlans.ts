@@ -139,7 +139,7 @@ function file(): WorkoutPlansFile {
 export const plansLoaded = () => FILE !== null;
 
 /** How many plans ship with the app — a plain number, so counters don't load the file. */
-export const PLAN_COUNT = 528;
+export const PLAN_COUNT = 593;
 
 export function allPlans(): WorkoutPlan[] {
   return file().plans;

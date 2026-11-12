@@ -18,6 +18,7 @@ import { Tap } from '../ui/Pressable';
 import { Text } from '../ui/Text';
 import { toast } from '../ui/Toast';
 import { color, radius, space } from '../ui/tokens';
+import { currentSchedule } from '../features/trainingSchedule';
 
 /** A calendar week of recorded training, never a lifetime total under a weekly heading. */
 export default function WeeklyDebriefScreen() {
@@ -34,8 +35,9 @@ export default function WeeklyDebriefScreen() {
   const requested = params?.weekStart ? new Date(`${params.weekStart}T12:00:00`) : null;
   const currentMonday = mondayOfWeek();
   const anchor = requested && Number.isFinite(requested.getTime()) && getLocalDateKey(requested) === params?.weekStart && requested <= currentMonday ? requested : currentMonday;
-  const week = summarizeTrainingWeek(dates, profile?.workout_days_per_week, anchor);
-  const next = nextTrainingDay(profile?.workout_days_per_week, dates);
+  const schedule = currentSchedule(profile);
+  const week = summarizeTrainingWeek(dates, schedule, anchor);
+  const next = nextTrainingDay(schedule, dates);
   const focus = getTrainingFocus(profile, scores, targets);
   const lastDay = new Date(week.end);
   lastDay.setDate(lastDay.getDate() - 1);

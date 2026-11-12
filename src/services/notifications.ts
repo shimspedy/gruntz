@@ -98,6 +98,13 @@ export async function setupNotificationChannels() {
 // ─── Daily Mission Reminder ─────────────────────────────────────
 
 /**
+ * expo-notifications reads the Android channel from the trigger, not the content. Set
+ * on the content it was ignored, so every notification used the fallback channel: the
+ * rest chime never played and muting a channel in system settings silenced nothing.
+ */
+const onChannel = (channelId: string) => (Platform.OS === 'android' ? { channelId } : {});
+
+/**
  * @param weekdays 1 (Sunday) – 7 (Saturday). Empty means every day. Reminding someone who
  * trains three days a week on all seven is how an app gets its notifications turned off.
  */
@@ -110,19 +117,18 @@ export async function scheduleDailyReminder(hour: number, minute: number, weekda
       title: 'Time to train',
       body: 'Your next workout is ready when you are.',
       data: { type: 'daily-reminder', url: 'gruntz://train' },
-      ...(Platform.OS === 'android' && { channelId: 'daily-reminder' }),
     };
     if (!weekdays.length) {
       await Notifications.scheduleNotificationAsync({
         content,
-        trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute, ...onChannel('daily-reminder') },
       });
       return true;
     }
     for (const weekday of weekdays) {
       await Notifications.scheduleNotificationAsync({
         content,
-        trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday, hour, minute },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday, hour, minute, ...onChannel('daily-reminder') },
       });
     }
     return true;
@@ -164,7 +170,6 @@ export async function showWorkoutProgress(
     body: `${exercisesDone}/${exercisesTotal} exercises complete (${pct}%)`,
     data: { type: 'workout-progress', exercisesDone, exercisesTotal, url: 'gruntz://train' },
     sticky: true,
-    ...(Platform.OS === 'android' && { channelId: 'workout-progress' }),
   };
 
   await withNotificationGuard(async () => {
@@ -175,7 +180,8 @@ export async function showWorkoutProgress(
 
     activeProgressId = await Notifications.scheduleNotificationAsync({
       content,
-      trigger: null, // Immediate
+      // Immediate. Android still needs a trigger object to carry the channel.
+      trigger: Platform.OS === 'android' ? { channelId: 'workout-progress' } : null,
     });
   }, undefined);
 }
@@ -205,11 +211,10 @@ export async function scheduleRestDone(endsAt: number, nextLabel?: string) {
         title: 'Rest’s up',
         body: nextLabel ? `Time for your next set: ${nextLabel}` : 'Time for your next set.',
         data: { type: 'rest-done', url: 'gruntz://train' },
-        // The same chime the app plays in the foreground. Android takes it from the channel.
+        // The same chime the app plays in the foreground. Android takes it from the channel named on the trigger.
         sound: REST_SOUND,
-        ...(Platform.OS === 'android' && { channelId: 'rest-timer' }),
       },
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: new Date(endsAt) },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: new Date(endsAt), ...onChannel('rest-timer') },
     });
   }, undefined);
 }
@@ -246,9 +251,8 @@ export async function scheduleWorkoutLeftOpen(lastActivityAt: number, title: str
           title: nudge.title,
           body: nudge.body,
           data: { type: 'workout-open', url: 'gruntz://train' },
-          ...(Platform.OS === 'android' && { channelId: 'workout-progress' }),
         },
-        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: new Date(nudge.at) },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: new Date(nudge.at), ...onChannel('workout-progress') },
       });
     }
   }, undefined);
@@ -275,9 +279,12 @@ export async function scheduleTrialEndingReminder(trialEndsAt: string) {
 
   const endTime = new Date(trialEndsAt).getTime();
   if (!Number.isFinite(endTime)) return;
-  const fireAt = new Date(endTime - 36 * 60 * 60 * 1000);
+  const original = new Date(endTime - 36 * 60 * 60 * 1000);
+  let fireAt = new Date(original);
   // Nobody wants a sales push at 3am: pull it into the evening of the same day.
   if (fireAt.getHours() < 9 || fireAt.getHours() > 20) fireAt.setHours(18, 0, 0, 0);
+  // If that evening has already gone, a late reminder still beats none at all.
+  if (fireAt.getTime() <= Date.now() + 60_000) fireAt = original;
   if (fireAt.getTime() <= Date.now() + 60_000) {
     // Less than a minute away (or in the past) — nothing to schedule.
     return;
@@ -289,11 +296,11 @@ export async function scheduleTrialEndingReminder(trialEndsAt: string) {
         title: 'Your access ends soon',
         body: 'Your included Gruntz days end in under 2 days. Your history and routines stay yours either way.',
         data: { type: 'trial-ending', url: 'gruntz://paywall' },
-        ...(Platform.OS === 'android' && { channelId: 'daily-reminder' }),
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
         date: fireAt,
+        ...onChannel('daily-reminder'),
       },
     });
   }, undefined);
@@ -324,13 +331,13 @@ export async function scheduleWeeklyRecap(hour = 19, minute = 0) {
         title: 'Your weekly debrief',
         body: 'Review your training, see what moved, and plan your next mission.',
         data: { type: 'weekly-recap', url: 'gruntz://weekly-debrief' },
-        ...(Platform.OS === 'android' && { channelId: 'daily-reminder' }),
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
         weekday: 1, // Sunday (1 in expo-notifications)
         hour,
         minute,
+        ...onChannel('daily-reminder'),
       },
     });
     return true;

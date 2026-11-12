@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +7,7 @@ import { navigationRef } from '../navigation/ref';
 import type { RootStackParamList } from '../types/navigation';
 import { Text } from './Text';
 import { color, space } from './tokens';
+import { useCoversToasts } from './Toast';
 
 export interface SheetProps {
   visible: boolean;
@@ -56,7 +57,7 @@ let nextId = 0;
  * these children; closing it from either side (the caller, or a drag) keeps both in step.
  */
 export function Sheet({ visible, onClose, title, children, plainHeader, onDismissed, scrollable }: SheetProps) {
-  const id = useRef(`sheet-${++nextId}`).current;
+  const [id] = useState(() => `sheet-${++nextId}`);
 
   // Every render while open, so the route always draws the caller's latest closure.
   useEffect(() => {
@@ -86,6 +87,7 @@ export function SheetScreen({ route }: NativeStackScreenProps<RootStackParamList
   const entry = useSheets((s) => s.entries[id]);
   const latest = useRef(entry);
   if (entry) latest.current = entry;
+  useCoversToasts();
 
   useEffect(
     () => () => {

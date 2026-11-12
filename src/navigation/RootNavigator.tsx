@@ -1,12 +1,10 @@
 import { MovedDeviceSheet } from '../components/MovedDeviceSheet';
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, AppState, BackHandler, Linking, Platform, StyleSheet, View } from 'react-native';
+import { AppState, BackHandler, Linking, Platform, StyleSheet, View } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { startBackupLifecycle } from '../services/backup';
 import { startHealthSyncLifecycle } from '../services/healthSync';
-import { reportHandled } from '../services/crashReporting';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DarkTheme, NavigationContainer, type InitialState, type NavigationState } from '@react-navigation/native';
+import { DarkTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -60,17 +58,16 @@ import { useSubscriptionStore } from '../store/useSubscriptionStore';
 import { useProgramStore } from '../store/useProgramStore';
 import { useRoutineStore } from '../store/useRoutineStore';
 import { useSessionStore } from '../store/useSessionStore';
-import { getLocalDateKey } from '../utils/dateKey';
 import { useUiStore } from '../store/useUiStore';
 import { useUserStore } from '../store/useUserStore';
 import type { OnboardingStackParamList, RootStackParamList, TabParamList } from '../types/navigation';
 import { LogoMark } from '../ui/Logo';
 import { color } from '../ui/tokens';
 import { navigationRef } from './ref';
+import { useSavedNavigation } from './savedNavigation';
+import { BootFailure } from './BootFailure';
 import { TabBar } from './TabBar';
 import { createInitialLinkResolver } from './initialLink';
-import { Button } from '../ui/Button';
-import { Text } from '../ui/Text';
 import { usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { useExerciseLogStore } from '../store/useExerciseLogStore';
 import { useExerciseNotesStore } from '../store/useExerciseNotesStore';
@@ -83,8 +80,6 @@ import { trackRetentionEvent } from '../services/retentionAnalytics';
 import { resolveNotificationLink } from './notificationLink';
 import { startMetaInstallTracking } from '../services/metaInstallTracking';
 
-/** Coalesce navigation-state writes; a tab tap should not cost a disk write. */
-const NAV_SAVE_DEBOUNCE_MS = 600;
 
 /** How long an entitlement check stays fresh before the next foreground re-checks. */
 const ENTITLEMENT_REFRESH_MS = 30 * 60 * 1000;
@@ -301,43 +296,6 @@ function OnboardingFlow() {
   );
 }
 
-const NAV_KEY = '@gruntz_nav_state';
-const NAV_MAX_AGE_MS = 12 * 60 * 60 * 1000;
-/** Screens that only make sense in the moment they were opened; never restored after a relaunch. */
-const TRANSIENT = new Set(['Celebration', 'Paywall', 'RunTracker', 'RoutineEditor']);
-const isTransient = (r: { name: string; params?: object }) => {
-  if (TRANSIENT.has(r.name)) return true;
-  // A sheet's content lives in memory with whoever opened it; there is nothing to restore.
-  if (r.name === 'Sheet') return true;
-  if (r.name === 'ExerciseLibrary' && !!(r.params as { pick?: boolean } | undefined)?.pick) return true;
-  // A screen pinned to a date is only valid on that date. Restoring one saved up to
-  // twelve hours ago could present yesterday's workout as today's.
-  const dateKey = (r.params as { dateKey?: string } | undefined)?.dateKey;
-  return !!dateKey && dateKey !== getLocalDateKey();
-};
-
-/**
- * Drop transient screens (and anything stacked above them) from a saved navigation
- * state, at every level. Filtering only the top-level routes left a transient screen
- * nested inside a tab's own stack to be restored anyway.
- */
-function restorable(state: InitialState | undefined): InitialState | undefined {
-  const routes = state?.routes;
-  if (!routes?.length) return undefined;
-  const cut = routes.findIndex(isTransient);
-  const kept = (cut === -1 ? routes : routes.slice(0, cut)).map((route) =>
-    route.state ? { ...route, state: restorable(route.state as InitialState) } : route,
-  );
-  if (!kept.length) return undefined;
-  // A stack's index is its top; a TAB navigator's index is the selected tab, and
-  // forcing it to the last entry reopened the app on the last tab (Profile) on
-  // every cold start, whatever the user was actually looking at. Keep the saved
-  // index where it still points at a surviving route, and only clamp when the
-  // screens above it were dropped.
-  const saved = typeof state?.index === 'number' ? state.index : kept.length - 1;
-  return { ...state, routes: kept, index: Math.min(Math.max(saved, 0), kept.length - 1) } as InitialState;
-}
-
 /**
  * Android's hardware back should close whatever is on top. Neither the + menu nor
  * the full-screen workout overlay is a navigator screen, so back used to fall
@@ -376,65 +334,6 @@ function usePersistHydrated(store: { persist: { hasHydrated: () => boolean; onFi
   return hydrated;
 }
 
-/** Reopen on the screen the user left, if iOS closed the app while it was in the background. */
-function useSavedNavigation(hydrated: boolean, onboarded: boolean) {
-  const [ready, setReady] = useState(false);
-  const [initial, setInitial] = useState<InitialState | undefined>();
-  useEffect(() => {
-    if (!hydrated || ready) return;
-    if (!onboarded) return setReady(true);
-    let cancelled = false;
-    AsyncStorage.getItem(NAV_KEY)
-      .then((raw) => {
-        if (!raw || cancelled) return;
-        const saved = JSON.parse(raw) as { savedAt: number; state: InitialState };
-        // The app's home must be at the bottom of the stack, or Back has nowhere to go.
-        if (Date.now() - saved.savedAt < NAV_MAX_AGE_MS && saved.state?.routes?.[0]?.name === 'Tabs') setInitial(restorable(saved.state));
-      })
-      .catch(() => undefined)
-      .finally(() => !cancelled && setReady(true));
-    return () => {
-      cancelled = true;
-    };
-  }, [hydrated, onboarded, ready]);
-  // onStateChange fires on every navigation, including each tab tap and every step
-  // of a gesture, and each one serialised the whole tree to disk. Coalesced to one
-  // write, and flushed when the app leaves the foreground so nothing in flight is
-  // lost if iOS kills us.
-  const pending = useRef<NavigationState | undefined>(undefined);
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  useEffect(() => {
-    const flush = () => {
-      clearTimeout(timer.current);
-      timer.current = undefined;
-      const state = pending.current;
-      pending.current = undefined;
-      if (state && useUserStore.getState().isOnboarded) void AsyncStorage.setItem(NAV_KEY, JSON.stringify({ savedAt: Date.now(), state })).catch((e: unknown) => reportHandled(e, 'navigation.persist'));
-    };
-    const sub = AppState.addEventListener('change', (next) => {
-      if (next !== 'active') flush();
-    });
-    return () => {
-      sub.remove();
-      flush();
-    };
-  }, []);
-
-  const save = (state: NavigationState | undefined) => {
-    if (!state) return;
-    pending.current = state;
-    if (timer.current) return;
-    timer.current = setTimeout(() => {
-      clearTimeout(timer.current);
-      timer.current = undefined;
-      const next = pending.current;
-      pending.current = undefined;
-      if (next && useUserStore.getState().isOnboarded) void AsyncStorage.setItem(NAV_KEY, JSON.stringify({ savedAt: Date.now(), state: next })).catch((e: unknown) => reportHandled(e, 'navigation.persist'));
-    }, NAV_SAVE_DEBOUNCE_MS);
-  };
-  return { ready, initial, save };
-}
-
 /** Same frame as the native splash, held until persisted state resolves: no flash, no jump. */
 function Boot() {
   return (
@@ -456,7 +355,6 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   const programHydrated = useProgramStore((s) => s.hasHydrated);
   const programHydrationFailed = useProgramStore((s) => s.hydrationFailed);
   const subscriptionHydrationFailed = useSubscriptionStore((s) => s.hydrationFailed);
-  const [retried, setRetried] = useState(false);
   const [readyContainer, setReadyContainer] = useState<'app' | 'setup' | null>(null);
   useAndroidBack();
   const sessionHydrated = usePersistHydrated(useSessionStore);
@@ -580,53 +478,11 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
     if (waiting || !isOnboarded || readyContainer !== 'app' || !navigationRef.isReady() || hydrationFailed || programHydrationFailed || subscriptionHydrationFailed) return;
     return startMetaInstallTracking();
   }, [waiting, isOnboarded, readyContainer, hydrationFailed, programHydrationFailed, subscriptionHydrationFailed]);
-  if (hydrationFailed || programHydrationFailed || subscriptionHydrationFailed || (waiting && timedOut)) {
-    return (
-      <View style={[styles.fill, styles.boot, { paddingHorizontal: 28, gap: 20 }]}>
-        <LogoMark size={64} />
-        <Text variant="title" align="center">Couldn’t load your saved progress</Text>
-        <Text variant="callout" tone="secondary" align="center">Your saved data has been kept. Try loading it again, or close and reopen Gruntz.</Text>
-        <Button title="Try again" onPress={() => {
-          setRetried(true);
-          void Promise.all([
-            useUserStore.persist.rehydrate(), useProgramStore.persist.rehydrate(),
-            useSubscriptionStore.persist.rehydrate(), useSessionStore.persist.rehydrate(),
-            useRoutineStore.persist.rehydrate(), usePlanLibraryStore.persist.rehydrate(),
-            useExerciseLogStore.persist.rehydrate(), useReadinessStore.persist.rehydrate(),
-            useChallengeStore.persist.rehydrate(), useOnboardingDraftStore.persist.rehydrate(),
-            useExerciseNotesStore.persist.rehydrate(),
-          ]).catch(() => undefined);
-        }} />
-        {/* If a retry didn't help, the usual cause is an unreadable draft. Those are the only
-            things cleared here: training history, plans and the subscription are untouched. */}
-        {retried ? (
-          <Button
-            title="Clear unfinished workout and retry"
-            variant="secondary"
-            onPress={() =>
-              Alert.alert('Clear unfinished workout?', 'This removes a workout you had not finished and half-completed setup answers. Your history, plans and progress stay.', [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Clear and retry',
-                  style: 'destructive',
-                  onPress: () => {
-                    void AsyncStorage.multiRemove(['@gruntz_session', '@gruntz_chrome', '@gruntz_onboarding_draft', '@gruntz_nav_state'])
-                      .catch(() => undefined)
-                      .then(() => Promise.all([
-                        useSessionStore.persist.rehydrate(), useOnboardingDraftStore.persist.rehydrate(),
-                        useRoutineStore.persist.rehydrate(), usePlanLibraryStore.persist.rehydrate(),
-                        useExerciseLogStore.persist.rehydrate(), useReadinessStore.persist.rehydrate(),
-                        useChallengeStore.persist.rehydrate(), useExerciseNotesStore.persist.rehydrate(),
-                      ]))
-                      .catch(() => undefined);
-                  },
-                },
-              ])
-            }
-          />
-        ) : null}
-      </View>
-    );
+  // "Try again" re-reads the stores, so the timeout only earns this screen when a store is
+  // what is still missing. A slow font or link lookup keeps the boot screen instead.
+  const storesPending = !hasHydrated || !storesReady || !subscriptionHydrated;
+  if (hydrationFailed || programHydrationFailed || subscriptionHydrationFailed || (storesPending && timedOut)) {
+    return <BootFailure />;
   }
   if (waiting) return <Boot />;
 
@@ -652,10 +508,16 @@ export function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
       {isOnboarded ? (
         <>
           <WorkoutSessionHost />
-          <ChallengeSheet />
-          <ReadinessSheet />
-          <TeamInboxHost />
-          <MovedDeviceSheet />
+          {/* These present through the navigator. Mounted before it is ready, a sheet that
+              was already due (the moved-device notice is persisted) never opened at all. */}
+          {readyContainer === 'app' ? (
+            <>
+              <ChallengeSheet />
+              <ReadinessSheet />
+              <TeamInboxHost />
+              <MovedDeviceSheet />
+            </>
+          ) : null}
         </>
       ) : null}
     </View>

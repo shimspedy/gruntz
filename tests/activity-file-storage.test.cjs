@@ -100,18 +100,24 @@ function androidLoader(env) {
   const ROUTES = 'file:///documents/gruntz-routes/';
   env.routeFiles ??= new Map();
   const routes = env.routeFiles;
+  // The workout history is file-backed on Android too; its two files are ordinary ones here.
+  env.logFiles ??= new Map();
+  const logs = env.logFiles;
+  const isLog = (path) => /gruntz-exercise-log-\d\.json$/.test(path);
   return createLoader({
     '@react-native-async-storage/async-storage': env.legacy,
     'react-native': { Platform: { OS: 'android' } },
     'expo-file-system/legacy': {
       documentDirectory: 'file:///documents/',
-      getInfoAsync: async (path) => ({ exists: slot(path) !== null ? env.files.data.has(slot(path)) : path === ROUTES ? env.routeDirectory === true : routes.has(path) }),
+      getInfoAsync: async (path) => ({ exists: isLog(path) ? logs.has(path) : slot(path) !== null ? env.files.data.has(slot(path)) : path === ROUTES ? env.routeDirectory === true : routes.has(path) }),
       readAsStringAsync: async (path) => {
+        if (isLog(path)) return logs.get(path);
         if (slot(path) !== null) return env.files.read(slot(path));
         if (!routes.has(path)) throw Error('no such file');
         return routes.get(path);
       },
       writeAsStringAsync: async (path, value) => {
+        if (isLog(path)) { logs.set(path, value); return undefined; }
         if (slot(path) !== null) return env.files.write(slot(path), value);
         if (!path.startsWith(ROUTES) || !env.routeDirectory) throw Error('no such directory');
         if (env.failRoute?.(path)) throw Error('route disk full');
@@ -121,6 +127,7 @@ function androidLoader(env) {
       readDirectoryAsync: async () => [...routes.keys()].map((path) => path.slice(ROUTES.length)),
       moveAsync: async ({ from, to }) => { routes.set(to, routes.get(from)); routes.delete(from); },
       deleteAsync: async (path) => {
+        if (isLog(path)) { logs.delete(path); return undefined; }
         if (slot(path) !== null) return env.files.remove(slot(path));
         if (path === ROUTES) { routes.clear(); env.routeDirectory = false; } else routes.delete(path);
       },

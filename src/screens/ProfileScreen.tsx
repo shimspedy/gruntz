@@ -337,6 +337,7 @@ function EditNameSheet({ visible, onClose }: { visible: boolean; onClose: () => 
           maxFontSizeMultiplier={1.8}
           value={name}
           onChangeText={setName}
+          accessibilityLabel="Name"
           placeholder="Your name"
           placeholderTextColor={color.textTertiary}
           maxLength={40}

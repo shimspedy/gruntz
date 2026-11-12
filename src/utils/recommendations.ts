@@ -58,7 +58,8 @@ function getWeakAreas(strength: StrengthProfile, userProfile?: UserProfile | nul
     areas.push({ name: 'rucking', score: strength.rucking });
   }
   areas.sort((a, b) => a.score - b.score);
-  return areas.slice(0, 3).map(a => a.name);
+  // An area already at full marks is not a weakness, however it ranks against the others.
+  return areas.filter(a => a.score < 100).slice(0, 3).map(a => a.name);
 }
 
 function cardMatchesWeakness(card: MovementCard, weakAreas: string[]): number {
@@ -132,7 +133,11 @@ export function generateRecommendations(
       ? (card.difficulty === 'advanced' ? 2 : 0)
       : (card.difficulty === 'beginner' ? 2 : card.difficulty === 'intermediate' ? 1 : 0);
 
-    const totalScore = matchScore + difficultyBonus;
+    // A card the athlete has no pool or ruck for is listed, never recommended.
+    const usable = card.category === 'swim' ? !!userProfile?.has_pool_access
+      : card.category === 'ruck' ? !!userProfile?.has_ruck_access
+      : true;
+    const totalScore = usable ? matchScore + difficultyBonus : 0;
     // First-run users (totalScore == 0) shouldn't see a 0.3 "confidence" floor — drop to 0.
     const confidence = totalScore === 0 ? 0 : Math.min(1, totalScore / 10 + 0.3);
 
