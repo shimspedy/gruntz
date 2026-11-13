@@ -154,11 +154,6 @@ export const ExercisePage = React.memo(function ExercisePage({
           {`Demonstrated with ${ex.name}`}
         </Text>
       ) : null}
-      {ex?.description ? (
-        <Text variant="body" tone="secondary" style={styles.desc}>
-          {ex.description}
-        </Text>
-      ) : null}
       <Text variant="footnote" tone="tertiary" style={styles.sectionTag}>
         {exercise.section} · {exercise.requiredSets} {exercise.requiredSets === 1 ? 'set' : 'sets'} to complete
       </Text>

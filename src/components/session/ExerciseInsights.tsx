@@ -94,6 +94,13 @@ export function ExerciseInsights({
 
       {tab === 'about' ? (
         <View style={styles.tabBody}>
+          {/* Lives here, not above the set table: with it under the title the video was
+              pushed off screen while logging. */}
+          {exercise?.description ? (
+            <Text variant="body" tone="secondary" style={styles.about}>
+              {exercise.description}
+            </Text>
+          ) : null}
           <Section title="Your notes">
             <TextInput
               value={note}
@@ -230,6 +237,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: space.gutter, paddingTop: space.xl },
   tabBody: { marginTop: space.lg },
+  about: { marginBottom: space.xl },
   note: {
     minHeight: 64,
     backgroundColor: color.surface,
