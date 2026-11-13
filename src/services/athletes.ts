@@ -91,14 +91,18 @@ export const listFollowers = () => cards('list_followers');
 /**
  * Publishes the caller's own card. Called when findability changes and after a workout;
  * a no-op for anyone who has neither made themselves findable nor followed someone.
+ *
+ * Findability itself is only ever sent by the switch (`setDiscoverable`). Every other
+ * sync sends null, which the server reads as "leave it as it is": a switch left on in a
+ * restored backup or on another phone must not make the athlete findable again.
  */
-export async function syncAthleteProfile(force = false): Promise<AthleteResult<null>> {
+export async function syncAthleteProfile(force = false, discoverable: boolean | null = null): Promise<AthleteResult<null>> {
   const prefs = useReadinessStore.getState();
   if (!force && !prefs.discoverable && !prefs.followsAthletes) return { ok: true, value: null };
   const mine = localTeamStatus();
   const progress = useUserStore.getState().progress;
   const result = await call('upsert_athlete_profile', {
-    p_display_name: mine.displayName, p_discoverable: prefs.discoverable, p_sessions: mine.sessions, p_streak: mine.streak,
+    p_display_name: mine.displayName, p_discoverable: discoverable, p_sessions: mine.sessions, p_streak: mine.streak,
     p_level: progress.current_level, p_rank: progress.current_rank,
   });
   return result.ok ? { ok: true, value: null } : result;
@@ -134,7 +138,24 @@ export async function reportAthlete(userId: string, reason: string): Promise<Ath
 /** Turning findability on or off takes effect on the server at once. Off also drops existing followers. */
 export async function setDiscoverable(on: boolean): Promise<AthleteResult<null>> {
   useReadinessStore.getState().setFieldPreference('discoverable', on);
-  const result = await syncAthleteProfile(true);
+  const result = await syncAthleteProfile(true, on);
   if (!result.ok) useReadinessStore.getState().setFieldPreference('discoverable', !on);
   return result;
+}
+
+/**
+ * Sets this phone's two athlete switches from what the server holds. Run after sign-in:
+ * sign-out resets the switches, a second phone never had them, and a restore must not
+ * decide them. On any failure the switches are left alone.
+ */
+export async function reconcileAthleteSettings(): Promise<void> {
+  const result = await call('my_athlete_settings', {});
+  if (!result.ok) return;
+  const row: unknown = Array.isArray(result.value) ? result.value[0] : result.value;
+  if (!row || typeof row !== 'object') return;
+  const { discoverable, following } = row as { discoverable?: unknown; following?: unknown };
+  if (typeof discoverable !== 'boolean' || typeof following !== 'boolean') return;
+  const prefs = useReadinessStore.getState();
+  if (prefs.discoverable !== discoverable) prefs.setFieldPreference('discoverable', discoverable);
+  if (prefs.followsAthletes !== following) prefs.setFieldPreference('followsAthletes', following);
 }

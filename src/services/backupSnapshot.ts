@@ -100,6 +100,29 @@ async function removeStores(keys: string[]): Promise<void> {
   for (const key of keys) if (!ordinaryKey(key)) await OWN_STORAGE[key].removeItem(key);
 }
 
+/** Off by default, and never switched on by a backup: see `captureSnapshot` and `keepSocialSwitches`. */
+const SOCIAL_SWITCHES = ['shareWorkoutsWithTeams', 'teamNotifications', 'discoverable', 'followsAthletes'] as const;
+
+/**
+ * A restore keeps this phone's current sharing switches, whatever the backup holds
+ * (backups made before the switches were stripped still carry them).
+ */
+async function keepSocialSwitches(pairs: [string, string][]): Promise<[string, string][]> {
+  let current: Record<string, unknown> = {};
+  try {
+    current = (await import('../store/useReadinessStore')).useReadinessStore.getState() as unknown as Record<string, unknown>;
+  } catch {
+    // Without the store the switches come back off, which is the safe side.
+  }
+  return pairs.map(([key, value]): [string, string] => {
+    if (key !== '@gruntz_readiness') return [key, value];
+    const parsed: unknown = JSON.parse(value);
+    if (!isRecord(parsed) || !isRecord(parsed.state)) return [key, value];
+    for (const name of SOCIAL_SWITCHES) parsed.state[name] = current[name] === true;
+    return [key, JSON.stringify(parsed)];
+  });
+}
+
 export async function captureSnapshot(): Promise<BackupSnapshot> {
   const entries = await readStores(BACKED_UP_KEYS);
   const stores: Record<string, string> = {};
@@ -115,6 +138,9 @@ export async function captureSnapshot(): Promise<BackupSnapshot> {
         delete parsed.state.teamName;
         delete parsed.state.teamCode;
         delete parsed.state.teamCount;
+        // Sharing choices belong to this phone and this moment. Findability is held by the
+        // server; the rest are asked for again rather than switched on by an old backup.
+        for (const key of SOCIAL_SWITCHES) delete parsed.state[key];
       }
       if (isRecord(parsed) && isRecord(parsed.state) && Array.isArray(parsed.state.trackedSessions)) {
         // Existing backup users have never consented to precise location uploads.
@@ -169,7 +195,7 @@ export async function captureSnapshot(): Promise<BackupSnapshot> {
 export async function applySnapshot(snapshot: BackupSnapshot): Promise<void> {
   const { pairs, routes } = separateRoutes(validateSnapshot(snapshot));
   const resumeHealth = await suspendHealthSyncForDataChange();
-  try { await applySnapshotNow(pairs, routes); }
+  try { await applySnapshotNow(await keepSocialSwitches(pairs), routes); }
   finally { resumeHealth(); }
 }
 

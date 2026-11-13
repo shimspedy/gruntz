@@ -246,7 +246,7 @@ async function signOutNow(): Promise<void> {
   const supabase = getSupabase();
   if (!supabase) return;
   try {
-    // Needs the session, so it goes first: this phone stops receiving for the account.
+    // Needs the session, so it goes first: the server lets go of this phone's token.
     await import('./teamPush').then((push) => push.unregisterPushToken()).catch(() => undefined);
     await supabase.auth.signOut({ scope: 'local' });
   } catch (error) {
@@ -263,6 +263,10 @@ async function signOutNow(): Promise<void> {
  * row, where that account could read it and join the previous account's private team.
  */
 async function forgetAccountTeams(): Promise<void> {
+  // Before the switches are reset below, which is what tells it there is something to
+  // silence. A forced sign-out or an offline one cannot reach the server, so the phone
+  // itself stops receiving: the account that left must not keep buzzing it.
+  await import('./teamPush').then((push) => push.silenceDevicePush()).catch(() => undefined);
   try {
     const [{ useReadinessStore }, { useTeamInboxStore }] = await Promise.all([
       import('../store/useReadinessStore'),

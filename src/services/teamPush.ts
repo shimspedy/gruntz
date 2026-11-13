@@ -60,19 +60,42 @@ export async function enableTeamNotifications(): Promise<'on' | 'denied' | 'unav
   return 'unavailable';
 }
 
-/** Removes this phone's token from the account. Needs the session, so call it before signing out. */
+/**
+ * Removes this phone's token from the account. Needs the session, so call it before
+ * signing out. The saved token is forgotten only once the server has let go of it, so a
+ * failed call (offline) is tried again the next time this runs.
+ */
 export async function unregisterPushToken(): Promise<void> {
   try {
     const token = await AsyncStorage.getItem(TOKEN_KEY);
     if (!token) return;
-    await AsyncStorage.removeItem(TOKEN_KEY);
-    await getSupabase()?.rpc('unregister_push_token', { p_token: token });
+    const supabase = getSupabase();
+    if (!supabase) return;
+    const { error } = await supabase.rpc('unregister_push_token', { p_token: token });
+    if (!error) await AsyncStorage.removeItem(TOKEN_KEY);
   } catch {
-    // The token also leaves when another account registers on this phone, or the app is removed.
+    // `silenceDevicePush` below is the part that does not depend on the network.
+  }
+}
+
+/**
+ * Stops this phone receiving remote pushes at all, with or without a session or a
+ * connection. Used whenever an account leaves the phone (sign-out, a forced sign-out,
+ * erase): the server may still hold the token for that account, and its team chat must
+ * not keep arriving here. Reminders are local notifications and are not affected.
+ * Turning team notifications on again registers the phone afresh.
+ */
+export async function silenceDevicePush(): Promise<void> {
+  try {
+    if (!(await AsyncStorage.getItem(TOKEN_KEY)) && !useReadinessStore.getState().teamNotifications) return;
+    await Notifications.unregisterForNotificationsAsync();
+  } catch {
+    // Not registered, or the platform has nothing to unregister.
   }
 }
 
 export async function disableTeamNotifications(): Promise<void> {
+  await silenceDevicePush();
   useReadinessStore.getState().setFieldPreference('teamNotifications', false);
   await unregisterPushToken();
 }

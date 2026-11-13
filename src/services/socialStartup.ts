@@ -1,6 +1,6 @@
 import { usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { useProgramStore } from '../store/useProgramStore';
-import { syncAthleteProfile } from './athletes';
+import { reconcileAthleteSettings, syncAthleteProfile } from './athletes';
 import { planFollowerCounts, recordPlanFollow } from './planFollows';
 import { getSupabase } from './supabaseClient';
 import { syncPushToken } from './teamPush';
@@ -29,7 +29,7 @@ export function initializeSocial() {
     // Outside the auth callback: Supabase calls made inside it can deadlock its lock.
     setTimeout(() => {
       void syncPushToken();
-      void syncAthleteProfile();
+      void reconcileAthleteSettings().then(() => syncAthleteProfile());
       void recordPlanFollow(currentPlan());
       void planFollowerCounts();
     }, 0);

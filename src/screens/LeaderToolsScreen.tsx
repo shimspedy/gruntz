@@ -117,7 +117,7 @@ export default function LeaderToolsScreen() {
   useEffect(() => {
     if (!canAct || !invited || usedInvite.current === invited) return;
     usedInvite.current = invited;
-    const clean = invited.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+    const clean = /^[A-Za-z2-9]{6}$/.test(invited) ? invited.toUpperCase() : '';
     if (clean.length !== 6) return;
     setCode(clean);
     setSheet('join');

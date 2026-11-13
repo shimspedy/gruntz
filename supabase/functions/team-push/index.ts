@@ -22,6 +22,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 type Push = { to: string; title: string; body: string; data: Record<string, string>; sound: 'default'; channelId: string };
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
+const MESSAGE_PUSH_WINDOW_MS = 5 * 60 * 1000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function json(body: unknown, status: number): Response {
@@ -51,7 +52,9 @@ Deno.serve(async (req) => {
 
   let input: { kind?: unknown; messageId?: unknown; teamId?: unknown; userId?: unknown };
   try {
-    input = await req.json();
+    const parsed: unknown = await req.json();
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return json({ error: 'bad-request' }, 400);
+    input = parsed;
   } catch {
     return json({ error: 'bad-request' }, 400);
   }
@@ -67,8 +70,11 @@ Deno.serve(async (req) => {
     const messageId = id(input.messageId);
     if (!messageId) return json({ error: 'bad-request' }, 400);
     // Read as the caller: only a member can see the row, and only the author may announce it.
-    const { data: message } = await caller.from('team_messages').select('id, team_id, user_id, display_name, body').eq('id', messageId).maybeSingle();
+    const { data: message } = await caller.from('team_messages').select('id, team_id, user_id, display_name, body, created_at').eq('id', messageId).maybeSingle();
     if (!message || message.user_id !== userId) return json({ error: 'not-found' }, 404);
+    // Only a line that was just posted is announced: not a backlog, and not something
+    // written before the team's settings changed.
+    if (Date.now() - new Date(message.created_at).getTime() > MESSAGE_PUSH_WINDOW_MS) return json({ sent: 0 }, 200);
     const { data: team } = await caller.from('teams').select('id, name, is_public').eq('id', message.team_id).maybeSingle();
     // Public communities stay quiet: fifty strangers should not buzz each other's phones.
     if (!team || team.is_public) return json({ sent: 0 }, 200);

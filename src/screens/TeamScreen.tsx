@@ -39,7 +39,8 @@ export default function TeamScreen() {
   const teamId = params?.teamId ?? '';
   const initialTab = params?.tab;
   const [state, setState] = useState<State>(teamId ? { kind: 'loading' } : { kind: 'gone' });
-  const [tab, setTab] = useState<Tab>(initialTab ?? 'chat');
+  // The tab can arrive in a link; anything but the three known ones opens Chat.
+  const [tab, setTab] = useState<Tab>(TABS.some((item) => item.id === initialTab) ? initialTab as Tab : 'chat');
   const [busy, setBusy] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const alive = useRef(true);

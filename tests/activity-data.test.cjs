@@ -294,3 +294,27 @@ test('a backup never carries the team name, invite code or count (audit run-5)',
   assert.equal(captured.teamCount, undefined);
   assert.ok(!JSON.stringify(captured).includes('ABC123'));
 });
+
+test('sharing switches never travel in a backup and a restore cannot switch them on (audit run-8)', async () => {
+  const disk = storage();
+  const load = loader(disk);
+  const { useReadinessStore, flushReadinessPersistence } = load('src/store/useReadinessStore.ts');
+  const service = load('src/services/backupSnapshot.ts');
+  await tick();
+  const switches = ['shareWorkoutsWithTeams', 'teamNotifications', 'discoverable', 'followsAthletes'];
+  for (const name of switches) useReadinessStore.getState().setFieldPreference(name, true);
+  await flushReadinessPersistence();
+  const captured = await service.captureSnapshot();
+  const cloud = JSON.parse(captured.stores['@gruntz_readiness']).state;
+  for (const name of switches) assert.equal(cloud[name], undefined, `${name} stays on this phone`);
+
+  // A backup written before the switches were stripped still holds them switched on.
+  const old = JSON.parse(captured.stores['@gruntz_readiness']);
+  for (const name of switches) old.state[name] = true;
+  for (const name of switches) useReadinessStore.getState().setFieldPreference(name, false);
+  await flushReadinessPersistence();
+  await service.applySnapshot({ ...captured, stores: { ...captured.stores, '@gruntz_readiness': JSON.stringify(old) } });
+  for (const name of switches) assert.equal(useReadinessStore.getState()[name], false, `${name} is not switched on by a restore`);
+  const onDisk = JSON.parse(disk.data.get('@gruntz_readiness')).state;
+  for (const name of switches) assert.equal(onDisk[name], false);
+});
