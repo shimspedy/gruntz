@@ -8,6 +8,7 @@ import {
   FINISH_MAX_AGE_MS, START_MAX_AGE_MS, parseWatchCommands, parseWorkoutRef, planWorkoutRef, programWorkoutRef, routineWorkoutRef,
   watchLive, watchState, type WatchCommand, type WatchNotice, type WatchResult, type WatchWorkout,
 } from '../features/watchState';
+import { useExerciseLogStore } from '../store/useExerciseLogStore';
 import { nextPlanDay, usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { useProgramStore } from '../store/useProgramStore';
 import { useRoutineStore } from '../store/useRoutineStore';
@@ -32,7 +33,10 @@ const seen = new Set<string>();
 
 const unlocked = () => hasTrainingAccess(useSubscriptionStore.getState());
 const storesReady = () => useSessionStore.persist.hasHydrated() && useUserStore.getState().hasHydrated && !useUserStore.getState().hydrationFailed
-  && useRoutineStore.persist.hasHydrated() && usePlanLibraryStore.persist.hasHydrated() && useProgramStore.persist.hasHydrated();
+  && useRoutineStore.persist.hasHydrated() && usePlanLibraryStore.persist.hasHydrated() && useProgramStore.persist.hasHydrated()
+  // A finish cannot be committed before the log is read back; draining earlier consumed
+  // the command and answered "log at least one set".
+  && useExerciseLogStore.persist.hasHydrated();
 
 /** What the watch can start: the day the Train tab is offering, then the athlete's own workouts. */
 function startableWorkouts(now: number, readPlans = false): WatchWorkout[] {
@@ -264,7 +268,7 @@ export function initializeWatchLink() {
     if (next.hasHydrated !== previous.hasHydrated) ready();
     else if (next.profile?.settings.units !== previous.profile?.settings.units || next.progress.claimed_missions !== previous.progress.claimed_missions) changed();
   });
-  for (const store of [useSessionStore, useRoutineStore, useProgramStore, usePlanLibraryStore]) store.persist.onFinishHydration(ready);
+  for (const store of [useSessionStore, useRoutineStore, useProgramStore, usePlanLibraryStore, useExerciseLogStore]) store.persist.onFinishHydration(ready);
   onWatchCommands(drain);
   onWatchStatus(() => pushNow(true));
   AppState.addEventListener('change', (next) => { if (next === 'active') ready(); });

@@ -53,7 +53,7 @@ async function installedAuth({ initialUser = null, deferLogout = false } = {}) {
 
 function teamCaches() {
   const readiness = { teamName: 'Alpha', teamCode: 'ABC123', teamCount: 1 };
-  const inbox = { teamIds: ['one'], lastReadAt: { one: '2026-10-27T12:00:00Z' } };
+  const inbox = { teamIds: ['one'], lastReadAt: { one: '2026-10-27T12:00:00Z' }, latestAt: { one: '2026-10-27T13:00:00Z' } };
   return {
     readiness, inbox,
     mocks: {
@@ -240,7 +240,7 @@ test('signing out forgets the previous account\'s team name, invite code and inb
   await env.service.signOut();
   assert.equal(env.state.userId, null);
   assert.deepEqual(env.caches.readiness, { teamName: '', teamCode: '', teamCount: 0 });
-  assert.deepEqual(env.caches.inbox, { teamIds: [], lastReadAt: {} });
+  assert.deepEqual(env.caches.inbox, { teamIds: [], lastReadAt: {}, latestAt: {} }, 'team ids, read marks and last-message times all go');
   // A failed local sign-out still clears the caches.
   const failing = account({ signOutError: true });
   await failing.service.signOut();

@@ -135,6 +135,8 @@ interface SubscriptionState {
   entitlementStatus: EntitlementStatus | null;
   /** When the store last confirmed it. Pro is only trusted offline for 72 hours after. */
   entitlementVerifiedAt: string | null;
+  /** The newest store request time of any answer applied on this install (ms); a replayed cached answer is never newer. */
+  entitlementRequestAt: number | null;
   /** The latest time this install has seen, so a clock set back cannot extend offline Pro. */
   clockHighWater: number;
   /** Pro moved to another phone and the athlete has not dealt with it yet. */
@@ -180,6 +182,8 @@ function migratePersistedSubscriptionState(persistedState: unknown): Partial<Sub
     entitlementVerifiedAt: typeof persistedState.entitlementVerifiedAt === 'string' && Number.isFinite(Date.parse(persistedState.entitlementVerifiedAt))
       ? persistedState.entitlementVerifiedAt
       : persistedState.entitlementActive === true ? new Date().toISOString() : null,
+    entitlementRequestAt: typeof persistedState.entitlementRequestAt === 'number' && Number.isFinite(persistedState.entitlementRequestAt) && persistedState.entitlementRequestAt > 0
+      ? persistedState.entitlementRequestAt : null,
     movedNotice: persistedState.movedNotice === true,
     clockHighWater: typeof persistedState.clockHighWater === 'number' && Number.isFinite(persistedState.clockHighWater)
       ? Math.min(persistedState.clockHighWater, Date.now() + CLOCK_HIGH_WATER_MAX_AHEAD_MS) : 0,
@@ -379,11 +383,23 @@ function syncEntitlementState(
   }
   // A fresh answer carries the store's clock. Within the skew of this phone's clock it
   // is the truth about the time as well as the subscription, and it corrects a mark
-  // that ran ahead. An old SDK cache keeps its old request time and never gets here.
+  // that ran ahead.
+  //
+  // "Within the skew" is not enough by itself: the SDK's on-device cache keeps the
+  // request time of the last real fetch, so with the app offline and the phone clock
+  // set back to that time, the cached answer looked live and lowered the mark, which
+  // reopened an ended trial or lapsed Pro (audit run-7). An answer only counts as live
+  // when its request time is also newer than every answer already applied here; a
+  // replay carries a time this install has already recorded.
   const now = Date.now();
-  const liveAnswer = Number.isFinite(requestedAt) && Math.abs(now - requestedAt) <= TRIAL_CLOCK_SKEW_MS;
+  const verifiedBefore = previous.entitlementVerifiedAt ? Date.parse(previous.entitlementVerifiedAt) : NaN;
+  const newestApplied = previous.entitlementRequestAt ?? (Number.isFinite(verifiedBefore) ? verifiedBefore : null);
+  const unseen = newestApplied === null ? !previous.hydrationFailed : requestedAt > newestApplied;
+  const liveAnswer = Number.isFinite(requestedAt) && Math.abs(now - requestedAt) <= TRIAL_CLOCK_SKEW_MS && unseen;
   const clockHighWater = liveAnswer ? Math.max(requestedAt, now) : Math.max(previous.clockHighWater ?? 0, now);
   set({
+    // Only ever moves forward: the newest store request time this install has applied.
+    entitlementRequestAt: Number.isFinite(requestedAt) ? Math.max(newestApplied ?? 0, requestedAt) : newestApplied,
     entitlementActive: active,
     entitlementStatus: status,
     // The store's time for this answer: an offline SDK cache keeps its old one.
@@ -455,6 +471,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       lastError: null,
       entitlementStatus: null,
       entitlementVerifiedAt: null,
+      entitlementRequestAt: null,
       clockHighWater: 0,
       movedNotice: false,
       dismissMovedNotice: () => set({ movedNotice: false }),
@@ -655,6 +672,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         managementUrl: state.managementUrl,
         entitlementStatus: state.entitlementStatus,
         entitlementVerifiedAt: state.entitlementVerifiedAt,
+        entitlementRequestAt: state.entitlementRequestAt,
         clockHighWater: state.clockHighWater,
         movedNotice: state.movedNotice,
       }),

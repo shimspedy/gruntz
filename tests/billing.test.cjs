@@ -498,3 +498,64 @@ test('a live store answer corrects a clock mark that once ran ahead, instead of 
   const migrated = s.persistence.migrate({ clockHighWater: Date.now() + 5 * 366 * day }, 0);
   assert.ok(migrated.clockHighWater <= Date.now() + 366 * day + 1000);
 });
+
+test('a cached store answer replayed with the clock set back to its time cannot lower the clock mark (audit run-7)', async () => {
+  const day = 24 * 60 * 60 * 1000;
+  const realNow = Date.now();
+  const start = new Date(realNow - 30 * day).toISOString(); // the included trial ended long ago
+  const answeredAt = realNow - 27 * day; // the last real store answer, on day 3 of the trial
+  const replay = (active) => ({ ...customer(active), requestDate: new Date(answeredAt).toISOString() });
+  const run = async (active, seenBefore) => {
+    const keychain = new Map([['gruntz_trial_started_at', start], ['gruntz_clock_high_water', String(realNow)]]);
+    const s = store({ keychain, loadRevenueCatState: async () => ({ currentOffering: null, customerInfo: replay(active), customerInfoKnown: true, configured: true }) });
+    // What an honest launch at `answeredAt` left behind, then a month of real time passing.
+    s.useSubscriptionStore.setState({ trialStartedAt: start, clockHighWater: realNow, entitlementActive: false, ...seenBefore });
+    s.persistence.onRehydrateStorage()(undefined, undefined);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    const clock = Date.now;
+    Date.now = () => answeredAt + 60 * 1000; // the phone clock set back to the cached answer's time
+    try {
+      await s.state().initialize();
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      return { state: s.state(), access: s.hasTrainingAccess(s.state()), pinned: Number(keychain.get('gruntz_clock_high_water')) };
+    } finally {
+      Date.now = clock;
+    }
+  };
+  const records = [
+    ['the request time recorded by this build', { entitlementRequestAt: answeredAt, entitlementVerifiedAt: new Date(answeredAt).toISOString() }],
+    ['an install upgraded from before the field existed', { entitlementRequestAt: null, entitlementVerifiedAt: new Date(answeredAt).toISOString() }],
+  ];
+  for (const [label, seenBefore] of records) {
+    for (const active of [false, true]) {
+      const { state, access, pinned } = await run(active, seenBefore);
+      assert.ok(state.clockHighWater >= realNow, `${label}: the stored mark is not lowered (cached Pro ${active})`);
+      assert.ok(pinned >= realNow, `${label}: the Keychain mark is not lowered (cached Pro ${active})`);
+      assert.equal(state.entitlementActive, false, `${label}: cached Pro is not honoured behind the mark`);
+      assert.equal(access, false, `${label}: the ended trial stays closed`);
+      assert.equal(state.entitlementRequestAt, answeredAt, `${label}: the recorded request time never goes backwards`);
+    }
+  }
+
+  // A genuinely newer answer still corrects a mark that ran ahead (the run-5 behaviour).
+  const ahead = realNow + 30 * day;
+  const keychain = new Map([['gruntz_trial_started_at', new Date(realNow - 3 * day).toISOString()], ['gruntz_clock_high_water', String(ahead)]]);
+  const fresh = { ...customer(true), requestDate: new Date().toISOString() };
+  const s = store({ keychain, loadRevenueCatState: async () => ({ currentOffering: null, customerInfo: fresh, customerInfoKnown: true, configured: true }) });
+  s.useSubscriptionStore.setState({ clockHighWater: ahead, entitlementRequestAt: realNow - day, entitlementVerifiedAt: new Date(realNow - day).toISOString() });
+  s.persistence.onRehydrateStorage()(undefined, undefined);
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  await s.state().initialize();
+  assert.equal(s.state().entitlementActive, true);
+  assert.ok(s.state().clockHighWater < realNow + day, 'a new real answer still lowers a mark that ran ahead');
+
+  // Unreadable storage is not a blank slate: with no record of earlier answers, nothing is trusted as new.
+  const failed = store({ loadRevenueCatState: async () => ({ currentOffering: null, customerInfo: fresh, customerInfoKnown: true, configured: true }) });
+  failed.useSubscriptionStore.setState({ clockHighWater: ahead, hydrationFailed: true });
+  await failed.state().initialize();
+  assert.equal(failed.state().clockHighWater, ahead);
+
+  const migrated = s.persistence.migrate({ entitlementRequestAt: 'yesterday' }, 0);
+  assert.equal(migrated.entitlementRequestAt, null);
+  assert.equal(s.persistence.migrate({ entitlementRequestAt: answeredAt }, 0).entitlementRequestAt, answeredAt);
+});

@@ -208,6 +208,9 @@ async function applySnapshotNow(pairs: [string, string][], routes: [string, Rout
   // The restore is committed. Routes of activities it replaced are now orphans;
   // failing to delete them must not report a completed restore as failed.
   await pruneRoutes(routes.map(([id]) => id)).catch(() => undefined);
+  // The wrist was still told "Workout saved" about the last workout of the profile
+  // that was just replaced. Same reset an erase does; never fails a finished restore.
+  await import('./watchLink').then((link) => link.resetWatchLink()).catch(() => undefined);
 }
 
 /**

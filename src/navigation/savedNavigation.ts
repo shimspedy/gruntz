@@ -63,7 +63,8 @@ export function useSavedNavigation(hydrated: boolean, onboarded: boolean) {
         if (!raw || cancelled) return;
         const saved = JSON.parse(raw) as { savedAt: number; state: InitialState };
         // The app's home must be at the bottom of the stack, or Back has nowhere to go.
-        if (Date.now() - saved.savedAt < NAV_MAX_AGE_MS && saved.state?.routes?.[0]?.name === 'Tabs') setInitial(restorable(saved.state));
+        const age = Date.now() - saved.savedAt;
+        if (age >= 0 && age < NAV_MAX_AGE_MS && saved.state?.routes?.[0]?.name === 'Tabs') setInitial(restorable(saved.state));
       })
       .catch(() => undefined)
       .finally(() => !cancelled && setReady(true));

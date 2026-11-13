@@ -268,7 +268,7 @@ async function forgetAccountTeams(): Promise<void> {
     ]);
     useReadinessStore.getState().setTeam('', '', 0);
     useTeamInboxStore.getState().setTeamIds([]);
-    useTeamInboxStore.setState({ lastReadAt: {} });
+    useTeamInboxStore.setState({ lastReadAt: {}, latestAt: {} });
   } catch (error) {
     if (__DEV__) console.warn('[backup] forgetAccountTeams failed', error);
   }

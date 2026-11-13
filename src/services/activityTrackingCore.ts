@@ -125,6 +125,7 @@ function parseDraft(raw: string): Draft {
       || !positive(d.startedAt) || !positive(d.elapsedMs) || !(d.activeSince === null || positive(d.activeSince))
       || !positive(d.segmentStartedAt) || !positive(d.segment) || !positive(d.distanceMeters) || !positive(d.elevationMeters)
       || !positive(d.stepsBanked) || !positive(d.stepsCurrent) || !positive(d.lastTimestamp) || !positive(d.updatedAt)
+      || !(d.endedAt === undefined || positive(d.endedAt))
       || typeof d.backgroundEnabled !== 'boolean' || typeof d.stepsLimited !== 'boolean'
       || !Array.isArray(d.route) || d.route.length > MAX_ACTIVITY_ROUTE_POINTS || !d.route.every(validPoint)
       || !(d.anchor === null || (validPoint(d.anchor) && positive(d.anchor.accuracy)))
@@ -214,7 +215,9 @@ export function createActivityTracker(deps: ActivityTrackingDependencies) {
     if (!draft) return;
     draft.elapsedMs = elapsed(at);
     draft.activeSince = null;
-    draft.endedAt = at;
+    // Only while it was actually recording: ending an activity that was paused last
+    // night must keep last night's time, not the moment Stop was tapped.
+    if (draft.status === 'recording' || draft.endedAt === undefined) draft.endedAt = at;
     draft.status = 'paused';
     breakSegment();
     publish({ currentSpeedMph: null });
