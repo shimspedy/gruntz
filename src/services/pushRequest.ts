@@ -3,7 +3,9 @@ import { getSupabase } from './supabaseClient';
 export type PushRequest =
   | { kind: 'message'; messageId: string }
   | { kind: 'nudge'; teamId: string; userId: string }
-  | { kind: 'follow'; userId: string };
+  | { kind: 'follow'; userId: string }
+  | { kind: 'comment'; commentId: string }
+  | { kind: 'reaction'; postId: string };
 
 /** Asks the server to deliver one notification. Best effort: the action itself is already saved. */
 export async function requestPush(request: PushRequest): Promise<{ ok: boolean; reason?: 'rate-limited' | 'error' }> {

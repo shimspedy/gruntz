@@ -101,6 +101,7 @@ export default function ProfileScreen() {
       </View>
 
       <Group style={styles.group}>
+        <Row icon="medal" title="Ranks" subtitle="Your rank, skills and what comes next" onPress={() => navigation.navigate('Ranks')} />
         <MembershipRow />
         <Row icon="flag" title="Service & test profile" onPress={() => navigation.navigate('ServiceProfile')} />
         {signedIn || (__DEV__ && teamCount > 0) ? (

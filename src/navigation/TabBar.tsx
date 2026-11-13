@@ -19,7 +19,6 @@ import { SessionMiniBar } from '../components/session/SessionMiniBar';
 import { useSessionStore } from '../store/useSessionStore';
 import { useUiStore } from '../store/useUiStore';
 import { Icon, type IconName } from '../ui/Icon';
-import { HexIcon } from '../ui/HexIcon';
 import { Tap } from '../ui/Pressable';
 import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
@@ -28,7 +27,7 @@ import { useCreateActions } from './createActions';
 
 const TAB_META: Record<string, { label: string; icon?: IconName; iconActive?: IconName }> = {
   Train: { label: 'Train', icon: 'dumbbell', iconActive: 'dumbbellFill' },
-  Ranks: { label: 'Ranks' },
+  Feed: { label: 'Feed', icon: 'people', iconActive: 'peopleFill' },
   Test: { label: 'Test', icon: 'test', iconActive: 'testFill' },
   Plans: { label: 'Plans', icon: 'book', iconActive: 'book' },
   Profile: { label: 'Profile', icon: 'person', iconActive: 'personFill' },
@@ -78,11 +77,7 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
           }
         }}
       >
-        {route.name === 'Ranks' ? (
-          <HexIcon size={25} color={tint} filled={focused} />
-        ) : (
-          <Icon name={(focused ? meta.iconActive : meta.icon)!} size={24} color={tint} />
-        )}
+        <Icon name={(focused ? meta.iconActive : meta.icon)!} size={24} color={tint} />
         <Text variant="caption" style={[styles.tabLabel, { color: tint }]}>
           {meta.label}
         </Text>

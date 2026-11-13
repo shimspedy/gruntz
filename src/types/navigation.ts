@@ -4,7 +4,8 @@ import type { ActivityType } from './activity';
 
 export type TabParamList = {
   Train: undefined;
-  Ranks: undefined;
+  /** Posts from other athletes. Signed out, it shows a sign-in prompt. */
+  Feed: undefined;
   /** Military Prep only; other users get `Plans` in this slot. */
   Test: undefined;
   Plans: undefined;
@@ -61,6 +62,11 @@ export type RootStackParamList = {
   /** `code` comes from an invite link and is typed into the join sheet for the athlete. */
   LeaderTools: { code?: string } | undefined;
   Athletes: undefined;
+  /** Rank, skills and trophies. Was a tab until the feed took its slot. */
+  Ranks: undefined;
+  PostDetail: { postId: string };
+  ComposePost: undefined;
+  AthletePosts: { userId: string; name?: string };
   Team: { teamId: string; tab?: 'chat' | 'leaderboard' | 'members' };
   Communities: undefined;
   /** The route behind every `<Sheet>`; `id` names the content its owner published. */

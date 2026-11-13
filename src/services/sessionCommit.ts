@@ -93,6 +93,8 @@ export function commitSession(): CommitOutcome | null {
   // Team rosters show sessions and streak; a no-op for anyone not in a team.
   void import('./teams').then((teams) => teams.syncTeamStatus()).catch(() => undefined);
   void import('./athletes').then((athletes) => athletes.syncAthleteProfile()).catch(() => undefined);
+  // Kept on this phone so the athlete can share the session to the feed today if they choose to.
+  void import('./feed').then((feed) => feed.rememberWorkout({ title, minutes: fresh.duration_minutes, sets, records: fresh.exercises.filter((exercise) => exercise.is_personal_record).length })).catch(() => undefined);
   // Opt-in, and once a day: a second session the same day does not post again.
   if (!repeatOfToday && useReadinessStore.getState().shareWorkoutsWithTeams && useReadinessStore.getState().teamCount > 0) {
     const post = { title, minutes: fresh.duration_minutes, sets, personalRecords: fresh.exercises.filter((exercise) => exercise.is_personal_record).length };

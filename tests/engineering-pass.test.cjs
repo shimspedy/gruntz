@@ -311,3 +311,42 @@ test('plan popularity only breaks ties between plans that already fit, and built
   assert.equal(followedPlanId(null, 'recon'), 'program-recon');
   assert.equal(followedPlanId(null, null), null);
 });
+
+test('feed: a reaction moves between emoji without double counting, and menu outcomes update the list', () => {
+  const { createLoader } = require('./workout-test-utils.cjs');
+  const { withReaction, applyPostChange } = createLoader({
+    'react-native': { ActionSheetIOS: {}, Alert: {}, Platform: { OS: 'ios' } },
+    '../services/athletes': {}, '../services/feed': { FEED_FAILURE: {} }, '../ui/haptics': { haptic: {} }, '../ui/Toast': { toast() {} },
+  })('src/hooks/usePostActions.ts');
+  const post = { id: 'p1', userId: 'a', reactions: { fire: 2 }, myReaction: null, isFollowing: false };
+  const fired = withReaction(post, 'fire');
+  assert.deepEqual([fired.reactions.fire, fired.myReaction], [3, 'fire']);
+  const switched = withReaction(fired, 'strong');
+  assert.deepEqual([switched.reactions.fire, switched.reactions.strong, switched.myReaction], [2, 1, 'strong']);
+  const cleared = withReaction(switched, null);
+  assert.deepEqual([cleared.reactions.fire, cleared.reactions.strong, cleared.myReaction], [2, 0, null]);
+  assert.equal(post.reactions.fire, 2, 'the post on screen is not mutated');
+
+  const posts = [post, { id: 'p2', userId: 'b', reactions: {}, myReaction: null, isFollowing: false }, { id: 'p3', userId: 'a', reactions: {}, myReaction: null, isFollowing: false }];
+  assert.deepEqual(applyPostChange(posts, { kind: 'removed', post }).map((p) => p.id), ['p2', 'p3']);
+  assert.deepEqual(applyPostChange(posts, { kind: 'author-removed', userId: 'a' }).map((p) => p.id), ['p2'], 'blocking removes every post by that athlete');
+  assert.deepEqual(applyPostChange(posts, { kind: 'following', userId: 'a', on: true }).map((p) => p.isFollowing), [true, false, true]);
+});
+
+test('feed: only a workout finished in the last 18 hours is offered for sharing, with bounded numbers', async () => {
+  const { createLoader } = require('./workout-test-utils.cjs');
+  const disk = new Map();
+  const { rememberWorkout, recentWorkout } = createLoader({
+    '@react-native-async-storage/async-storage': { __esModule: true, default: { getItem: async (k) => disk.get(k) ?? null, setItem: async (k, v) => { disk.set(k, v); } } },
+    './supabaseClient': { getSupabase: () => null },
+  })('src/services/feed.ts');
+  assert.equal(await recentWorkout(), null);
+  await rememberWorkout({ title: '  Lower Body  ', minutes: 42.4, sets: 99999, records: -3 });
+  assert.deepEqual(await recentWorkout(), { title: 'Lower Body', minutes: 42, sets: 1000, records: 0 });
+  disk.set('@gruntz_last_workout', JSON.stringify({ title: 'Old', minutes: 1, sets: 1, records: 0, at: Date.now() - 19 * 60 * 60 * 1000 }));
+  assert.equal(await recentWorkout(), null, 'yesterday\'s session is not today\'s post');
+  disk.set('@gruntz_last_workout', JSON.stringify({ title: 'Future', at: Date.now() + 60000 }));
+  assert.equal(await recentWorkout(), null);
+  disk.set('@gruntz_last_workout', '{not json');
+  assert.equal(await recentWorkout(), null);
+});

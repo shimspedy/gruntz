@@ -8,6 +8,7 @@ import { getLocalDateKey } from '../utils/dateKey';
 import { getLevelForXP, getRank } from '../utils/xp';
 import { setDemoPublicTeams, setDemoTeams } from '../services/teams';
 import { setDemoMessages } from '../services/teamChat';
+import { setDemoFeed, type FeedComment, type FeedPost } from '../services/feed';
 import { saveRoute } from '../store/activityRoutes';
 import { useRoutineStore } from '../store/useRoutineStore';
 import type { RoutePoint } from '../types/activity';
@@ -196,4 +197,24 @@ export function seedDemo() {
     { id: 'pub-2', name: 'Midwest ruckers', description: 'Weekly rucks, monthly 12-milers. Grand Rapids and around.', memberCount: 18, isMember: false },
     { id: 'pub-3', name: 'Night shift', description: 'For people who train after 2200.', memberCount: 7, isMember: false },
   ]);
+  const post = (id: string, name: string, level: number, rank: string, minutes: number, extra: Partial<FeedPost>): FeedPost => ({
+    id, userId: `demo-${name}`, displayName: name, level, rank, avatarUrl: null, kind: 'text', body: '', audience: 'everyone', workout: null,
+    photoUrl: null, createdAt: minutesAgo(minutes), reactions: {}, myReaction: null, commentCount: 0, isMine: false, isFollowing: false, ...extra,
+  });
+  const comment = (id: string, name: string, minutes: number, body: string, parentId: string | null = null): FeedComment => ({
+    id, parentId, userId: `demo-${name}`, displayName: name, avatarUrl: null, body, createdAt: minutesAgo(minutes), isMine: false,
+  });
+  setDemoFeed({
+    posts: [
+      post('f1', 'Brooks', 14, 'Operator', 22, { kind: 'workout', body: 'Squat finally moved. Slept eight hours and it showed.', workout: { title: 'Lower Body Strength', minutes: 52, sets: 21, records: 2 }, reactions: { strong: 9, fire: 4, salute: 1 }, myReaction: 'strong', commentCount: 3, isFollowing: true }),
+      post('f2', 'Dana R.', 9, 'Cadet', 95, { body: 'Anyone else doing the 12-mile ruck this Saturday? Looking for a pace group around 15 min a mile.', reactions: { clap: 2 }, commentCount: 1 }),
+      post('f3', 'Ortiz', 11, 'Operator', 180, { kind: 'workout', workout: { title: 'Push-Up and Plank Builder', minutes: 28, sets: 12, records: 0 }, reactions: { fire: 3 } }),
+      post('f4', 'Priya', 22, 'Veteran', 400, { body: 'Thirty days straight. The trick was laying my kit out the night before.', reactions: { heart: 12, strong: 7, clap: 5 }, commentCount: 6, audience: 'followers', isFollowing: true }),
+      post('f5', 'Alex', 12, 'Operator', 600, { kind: 'workout', body: 'Short one before work.', workout: { title: 'Core and Mobility', minutes: 18, sets: 9, records: 0 }, isMine: true, reactions: { strong: 2 } }),
+    ],
+    comments: {
+      f1: [comment('c1', 'Dana R.', 18, 'Depth looked good too. What did you hit?'), comment('c2', 'Brooks', 15, '315 for five. Old best was 305.', 'c1'), comment('c3', 'Ortiz', 9, 'Strong. See you at 0600.')],
+      f2: [comment('c4', 'Priya', 60, 'In. I can hold 15s.')],
+    },
+  });
 }

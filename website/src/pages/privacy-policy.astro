@@ -205,15 +205,40 @@ const updated = 'November 12, 2026';
     </li>
   </ul>
 
-  <h3>Optional team notifications</h3>
+  <h3>Optional social notifications</h3>
   <p>
-    <strong>Team notifications</strong> is off by default (Settings). If you switch it on, this
+    <strong>Social notifications</strong> is off by default (Settings). If you switch it on, this
     phone's push notification token is stored with your account so that a teammate's chat message
-    or nudge in a private team, or a new follower, can be delivered to it. The notification shows
+    or nudge in a private team, a new follower, or a comment or reaction on your post can be delivered to it. The notification shows
     the team name, the sender's display name and the message. The token is deleted when you switch
     the setting off, sign out or delete your account. Notifications are delivered through Expo's
     push service and Apple or Google.
   </p>
+
+  <h3>Optional feed posts</h3>
+  <p>
+    The feed is for signed-in accounts, and posting is your choice.
+  </p>
+  <ul>
+    <li>
+      A post holds the text you write and, if you add them, a summary of a finished workout (its
+      name, duration, set count and number of records) or one photo you pick. Weights and reps are
+      not included. Your display name, profile photo, level and rank are shown with it.
+    </li>
+    <li>
+      You choose who can see each post: every signed-in athlete, or only athletes who follow you.
+      Comments and reactions are visible to anyone who can see the post.
+    </li>
+    <li>
+      To put posts in a useful order we record which posts were shown to you, and use your follows,
+      teams and current plan. This is not used for advertising and is not shared.
+    </li>
+    <li>
+      You can delete your posts and comments at any time; a post's photo is deleted with it. A
+      report keeps a copy of the reported text for review. Everything else is deleted when you
+      delete your account.
+    </li>
+  </ul>
 
   <h3>Plan popularity</h3>
   <p>
@@ -316,7 +341,7 @@ const updated = 'November 12, 2026';
     </li>
     <li>
       Expo push notification service, with Apple Push Notification service and Firebase Cloud
-      Messaging, for delivering team notifications — only if you switch them on.
+      Messaging, for delivering social notifications — only if you switch them on.
     </li>
     <li>Apple App Store or Google Play for payment processing and store-managed subscriptions.</li>
     <li>OpenFreeMap for map tiles and styles when you view a route map.</li>

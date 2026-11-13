@@ -33,6 +33,10 @@ import ProfileScreen from '../screens/ProfileScreen';
 import ProgramDetailScreen from '../screens/ProgramDetailScreen';
 import ProgramSelectScreen from '../screens/ProgramSelectScreen';
 import RanksScreen from '../screens/RanksScreen';
+import FeedScreen from '../screens/FeedScreen';
+import PostDetailScreen from '../screens/PostDetailScreen';
+import AthletePostsScreen from '../screens/AthletePostsScreen';
+import ComposePostScreen from '../screens/ComposePostScreen';
 import RunTrackerScreen from '../screens/RunTrackerScreen';
 import ActivityHistoryScreen from '../screens/ActivityHistoryScreen';
 import ActivityDetailScreen from '../screens/ActivityDetailScreen';
@@ -133,7 +137,7 @@ const linking = {
         initialRouteName: 'Train' as const,
         screens: {
           Train: 'train',
-          Ranks: 'ranks',
+          Feed: 'feed',
           // Only registered for Military Prep athletes; the link does not resolve
           // for anyone else, so do not put it in general marketing.
           Test: 'test',
@@ -159,6 +163,9 @@ const linking = {
       Team: 'team/:teamId',
       LeaderTools: 'join/:code',
       Athletes: 'athletes',
+      // Still `gruntz://ranks`, as it was when Ranks was a tab.
+      Ranks: 'ranks',
+      PostDetail: 'post/:postId',
     },
   },
 };
@@ -183,7 +190,7 @@ function MainTabs() {
         screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: color.bg }, animation: 'none' }}
       >
         <Tabs.Screen name="Train" component={TrainScreen} />
-        <Tabs.Screen name="Ranks" component={RanksScreen} />
+        <Tabs.Screen name="Feed" component={FeedScreen} />
         {military ? <Tabs.Screen name="Test" component={TestScreen} /> : <Tabs.Screen name="Plans" component={PlanBrowseScreen} />}
         <Tabs.Screen name="Profile" component={ProfileScreen} />
       </Tabs.Navigator>
@@ -265,6 +272,10 @@ function AppStack() {
       <Stack.Screen name="Team" component={TeamScreen} />
       <Stack.Screen name="Communities" component={CommunitiesScreen} />
       <Stack.Screen name="Athletes" component={AthletesScreen} />
+      <Stack.Screen name="Ranks" component={RanksScreen} />
+      <Stack.Screen name="PostDetail" component={PostDetailScreen} />
+      <Stack.Screen name="AthletePosts" component={AthletePostsScreen} />
+      <Stack.Screen name="ComposePost" component={ComposePostScreen} options={{ presentation: 'modal' }} />
       <Stack.Screen
         name="Sheet"
         component={SheetScreen}

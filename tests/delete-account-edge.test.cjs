@@ -53,6 +53,18 @@ function environment(options = {}) {
   };
   const admin = {
     storage: { from(bucket) {
+      if (bucket === 'feed-photos') {
+        // Post photos live only under the verified caller's own folder.
+        return {
+          list: async folder => { assert.equal(folder, userId); return { data: state.photos ?? [], error: null }; },
+          remove: async paths => {
+            for (const path of paths) assert.ok(path.startsWith(`${userId}/`), 'Only the verified caller photos may be removed');
+            state.events.push(['photos', bucket, paths]);
+            state.photos = [];
+            return { data: [], error: null };
+          },
+        };
+      }
       assert.equal(bucket, 'team-avatars');
       return { remove: async paths => {
         assert.deepEqual(paths, [`${userId}.jpg`], 'Only the verified caller avatar may be removed');
@@ -192,4 +204,14 @@ test('a failed Auth delete retries after idempotent cleanup without selecting an
   assert.equal((await env.invoke()).status, 200);
   assert.equal(env.state.events.filter(([kind]) => kind === 'leave').length, 1);
   assert.equal((await env.invoke()).status, 401, 'A deleted identity cannot replay privileged cleanup');
+});
+
+test('post photos under the verified caller folder are removed before the account, and nobody else\'s', async () => {
+  const env = environment({ memberships: [] });
+  env.state.photos = [{ name: 'post-one.jpg' }, { name: 'post-two.jpg' }];
+  const result = await env.invoke();
+  assert.equal(result.status, 200);
+  const at = env.state.events.findIndex(event => event[0] === 'photos');
+  assert.deepEqual(env.state.events[at], ['photos', 'feed-photos', [`${userId}/post-one.jpg`, `${userId}/post-two.jpg`]]);
+  assert.ok(at < env.state.events.findIndex(event => event[0] === 'delete'));
 });

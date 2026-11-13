@@ -291,8 +291,8 @@ export default function SettingsScreen() {
           <Group label="Teams and athletes" style={styles.group}>
             <Row
               icon="bell"
-              title="Team notifications"
-              subtitle="Off by default. A push when a teammate posts or nudges you, or someone follows you."
+              title="Social notifications"
+              subtitle="Off by default. A push when a teammate posts or nudges you, someone follows you, or someone comments on or reacts to your post."
               toggle={teamNotifications}
               onToggle={(v) => void toggleTeamNotifications(v)}
             />

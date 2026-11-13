@@ -1,7 +1,8 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 /**
- * Sends the push notifications behind team chat, nudges and new followers.
+ * Sends the push notifications behind team chat, nudges, new followers, and comments
+ * and reactions on feed posts.
  *
  * The app cannot do this itself: delivering to someone else's phone needs their push
  * token, and no app role can read the token table. This function reads it with the
@@ -50,7 +51,7 @@ Deno.serve(async (req) => {
   const userId = identity?.data.user?.id;
   if (identity?.error || !userId) return json({ error: 'not-signed-in' }, 401);
 
-  let input: { kind?: unknown; messageId?: unknown; teamId?: unknown; userId?: unknown };
+  let input: { kind?: unknown; messageId?: unknown; teamId?: unknown; userId?: unknown; commentId?: unknown; postId?: unknown };
   try {
     const parsed: unknown = await req.json();
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return json({ error: 'bad-request' }, 400);
@@ -62,6 +63,14 @@ Deno.serve(async (req) => {
 
   const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
   let recipients: string[] = [];
+  /** Drops anyone who has blocked the caller, or whom the caller has blocked. */
+  const notBlocked = async (ids: string[]): Promise<string[]> => {
+    if (!ids.length) return [];
+    const { data: blocks } = await admin.from('athlete_blocks').select('blocker_id, blocked_id')
+      .or(`blocker_id.eq.${userId},blocked_id.eq.${userId}`).limit(2000);
+    const cut = new Set((blocks ?? []).map((row) => (row.blocker_id === userId ? row.blocked_id : row.blocker_id)));
+    return ids.filter((who) => !cut.has(who));
+  };
   let title = '';
   let body = '';
   let data: Record<string, string> = {};
@@ -119,6 +128,46 @@ Deno.serve(async (req) => {
     title = 'New follower';
     body = clip(`${me.display_name} started following you.`, 160);
     data = { url: 'gruntz://athletes', type: 'athlete-follow' };
+  } else if (input.kind === 'comment') {
+    const commentId = id(input.commentId);
+    if (!commentId) return json({ error: 'bad-request' }, 400);
+    // Only the comment's author may announce it, once, and only while it is fresh.
+    const { data: claimed } = await admin.from('feed_comments').update({ notified_at: new Date().toISOString() })
+      .eq('id', commentId).eq('user_id', userId).is('notified_at', null)
+      .gt('created_at', new Date(Date.now() - MESSAGE_PUSH_WINDOW_MS).toISOString())
+      .select('id, post_id, parent_id, body');
+    const comment = claimed?.[0];
+    if (!comment) return json({ sent: 0 }, 200);
+    const [{ data: post }, { data: parent }, { data: me }] = await Promise.all([
+      admin.from('feed_posts').select('id, user_id, hidden').eq('id', comment.post_id).maybeSingle(),
+      comment.parent_id ? admin.from('feed_comments').select('user_id').eq('id', comment.parent_id).maybeSingle() : Promise.resolve({ data: null }),
+      admin.from('athlete_profiles').select('display_name').eq('user_id', userId).maybeSingle(),
+    ]);
+    if (!post || post.hidden || !me) return json({ sent: 0 }, 200);
+    // The post's author, and for a reply the athlete being answered. Never the commenter.
+    const wanted = [...new Set([post.user_id, parent?.user_id].filter((who): who is string => !!who && who !== userId))];
+    recipients = await notBlocked(wanted);
+    title = comment.parent_id ? 'New reply' : 'New comment';
+    body = clip(`${me.display_name}: ${comment.body}`, 160);
+    data = { url: `gruntz://post/${post.id}`, type: 'feed-comment' };
+  } else if (input.kind === 'reaction') {
+    const postId = id(input.postId);
+    if (!postId) return json({ error: 'bad-request' }, 400);
+    // The reaction must exist, and each athlete's reaction to a post is announced once.
+    const { data: reaction } = await admin.from('feed_reactions').select('post_id').eq('post_id', postId).eq('user_id', userId).maybeSingle();
+    if (!reaction) return json({ sent: 0 }, 200);
+    const { data: first } = await admin.from('feed_reaction_notices')
+      .upsert({ post_id: postId, user_id: userId }, { onConflict: 'post_id,user_id', ignoreDuplicates: true }).select('post_id');
+    if (!first?.length) return json({ sent: 0 }, 200);
+    const [{ data: post }, { data: me }] = await Promise.all([
+      admin.from('feed_posts').select('id, user_id, hidden').eq('id', postId).maybeSingle(),
+      admin.from('athlete_profiles').select('display_name').eq('user_id', userId).maybeSingle(),
+    ]);
+    if (!post || post.hidden || !me || post.user_id === userId) return json({ sent: 0 }, 200);
+    recipients = await notBlocked([post.user_id]);
+    title = 'New reaction';
+    body = clip(`${me.display_name} reacted to your post.`, 160);
+    data = { url: `gruntz://post/${post.id}`, type: 'feed-reaction' };
   } else {
     return json({ error: 'bad-request' }, 400);
   }

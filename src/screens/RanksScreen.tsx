@@ -4,15 +4,13 @@ import { useNavigation, useScrollToTop } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, LinearTransition, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { MuscleBodyMap } from '../components/MuscleBodyMap';
-import { TabHeader } from '../components/TabHeader';
 import { achievements as allAchievements } from '../data/achievements';
 import { getExerciseById } from '../data/exercises';
 import { getRankInfo, rankDescription, ranks, rankTitle } from '../data/ranks';
-import { useTabChromeInset } from '../navigation/TabBar';
 import { useUserStore } from '../store/useUserStore';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
-import { SectionTitle } from '../ui/Layout';
+import { NavHeader, SectionTitle } from '../ui/Layout';
 import { Bar } from '../ui/Progress';
 import { Tap } from '../ui/Pressable';
 import { RANK_ORDER, RANK_TIERS, RankBadge } from '../ui/RankBadge';
@@ -36,7 +34,6 @@ function scoreLevel(score: number) {
 export default function RanksScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const bottom = useTabChromeInset();
   const ref = React.useRef<ScrollView>(null);
   useScrollToTop(ref);
   const progress = useUserStore((s) => s.progress);
@@ -77,8 +74,9 @@ export default function RanksScreen() {
   }, [progress.exercises_completed]);
 
   return (
-    <ScrollView ref={ref} style={styles.screen} contentContainerStyle={{ paddingTop: insets.top, paddingBottom: bottom }} showsVerticalScrollIndicator={false}>
-      <TabHeader />
+    <View style={styles.screen}>
+    <NavHeader title="Ranks" />
+    <ScrollView ref={ref} contentContainerStyle={{ paddingBottom: insets.bottom + space.xxl }} showsVerticalScrollIndicator={false}>
 
       <View style={styles.rankCard}>
         <View style={styles.rankTop}>
@@ -157,6 +155,7 @@ export default function RanksScreen() {
         ))}
       </View>
     </ScrollView>
+    </View>
   );
 }
 

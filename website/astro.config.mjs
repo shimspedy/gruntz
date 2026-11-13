@@ -8,7 +8,8 @@ export default defineConfig({
   site: 'https://gruntzfit.com',
   // Preserve the site's Astro 6 whitespace behavior across the security upgrade.
   compressHTML: true,
-  integrations: [sitemap()],
+  // The admin page is not for search engines.
+  integrations: [sitemap({ filter: (page) => !page.includes('/admin') })],
   build: {
     format: 'directory',
   },

@@ -1,0 +1,72 @@
+---
+// Moderation for the Gruntz feed. Not linked from anywhere, not indexed, and useless
+// without an admin's Google sign-in: the server checks every request.
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Gruntz admin</title>
+    <link rel="icon" href="/favicon.svg" />
+    <style is:global>
+      :root { color-scheme: dark; --bg: #0b0b0c; --surface: #161618; --line: #2a2a2c; --text: #f4f5f4; --muted: #a1a1a6; --accent: #3d8bff; --bad: #ff6b5e; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif; }
+      main { width: min(880px, 100% - 32px); margin: 0 auto; padding: 32px 0 64px; }
+      h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: -0.02em; }
+      h2 { font-size: 18px; margin: 32px 0 12px; }
+      p { margin: 0; }
+      [hidden] { display: none !important; }
+      .admin-lede { color: var(--muted); margin-bottom: 24px; }
+      .admin-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 8px; }
+      .admin-bar span { color: var(--muted); font-size: 14px; flex: 1; min-width: 160px; }
+      #admin-status { min-height: 24px; font-size: 14px; color: var(--muted); margin: 12px 0; }
+      #admin-status[data-tone='bad'] { color: var(--bad); }
+      .admin-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+      .admin-meta { color: var(--muted); font-size: 13px; }
+      .admin-text { margin: 8px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+      .admin-state { font-size: 13px; margin-top: 8px; }
+      .admin-photo { display: block; max-width: min(320px, 100%); border-radius: 10px; margin: 8px 0; }
+      .admin-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+      .admin-button { font: inherit; font-size: 14px; font-weight: 600; color: var(--text); background: #262628; border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; cursor: pointer; }
+      .admin-button:hover { background: #303033; }
+      .admin-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+      .admin-button:disabled { opacity: 0.5; cursor: default; }
+      .admin-danger { color: var(--bad); }
+      .admin-empty { color: var(--muted); padding: 16px 0; }
+      .admin-count { color: var(--muted); font-weight: 400; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Gruntz admin</h1>
+      <p class="admin-lede">Review what athletes reported in the feed, and hide or remove posts and comments.</p>
+
+      <section id="admin-gate" hidden>
+        <p class="admin-lede">Sign in with the Google account that administers Gruntz. No other sign-in works here.</p>
+        <div id="admin-google"></div>
+      </section>
+
+      <p id="admin-status" role="status" aria-live="polite"></p>
+
+      <section id="admin-board" hidden>
+        <div class="admin-bar">
+          <span id="admin-who"></span>
+          <button class="admin-button" id="admin-reload" type="button">Reload</button>
+          <button class="admin-button" id="admin-signout" type="button">Sign out</button>
+        </div>
+        <h2>Reports <span class="admin-count" id="admin-report-count"></span></h2>
+        <div id="admin-reports"></div>
+        <h2>Recent posts</h2>
+        <div id="admin-posts"></div>
+      </section>
+    </main>
+    <script is:inline src="https://accounts.google.com/gsi/client" async></script>
+    <script>
+      import '../scripts/admin.ts';
+    </script>
+  </body>
+</html>
