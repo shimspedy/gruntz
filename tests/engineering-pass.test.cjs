@@ -373,3 +373,28 @@ test('feed: nothing fetched for one account stays on the phone after it leaves (
   assert.equal(cleared, 2, 'downloaded pictures are dropped from memory and disk');
   assert.notEqual(feed.feedChangeStamp(), stamp, 'open feed screens know to reload');
 });
+
+test('feed: posting and commenting need the community rules accepted once per account', async () => {
+  const { createLoader } = require('./workout-test-utils.cjs');
+  const disk = new Map();
+  let user = 'athlete-a';
+  let answer = 'I agree';
+  let asked = 0;
+  const { ensureFeedRulesAccepted } = createLoader({
+    '@react-native-async-storage/async-storage': { __esModule: true, default: { getItem: async (k) => disk.get(k) ?? null, setItem: async (k, v) => { disk.set(k, v); } } },
+    'react-native': { Alert: { alert: (_t, _m, buttons) => { asked += 1; buttons.find((b) => b.text === answer).onPress(); } } },
+    '../utils/externalLinks': { openExternalUrl: async () => undefined },
+    './supabaseClient': { getSupabase: () => ({ auth: { getSession: async () => ({ data: { session: user ? { user: { id: user } } : null } }) } }) },
+  })('src/services/feedRules.ts');
+  answer = 'Cancel';
+  assert.equal(await ensureFeedRulesAccepted(), false, 'declining blocks the post');
+  answer = 'I agree';
+  assert.equal(await ensureFeedRulesAccepted(), true);
+  assert.equal(await ensureFeedRulesAccepted(), true);
+  assert.equal(asked, 2, 'asked until agreed, then never again for that account');
+  user = 'athlete-b';
+  assert.equal(await ensureFeedRulesAccepted(), true);
+  assert.equal(asked, 3, 'another account on the phone agrees for itself');
+  user = null;
+  assert.equal(await ensureFeedRulesAccepted(), false, 'signed out cannot post');
+});

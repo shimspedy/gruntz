@@ -6,6 +6,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FEED_FAILURE, createPost, recentWorkout, type Audience, type WorkoutSummary } from '../services/feed';
+import { ensureFeedRulesAccepted } from '../services/feedRules';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { NavHeader } from '../ui/Layout';
@@ -64,6 +65,8 @@ export default function ComposePostScreen() {
 
   const publish = async () => {
     if (!ready || busy) return;
+    if (!(await ensureFeedRulesAccepted())) return;
+    if (!alive.current) return;
     setBusy(true);
     const result = await createPost({ body, audience, workout: sharingWorkout ? workout : null, photoUri: photo });
     if (!alive.current) return;

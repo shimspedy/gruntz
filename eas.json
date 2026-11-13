@@ -60,6 +60,13 @@
         "track": "alpha",
         "releaseStatus": "completed"
       }
+    },
+    "play-production": {
+      "android": {
+        "serviceAccountKeyPath": "./secrets/play-service-account.json",
+        "track": "production",
+        "releaseStatus": "completed"
+      }
     }
   }
 }

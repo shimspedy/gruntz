@@ -9,6 +9,7 @@ import {
   FEED_FAILURE, addComment, cachePosts, cachedPost, deleteComment, fetchComments, hasDemoFeed, reportComment, setReaction,
   type FeedComment, type FeedPost, type ReactionKey,
 } from '../services/feed';
+import { ensureFeedRulesAccepted } from '../services/feedRules';
 import type { RootStackParamList } from '../types/navigation';
 import { relativeTime } from '../utils/relativeTime';
 import { Icon } from '../ui/Icon';
@@ -71,6 +72,8 @@ export default function PostDetailScreen() {
   const send = async () => {
     const body = draft.trim();
     if (!body || sending || !post) return;
+    if (!(await ensureFeedRulesAccepted())) return;
+    if (!alive.current) return;
     setSending(true);
     const result = await addComment(post.id, replyTo ? (replyTo.parentId ?? replyTo.id) : null, body);
     if (!alive.current) return;
