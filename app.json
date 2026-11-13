@@ -141,9 +141,16 @@
           "recordAudioAndroid": false,
           "enableBackgroundPlayback": false
         }
+      ],
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.267383737442-7tj25aa1k761a5cibgguqeejt9kr7i90"
+        }
       ]
     ],
     "extra": {
+      "googleIosClientId": "267383737442-7tj25aa1k761a5cibgguqeejt9kr7i90.apps.googleusercontent.com",
       "eas": {
         "projectId": "6756ee93-6c12-45a9-90b3-85fc1c31cdcd"
       }

@@ -11,6 +11,7 @@ import {
   getSignedInEmail,
   pushBackup,
   requestSignInCode,
+  type ProviderSignInResult,
   reconcileTrialStart,
   restoreBackup,
   scheduleBackup,
@@ -21,6 +22,7 @@ import {
 import { verifySignInCode } from '../services/backup';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { appleSignInAvailable, signInWithApple } from '../services/appleSignIn';
+import { googleSignInAvailable, signInWithGoogle } from '../services/googleSignIn';
 import { flushReadinessPersistence, useReadinessStore } from '../store/useReadinessStore';
 import { useUserStore } from '../store/useUserStore';
 import { Button } from '../ui/Button';
@@ -55,6 +57,7 @@ export default function BackupScreen() {
   const [stage, setStage] = useState<'email' | 'code'>('email');
   const [signedInEmail, setSignedInEmail] = useState<string | null>(null);
   const [appleReady, setAppleReady] = useState(false);
+  const googleReady = googleSignInAvailable();
   useEffect(() => {
     let live = true;
     void appleSignInAvailable().then((ready) => { if (live) setAppleReady(ready); });
@@ -202,9 +205,9 @@ export default function BackupScreen() {
     }
   };
 
-  const continueWithApple = async () => {
+  const continueWith = async (signIn: () => Promise<ProviderSignInResult>) => {
     setBusy(true);
-    const result = await signInWithApple();
+    const result = await signIn();
     if (result === 'signed-in') {
       await afterSignIn();
       return;
@@ -470,10 +473,15 @@ export default function BackupScreen() {
                       buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
                       cornerRadius={radius.md}
                       style={[styles.provider, busy && styles.providerBusy]}
-                      onPress={() => { if (!busy) void continueWithApple(); }}
+                      onPress={() => { if (!busy) void continueWith(signInWithApple); }}
                     />
-                    <Text variant="footnote" tone="tertiary" style={styles.or}>or use your email</Text>
                   </>
+                ) : null}
+                {googleReady ? (
+                  <Button title="Continue with Google" variant="secondary" onPress={() => void continueWith(signInWithGoogle)} disabled={busy} style={styles.providerButton} />
+                ) : null}
+                {appleReady || googleReady ? (
+                  <Text variant="footnote" tone="tertiary" style={styles.or}>or use your email</Text>
                 ) : null}
                 <TextInput
                   value={email}
@@ -535,9 +543,10 @@ const styles = StyleSheet.create({
   note: { marginBottom: space.md, lineHeight: 21 },
   group: { marginVertical: space.md },
   spacer: { height: space.sm },
-  provider: { height: 50, marginBottom: space.md },
+  provider: { height: 50, marginBottom: space.sm },
+  providerButton: { marginBottom: space.sm },
   providerBusy: { opacity: 0.5 },
-  or: { textAlign: 'center', marginBottom: space.md },
+  or: { textAlign: 'center', marginTop: space.xs, marginBottom: space.md },
   input: {
     height: 50,
     borderRadius: radius.md,
