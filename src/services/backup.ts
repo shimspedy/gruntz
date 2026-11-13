@@ -18,6 +18,7 @@ export type BackupMeta = {
 
 export type AuthResult = 'sent' | 'rate-limited' | 'unavailable' | 'error';
 export type VerifyResult = 'signed-in' | 'invalid-code' | 'unavailable' | 'error';
+export type ProviderSignInResult = 'signed-in' | 'cancelled' | 'unavailable' | 'error';
 export type PushBackupResult = 'ok' | 'needs-review' | 'signed-out' | 'unavailable' | 'too-large' | 'error';
 export type RestoreBackupResult = 'restored' | 'no-backup' | 'signed-out' | 'unavailable' | 'too-new' | 'too-large' | 'error';
 
@@ -236,6 +237,31 @@ async function verifySignInCodeNow(email: string, code: string, generation: numb
     if (__DEV__) console.warn('[backup] verifySignInCode threw', error);
     return 'error';
   }
+}
+
+/**
+ * Starts a session from an identity token the system handed this app (Sign in with
+ * Apple, Google). Supabase verifies the token's signature, audience and nonce; nothing
+ * here trusts what the token says. Queued like every other session change.
+ */
+export function signInWithProviderToken(provider: 'apple' | 'google', token: string, nonce?: string): Promise<ProviderSignInResult> {
+  return changeSession(async (generation) => {
+    const supabase = getSupabase();
+    if (!supabase) return 'unavailable';
+    try {
+      if (generation !== sessionGeneration) return 'error';
+      const { error } = await supabase.auth.signInWithIdToken({ provider, token, nonce });
+      if (generation !== sessionGeneration) return 'error';
+      if (error) {
+        if (__DEV__) console.warn('[backup] signInWithProviderToken failed', error);
+        return 'error';
+      }
+      return 'signed-in';
+    } catch (error) {
+      if (__DEV__) console.warn('[backup] signInWithProviderToken threw', error);
+      return 'error';
+    }
+  });
 }
 
 export function signOut(): Promise<void> {

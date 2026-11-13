@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -19,6 +19,8 @@ import {
   type BackupMeta,
 } from '../services/backup';
 import { verifySignInCode } from '../services/backup';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import { appleSignInAvailable, signInWithApple } from '../services/appleSignIn';
 import { flushReadinessPersistence, useReadinessStore } from '../store/useReadinessStore';
 import { useUserStore } from '../store/useUserStore';
 import { Button } from '../ui/Button';
@@ -52,6 +54,12 @@ export default function BackupScreen() {
   const [code, setCode] = useState('');
   const [stage, setStage] = useState<'email' | 'code'>('email');
   const [signedInEmail, setSignedInEmail] = useState<string | null>(null);
+  const [appleReady, setAppleReady] = useState(false);
+  useEffect(() => {
+    let live = true;
+    void appleSignInAvailable().then((ready) => { if (live) setAppleReady(ready); });
+    return () => { live = false; };
+  }, []);
   const [meta, setMeta] = useState<BackupMeta | null>(null);
   const [busy, setBusy] = useState(false);
   const includeRoutes = useReadinessStore((state) => state.includeActivityRoutesInBackup);
@@ -156,6 +164,56 @@ export default function BackupScreen() {
     );
   };
 
+  /** Everything that follows a new session, however the athlete signed in. `busy` is on when called. */
+  const afterSignIn = async () => {
+    haptic.success();
+    setCode('');
+    setStage('email');
+    // Before the first push, so a reinstall resumes the real trial instead of
+    // overwriting the server's earlier start with this device's fresh one.
+    await reconcileTrialStart();
+    await refresh();
+    if (onboarding) {
+      // Nothing on a phone mid-setup is worth uploading; go straight to the restore.
+      const found = await fetchBackupMeta();
+      setBusy(false);
+      if (found) {
+        confirmRestore(found);
+      } else {
+        Alert.alert(
+          'No backup on this account',
+          'You’re signed in, so the training you log from now on will back up to this account. Let’s set up your plan.',
+          [{ text: 'Continue', onPress: () => navigation.goBack() }],
+        );
+      }
+      return;
+    }
+    // First sign-in on a device that has been training: get it safe immediately,
+    // rather than waiting for the next debounced push.
+    const backupResult = await pushBackup();
+    await refresh();
+    setBusy(false);
+    if (backupResult === 'needs-review') {
+      Alert.alert('Your existing backup is safe', 'Restore it onto this phone, or choose Back up now to replace it with the progress on this phone. Automatic backup is paused until you choose.');
+    } else if (backupResult === 'too-large') {
+      showBackupTooLarge();
+    } else {
+      toast(backupResult === 'ok' ? 'Signed in · progress backed up' : 'Signed in · backup will retry after you train', { icon: 'check' });
+    }
+  };
+
+  const continueWithApple = async () => {
+    setBusy(true);
+    const result = await signInWithApple();
+    if (result === 'signed-in') {
+      await afterSignIn();
+      return;
+    }
+    setBusy(false);
+    if (result === 'cancelled') return;
+    Alert.alert('Couldn’t sign in', result === 'unavailable' ? 'Sign-in isn’t available right now. Your training is safe on this device.' : 'Something went wrong. Your training is safe on this device.');
+  };
+
   const verify = async () => {
     if (!new RegExp(`^\\d{${OTP_CODE_LENGTH}}$`).test(code.trim())) {
       toast(`Enter the ${OTP_CODE_LENGTH}-digit code`, { tone: 'error', icon: 'alert' });
@@ -164,40 +222,7 @@ export default function BackupScreen() {
     setBusy(true);
     const result = await verifySignInCode(email, code);
     if (result === 'signed-in') {
-      haptic.success();
-      setCode('');
-      setStage('email');
-      // Before the first push, so a reinstall resumes the real trial instead of
-      // overwriting the server's earlier start with this device's fresh one.
-      await reconcileTrialStart();
-      await refresh();
-      if (onboarding) {
-        // Nothing on a phone mid-setup is worth uploading; go straight to the restore.
-        const found = await fetchBackupMeta();
-        setBusy(false);
-        if (found) {
-          confirmRestore(found);
-        } else {
-          Alert.alert(
-            'No backup on this account',
-            'You’re signed in, so the training you log from now on will back up to this email. Let’s set up your plan.',
-            [{ text: 'Continue', onPress: () => navigation.goBack() }],
-          );
-        }
-        return;
-      }
-      // First sign-in on a device that has been training: get it safe immediately,
-      // rather than waiting for the next debounced push.
-      const backupResult = await pushBackup();
-      await refresh();
-      setBusy(false);
-      if (backupResult === 'needs-review') {
-        Alert.alert('Your existing backup is safe', 'Restore it onto this phone, or choose Back up now to replace it with the progress on this phone. Automatic backup is paused until you choose.');
-      } else if (backupResult === 'too-large') {
-        showBackupTooLarge();
-      } else {
-        toast(backupResult === 'ok' ? 'Signed in · progress backed up' : 'Signed in · backup will retry after you train', { icon: 'check' });
-      }
+      await afterSignIn();
       return;
     }
     setBusy(false);
@@ -437,6 +462,19 @@ export default function BackupScreen() {
 
             {stage === 'email' ? (
               <>
+                {appleReady ? (
+                  <>
+                    {/* Apple's own button: its label, mark and press states are theirs to draw. */}
+                    <AppleAuthentication.AppleAuthenticationButton
+                      buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+                      buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+                      cornerRadius={radius.md}
+                      style={[styles.provider, busy && styles.providerBusy]}
+                      onPress={() => { if (!busy) void continueWithApple(); }}
+                    />
+                    <Text variant="footnote" tone="tertiary" style={styles.or}>or use your email</Text>
+                  </>
+                ) : null}
                 <TextInput
                   value={email}
                   onChangeText={setEmail}
@@ -497,6 +535,9 @@ const styles = StyleSheet.create({
   note: { marginBottom: space.md, lineHeight: 21 },
   group: { marginVertical: space.md },
   spacer: { height: space.sm },
+  provider: { height: 50, marginBottom: space.md },
+  providerBusy: { opacity: 0.5 },
+  or: { textAlign: 'center', marginBottom: space.md },
   input: {
     height: 50,
     borderRadius: radius.md,

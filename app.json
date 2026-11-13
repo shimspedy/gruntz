@@ -12,6 +12,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.gruntz.fitness",
       "appleTeamId": "YY96MFYC96",
+      "usesAppleSignIn": true,
       "buildNumber": "55",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
@@ -78,6 +79,7 @@
         }
       ],
       "expo-secure-store",
+      "expo-apple-authentication",
       "expo-sensors",
       [
         "expo-location",
