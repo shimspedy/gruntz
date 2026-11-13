@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Second pass over the 6.9" App Store set (1320x2868), on top of make_screenshots.py.
+"""Second pass over the App Store sets (iPhone 6.9" 1320x2868; iPad 13" 2064x2752 with
+DEVICE=ipad), on top of make_screenshots.py.
 
 Two things change, and nothing else about the look:
 
@@ -17,14 +18,16 @@ Usage:
 import os, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.join(HERE, 'iphone-6.9')
-OUT = os.path.join(HERE, 'iphone-6.9-v2')
+IPAD = os.environ.get('DEVICE') == 'ipad'
+SRC = os.path.join(HERE, 'ipad-13' if IPAD else 'iphone-6.9')
+OUT = os.path.join(HERE, 'ipad-13-v2' if IPAD else 'iphone-6.9-v2')
 FONTS = os.path.join(HERE, '..', '..', 'node_modules', '@expo-google-fonts', 'dm-sans')
 CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 TMP = os.environ.get('TMPDIR', '/tmp')
-W, H = 1320, 2868
+# App Store sizes: iPhone 6.9" 1320x2868, iPad 13" 2064x2752 (DEVICE=ipad).
+W, H = (2064, 2752) if IPAD else (1320, 2868)
 # The first set draws its headline on pure black; the photo and phone start below this.
-BAND = 500
+BAND = 505 if IPAD else 500
 
 # (source slide, output slide, plain first line, highlighted phrase)
 SLIDES = [
@@ -44,12 +47,12 @@ FONT_FACE = f'''
 @font-face {{ font-family: DM; font-weight: 800; src: url('file://{os.path.abspath(FONTS)}/800ExtraBold/DMSans_800ExtraBold.ttf'); }}
 @font-face {{ font-family: DM; font-weight: 500; src: url('file://{os.path.abspath(FONTS)}/500Medium/DMSans_500Medium.ttf'); }}
 '''
-HEADLINE_CSS = '''
-h1 { position: absolute; top: 132px; left: 0; right: 0; margin: 0; text-align: center; color: #fff;
-  font: 800 132px/1.04 DM, sans-serif; letter-spacing: -2px; }
+HEADLINE_CSS = f'''
+h1 {{ position: absolute; top: {116 if IPAD else 132}px; left: 0; right: 0; margin: 0; text-align: center; color: #fff;
+  font: 800 {150 if IPAD else 132}px/1.04 DM, sans-serif; letter-spacing: -2px; }}
 /* The app's primary button: white, black text. One per headline. */
-h1 mark { display: inline-block; margin-top: 20px; padding: 4px 36px 14px; border-radius: 32px;
-  background: #f4f5f4; color: #050506; }
+h1 mark {{ display: inline-block; margin-top: 20px; padding: 4px {42 if IPAD else 36}px 14px; border-radius: {36 if IPAD else 32}px;
+  background: #f4f5f4; color: #050506; }}
 '''
 
 
@@ -86,17 +89,21 @@ def hero(source_png=None):
     # there is 900px wide at 210,640) and shown 1.9x so both figures span the tile. The
     # device frame, card above and tab bar below are masked out.
     source = os.path.abspath(source_png) if source_png else os.path.join(SRC, '02.png')
+    # iPad: the same screen sits 860px wide at 602,588 in ipad-13/02.png and is shown 2x;
+    # `edge` keeps the device frame of that render out of the tile.
+    g = dict(top=560, height=1150, size=4128, x=-1032, y=-3378, solid=880, gone=1090, edge=200, side=360, pad=240, facts=1790, by=2330, sub=2430) if IPAD else \
+        dict(top=580, height=1150, size=2500, x=-590, y=-3394, solid=860, gone=1070, edge=0, side=60, pad=80, facts=1880, by=2400, sub=2496)
     css = f'''
-.map {{ position: absolute; left: 0; top: 580px; width: 1320px; height: 1150px;
-  background: url('file://{source}') no-repeat; background-size: 2500px auto; background-position: -590px -3394px;
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 70px, #000 860px, transparent 1070px),
-    linear-gradient(to right, transparent 0, #000 60px, #000 1260px, transparent 1320px); -webkit-mask-composite: source-in; }}
-.facts {{ position: absolute; left: 80px; right: 80px; top: 1880px; display: flex; gap: 24px; }}
+.map {{ position: absolute; left: 0; top: {g['top']}px; width: {W}px; height: {g['height']}px;
+  background: url('file://{source}') no-repeat; background-size: {g['size']}px auto; background-position: {g['x']}px {g['y']}px;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 70px, #000 {g['solid']}px, transparent {g['gone']}px),
+    linear-gradient(to right, transparent {g['edge']}px, #000 {g['side']}px, #000 {W - g['side']}px, transparent {W - g['edge']}px); -webkit-mask-composite: source-in; }}
+.facts {{ position: absolute; left: {g['pad']}px; right: {g['pad']}px; top: {g['facts']}px; display: flex; gap: 24px; }}
 .fact {{ flex: 1; padding: 44px 36px 48px; border-radius: 44px; background: #121214; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.08); }}
 .fact b {{ display: block; color: #fff; font: 800 104px/1 DM, sans-serif; letter-spacing: -2px; font-variant-numeric: tabular-nums; }}
 .fact span {{ display: block; margin-top: 20px; color: #9a9ca3; font: 500 40px/1.2 DM, sans-serif; }}
-.by {{ position: absolute; left: 0; right: 0; top: 2400px; text-align: center; color: #c9ccd1; font: 500 52px/1.2 DM, sans-serif; }}
-.sub {{ position: absolute; left: 0; right: 0; top: 2496px; text-align: center; color: #7d8088; font: 500 40px/1.2 DM, sans-serif; }}'''
+.by {{ position: absolute; left: 0; right: 0; top: {g['by']}px; text-align: center; color: #c9ccd1; font: 500 52px/1.2 DM, sans-serif; }}
+.sub {{ position: absolute; left: 0; right: 0; top: {g['sub']}px; text-align: center; color: #7d8088; font: 500 40px/1.2 DM, sans-serif; }}'''
     body = f'''<div class="map"></div>{headline(*HERO)}
 <div class="facts">
   <div class="fact"><b>78%</b><span>test ready</span></div>
