@@ -237,6 +237,8 @@ async function applySnapshotNow(pairs: [string, string][], routes: [string, Rout
   // The wrist was still told "Workout saved" about the last workout of the profile
   // that was just replaced. Same reset an erase does; never fails a finished restore.
   await import('./watchLink').then((link) => link.resetWatchLink()).catch(() => undefined);
+  // The workout offered for sharing belonged to the profile that was just replaced.
+  await import('./feed').then((feed) => feed.clearFeedState()).catch(() => undefined);
 }
 
 /**

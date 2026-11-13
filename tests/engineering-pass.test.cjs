@@ -350,3 +350,26 @@ test('feed: only a workout finished in the last 18 hours is offered for sharing,
   disk.set('@gruntz_last_workout', '{not json');
   assert.equal(await recentWorkout(), null);
 });
+
+test('feed: nothing fetched for one account stays on the phone after it leaves (audit run-9)', async () => {
+  const { createLoader } = require('./workout-test-utils.cjs');
+  const disk = new Map();
+  let cleared = 0;
+  const feed = createLoader({
+    '@react-native-async-storage/async-storage': { __esModule: true, default: { getItem: async (k) => disk.get(k) ?? null, setItem: async (k, v) => { disk.set(k, v); }, removeItem: async (k) => { disk.delete(k); } } },
+    './supabaseClient': { getSupabase: () => null },
+    'expo-image': { Image: { clearMemoryCache: async () => { cleared += 1; }, clearDiskCache: async () => { cleared += 1; } } },
+  })('src/services/feed.ts');
+  feed.cachePosts([{ id: 'p1', body: 'followers only' }, { id: 'p2', body: 'another' }]);
+  await feed.rememberWorkout({ title: 'Lower Body', minutes: 40, sets: 12, records: 1 });
+  assert.equal(feed.cachedPost('p1').body, 'followers only');
+  assert.ok(await feed.recentWorkout());
+  const stamp = feed.feedChangeStamp();
+
+  await feed.clearFeedState();
+  assert.equal(feed.cachedPost('p1'), undefined);
+  assert.equal(feed.cachedPost('p2'), undefined);
+  assert.equal(await feed.recentWorkout(), null, 'the next account is not offered the previous one\'s workout');
+  assert.equal(cleared, 2, 'downloaded pictures are dropped from memory and disk');
+  assert.notEqual(feed.feedChangeStamp(), stamp, 'open feed screens know to reload');
+});

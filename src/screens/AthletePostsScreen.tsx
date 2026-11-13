@@ -4,7 +4,8 @@ import { useNavigation, useRoute, type RouteProp } from '@react-navigation/nativ
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PostCard } from '../components/feed/PostCard';
 import { applyPostChange, usePostActions, withReaction } from '../hooks/usePostActions';
-import { FEED_FAILURE, fetchAthletePosts, setReaction, type FeedPost, type ReactionKey } from '../services/feed';
+import { useSignedIn } from '../hooks/useSignedIn';
+import { FEED_FAILURE, fetchAthletePosts, hasDemoFeed, setReaction, type FeedPost, type ReactionKey } from '../services/feed';
 import type { RootStackParamList } from '../types/navigation';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
@@ -26,6 +27,9 @@ export default function AthletePostsScreen() {
   const [failed, setFailed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const alive = useRef(true);
+  // Another account's list must never stay on screen.
+  const signedIn = useSignedIn() === true || hasDemoFeed();
+  useEffect(() => { if (!signedIn) setPosts([]); }, [signedIn]);
 
   const load = useCallback(async () => {
     const result = await fetchAthletePosts(userId);

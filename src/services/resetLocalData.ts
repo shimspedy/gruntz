@@ -62,6 +62,7 @@ async function resetLocalDataNow() {
   await useSessionStore.persist.clearStorage();
   // The sweep below removes the saved push token; let the server and the phone go of it first.
   await import('./teamPush').then(async (push) => { await push.silenceDevicePush(); await push.unregisterPushToken(); }).catch(() => undefined);
+  await import('./feed').then((feed) => feed.clearFeedState()).catch(() => undefined);
   const keys = await AsyncStorage.getAllKeys();
   // Billing remains store-managed and the original trial must not restart on erase.
   const retained = new Set(['@gruntz_subscription', '@gruntz_backup_owner', '@gruntz_backup_synced_at']);

@@ -293,6 +293,8 @@ async function forgetAccountTeams(): Promise<void> {
   // silence. A forced sign-out or an offline one cannot reach the server, so the phone
   // itself stops receiving: the account that left must not keep buzzing it.
   await import('./teamPush').then((push) => push.silenceDevicePush()).catch(() => undefined);
+  // Posts fetched for that account must not stay readable by whoever holds the phone next.
+  await import('./feed').then((feed) => feed.clearFeedState()).catch(() => undefined);
   try {
     const [{ useReadinessStore }, { useTeamInboxStore }] = await Promise.all([
       import('../store/useReadinessStore'),

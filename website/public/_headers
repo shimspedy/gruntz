@@ -11,6 +11,11 @@
 
 # The admin page needs Google's sign-in script and this project's API, so the policy above
 # names exactly those two origins. Nothing else on the site uses them.
+/admin
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+
 /admin/*
   X-Robots-Tag: noindex, nofollow
   Cache-Control: no-store

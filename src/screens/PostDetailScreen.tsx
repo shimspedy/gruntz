@@ -4,8 +4,9 @@ import { useNavigation, useRoute, type RouteProp } from '@react-navigation/nativ
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar, PostCard } from '../components/feed/PostCard';
 import { usePostActions, withReaction } from '../hooks/usePostActions';
+import { useSignedIn } from '../hooks/useSignedIn';
 import {
-  FEED_FAILURE, addComment, cachePosts, cachedPost, deleteComment, fetchComments, reportComment, setReaction,
+  FEED_FAILURE, addComment, cachePosts, cachedPost, deleteComment, fetchComments, hasDemoFeed, reportComment, setReaction,
   type FeedComment, type FeedPost, type ReactionKey,
 } from '../services/feed';
 import type { RootStackParamList } from '../types/navigation';
@@ -25,6 +26,9 @@ export default function PostDetailScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useContentSize();
   const postId = useRoute<RouteProp<RootStackParamList, 'PostDetail'>>().params?.postId ?? '';
+  // Nothing is drawn from the cache unless someone is signed in: the cache is emptied when
+  // an account leaves, and this is the second lock on the same door.
+  const signedIn = useSignedIn() === true || hasDemoFeed();
   const [post, setPost] = useState<FeedPost | undefined>(() => cachedPost(postId));
   const [comments, setComments] = useState<FeedComment[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -111,7 +115,7 @@ export default function PostDetailScreen() {
     return all.filter((c) => !c.parentId).map((top) => ({ top, replies: all.filter((c) => c.parentId === top.id) }));
   }, [comments]);
 
-  if (!post) {
+  if (!post || !signedIn) {
     return (
       <View style={styles.screen}>
         <NavHeader title="Post" />

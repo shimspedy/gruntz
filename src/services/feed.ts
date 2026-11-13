@@ -77,6 +77,7 @@ export const FEED_FAILURE: Record<FeedFailure, string> = {
   error: 'Couldn’t reach Gruntz. Check your connection and try again.',
 };
 
+const LAST_WORKOUT_KEY = '@gruntz_last_workout';
 const AVATAR_BUCKET = 'team-avatars';
 const PHOTO_BUCKET = 'feed-photos';
 const LINK_SECONDS = 60 * 60;
@@ -166,6 +167,24 @@ async function call(fn: string, args: Record<string, unknown>): Promise<FeedResu
     return error ? fail(failureFor(error.message)) : { ok: true, value: data };
   } catch {
     return fail('error');
+  }
+}
+
+/**
+ * Forgets everything the feed fetched for the account that just left this phone: cached
+ * posts (some of them follower-only, with photo links that still work for an hour), the
+ * last workout offered for sharing, and downloaded pictures. Called on every path that
+ * drops an account: sign-out, a forced sign-out, account deletion, erase and restore.
+ */
+export async function clearFeedState(): Promise<void> {
+  cache.clear();
+  noteFeedChanged();
+  try { await AsyncStorage.removeItem(LAST_WORKOUT_KEY); } catch { /* the sweep or next write replaces it */ }
+  try {
+    const { Image } = await import('expo-image');
+    await Promise.all([Image.clearMemoryCache(), Image.clearDiskCache()]);
+  } catch {
+    // Pictures left in the cache are only reachable through links that expire.
   }
 }
 
@@ -333,7 +352,6 @@ export async function deletePost(postId: string): Promise<FeedResult<null>> {
 }
 
 // ─── The last finished workout, offered in the composer ──────────────────────
-const LAST_WORKOUT_KEY = '@gruntz_last_workout';
 type SavedWorkout = WorkoutSummary & { at: number };
 
 /** Remembered on this phone when a workout is saved, so it can be shared the same day. */

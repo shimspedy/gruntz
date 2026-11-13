@@ -41,11 +41,19 @@ export async function syncPushToken(): Promise<boolean> {
     const token = await deviceToken();
     if (!token) return false;
     const { error } = await supabase.rpc('register_push_token', { p_token: token, p_platform: Platform.OS });
-    if (error) return false;
+    if (error) {
+      // Asking for the token put this phone back on the push network, but the server
+      // could not move the token to this account. Take it off again, so pushes for
+      // whoever the token still belongs to cannot arrive here.
+      await Notifications.unregisterForNotificationsAsync().catch(() => undefined);
+      return false;
+    }
     await AsyncStorage.setItem(TOKEN_KEY, token);
     return true;
   } catch (error) {
     // The simulator and builds without push credentials land here; that is not a fault.
+    // If the phone did get registered before the failure, take it off again.
+    await Notifications.unregisterForNotificationsAsync().catch(() => undefined);
     reportHandled(error, 'teamPush.sync');
     return false;
   }

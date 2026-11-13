@@ -78,11 +78,14 @@ Deno.serve(async (req) => {
     if (avatarError) return json({ error: 'avatar-delete-failed' }, 500);
 
     // Post photos live under the athlete's own folder; the posts themselves go with the user row.
-    const { data: photos, error: listError } = await admin.storage.from('feed-photos').list(userId, { limit: 1000 });
-    if (listError) return json({ error: 'photo-delete-failed' }, 500);
-    if (photos?.length) {
+    // Page by page until the folder is empty; bounded so a storage fault cannot loop forever.
+    for (let page = 0; page < 20; page += 1) {
+      const { data: photos, error: listError } = await admin.storage.from('feed-photos').list(userId, { limit: 1000 });
+      if (listError) return json({ error: 'photo-delete-failed' }, 500);
+      if (!photos?.length) break;
       const { error: photoError } = await admin.storage.from('feed-photos').remove(photos.map((photo) => `${userId}/${photo.name}`));
       if (photoError) return json({ error: 'photo-delete-failed' }, 500);
+      if (photos.length < 1000) break;
     }
 
     const { error: deleteError } = await admin.auth.admin.deleteUser(userId);

@@ -63,13 +63,15 @@ Deno.serve(async (req) => {
 
   const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
   let recipients: string[] = [];
-  /** Drops anyone who has blocked the caller, or whom the caller has blocked. */
-  const notBlocked = async (ids: string[]): Promise<string[]> => {
+  /**
+   * Of the athletes a comment or reaction would notify, those the database says may be
+   * told: they can still see the post, the caller can still see it, and there is no
+   * block between them. A failed check notifies nobody.
+   */
+  const mayBeTold = async (postId: string, ids: string[]): Promise<string[]> => {
     if (!ids.length) return [];
-    const { data: blocks } = await admin.from('athlete_blocks').select('blocker_id, blocked_id')
-      .or(`blocker_id.eq.${userId},blocked_id.eq.${userId}`).limit(2000);
-    const cut = new Set((blocks ?? []).map((row) => (row.blocker_id === userId ? row.blocked_id : row.blocker_id)));
-    return ids.filter((who) => !cut.has(who));
+    const { data: allowed, error } = await admin.rpc('feed_push_recipients', { p_post_id: postId, p_sender: userId, p_ids: ids });
+    return error || !Array.isArray(allowed) ? [] : allowed.filter((who): who is string => typeof who === 'string');
   };
   let title = '';
   let body = '';
@@ -146,7 +148,7 @@ Deno.serve(async (req) => {
     if (!post || post.hidden || !me) return json({ sent: 0 }, 200);
     // The post's author, and for a reply the athlete being answered. Never the commenter.
     const wanted = [...new Set([post.user_id, parent?.user_id].filter((who): who is string => !!who && who !== userId))];
-    recipients = await notBlocked(wanted);
+    recipients = await mayBeTold(post.id, wanted);
     title = comment.parent_id ? 'New reply' : 'New comment';
     body = clip(`${me.display_name}: ${comment.body}`, 160);
     data = { url: `gruntz://post/${post.id}`, type: 'feed-comment' };
@@ -156,15 +158,18 @@ Deno.serve(async (req) => {
     // The reaction must exist, and each athlete's reaction to a post is announced once.
     const { data: reaction } = await admin.from('feed_reactions').select('post_id').eq('post_id', postId).eq('user_id', userId).maybeSingle();
     if (!reaction) return json({ sent: 0 }, 200);
-    const { data: first } = await admin.from('feed_reaction_notices')
-      .upsert({ post_id: postId, user_id: userId }, { onConflict: 'post_id,user_id', ignoreDuplicates: true }).select('post_id');
-    if (!first?.length) return json({ sent: 0 }, 200);
     const [{ data: post }, { data: me }] = await Promise.all([
       admin.from('feed_posts').select('id, user_id, hidden').eq('id', postId).maybeSingle(),
       admin.from('athlete_profiles').select('display_name').eq('user_id', userId).maybeSingle(),
     ]);
     if (!post || post.hidden || !me || post.user_id === userId) return json({ sent: 0 }, 200);
-    recipients = await notBlocked([post.user_id]);
+    const allowed = await mayBeTold(post.id, [post.user_id]);
+    if (!allowed.length) return json({ sent: 0 }, 200);
+    // Claimed last, so a reaction that could not be announced does not use up the one notice.
+    const { data: first } = await admin.from('feed_reaction_notices')
+      .upsert({ post_id: postId, user_id: userId }, { onConflict: 'post_id,user_id', ignoreDuplicates: true }).select('post_id');
+    if (!first?.length) return json({ sent: 0 }, 200);
+    recipients = allowed;
     title = 'New reaction';
     body = clip(`${me.display_name} reacted to your post.`, 160);
     data = { url: `gruntz://post/${post.id}`, type: 'feed-reaction' };
