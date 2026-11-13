@@ -3,6 +3,8 @@ import { useTeamInboxStore } from '../store/useTeamInboxStore';
 import { useUserStore } from '../store/useUserStore';
 import { getSupabase } from './supabaseClient';
 import { syncProfilePhoto } from './profilePhotoCloud';
+import { getLocalDateKey } from '../utils/dateKey';
+import { requestPush } from './pushRequest';
 
 /**
  * Teams ("Leader tools"): a leader creates a team, athletes join with its invite code,
@@ -21,6 +23,10 @@ export type TeamMember = {
   streak: number;
   status: TeamStatus;
   updatedAt: string;
+  /** Sessions logged since Monday (UTC), for the weekly board. */
+  weekSessions: number;
+  /** Whether a session was reported today, on this phone's calendar. */
+  trainedToday: boolean;
   isMe: boolean;
   /** A short-lived link to the member's photo; null when they have none. Your own row uses the local photo. */
   avatarUrl: string | null;
@@ -121,7 +127,7 @@ export async function fetchMyTeams(): Promise<TeamResult<Team[]>> {
     }
     const { data: rows, error: rosterError } = await supabase
       .from('team_members')
-      .select('team_id, user_id, display_name, role, sessions, streak, status, updated_at, avatar_version')
+      .select('team_id, user_id, display_name, role, sessions, streak, status, updated_at, avatar_version, last_trained_at, week_start, week_sessions')
       .order('role', { ascending: true })
       .order('display_name', { ascending: true });
     if (rosterError) return fail('error');
@@ -132,6 +138,8 @@ export async function fetchMyTeams(): Promise<TeamResult<Team[]>> {
       const { data } = await supabase.storage.from(AVATAR_BUCKET).createSignedUrls(withPhotos.map(avatarPath), AVATAR_LINK_SECONDS);
       for (const item of data ?? []) if (item.signedUrl && item.path) links.set(item.path, item.signedUrl);
     }
+    const today = getLocalDateKey();
+    const thisWeek = weekStartUtc();
     const value: Team[] = teams.map((team) => {
       const members: TeamMember[] = (rows ?? []).filter((row) => row.team_id === team.id).map((row) => ({
         userId: row.user_id,
@@ -141,6 +149,8 @@ export async function fetchMyTeams(): Promise<TeamResult<Team[]>> {
         streak: row.streak ?? 0,
         status: (['green', 'amber', 'red'] as const).includes(row.status) ? row.status : 'unknown',
         updatedAt: row.updated_at,
+        weekSessions: row.week_start === thisWeek ? row.week_sessions ?? 0 : 0,
+        trainedToday: !!row.last_trained_at && getLocalDateKey(new Date(row.last_trained_at)) === today,
         isMe: row.user_id === user.value,
         avatarUrl: links.get(avatarPath(row.user_id)) ?? null,
       }));
@@ -224,6 +234,18 @@ export async function leaveTeam(teamId: string): Promise<TeamResult<null>> {
     useTeamInboxStore.getState().setTeamIds(useTeamInboxStore.getState().teamIds.filter((id) => id !== teamId));
   }
   return result;
+}
+
+/** Monday of the current week in UTC, as the server stamps `week_start`. */
+export function weekStartUtc(now = new Date()): string {
+  const monday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - ((now.getUTCDay() + 6) % 7)));
+  return monday.toISOString().slice(0, 10);
+}
+
+/** One nudge per teammate per day, private teams only; the server enforces both. */
+export async function nudgeTeammate(teamId: string, userId: string): Promise<TeamResult<null>> {
+  const result = await requestPush({ kind: 'nudge', teamId, userId });
+  return result.ok ? { ok: true, value: null } : fail(result.reason === 'rate-limited' ? 'rate-limited' : 'error');
 }
 
 /** Publish the caller's three numbers. A no-op for anyone not in a team. */

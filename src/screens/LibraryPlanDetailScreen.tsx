@@ -8,6 +8,7 @@ import { dayMinutesLabel, displayTitle, EQUIPMENT_LABEL, planDayHero, planHero, 
 import { nextPlanDay, planProgress, usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { useProgramStore } from '../store/useProgramStore';
 import { effectiveEquipmentAccess } from '../features/planRecommend';
+import { usePlanFollowers } from '../hooks/usePlanFollowers';
 import type { RootStackParamList } from '../types/navigation';
 import { Button } from '../ui/Button';
 import { ExerciseThumb, HeroArt } from '../ui/ExerciseArt';
@@ -148,6 +149,7 @@ export default function LibraryPlanDetailScreen() {
         <View style={styles.facts}>
           <Fact icon="dumbbell" text={EQUIPMENT_LABEL[effectiveEquipmentAccess(plan)]} />
           {plan.match.goals.length ? <Fact icon="flag" text={plan.match.goals.join(' · ')} /> : null}
+          <FollowersFact planId={plan.id} />
           {s.target_gender && s.target_gender !== 'Male & Female' ? <Fact icon="person" text={`Written for ${s.target_gender.toLowerCase()} lifters`} /> : null}
         </View>
 
@@ -226,6 +228,12 @@ export default function LibraryPlanDetailScreen() {
       </View>
     </View>
   );
+}
+
+/** Shown once three or more signed-in athletes are on the plan; nothing before that. */
+function FollowersFact({ planId }: { planId: string }) {
+  const followers = usePlanFollowers()[planId];
+  return followers ? <Fact icon="person" text={`${followers} athletes are following this plan`} /> : null;
 }
 
 function Fact({ icon, text }: { icon: 'dumbbell' | 'flag' | 'person'; text: string }) {

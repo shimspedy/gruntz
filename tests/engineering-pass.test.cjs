@@ -265,3 +265,49 @@ test('an import reports sets the caps dropped, and never counts a duplicate as d
   assert.equal(capped.report.entries, MAX_ENTRIES_PER_EXERCISE);
   assert.equal(capped.report.droppedSets, 10, 'five entries of two sets did not fit');
 });
+
+test('a finished workout posts to private teams only when switched on, as one plain chat line', async () => {
+  const { workoutAnnouncement } = load('src/features/teamPost.ts');
+  assert.equal(workoutAnnouncement({ title: 'Back & Biceps', minutes: 42, sets: 12, personalRecords: 2 }), 'Finished Back & Biceps · 42 min · 12 sets · 2 records');
+  assert.equal(workoutAnnouncement({ title: '  Push   day ', minutes: 0, sets: 1, personalRecords: 0 }), 'Finished Push day · 1 set');
+  assert.equal(workoutAnnouncement({ title: 'Push day', minutes: 30, sets: 0, personalRecords: 0 }), null, 'nothing logged, nothing to post');
+  assert.equal(workoutAnnouncement({ title: '   ', minutes: 30, sets: 3, personalRecords: 0 }), null);
+  assert.ok(workoutAnnouncement({ title: 'x'.repeat(500), minutes: 30, sets: 3, personalRecords: 0 }).length < 120);
+
+  const sent = [];
+  const prefs = { shareWorkoutsWithTeams: false };
+  const teams = [{ id: 'platoon', isPublic: false }, { id: 'community', isPublic: true }, { id: 'squad', isPublic: false }];
+  const rows = { insert: (row) => { sent.push(row); return { select: () => ({ single: async () => ({ data: { id: `m${sent.length}`, team_id: row.team_id, user_id: 'me', display_name: 'Alex', body: row.body, created_at: new Date().toISOString() }, error: null }) }) }; } };
+  const chat = createLoader({
+    './supabaseClient': { getSupabase: () => ({ auth: { getSession: async () => ({ data: { session: { user: { id: 'me' } } } }) }, from: () => rows }) },
+    './teams': { localTeamStatus: () => ({ displayName: 'Alex' }), fetchMyTeams: async () => ({ ok: true, value: teams }) },
+    '../store/useReadinessStore': { useReadinessStore: { getState: () => prefs } },
+  })('src/services/teamWorkoutPost.ts');
+  const workout = { title: 'Back & Biceps', minutes: 42, sets: 12, personalRecords: 0 };
+
+  assert.equal(await chat.announceWorkout(workout), 0);
+  assert.equal(sent.length, 0, 'off by default: nothing leaves the phone');
+
+  prefs.shareWorkoutsWithTeams = true;
+  assert.equal(await chat.announceWorkout(workout), 2);
+  assert.deepEqual(sent.map((row) => row.team_id), ['platoon', 'squad'], 'public communities are skipped');
+  assert.ok(sent.every((row) => row.body === 'Finished Back & Biceps · 42 min · 12 sets' && row.user_id === 'me'));
+});
+
+test('plan popularity only breaks ties between plans that already fit, and built-in programs get their own id', () => {
+  const { createLoader } = require('./workout-test-utils.cjs');
+  const { popularityBonus } = createLoader({ '../data/workoutPlans': { allPlans: () => [], planExercises: () => ({}) } })('src/features/planRecommend.ts');
+  assert.equal(popularityBonus(undefined), 0);
+  assert.equal(popularityBonus(2), 0, 'fewer than three followers is never shown or counted');
+  assert.ok(popularityBonus(10) > 0 && popularityBonus(10) < popularityBonus(100));
+  assert.equal(popularityBonus(1_000_000), 1, 'a crowd cannot outweigh a goal match (three points)');
+
+  const noop = { subscribe() {}, getState: () => ({}) };
+  const { followedPlanId } = createLoader({
+    '../store/usePlanLibraryStore': { usePlanLibraryStore: noop }, '../store/useProgramStore': { useProgramStore: noop },
+    './athletes': {}, './planFollows': {}, './supabaseClient': {}, './teamPush': {},
+  })('src/services/socialStartup.ts');
+  assert.equal(followedPlanId('5-day-split', 'recon'), '5-day-split');
+  assert.equal(followedPlanId(null, 'recon'), 'program-recon');
+  assert.equal(followedPlanId(null, null), null);
+});

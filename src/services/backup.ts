@@ -246,6 +246,8 @@ async function signOutNow(): Promise<void> {
   const supabase = getSupabase();
   if (!supabase) return;
   try {
+    // Needs the session, so it goes first: this phone stops receiving for the account.
+    await import('./teamPush').then((push) => push.unregisterPushToken()).catch(() => undefined);
     await supabase.auth.signOut({ scope: 'local' });
   } catch (error) {
     if (__DEV__) console.warn('[backup] signOut failed', error);
@@ -267,6 +269,8 @@ async function forgetAccountTeams(): Promise<void> {
       import('../store/useTeamInboxStore'),
     ]);
     useReadinessStore.getState().setTeam('', '', 0);
+    // These were the previous account's choices; the next account on this phone makes its own.
+    useReadinessStore.setState({ shareWorkoutsWithTeams: false, teamNotifications: false, discoverable: false, followsAthletes: false });
     useTeamInboxStore.getState().setTeamIds([]);
     useTeamInboxStore.setState({ lastReadAt: {}, latestAt: {} });
   } catch (error) {

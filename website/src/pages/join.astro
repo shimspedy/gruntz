@@ -1,0 +1,30 @@
+---
+import LegalLayout from '../layouts/LegalLayout.astro';
+import { site } from '../data/site';
+---
+
+<LegalLayout
+  title="Join a team"
+  description="You were invited to a team on Gruntz. Open the app to join it, or get the app first."
+  kicker="Team invite"
+>
+  <p id="join-lead">
+    Open Gruntz and the team code is filled in for you. Joining still takes your tap, and you need
+    to be signed in to a Gruntz account.
+  </p>
+
+  <div class="legal-quick-links">
+    <a class="button button-primary" id="join-open" href="gruntz://join" hidden>Open in Gruntz</a>
+    <a class="button button-secondary" href={site.appStoreUrl}>Get Gruntz on the App Store</a>
+  </div>
+
+  <p id="join-code-line" hidden>
+    Or open Profile, then Teams, choose Join a team and enter the code
+    <strong id="join-code"></strong>
+  </p>
+  <p id="join-missing">
+    This link has no team code. Ask your teammate to share the invite again from their team in
+    Gruntz.
+  </p>
+  <script is:inline src="/join.js" defer></script>
+</LegalLayout>

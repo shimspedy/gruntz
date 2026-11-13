@@ -41,6 +41,7 @@ import BackupScreen from '../screens/BackupScreen';
 import DataTransferScreen from '../screens/DataTransferScreen';
 import HealthSyncScreen from '../screens/HealthSyncScreen';
 import TeamScreen from '../screens/TeamScreen';
+import AthletesScreen from '../screens/AthletesScreen';
 import CommunitiesScreen from '../screens/CommunitiesScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import StatsScreen from '../screens/StatsScreen';
@@ -153,6 +154,11 @@ const linking = {
       ActivityDetail: 'activities/:sessionId',
       Settings: 'settings',
       Paywall: 'paywall',
+      // Social links only open a screen. Joining, following and posting still take a tap
+      // there, and the server decides what the signed-in athlete may see.
+      Team: 'team/:teamId',
+      LeaderTools: 'join/:code',
+      Athletes: 'athletes',
     },
   },
 };
@@ -258,6 +264,7 @@ function AppStack() {
       <Stack.Screen name="LeaderTools" component={LeaderToolsScreen} />
       <Stack.Screen name="Team" component={TeamScreen} />
       <Stack.Screen name="Communities" component={CommunitiesScreen} />
+      <Stack.Screen name="Athletes" component={AthletesScreen} />
       <Stack.Screen
         name="Sheet"
         component={SheetScreen}

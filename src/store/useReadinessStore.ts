@@ -71,6 +71,14 @@ interface ReadinessState {
   batterySaver: boolean;
   trackedSessions: TrackedSession[];
   includeActivityRoutesInBackup: boolean;
+  /** Off unless chosen: a finished workout posts its name, time and set count to the athlete's private teams. */
+  shareWorkoutsWithTeams: boolean;
+  /** Off unless chosen: this phone receives pushes for team chat, nudges and new followers. */
+  teamNotifications: boolean;
+  /** Off unless chosen: other signed-in athletes can find this athlete by name and follow them. */
+  discoverable: boolean;
+  /** Set once the athlete follows someone, so their own card stays current for the people they follow. */
+  followsAthletes: boolean;
   /** The first team's name and code, kept for older builds; `teamCount` says how many there are. */
   teamName: string;
   teamCode: string;
@@ -79,7 +87,7 @@ interface ReadinessState {
   saveTestAttempt: (testId: FitnessTestType, scores: Record<string, number>, recordedAt?: string) => boolean;
   setTrainingChoice: (mode: TrainingMode, date?: string) => void;
   setTargetScore: (eventId: string, value: number) => void;
-  setFieldPreference: (key: 'fieldMode' | 'audioCues' | 'keepScreenAwake' | 'batterySaver', value: boolean) => void;
+  setFieldPreference: (key: 'fieldMode' | 'audioCues' | 'keepScreenAwake' | 'batterySaver' | 'shareWorkoutsWithTeams' | 'teamNotifications' | 'discoverable' | 'followsAthletes', value: boolean) => void;
   /**
    * Adds a summary. True only for a newly saved activity, so callers award lifetime
    * stats once. An activity with a route is refused: use `saveTrackedActivity`, which
@@ -120,6 +128,7 @@ export const useReadinessStore = create<ReadinessState>()(
       checkIns: [], testScores: {}, targetScores: {}, testAttempts: [], trainingChoice: null, fieldMode: false, audioCues: true,
       keepScreenAwake: true, batterySaver: false, trackedSessions: [], teamName: '', teamCode: '', teamCount: 0,
       includeActivityRoutesInBackup: false,
+      shareWorkoutsWithTeams: false, teamNotifications: false, discoverable: false, followsAthletes: false,
       saveCheckIn: (checkIn) => set((state) => ({
         checkIns: [checkIn, ...state.checkIns.filter((item) => item.date !== checkIn.date)].slice(0, MAX_CHECKINS),
       })),

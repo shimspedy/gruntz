@@ -52,12 +52,12 @@ async function installedAuth({ initialUser = null, deferLogout = false } = {}) {
 }
 
 function teamCaches() {
-  const readiness = { teamName: 'Alpha', teamCode: 'ABC123', teamCount: 1 };
+  const readiness = { teamName: 'Alpha', teamCode: 'ABC123', teamCount: 1, shareWorkoutsWithTeams: true, teamNotifications: true, discoverable: true, followsAthletes: true };
   const inbox = { teamIds: ['one'], lastReadAt: { one: '2026-10-27T12:00:00Z' }, latestAt: { one: '2026-10-27T13:00:00Z' } };
   return {
     readiness, inbox,
     mocks: {
-      '../store/useReadinessStore': { useReadinessStore: { getState: () => ({ setTeam: (teamName, teamCode, teamCount) => Object.assign(readiness, { teamName, teamCode, teamCount }) }) } },
+      '../store/useReadinessStore': { useReadinessStore: { getState: () => ({ setTeam: (teamName, teamCode, teamCount) => Object.assign(readiness, { teamName, teamCode, teamCount }) }), setState: (patch) => Object.assign(readiness, patch) } },
       '../store/useTeamInboxStore': { useTeamInboxStore: { getState: () => ({ setTeamIds: (teamIds) => { inbox.teamIds = teamIds; } }), setState: (patch) => Object.assign(inbox, patch) } },
     },
   };
@@ -239,7 +239,8 @@ test('signing out forgets the previous account\'s team name, invite code and inb
   const env = account();
   await env.service.signOut();
   assert.equal(env.state.userId, null);
-  assert.deepEqual(env.caches.readiness, { teamName: '', teamCode: '', teamCount: 0 });
+  assert.deepEqual(env.caches.readiness, { teamName: '', teamCode: '', teamCount: 0, shareWorkoutsWithTeams: false, teamNotifications: false, discoverable: false, followsAthletes: false },
+    'the previous account\'s team and its sharing, notification and findability choices all reset');
   assert.deepEqual(env.caches.inbox, { teamIds: [], lastReadAt: {}, latestAt: {} }, 'team ids, read marks and last-message times all go');
   // A failed local sign-out still clears the caches.
   const failing = account({ signOutError: true });

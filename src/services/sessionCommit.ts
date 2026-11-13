@@ -12,6 +12,7 @@ import { maybeRequestReview } from '../utils/socialActions';
 import { scheduleBackup } from './backup';
 import { clearWorkoutProgress } from './notifications';
 import { trackRetentionEvent } from './retentionAnalytics';
+import { useReadinessStore } from '../store/useReadinessStore';
 
 export interface CommitOutcome {
   /** The same workout was already counted today: the sets are logged, no XP is paid twice. */
@@ -91,6 +92,12 @@ export function commitSession(): CommitOutcome | null {
   }
   // Team rosters show sessions and streak; a no-op for anyone not in a team.
   void import('./teams').then((teams) => teams.syncTeamStatus()).catch(() => undefined);
+  void import('./athletes').then((athletes) => athletes.syncAthleteProfile()).catch(() => undefined);
+  // Opt-in, and once a day: a second session the same day does not post again.
+  if (!repeatOfToday && useReadinessStore.getState().shareWorkoutsWithTeams && useReadinessStore.getState().teamCount > 0) {
+    const post = { title, minutes: fresh.duration_minutes, sets, personalRecords: fresh.exercises.filter((exercise) => exercise.is_personal_record).length };
+    void import('./teamWorkoutPost').then((teamPost) => teamPost.announceWorkout(post)).catch(() => undefined);
+  }
   useSessionStore.getState().finish();
   const outcome: CommitOutcome = {
     repeatOfToday,

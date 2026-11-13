@@ -161,12 +161,12 @@ export function seedDemo() {
       isPublic: false,
       description: '',
       members: [
-        { userId: 'me', displayName: 'Alex', role: 'leader', sessions: claimed.size, streak: 12, status: 'green', updatedAt: minutesAgo(1), isMe: true, avatarUrl: null },
-        { userId: 'a', displayName: 'Brooks', role: 'member', sessions: 52, streak: 21, status: 'green', updatedAt: minutesAgo(38), isMe: false, avatarUrl: null },
-        { userId: 'b', displayName: 'Dana R.', role: 'member', sessions: 44, streak: 9, status: 'amber', updatedAt: minutesAgo(95), isMe: false, avatarUrl: null },
-        { userId: 'c', displayName: 'Ortiz', role: 'member', sessions: 39, streak: 14, status: 'green', updatedAt: minutesAgo(180), isMe: false, avatarUrl: null },
-        { userId: 'd', displayName: 'Sam K.', role: 'member', sessions: 31, streak: 3, status: 'red', updatedAt: minutesAgo(410), isMe: false, avatarUrl: null },
-        { userId: 'e', displayName: 'Whitaker', role: 'member', sessions: 27, streak: 6, status: 'unknown', updatedAt: minutesAgo(1500), isMe: false, avatarUrl: null },
+        { userId: 'me', displayName: 'Alex', role: 'leader', sessions: claimed.size, streak: 12, status: 'green', updatedAt: minutesAgo(1), isMe: true, weekSessions: Math.min(4, claimed.size), trainedToday: true, avatarUrl: null },
+        { userId: 'a', displayName: 'Brooks', role: 'member', sessions: 52, streak: 21, status: 'green', updatedAt: minutesAgo(38), isMe: false, weekSessions: 4, trainedToday: true, avatarUrl: null },
+        { userId: 'b', displayName: 'Dana R.', role: 'member', sessions: 44, streak: 9, status: 'amber', updatedAt: minutesAgo(95), isMe: false, weekSessions: 3, trainedToday: true, avatarUrl: null },
+        { userId: 'c', displayName: 'Ortiz', role: 'member', sessions: 39, streak: 14, status: 'green', updatedAt: minutesAgo(180), isMe: false, weekSessions: 3, trainedToday: true, avatarUrl: null },
+        { userId: 'd', displayName: 'Sam K.', role: 'member', sessions: 31, streak: 3, status: 'red', updatedAt: minutesAgo(410), isMe: false, weekSessions: 2, trainedToday: false, avatarUrl: null },
+        { userId: 'e', displayName: 'Whitaker', role: 'member', sessions: 27, streak: 6, status: 'unknown', updatedAt: minutesAgo(1500), isMe: false, weekSessions: 2, trainedToday: false, avatarUrl: null },
       ],
     },
     {
@@ -177,18 +177,18 @@ export function seedDemo() {
       isPublic: true,
       description: 'Open run and ruck group, every Saturday at 0700.',
       members: [
-        { userId: 'f', displayName: 'Priya', role: 'leader', sessions: 61, streak: 30, status: 'green', updatedAt: minutesAgo(20), isMe: false, avatarUrl: null },
-        { userId: 'me', displayName: 'Alex', role: 'member', sessions: claimed.size, streak: 12, status: 'green', updatedAt: minutesAgo(1), isMe: true, avatarUrl: null },
-        { userId: 'g', displayName: 'Marcus', role: 'member', sessions: 18, streak: 2, status: 'amber', updatedAt: minutesAgo(300), isMe: false, avatarUrl: null },
+        { userId: 'f', displayName: 'Priya', role: 'leader', sessions: 61, streak: 30, status: 'green', updatedAt: minutesAgo(20), isMe: false, weekSessions: 5, trainedToday: true, avatarUrl: null },
+        { userId: 'me', displayName: 'Alex', role: 'member', sessions: claimed.size, streak: 12, status: 'green', updatedAt: minutesAgo(1), isMe: true, weekSessions: Math.min(4, claimed.size), trainedToday: true, avatarUrl: null },
+        { userId: 'g', displayName: 'Marcus', role: 'member', sessions: 18, streak: 2, status: 'amber', updatedAt: minutesAgo(300), isMe: false, weekSessions: 1, trainedToday: false, avatarUrl: null },
       ],
     },
   ]);
   setDemoMessages([
-    { id: 'm1', teamId: 'demo-team', userId: 'a', displayName: 'Brooks', body: 'Ruck tomorrow at 0600, 35 lb. Meet at the north gate.', createdAt: minutesAgo(130), isMe: false },
-    { id: 'm2', teamId: 'demo-team', userId: 'b', displayName: 'Dana R.', body: 'In. Bringing the extra plates.', createdAt: minutesAgo(118), isMe: false },
-    { id: 'm3', teamId: 'demo-team', userId: 'me', displayName: 'Alex', body: 'Good. Hydrate tonight, check in before you leave the house.', createdAt: minutesAgo(90), isMe: true },
-    { id: 'm4', teamId: 'demo-team', userId: 'c', displayName: 'Ortiz', body: 'Copy. Knee is holding up after the last one.', createdAt: minutesAgo(42), isMe: false },
-    { id: 'm5', teamId: 'demo-team-2', userId: 'f', displayName: 'Priya', body: 'Saturday is a 10K run then a 3 mile ruck. Pace is relaxed, nobody gets dropped.', createdAt: minutesAgo(400), isMe: false },
+    { id: 'm1', teamId: 'demo-team', userId: 'a', displayName: 'Brooks', body: 'Ruck tomorrow at 0600, 35 lb. Meet at the north gate.', createdAt: minutesAgo(130), isMe: false, respect: 3, respected: true },
+    { id: 'm2', teamId: 'demo-team', userId: 'b', displayName: 'Dana R.', body: 'In. Bringing the extra plates.', createdAt: minutesAgo(118), isMe: false, respect: 0, respected: false },
+    { id: 'm3', teamId: 'demo-team', userId: 'me', displayName: 'Alex', body: 'Good. Hydrate tonight, check in before you leave the house.', createdAt: minutesAgo(90), isMe: true, respect: 0, respected: false },
+    { id: 'm4', teamId: 'demo-team', userId: 'c', displayName: 'Ortiz', body: 'Copy. Knee is holding up after the last one.', createdAt: minutesAgo(42), isMe: false, respect: 0, respected: false },
+    { id: 'm5', teamId: 'demo-team-2', userId: 'f', displayName: 'Priya', body: 'Saturday is a 10K run then a 3 mile ruck. Pace is relaxed, nobody gets dropped.', createdAt: minutesAgo(400), isMe: false, respect: 0, respected: false },
   ]);
   setDemoPublicTeams([
     { id: 'demo-team-2', name: 'Saturday crew', description: 'Open run and ruck group, every Saturday at 0700.', memberCount: 3, isMember: true },

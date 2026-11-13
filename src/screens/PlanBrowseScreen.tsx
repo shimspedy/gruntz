@@ -8,6 +8,7 @@ import { useTabChromeInset } from '../navigation/TabBar';
 import { allPlans, planCategories, PLAN_COUNT, type WorkoutPlan } from '../data/workoutPlans';
 import { EQUIPMENT_LABEL } from '../features/planDisplay';
 import { effectiveEquipmentAccess, recommendPlans } from '../features/planRecommend';
+import { usePlanFollowers } from '../hooks/usePlanFollowers';
 import { usePlanLibraryStore } from '../store/usePlanLibraryStore';
 import { useUserStore } from '../store/useUserStore';
 import { Icon } from '../ui/Icon';
@@ -70,7 +71,8 @@ export default function PlanBrowseScreen() {
   useScrollToTop(list);
   const filtered = !!category || days > 0 || !!level || !!gear || !!query.trim();
 
-  const matched = useMemo(() => (profile ? recommendPlans(profile, 8) : []), [profile]);
+  const followers = usePlanFollowers();
+  const matched = useMemo(() => (profile ? recommendPlans(profile, 8, followers) : []), [profile, followers]);
   const categories = useMemo(() => planCategories(kind), [kind]);
 
   const plans = useMemo(() => {

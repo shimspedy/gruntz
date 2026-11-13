@@ -69,7 +69,15 @@ export function effectiveEquipmentAccess(plan: WorkoutPlan): PlanEquipmentAccess
   return result;
 }
 
-function scorePlan(plan: WorkoutPlan, profile: UserProfile, relaxed = false): PlanRecommendation | null {
+/**
+ * Popularity breaks ties between plans that already fit; it never rescues one that does not.
+ * Capped at one point (a goal match is three), reached at about a hundred followers.
+ */
+export function popularityBonus(followers: number | undefined): number {
+  return followers && followers >= 3 ? Math.min(1, Math.log10(followers) / 2) : 0;
+}
+
+function scorePlan(plan: WorkoutPlan, profile: UserProfile, relaxed = false, followers: Record<string, number> = {}): PlanRecommendation | null {
   const m = plan.match;
   const reasons: string[] = [];
   let score = 0;
@@ -113,12 +121,17 @@ function scorePlan(plan: WorkoutPlan, profile: UserProfile, relaxed = false): Pl
   }
 
   score += plan.stats.video_coverage * 2;
+  const following = followers[plan.id];
+  if (following && following >= 3) {
+    score += popularityBonus(following);
+    reasons.push(`${following} athletes on it`);
+  }
   return { plan, score: Math.round(score * 100) / 100, reasons };
 }
 
-const rank = (plans: WorkoutPlan[], profile: UserProfile, relaxed: boolean) =>
+const rank = (plans: WorkoutPlan[], profile: UserProfile, relaxed: boolean, followers: Record<string, number>) =>
   plans
-    .map((p) => scorePlan(p, profile, relaxed))
+    .map((p) => scorePlan(p, profile, relaxed, followers))
     .filter((r): r is PlanRecommendation => r !== null && (relaxed || r.score > 0))
     .sort((a, b) => b.score - a.score);
 
@@ -127,10 +140,10 @@ const rank = (plans: WorkoutPlan[], profile: UserProfile, relaxed: boolean) =>
  * level filters (e.g. advanced with no equipment), the list is topped up with the closest
  * plans the user can still do with their equipment.
  */
-export function recommendPlans(profile: UserProfile, limit = 10): PlanRecommendation[] {
+export function recommendPlans(profile: UserProfile, limit = 10, followers: Record<string, number> = {}): PlanRecommendation[] {
   const programs = allPlans().filter((p) => p.kind === 'program');
-  const strict = rank(programs, profile, false).slice(0, limit);
+  const strict = rank(programs, profile, false, followers).slice(0, limit);
   if (strict.length >= limit) return strict;
   const taken = new Set(strict.map((r) => r.plan.id));
-  return [...strict, ...rank(programs, profile, true).filter((r) => !taken.has(r.plan.id))].slice(0, limit);
+  return [...strict, ...rank(programs, profile, true, followers).filter((r) => !taken.has(r.plan.id))].slice(0, limit);
 }

@@ -27,6 +27,7 @@ import { initializeWatchLink } from './src/services/watchLink';
 import { initializeWorkoutPresence } from './src/services/workoutPresence';
 import { initializeProfilePhotoCloud } from './src/services/profilePhotoCloud';
 import { initializeReturningAthlete } from './src/services/returningAthlete';
+import { initializeSocial } from './src/services/socialStartup';
 
 // Dev-only: suppress known RevenueCat config warnings while App Store Connect
 // products haven't propagated. In production we WANT these logs surfaced so
@@ -83,6 +84,7 @@ export default function App() {
     initializeWatchLink();
     initializeProfilePhotoCloud();
     initializeReturningAthlete();
+    initializeSocial();
   }, []);
 
   useEffect(() => {

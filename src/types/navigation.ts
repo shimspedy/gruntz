@@ -58,7 +58,9 @@ export type RootStackParamList = {
   DataTransfer: undefined;
   HealthSync: undefined;
   TrainingPreferences: undefined;
-  LeaderTools: undefined;
+  /** `code` comes from an invite link and is typed into the join sheet for the athlete. */
+  LeaderTools: { code?: string } | undefined;
+  Athletes: undefined;
   Team: { teamId: string; tab?: 'chat' | 'leaderboard' | 'members' };
   Communities: undefined;
   /** The route behind every `<Sheet>`; `id` names the content its owner published. */

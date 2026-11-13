@@ -1,7 +1,7 @@
 ---
 import LegalLayout from '../layouts/LegalLayout.astro';
 import { site } from '../data/site';
-const updated = 'November 2, 2026';
+const updated = 'November 12, 2026';
 ---
 
 <LegalLayout
@@ -165,7 +165,64 @@ const updated = 'November 2, 2026';
       Leaving a team removes your entry from it and stops sharing. A team leader can remove a
       member. Deleting your account also removes you from your team.
     </li>
+    <li>
+      The roster also shows whether you <strong>trained today</strong> and how many sessions you
+      logged this week. Teammates in a private team can send you one nudge a day, and members can
+      give a chat message <strong>respect</strong>; who gave it is visible to that team.
+    </li>
+    <li>
+      <strong>Post finished workouts</strong> is off by default (Settings). If you switch it on,
+      finishing a workout posts its name, duration, set count and number of records to your private
+      teams' chat. Weights and reps are not sent.
+    </li>
   </ul>
+
+  <h3>Optional athlete profile and following</h3>
+  <p>
+    Following is optional, needs an account, and is off until you use it (Profile → Teams →
+    Follow athletes).
+  </p>
+  <ul>
+    <li>
+      <strong>Let athletes find me</strong> is off by default. If you switch it on, any signed-in
+      Gruntz user can find you by display name and see your display name, profile photo, level,
+      rank, session count, streak, sessions this week and whether you trained today, and can
+      follow you without your approval. Switching it off hides you from search and removes your
+      followers.
+    </li>
+    <li>
+      If you follow someone, they can see the same card for you in their followers list, whether
+      or not you are findable.
+    </li>
+    <li>
+      You can unfollow, block or report an athlete. Blocking hides each of you from the other and
+      removes follows in both directions. A report keeps the reported athlete's display name and
+      your reason, and is reviewed by Gruntz.
+    </li>
+    <li>
+      Nothing else is on the card. Weights, reps, test scores, sleep, limitations, GPS routes,
+      location and your email address are never shown to other athletes.
+    </li>
+  </ul>
+
+  <h3>Optional team notifications</h3>
+  <p>
+    <strong>Team notifications</strong> is off by default (Settings). If you switch it on, this
+    phone's push notification token is stored with your account so that a teammate's chat message
+    or nudge in a private team, or a new follower, can be delivered to it. The notification shows
+    the team name, the sender's display name and the message. The token is deleted when you switch
+    the setting off, sign out or delete your account. Notifications are delivered through Expo's
+    push service and Apple or Google.
+  </p>
+
+  <h3>Plan popularity</h3>
+  <p>
+    If you are signed in to an account, the app records which training plan you are following
+    (one plan identifier per account) so that plans can show how many athletes follow them and be
+    recommended accordingly. Only totals are ever shown, and only for plans with at least three
+    followers. The record is deleted when you stop the plan or delete your account. If you are not
+    signed in, nothing is sent.
+  </p>
 
   <h3>Route maps and activity cards</h3>
   <p>
@@ -247,8 +304,13 @@ const updated = 'November 2, 2026';
     <li>RevenueCat for subscription and entitlement management.</li>
     <li>Meta for optional app-install and app-open advertising measurement, after your permission.</li>
     <li>
-      Supabase for optional account sign-in, progress backup storage and team rosters, and Resend
-      for delivering sign-in code emails — only if you enable progress backup or use teams.
+      Supabase for optional account sign-in, progress backup storage, team rosters, athlete
+      profiles and plan follow counts, and Resend for delivering sign-in code emails — only if you
+      enable progress backup or use teams.
+    </li>
+    <li>
+      Expo push notification service, with Apple Push Notification service and Firebase Cloud
+      Messaging, for delivering team notifications — only if you switch them on.
     </li>
     <li>Apple App Store or Google Play for payment processing and store-managed subscriptions.</li>
     <li>OpenFreeMap for map tiles and styles when you view a route map.</li>
@@ -273,7 +335,8 @@ const updated = 'November 2, 2026';
   </p>
   <p>
     If you join a team, your team entry is retained until you leave the team, are removed from
-    it, or delete your account. A team with no members left is deleted. Reports of chat messages,
+    it, or delete your account. Your athlete profile, follows, blocks, push notification token and
+    plan record are deleted when you delete your account. A team with no members left is deleted. Reports of chat messages,
     including the copy of the reported message, are kept only as long as needed for moderation
     and safety.
   </p>

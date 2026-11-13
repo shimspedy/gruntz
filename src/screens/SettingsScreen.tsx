@@ -38,6 +38,9 @@ import { openExternalUrl } from '../utils/externalLinks';
 import { maybeRequestReview } from '../utils/socialActions';
 import { resetLocalData } from '../services/resetLocalData';
 import { disableMetaInstallTracking, enableMetaInstallTracking, getMetaInstallTrackingState, subscribeMetaInstallTracking } from '../services/metaInstallTracking';
+import { useSignedIn } from '../hooks/useSignedIn';
+import { setDiscoverable } from '../services/athletes';
+import { disableTeamNotifications, enableTeamNotifications } from '../services/teamPush';
 
 /** Times people actually train. Settings said "change it anytime" while 07:00 was hardcoded. */
 const REMINDER_TIMES = ['05:30', '06:00', '06:30', '07:00', '08:00', '12:00', '17:00', '18:00', '19:00', '20:00'];
@@ -65,6 +68,22 @@ export default function SettingsScreen() {
   const keepScreenAwake = useReadinessStore((s) => s.keepScreenAwake);
   const batterySaver = useReadinessStore((s) => s.batterySaver);
   const setField = useReadinessStore((s) => s.setFieldPreference);
+  const shareWorkouts = useReadinessStore((s) => s.shareWorkoutsWithTeams);
+  const teamNotifications = useReadinessStore((s) => s.teamNotifications);
+  const discoverable = useReadinessStore((s) => s.discoverable);
+  const toggleTeamNotifications = async (on: boolean) => {
+    if (!on) { await disableTeamNotifications(); return; }
+    const result = await enableTeamNotifications();
+    if (result === 'denied') toast('Allow notifications for Gruntz in your device Settings, then switch this on.', { tone: 'info', icon: 'bell' });
+    else if (result === 'unavailable') toast('Couldn’t turn on team notifications on this device. Try again later.', { tone: 'error', icon: 'alert' });
+  };
+  const toggleDiscoverable = async (on: boolean) => {
+    const result = await setDiscoverable(on);
+    if (!result.ok) toast('Couldn’t save that. Check your connection and try again.', { tone: 'error', icon: 'alert' });
+  };
+  const teamCount = useReadinessStore((s) => s.teamCount);
+  // Social settings exist only for someone signed in and in a team.
+  const signedIn = useSignedIn();
   const restSoundOff = useChromePrefs((s) => s.restSoundOff);
   const setRestSoundOff = useChromePrefs((s) => s.setRestSoundOff);
   const trialStartedAt = useSubscriptionStore((s) => s.trialStartedAt);
@@ -265,6 +284,34 @@ export default function SettingsScreen() {
         {__DEV__ ? (
           <Group label="Development" style={styles.group}>
             <Row icon="gauge" title="Retention diagnostics" subtitle="Local activation and training events" onPress={() => navigation.navigate('RetentionDiagnostics')} />
+          </Group>
+        ) : null}
+
+        {signedIn ? (
+          <Group label="Teams and athletes" style={styles.group}>
+            <Row
+              icon="bell"
+              title="Team notifications"
+              subtitle="Off by default. A push when a teammate posts or nudges you, or someone follows you."
+              toggle={teamNotifications}
+              onToggle={(v) => void toggleTeamNotifications(v)}
+            />
+            <Row
+              icon="eye"
+              title="Let athletes find me"
+              subtitle="Off by default. Anyone signed in can find you by name and see your photo, level, rank, sessions and streak. Turning it off removes your followers."
+              toggle={discoverable}
+              onToggle={(v) => void toggleDiscoverable(v)}
+            />
+            {teamCount > 0 ? (
+              <Row
+                icon="flag"
+                title="Post finished workouts"
+                subtitle="Off by default. Sends the workout name, time and set count to your private teams' chat when you finish. Weights and reps are not sent."
+                toggle={shareWorkouts}
+                onToggle={(v) => setField('shareWorkoutsWithTeams', v)}
+              />
+            ) : null}
           </Group>
         ) : null}
 

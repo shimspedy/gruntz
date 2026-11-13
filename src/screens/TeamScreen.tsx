@@ -4,7 +4,7 @@ import { useFocusEffect, useNavigation, useRoute, type RouteProp } from '@react-
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
-import { fetchMyTeams, leaveTeam, removeTeamMember, rotateInviteCode, setTeamVisibility, syncTeamStatus, type Team, type TeamFailure, type TeamMember } from '../services/teams';
+import { fetchMyTeams, leaveTeam, nudgeTeammate, removeTeamMember, rotateInviteCode, setTeamVisibility, syncTeamStatus, type Team, type TeamFailure, type TeamMember } from '../services/teams';
 import { loadProfilePhotoLocation } from '../services/profilePhoto';
 import { useChromePrefs } from '../store/useUiStore';
 import type { RootStackParamList } from '../types/navigation';
@@ -12,6 +12,7 @@ import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { IconButton, NavHeader } from '../ui/Layout';
 import { Tap } from '../ui/Pressable';
+import { Segmented } from '../ui/Segmented';
 import { Sheet } from '../ui/Sheet';
 import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
@@ -20,6 +21,11 @@ import { color, font, radius, space } from '../ui/tokens';
 import { relativeTime } from '../utils/relativeTime';
 import { FAILURE_MESSAGE, STATUS_LABEL, STATUS_TINT } from './LeaderToolsScreen';
 import { TeamChatView } from './TeamChatScreen';
+
+/** A nudge is for a teammate in a private team who has not trained yet today. */
+const canNudge = (team: Team, member: TeamMember) => !team.isPublic && !member.isMe && !member.trainedToday;
+/** Opens the app on the join screen with the code filled in; the web page falls back to the App Store. */
+export const teamInviteLink = (code: string) => `https://gruntzfit.com/join/#${code}`;
 
 type State = { kind: 'loading' } | { kind: 'team'; team: Team } | { kind: 'gone' } | { kind: 'error' };
 type Tab = 'chat' | 'leaderboard' | 'members';
@@ -79,7 +85,7 @@ export default function TeamScreen() {
 
   const invite = (team: Team) => {
     haptic.light();
-    void Share.share({ message: `Join ${team.name} on Gruntz. Open Profile, then Teams, and enter the code ${team.inviteCode}.` }).catch(() => undefined);
+    void Share.share({ message: `Join ${team.name} on Gruntz: ${teamInviteLink(team.inviteCode)}\nOr open Profile, then Teams, and enter the code ${team.inviteCode}.` }).catch(() => undefined);
   };
 
   const confirmLeave = (team: Team) => {
@@ -135,14 +141,22 @@ export default function TeamScreen() {
         { text: 'Cancel', style: 'cancel' },
         { text: 'Remove', style: 'destructive', onPress: () => void run(() => removeTeamMember(team.id, member.userId), `${member.displayName} removed`) },
       ]);
+    const actions: { label: string; run: () => void; destructive?: boolean }[] = [
+      ...(canNudge(team, member) ? [{ label: `Nudge ${member.displayName}`, run: () => void run(() => nudgeTeammate(team.id, member.userId), `${member.displayName} nudged`, () => undefined) }] : []),
+      ...(team.isLeader ? [{ label: 'Remove from team', run: remove, destructive: true }] : []),
+    ];
+    if (!actions.length) return;
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
-        { title: member.displayName, options: ['Remove from team', 'Cancel'], destructiveButtonIndex: 0, cancelButtonIndex: 1, userInterfaceStyle: 'dark' },
-        (i) => { if (i === 0) remove(); },
+        { title: member.displayName, options: [...actions.map((action) => action.label), 'Cancel'], destructiveButtonIndex: actions.findIndex((action) => action.destructive), cancelButtonIndex: actions.length, userInterfaceStyle: 'dark' },
+        (i) => actions[i]?.run(),
       );
       return;
     }
-    remove();
+    Alert.alert(member.displayName, undefined, [
+      ...actions.map((action) => ({ text: action.label, onPress: action.run, ...(action.destructive ? { style: 'destructive' as const } : {}) })),
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   const team = state.kind === 'team' ? state.team : null;
@@ -212,7 +226,7 @@ export default function TeamScreen() {
           </Text>
           <View style={styles.roster}>
             {team.members.map((member, index) => (
-              <RosterRow key={member.userId} member={member} last={index === team.members.length - 1} onOptions={team.isLeader && !member.isMe ? () => memberOptions(team, member) : undefined} />
+              <RosterRow key={member.userId} member={member} last={index === team.members.length - 1} onOptions={!member.isMe && (team.isLeader || canNudge(team, member)) ? () => memberOptions(team, member) : undefined} />
             ))}
           </View>
           {team.members.length === 1 ? (
@@ -261,20 +275,30 @@ export default function TeamScreen() {
   );
 }
 
-/** Ranked by sessions completed, then streak. Your own row is marked, and the top three get a medal. */
+type Period = 'week' | 'all';
+const PERIODS: { value: Period; label: string }[] = [{ value: 'week', label: 'This week' }, { value: 'all', label: 'All time' }];
+
+/**
+ * Ranked by sessions, then streak. Opens on this week, so someone who joined yesterday
+ * is not looking at a board they can never climb. Your own row is marked, and the top
+ * three get a medal.
+ */
 function Leaderboard({ team }: { team: Team }) {
-  const ranked = [...team.members].sort((a, b) => b.sessions - a.sessions || b.streak - a.streak || a.displayName.localeCompare(b.displayName));
+  const [period, setPeriod] = useState<Period>('week');
+  const count = (member: TeamMember) => (period === 'week' ? member.weekSessions : member.sessions);
+  const ranked = [...team.members].sort((a, b) => count(b) - count(a) || b.streak - a.streak || a.displayName.localeCompare(b.displayName));
   const mine = ranked.findIndex((m) => m.isMe);
   return (
     <>
+      <Segmented options={PERIODS} value={period} onChange={setPeriod} style={{ marginBottom: space.md }} />
       <View style={styles.standing}>
         <Text variant="callout" tone="secondary">Your standing</Text>
         <Text style={styles.standingValue} tabular>{mine >= 0 ? `#${mine + 1}` : '—'}<Text variant="subhead" tone="tertiary"> of {ranked.length}</Text></Text>
-        <Text variant="footnote" tone="tertiary">Sessions completed, all time. Streak breaks ties.</Text>
+        <Text variant="footnote" tone="tertiary">{period === 'week' ? 'Sessions since Monday. Streak breaks ties.' : 'Sessions completed, all time. Streak breaks ties.'}</Text>
       </View>
       <View style={styles.roster}>
         {ranked.map((member, index) => (
-          <View key={member.userId} style={[styles.rosterRow, index < ranked.length - 1 && styles.rosterDivider]} accessible accessibilityLabel={`Number ${index + 1}, ${member.displayName}${member.isMe ? ', you' : ''}, ${member.sessions} sessions, ${member.streak} day streak`}>
+          <View key={member.userId} style={[styles.rosterRow, index < ranked.length - 1 && styles.rosterDivider]} accessible accessibilityLabel={`Number ${index + 1}, ${member.displayName}${member.isMe ? ', you' : ''}, ${count(member)} sessions${period === 'week' ? ' this week' : ''}, ${member.streak} day streak`}>
             <View style={styles.rank}>
               {index < 3 ? <Icon name="medal" size={20} color={[color.cta, '#C0C0C0', '#CD7F32'][index]} /> : <Text style={styles.rankNumber} tabular>{index + 1}</Text>}
             </View>
@@ -286,7 +310,7 @@ function Leaderboard({ team }: { team: Team }) {
               <Text variant="footnote" tone="tertiary" style={{ marginTop: 2 }}>{member.streak} day streak</Text>
             </View>
             <View style={styles.rosterStat}>
-              <Text variant="headline" tabular>{member.sessions}</Text>
+              <Text variant="headline" tabular>{count(member)}</Text>
               <Text variant="caption" tone="tertiary">sessions</Text>
             </View>
           </View>
@@ -321,17 +345,20 @@ function RosterRow({ member, last, onOptions }: { member: TeamMember; last: bool
     <View
       style={[styles.rosterRow, !last && styles.rosterDivider]}
       accessible
-      accessibilityLabel={`${member.displayName}${member.role === 'leader' ? ', leader' : ''}, ${member.sessions} sessions, ${member.streak} day streak, status ${STATUS_LABEL[member.status]}`}
+      accessibilityLabel={`${member.displayName}${member.role === 'leader' ? ', leader' : ''}${member.trainedToday ? ', trained today' : ''}, ${member.sessions} sessions, ${member.streak} day streak, status ${STATUS_LABEL[member.status]}`}
     >
       <MemberPhoto member={member} />
       <View style={{ flex: 1 }}>
-        <Text variant="headline" numberOfLines={1}>
-          {member.displayName}
-          {member.isMe ? <Text variant="headline" tone="tertiary">{'  You'}</Text> : null}
-        </Text>
+        <View style={styles.nameLine}>
+          <Text variant="headline" numberOfLines={1} style={{ flexShrink: 1 }}>
+            {member.displayName}
+            {member.isMe ? <Text variant="headline" tone="tertiary">{'  You'}</Text> : null}
+          </Text>
+          {member.trainedToday ? <Icon name="check" size={14} color={color.success} weight="bold" /> : null}
+        </View>
         <Text variant="footnote" tone="tertiary" style={{ marginTop: 2 }} numberOfLines={1}>
           {member.role === 'leader' ? 'Leader · ' : ''}
-          {STATUS_LABEL[member.status]} · {relativeTime(member.updatedAt)}
+          {member.trainedToday ? 'Trained today' : `${STATUS_LABEL[member.status]} · ${relativeTime(member.updatedAt)}`}
         </Text>
       </View>
       <View style={styles.rosterStat}>
@@ -370,6 +397,7 @@ const styles = StyleSheet.create({
   rosterRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 64, paddingVertical: space.sm },
   rosterDivider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: color.line },
   rosterStat: { alignItems: 'flex-end', minWidth: 54 },
+  nameLine: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   rowMore: { width: 36, height: 44, alignItems: 'center', justifyContent: 'center' },
   memberPhoto: { width: 40, height: 40, borderRadius: 20, backgroundColor: color.surfaceHigh, alignItems: 'center', justifyContent: 'center' },
   memberImage: { width: 40, height: 40, borderRadius: 20 },

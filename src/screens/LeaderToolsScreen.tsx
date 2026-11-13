@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -61,6 +61,9 @@ export default function LeaderToolsScreen() {
   const [sheet, setSheet] = useState<'join' | 'create' | null>(null);
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
+  // An invite link arrives with the code. It is only typed in for them: joining still takes their tap.
+  const invited = useRoute<RouteProp<RootStackParamList, 'LeaderTools'>>().params?.code;
+  const usedInvite = useRef<string | null>(null);
   const alive = useRef(true);
   const privacyDismissed = useChromePrefs((s) => s.leaderPrivacyDismissed);
   const setPrivacyDismissed = useChromePrefs((s) => s.setLeaderPrivacyDismissed);
@@ -111,6 +114,14 @@ export default function LeaderToolsScreen() {
   const mine = localTeamStatus();
   const teams = view.kind === 'teams' ? view.teams : [];
   const canAct = view.kind === 'teams';
+  useEffect(() => {
+    if (!canAct || !invited || usedInvite.current === invited) return;
+    usedInvite.current = invited;
+    const clean = invited.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+    if (clean.length !== 6) return;
+    setCode(clean);
+    setSheet('join');
+  }, [canAct, invited]);
   const atLimit = teams.length >= MAX_TEAMS;
 
   return (
@@ -137,7 +148,7 @@ export default function LeaderToolsScreen() {
             <View style={{ flex: 1 }}>
               <Text variant="headline">Three numbers and a photo, nothing else</Text>
               <Text variant="subhead" tone="secondary" style={{ marginTop: 4 }}>
-                A team sees your name, your profile photo if you set one, your session count, your streak and a green, amber or red status from today’s check-in. Weights, sleep, limitations and test scores stay on this phone.
+                A team sees your name, your profile photo if you set one, your session count, your streak and a green, amber or red status from today’s check-in. Weights, sleep, limitations and test scores stay on this phone. Posting finished workouts to chat is a separate switch in Settings, off by default.
               </Text>
             </View>
             <IconButton icon="close" label="Dismiss" size={18} tint={color.textSecondary} onPress={() => { haptic.selection(); setPrivacyDismissed(true); }} style={styles.privacyClose} />
@@ -183,6 +194,16 @@ export default function LeaderToolsScreen() {
               <View style={{ flex: 1 }}>
                 <Text variant="headline">Find communities</Text>
                 <Text variant="footnote" tone="tertiary" style={{ marginTop: 2 }}>Open groups anyone can join. Run clubs, test prep, ruck crews.</Text>
+              </View>
+              <Icon name="chevronRight" size={15} color={color.textTertiary} weight="semibold" />
+            </Tap>
+            <Tap feedback="highlight" baseColor={color.surface} pressedColor={color.surfacePressed} onPress={() => navigation.navigate('Athletes')} style={[styles.discover, { marginTop: space.sm }]} accessibilityRole="button" accessibilityLabel="Follow athletes">
+              <View style={[styles.actionIcon, { backgroundColor: color.accentSoft }]}>
+                <Icon name="people" size={20} color={color.accent} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text variant="headline">Follow athletes</Text>
+                <Text variant="footnote" tone="tertiary" style={{ marginTop: 2 }}>Find someone by name and follow in one tap. No code needed.</Text>
               </View>
               <Icon name="chevronRight" size={15} color={color.textTertiary} weight="semibold" />
             </Tap>

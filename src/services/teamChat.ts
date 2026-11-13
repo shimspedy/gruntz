@@ -1,3 +1,4 @@
+import { requestPush } from './pushRequest';
 import { getSupabase } from './supabaseClient';
 import { localTeamStatus, type TeamFailure, type TeamResult } from './teams';
 
@@ -10,6 +11,9 @@ export interface TeamMessage {
   body: string;
   createdAt: string;
   isMe: boolean;
+  /** How many teammates gave this line respect, and whether this athlete is one of them. */
+  respect: number;
+  respected: boolean;
 }
 
 export const MAX_MESSAGE_LENGTH = 1000;
@@ -64,9 +68,11 @@ async function me(): Promise<string | null> {
   }
 }
 
-type Row = { id: string; team_id: string; user_id: string; display_name: string; body: string; created_at: string };
+type Row = { id: string; team_id: string; user_id: string; display_name: string; body: string; created_at: string; team_message_reactions?: { user_id: string }[] | null };
 const toMessage = (row: Row, userId: string | null): TeamMessage => ({
   id: row.id, teamId: row.team_id, userId: row.user_id, displayName: row.display_name, body: row.body, createdAt: row.created_at, isMe: row.user_id === userId,
+  respect: row.team_message_reactions?.length ?? 0,
+  respected: !!userId && !!row.team_message_reactions?.some((reaction) => reaction.user_id === userId),
 });
 
 // Dev-only chat for the demo team, so the screen can be seen without an account.
@@ -84,7 +90,7 @@ export async function fetchMessages(teamId: string, before?: string): Promise<Te
   const userId = await me();
   if (!userId) return fail('signed-out');
   try {
-    let query = supabase.from('team_messages').select('id, team_id, user_id, display_name, body, created_at').eq('team_id', teamId).order('created_at', { ascending: false }).limit(PAGE);
+    let query = supabase.from('team_messages').select('id, team_id, user_id, display_name, body, created_at, team_message_reactions(user_id)').eq('team_id', teamId).order('created_at', { ascending: false }).limit(PAGE);
     if (before) query = query.lt('created_at', before);
     const { data, error } = await query;
     if (error) return fail('error');
@@ -99,7 +105,7 @@ export async function sendMessage(teamId: string, body: string): Promise<TeamRes
   if (!text) return fail('error');
   const displayName = localTeamStatus().displayName;
   if (__DEV__ && demoMessages) {
-    const message: TeamMessage = { id: `demo-${Date.now()}`, teamId, userId: 'me', displayName, body: text, createdAt: new Date().toISOString(), isMe: true };
+    const message: TeamMessage = { id: `demo-${Date.now()}`, teamId, userId: 'me', displayName, body: text, createdAt: new Date().toISOString(), isMe: true, respect: 0, respected: false };
     demoMessages = [...demoMessages, message];
     return { ok: true, value: message };
   }
@@ -110,7 +116,27 @@ export async function sendMessage(teamId: string, body: string): Promise<TeamRes
   try {
     const { data, error } = await supabase.from('team_messages').insert({ team_id: teamId, user_id: userId, display_name: displayName, body: text }).select('id, team_id, user_id, display_name, body, created_at').single();
     if (error || !data) return fail(error?.message.includes('row-level security') ? 'not-found' : error?.message.includes('RATE_LIMITED') ? 'rate-limited' : 'error');
+    // Teammates hear about it; the server decides who, and only once per line.
+    void requestPush({ kind: 'message', messageId: (data as Row).id });
     return { ok: true, value: toMessage(data as Row, userId) };
+  } catch {
+    return fail('error');
+  }
+}
+
+/** Gives or takes back respect on a teammate's line. One per person; never on your own. */
+export async function setRespect(message: TeamMessage, on: boolean): Promise<TeamResult<null>> {
+  if (message.isMe) return fail('error');
+  const supabase = getSupabase();
+  if (!supabase) return fail('unavailable');
+  const userId = await me();
+  if (!userId) return fail('signed-out');
+  try {
+    const table = supabase.from('team_message_reactions');
+    const { error } = on
+      ? await table.upsert({ message_id: message.id, user_id: userId }, { onConflict: 'message_id,user_id', ignoreDuplicates: true })
+      : await table.delete().eq('message_id', message.id).eq('user_id', userId);
+    return error ? fail(error.message.includes('row-level security') ? 'not-found' : 'error') : { ok: true, value: null };
   } catch {
     return fail('error');
   }

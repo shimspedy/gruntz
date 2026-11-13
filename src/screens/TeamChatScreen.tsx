@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActionSheetIOS, Alert, FlatList, KeyboardAvoidingView, Platform, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  cleanMessage, deleteMessage, fetchMessages, MAX_MESSAGE_LENGTH, mergeMessages, reportMessage, sendMessage, subscribeToMessages, type TeamMessage,
- reconcileLatestPage } from '../services/teamChat';
+  cleanMessage, deleteMessage, fetchMessages, MAX_MESSAGE_LENGTH, mergeMessages, reconcileLatestPage, reportMessage, sendMessage, setRespect, subscribeToMessages,
+  type TeamMessage,
+} from '../services/teamChat';
 import type { Team } from '../services/teams';
 import { useTeamInboxStore } from '../store/useTeamInboxStore';
 import { Image } from 'expo-image';
@@ -112,7 +113,21 @@ export function TeamChatView({ team }: { team: Team }) {
         void reportMessage(message, '').then((result) => toast(result.ok ? 'Reported. Thank you.' : FAILURE_MESSAGE[result.reason], result.ok ? undefined : { tone: 'error', icon: 'alert' }));
       } },
     ]);
+    // Shown at once and put back if the server refuses, so the tap never feels lost.
+    const respect = () => {
+      const on = !message.respected;
+      const apply = (given: boolean) => setMessages((current) => (current ?? []).map((item) => (item.id === message.id
+        ? { ...item, respected: given, respect: Math.max(0, item.respect + (given ? 1 : -1)) } : item)));
+      haptic.light();
+      apply(on);
+      void setRespect(message, on).then((result) => {
+        if (result.ok) return;
+        apply(!on);
+        toast(FAILURE_MESSAGE[result.reason], { tone: 'error', icon: 'alert' });
+      });
+    };
     const actions: { label: string; run: () => void; destructive?: boolean }[] = [
+      ...(message.isMe ? [] : [{ label: message.respected ? 'Take back respect' : 'Give respect', run: respect }]),
       ...(message.isMe ? [] : [{ label: 'Report message', run: report }]),
       ...(canDelete ? [{ label: 'Delete message', run: remove, destructive: true }] : []),
     ];
@@ -207,7 +222,7 @@ export function TeamChatView({ team }: { team: Team }) {
 function Bubble({ message, showAuthor, photoUrl, onLongPress }: { message: TeamMessage; showAuthor: boolean; photoUrl: string | null; onLongPress: () => void }) {
   const mine = message.isMe;
   return (
-    <Tap feedback="opacity" onLongPress={onLongPress} onPress={() => undefined} style={[styles.row, mine && styles.rowMine]} accessibilityLabel={`${message.displayName}: ${message.body}`} accessibilityHint="Long press for options">
+    <Tap feedback="opacity" onLongPress={onLongPress} onPress={() => undefined} style={[styles.row, mine && styles.rowMine]} accessibilityLabel={`${message.displayName}: ${message.body}${message.respect > 0 ? `, respect from ${message.respect}` : ''}`} accessibilityHint="Long press for options">
       {!mine ? (
         <View style={styles.avatar}>
           {photoUrl ? <Image source={{ uri: photoUrl }} style={{ width: 28, height: 28, borderRadius: 14 }} contentFit="cover" accessibilityIgnoresInvertColors /> : <Text style={styles.avatarInitial}>{message.displayName.charAt(0).toUpperCase()}</Text>}
@@ -222,6 +237,12 @@ function Bubble({ message, showAuthor, photoUrl, onLongPress }: { message: TeamM
         <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleTheirs]}>
           <Text variant="body" style={mine ? { color: '#000' } : undefined}>{message.body}</Text>
         </View>
+        {message.respect > 0 ? (
+          <View style={[styles.respect, mine && { alignSelf: 'flex-end' }]}>
+            <Icon name="starFill" size={11} color={message.respected ? color.accent : color.textTertiary} />
+            <Text variant="caption" tone={message.respected ? 'accent' : 'tertiary'} tabular>{message.respect}</Text>
+          </View>
+        ) : null}
       </View>
     </Tap>
   );
@@ -236,6 +257,7 @@ const styles = StyleSheet.create({
   avatarInitial: { fontFamily: font.bold, fontSize: 12, color: color.text },
   author: { marginBottom: 4, marginLeft: 4, marginTop: 8 },
   bubble: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: radius.lg, borderCurve: 'continuous' },
+  respect: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3, marginLeft: 6, marginRight: 6 },
   bubbleTheirs: { backgroundColor: color.surface, borderBottomLeftRadius: 6 },
   bubbleMine: { backgroundColor: color.accent, borderBottomRightRadius: 6 },
   composer: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, paddingHorizontal: space.md, paddingTop: space.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color.line, backgroundColor: color.bg },
