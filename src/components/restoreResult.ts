@@ -3,6 +3,7 @@ import { entitlementMessage, unlocks } from '../services/entitlementStatus';
 import type { RestoreOutcome } from '../store/useSubscriptionStore';
 import { useSubscriptionStore } from '../store/useSubscriptionStore';
 import { toast } from '../ui/Toast';
+import { presentRevenueCatCodeRedemption } from '../services/subscription';
 
 /**
  * The one way a restore result is shown, so the paywall, Settings and the welcome
@@ -30,4 +31,20 @@ export function showRestoreResult(outcome: RestoreOutcome, options: { onUnlocked
     return;
   }
   Alert.alert(title, body, outcome === 'billing-retry' ? [{ text: 'Not now', style: 'cancel' }, updatePayment] : undefined);
+}
+
+/**
+ * Opens Apple's offer-code sheet. A redeemed code reaches the store through RevenueCat's
+ * customer info listener, so Pro unlocks without anything waiting here; only a sheet that
+ * could not open needs a message.
+ */
+export async function redeemCode() {
+  const result = await presentRevenueCatCodeRedemption();
+  if (result === 'presented') return;
+  Alert.alert(
+    'Couldn’t open code redemption',
+    result === 'unavailable'
+      ? 'Redeem your code in the App Store instead: tap your profile picture, then Redeem Gift Card or Code.'
+      : 'Try again in a moment, or redeem it in the App Store: tap your profile picture, then Redeem Gift Card or Code.',
+  );
 }

@@ -513,6 +513,30 @@ export async function restoreRevenueCatPurchases(): Promise<{
   }
 }
 
+/** Apple offer codes. Google Play has no in-app sheet; Play codes are redeemed in the Play Store. */
+export const codeRedemptionAvailable = (): boolean => Platform.OS === 'ios';
+
+/**
+ * Apple's own sheet for entering an offer code (for example a giveaway code). Apple
+ * handles the code entirely; a redemption arrives as an App Store transaction, which
+ * RevenueCat picks up and reports through the customer info listener, so the store
+ * unlocks Pro without this function waiting on the sheet.
+ */
+export async function presentRevenueCatCodeRedemption(): Promise<'presented' | 'unavailable' | 'error'> {
+  if (!codeRedemptionAvailable()) return 'unavailable';
+  const configured = await configureRevenueCat();
+  if (!configured) return 'unavailable';
+  const purchasesModule = await getPurchasesModule();
+  if (!purchasesModule) return 'unavailable';
+  try {
+    await purchasesModule.default.presentCodeRedemptionSheet();
+    return 'presented';
+  } catch (error) {
+    if (__DEV__) console.warn('[subscription] presentCodeRedemptionSheet failed', error);
+    return 'error';
+  }
+}
+
 export async function presentRevenueCatCustomerCenter(): Promise<{
   status: 'presented' | 'unavailable' | 'error';
   customerInfo: CustomerInfo | null;

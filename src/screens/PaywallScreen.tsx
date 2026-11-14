@@ -13,7 +13,8 @@ import { Icon } from '../ui/Icon';
 import { Tap } from '../ui/Pressable';
 import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
-import { showRestoreResult } from '../components/restoreResult';
+import { redeemCode, showRestoreResult } from '../components/restoreResult';
+import { codeRedemptionAvailable } from '../services/subscription';
 import { toast } from '../ui/Toast';
 import { color, font, motion, radius, space } from '../ui/tokens';
 import { openExternalUrl } from '../utils/externalLinks';
@@ -282,6 +283,18 @@ export default function PaywallScreen() {
           <Text variant="footnote" tone="quaternary">
             ·
           </Text>
+          {codeRedemptionAvailable() ? (
+            <>
+              <Tap feedback="opacity" hitSlop={12} onPress={() => void redeemCode()} style={styles.link} accessibilityLabel="Redeem a code">
+                <Text variant="footnote" tone="secondary">
+                  Redeem code
+                </Text>
+              </Tap>
+              <Text variant="footnote" tone="quaternary">
+                ·
+              </Text>
+            </>
+          ) : null}
           <Tap feedback="opacity" hitSlop={12} onPress={() => void open(GRUNTZ_TERMS_OF_USE_URL)} style={styles.link} accessibilityLabel="Terms of use">
             <Text variant="footnote" tone="secondary">
               Terms
@@ -391,5 +404,5 @@ const styles = StyleSheet.create({
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: space.md, paddingTop: space.md, backgroundColor: color.bg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color.line },
   // Opaque on purpose: at 92% the auto-renew disclosure scrolling underneath ghosted through the button and links.
   reassure: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 14 },
-  links: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 10 },
+  links: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', columnGap: 10, marginTop: 10 },
 });

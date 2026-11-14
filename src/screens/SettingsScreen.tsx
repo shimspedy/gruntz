@@ -31,7 +31,8 @@ import { Icon } from '../ui/Icon';
 import { Wordmark } from '../ui/Logo';
 import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
-import { showRestoreResult } from '../components/restoreResult';
+import { redeemCode, showRestoreResult } from '../components/restoreResult';
+import { codeRedemptionAvailable } from '../services/subscription';
 import { toast } from '../ui/Toast';
 import { color, space } from '../ui/tokens';
 import { openExternalUrl } from '../utils/externalLinks';
@@ -274,6 +275,9 @@ export default function SettingsScreen() {
               void restore().finally(() => setRestoring(false)).then((r) => showRestoreResult(r));
             }}
           />
+          {codeRedemptionAvailable() ? (
+            <Row icon="gift" title="Redeem a code" onPress={() => void redeemCode()} />
+          ) : null}
         </Group>
 
         <Group label="Support" style={styles.group}>
