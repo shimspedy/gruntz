@@ -3,11 +3,20 @@ import { GoogleSignin, isErrorWithCode, isSuccessResponse, statusCodes } from '@
 import { Platform } from 'react-native';
 import { signInWithProviderToken, type ProviderSignInResult } from './backup';
 
+const extra = Constants.expoConfig?.extra as { googleIosClientId?: string; googleWebClientId?: string } | undefined;
 /** The iOS OAuth client. A public identifier, not a secret; it also sits in the app's URL schemes. */
-const iosClientId = (Constants.expoConfig?.extra as { googleIosClientId?: string } | undefined)?.googleIosClientId;
+const iosClientId = extra?.googleIosClientId;
+/**
+ * The Web OAuth client. On Android, Google issues the identity token to this client,
+ * so it is the audience Supabase checks. Public, like the iOS one; its secret never
+ * ships in the app. Android also needs an Android OAuth client in the same Google
+ * Cloud project for package com.gruntz.fitness and each signing certificate's SHA-1
+ * (Play app signing, upload, debug), or sign-in fails with DEVELOPER_ERROR.
+ */
+const webClientId = extra?.googleWebClientId;
 
-/** iOS only for now: Android needs its own client tied to the Play signing certificate. */
-export const googleSignInAvailable = (): boolean => Platform.OS === 'ios' && !!iosClientId;
+export const googleSignInAvailable = (): boolean =>
+  (Platform.OS === 'ios' && !!iosClientId) || (Platform.OS === 'android' && !!webClientId);
 
 let configured = false;
 
@@ -21,7 +30,9 @@ export async function signInWithGoogle(): Promise<ProviderSignInResult> {
   if (!googleSignInAvailable()) return 'unavailable';
   try {
     if (!configured) {
-      GoogleSignin.configure({ iosClientId, scopes: ['email'] });
+      GoogleSignin.configure(
+        Platform.OS === 'ios' ? { iosClientId, scopes: ['email'] } : { webClientId, scopes: ['email'] },
+      );
       configured = true;
     }
     const response = await GoogleSignin.signIn();
