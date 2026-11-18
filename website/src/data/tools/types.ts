@@ -248,3 +248,26 @@ export interface RankDetail {
   /** Anything not confirmed, in one line each. */
   unverified: string[];
 }
+
+/**
+ * A Medal of Honor recipient shown on a rank's page: someone who held that rank at the
+ * time of the action. Stories are original, short and drawn from the official citation.
+ */
+export interface Honoree {
+  branch: Branch;
+  /** Rank.abbr of the rank held at the time of the action (join key). */
+  abbr: string;
+  name: string;
+  /** Rank title exactly as the citation gives it, e.g. 'Corporal' or 'Private First Class'. */
+  rankAtAction: string;
+  /** e.g. 'Vietnam War', 'World War II', 'Operation Iraqi Freedom'. */
+  conflict: string;
+  /** Year of the action. */
+  year: number;
+  /** Two or three plain sentences in our own words: what happened and why it mattered. */
+  story: string;
+  /** True when the medal was awarded after the recipient's death. */
+  posthumous: boolean;
+  /** Official source for this recipient (cmohs.org recipient page, or a .mil page). */
+  source: { label: string; url: string };
+}

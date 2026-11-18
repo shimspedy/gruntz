@@ -81,9 +81,15 @@ if (app) {
               : <li aria-current="page" class="text-bone-2">{c.name}</li>)}
           </ol>
         </nav>
-        {eyebrow ? <p class="stamp mt-8 text-accent-text">{eyebrow}</p> : null}
-        <h1 class={`display ${eyebrow ? 'mt-3' : 'mt-6'} max-w-[22ch] text-[32px] sm:text-[42px] lg:text-[52px]`}>{h1}</h1>
-        <p class="mt-5 max-w-[62ch] text-lg leading-relaxed text-bone-2">{lede}</p>
+        {Astro.slots.has('hero') ? (
+          <div class="mt-6"><slot name="hero" /></div>
+        ) : (
+          <Fragment>
+            {eyebrow ? <p class="stamp mt-8 text-accent-text">{eyebrow}</p> : null}
+            <h1 class={`display ${eyebrow ? 'mt-3' : 'mt-6'} max-w-[22ch] text-[32px] sm:text-[42px] lg:text-[52px]`}>{h1}</h1>
+            <p class="mt-5 max-w-[62ch] text-lg leading-relaxed text-bone-2">{lede}</p>
+          </Fragment>
+        )}
         {verified ? (
           <p class="stamp mt-5">Last checked {verified}{pending ? ' · Some values awaiting confirmation' : ''} · Unofficial</p>
         ) : null}

@@ -1,0 +1,108 @@
+---
+/**
+ * The hero for a single rank page, laid out like a ticket: the main panel holds the
+ * insignia, title and big figures; a perforated stub on the right holds the small facts.
+ * This is the page's one standout element; everything below it stays quiet.
+ */
+interface Equivalent { branch: string; abbr: string; title: string; href: string; img: string | null; svg: string | null }
+interface Props {
+  branchName: string;
+  title: string;
+  grade: string;
+  abbr: string;
+  category: string;
+  summary: string;
+  img: string | null;
+  svg: string | null;
+  startPay: number | null;
+  payYear: number | null;
+  medalCount: number;
+  /** Where the rank sits in its ladder, shown when there are no featured recipients. */
+  position: { n: number; of: number; label: string };
+  equivalents: Equivalent[];
+  prev: { title: string; href: string } | null;
+  next: { title: string; href: string } | null;
+}
+const p = Astro.props as Props;
+const money = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+---
+
+<section class="ticket relative overflow-hidden rounded-[28px] border border-bone/10 bg-[linear-gradient(180deg,#1d2119_0%,#161913_100%)]" aria-label={`${p.title} at a glance`}>
+  <div class="grid lg:grid-cols-[minmax(0,1fr)_300px]">
+    <!-- Main panel -->
+    <div class="min-w-0 p-6 sm:p-9">
+      <div class="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+        <div class="flex min-w-0 items-start gap-5">
+          <div class="grid h-[92px] w-[92px] shrink-0 place-items-center rounded-[22px] bg-ink-3 shadow-[inset_0_0_0_1px_rgb(238_240_232_/_0.08)]">
+            {p.img ? <img src={p.img} alt={`${p.title} insignia`} width="76" height="76" loading="eager" class="h-[76px] w-[76px] object-contain" />
+              : p.svg ? <div class="h-[70px] w-[70px] [&_svg]:h-full [&_svg]:w-full" set:html={p.svg} /> : <span class="text-[12px] text-bone-3">No insignia</span>}
+          </div>
+          <div class="min-w-0">
+            <p class="stamp text-bone-2">{p.branchName}</p>
+            <h1 class="mt-2 text-[34px] font-bold leading-[1.05] tracking-[-0.01em] [font-stretch:108%] sm:text-[44px]">{p.title}</h1>
+            <p class="mt-2 text-[16px] text-bone-2">{p.grade} · {p.abbr} · {p.category}</p>
+          </div>
+        </div>
+        {p.equivalents.length ? (
+          <ul class="flex shrink-0 flex-wrap gap-2 xl:flex-nowrap xl:justify-end" aria-label="Same grade in other services">
+            {p.equivalents.slice(0, 6).map((e) => (
+              <li>
+                <a href={e.href} title={`${e.branch} ${e.title}`} class="flex h-[86px] w-[64px] flex-col items-center justify-between rounded-xl bg-ink-3 px-1.5 pb-1.5 pt-2 transition-colors duration-150 hover:bg-ink-4">
+                  <span class="grid h-11 w-11 place-items-center">
+                    {e.img ? <img src={e.img} alt="" width="44" height="44" loading="lazy" class="h-11 w-11 object-contain" />
+                      : e.svg ? <span class="block h-9 w-9 [&_svg]:h-full [&_svg]:w-full" set:html={e.svg} /> : <span class="text-[10px] text-bone-3">None</span>}
+                  </span>
+                  <span class="w-full text-center text-[10px] leading-3 text-bone-3">{e.branch}<span class="block font-semibold text-bone">{e.abbr}</span></span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+
+      <p class="mt-6 max-w-[64ch] text-[17px] leading-relaxed text-bone-2">{p.summary}</p>
+
+      <div class="mt-8 grid border-t border-bone/10 pt-7 sm:grid-cols-3 sm:divide-x sm:divide-bone/10">
+        <div class="pb-6 sm:pb-0 sm:pr-6">
+          <p class="stamp text-bone-3">Pay grade</p>
+          <p class="mt-2 text-[64px] font-extrabold leading-none tracking-[-0.03em] text-[#efe4d2] [font-stretch:112%] tabular-nums sm:text-[76px]">{p.grade}</p>
+          <p class="mt-3 text-[14px] text-bone-3">Same pay in every branch</p>
+        </div>
+        <div class="pb-6 sm:px-6 sm:pb-0">
+          <p class="stamp text-bone-3">Starting basic pay</p>
+          <p class="mt-2 text-[44px] font-bold leading-none tracking-[-0.02em] [font-stretch:108%] tabular-nums sm:text-[52px]">{p.startPay != null ? money(p.startPay) : '–'}</p>
+          <p class="mt-3 text-[14px] text-bone-3">{p.startPay != null ? `A month, ${p.payYear} chart` : 'No set rate'}</p>
+        </div>
+        <div class="sm:pl-6">
+          {p.medalCount ? (
+            <Fragment>
+              <p class="stamp text-bone-3">Medal of Honor</p>
+              <p class="mt-2 text-[44px] font-bold leading-none tracking-[-0.02em] [font-stretch:108%] tabular-nums sm:text-[52px]">{p.medalCount}</p>
+              <p class="mt-3 text-[14px] text-bone-3"><a class="hover:text-bone" href="#medal-of-honor">Recipients at this rank, below</a></p>
+            </Fragment>
+          ) : (
+            <Fragment>
+              <p class="stamp text-bone-3">Place in the ladder</p>
+              <p class="mt-2 text-[44px] font-bold leading-none tracking-[-0.02em] [font-stretch:108%] tabular-nums sm:text-[52px]">{p.position.n}<span class="text-[22px] text-bone-3"> of {p.position.of}</span></p>
+              <p class="mt-3 text-[14px] text-bone-3">{p.position.label}</p>
+            </Fragment>
+          )}
+        </div>
+      </div>
+    </div>
+
+    <!-- Perforated stub -->
+    <div class="relative border-t border-dashed border-bone/20 p-6 sm:p-8 lg:border-l lg:border-t-0">
+      <span aria-hidden="true" class="absolute -left-[13px] -top-[13px] hidden h-[26px] w-[26px] rounded-full border border-bone/10 bg-ink lg:block"></span>
+      <span aria-hidden="true" class="absolute -bottom-[13px] -left-[13px] hidden h-[26px] w-[26px] rounded-full border border-bone/10 bg-ink lg:block"></span>
+      <dl class="grid gap-0 divide-y divide-bone/10">
+        <div class="pb-4"><dt class="stamp text-bone-3">Abbreviation</dt><dd class="mt-1.5 text-[17px] font-semibold">{p.abbr}</dd></div>
+        <div class="py-4"><dt class="stamp text-bone-3">Category</dt><dd class="mt-1.5 text-[17px] font-semibold">{p.category}</dd></div>
+        <div class="py-4"><dt class="stamp text-bone-3">Rank below</dt><dd class="mt-1.5 text-[16px]">{p.prev ? <a class="hover:text-accent-text" href={p.prev.href}>{p.prev.title}</a> : <span class="text-bone-3">First rank</span>}</dd></div>
+        <div class="py-4"><dt class="stamp text-bone-3">Rank above</dt><dd class="mt-1.5 text-[16px]">{p.next ? <a class="hover:text-accent-text" href={p.next.href}>{p.next.title}</a> : <span class="text-bone-3">Highest rank</span>}</dd></div>
+      </dl>
+      <p class="stamp mt-6 text-bone-3">No. {p.grade} · {p.abbr.toUpperCase()}</p>
+      <span aria-hidden="true" class="pointer-events-none absolute bottom-7 right-5 hidden select-none font-mono text-[13px] tracking-[0.3em] text-bone/15 [writing-mode:vertical-rl] lg:block">GRUNTZ</span>
+    </div>
+  </div>
+</section>
