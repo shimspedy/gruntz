@@ -1,27 +1,28 @@
-// Applies the saved light/dark choice before first paint and runs the header switch.
+// Theme: follows the visitor's system setting unless they pick light or dark with the
+// header switch, which cycles System → Light → Dark. Runs before first paint.
 // A file, not inline: the Content-Security-Policy only allows scripts from this origin.
 (function () {
   var KEY = 'gruntz-theme';
+  var ORDER = ['system', 'light', 'dark'];
+  var LABEL = { system: 'Theme: system. Switch to light', light: 'Theme: light. Switch to dark', dark: 'Theme: dark. Switch to system' };
   var root = document.documentElement;
   var prefersLight = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
-  function apply(choice) {
-    if (choice === 'light' || choice === 'dark') root.setAttribute('data-theme', choice);
-    else root.removeAttribute('data-theme');
+  var mode = 'system';
+  function apply(next) {
+    mode = next === 'light' || next === 'dark' ? next : 'system';
+    if (mode === 'system') root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme', mode);
+    root.setAttribute('data-theme-mode', mode);
   }
   function effective() {
-    var set = root.getAttribute('data-theme');
-    if (set === 'light' || set === 'dark') return set;
+    if (mode !== 'system') return mode;
     return prefersLight && prefersLight.matches ? 'light' : 'dark';
   }
   function sync() {
-    var light = effective() === 'light';
     var buttons = document.querySelectorAll('[data-theme-toggle]');
-    for (var i = 0; i < buttons.length; i += 1) {
-      buttons[i].setAttribute('aria-pressed', light ? 'true' : 'false');
-      buttons[i].setAttribute('aria-label', light ? 'Switch to dark theme' : 'Switch to light theme');
-    }
+    for (var i = 0; i < buttons.length; i += 1) buttons[i].setAttribute('aria-label', LABEL[mode]);
     var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', light ? '#f3f3ee' : '#0b0c0a');
+    if (meta) meta.setAttribute('content', effective() === 'light' ? '#f3f3ee' : '#0b0c0a');
   }
   var saved = null;
   try { saved = localStorage.getItem(KEY); } catch (e) { /* storage blocked: follow the system */ }
@@ -30,9 +31,11 @@
     var target = event.target;
     var button = target && target.closest ? target.closest('[data-theme-toggle]') : null;
     if (!button) return;
-    var next = effective() === 'light' ? 'dark' : 'light';
-    apply(next);
-    try { localStorage.setItem(KEY, next); } catch (e) { /* the choice lasts for this page only */ }
+    apply(ORDER[(ORDER.indexOf(mode) + 1) % ORDER.length]);
+    try {
+      if (mode === 'system') localStorage.removeItem(KEY);
+      else localStorage.setItem(KEY, mode);
+    } catch (e) { /* the choice lasts for this page only */ }
     sync();
   });
   document.addEventListener('DOMContentLoaded', sync);

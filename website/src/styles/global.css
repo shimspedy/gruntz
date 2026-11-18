@@ -256,10 +256,8 @@
 }
 
 /* Header switch: show the sun while dark (tap for light), the moon while light. */
-.theme-toggle .i-moon { display: none; }
-:root[data-theme='light'] .theme-toggle .i-sun { display: none; }
-:root[data-theme='light'] .theme-toggle .i-moon { display: block; }
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme='dark']) .theme-toggle .i-sun { display: none; }
-  :root:not([data-theme='dark']) .theme-toggle .i-moon { display: block; }
-}
+.theme-toggle svg { display: none; }
+:root:not([data-theme-mode]) .theme-toggle .i-system,
+:root[data-theme-mode='system'] .theme-toggle .i-system,
+:root[data-theme-mode='light'] .theme-toggle .i-sun,
+:root[data-theme-mode='dark'] .theme-toggle .i-moon { display: block; }
