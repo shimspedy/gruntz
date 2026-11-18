@@ -12,8 +12,9 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary: 'bg-accent text-white hover:bg-accent-hi',
-        bone: 'bg-bone text-ink hover:bg-white',
-        coal: 'bg-coal text-bone hover:bg-ink-4',
+        bone: 'bg-bone text-ink hover:bg-bone/85',
+        // Always a dark button (used on the light paper sections), so its text stays light in both themes.
+        coal: 'bg-coal text-[#eef0e8] hover:bg-coal-2',
         outline: 'border border-bone/20 text-bone hover:border-bone/40 hover:bg-bone/5',
         ghost: 'text-bone-2 hover:text-bone',
       },

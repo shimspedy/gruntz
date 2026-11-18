@@ -93,7 +93,7 @@ const jsonLd = [{ '@context': 'https://schema.org', '@type': 'SoftwareApplicatio
   <Header lang={lang} />
   <main id="main">
     <!-- Hero: one photograph edge to edge, headline on its calm side. -->
-    <section class="relative isolate overflow-hidden" aria-labelledby="hero-title">
+    <section class="keep-dark relative isolate overflow-hidden" aria-labelledby="hero-title">
       <Image
         src={photos.hero.src} alt={es ? photos.hero.altEs : photos.hero.alt}
         widths={[640, 960, 1440, 1920, 2400]} sizes="100vw" format="webp" quality={70}
@@ -147,7 +147,7 @@ const jsonLd = [{ '@context': 'https://schema.org', '@type': 'SoftwareApplicatio
       </div>
       <ul class="people-rail mt-12">
         {people.map((p, i) => (
-          <li class="reveal relative isolate flex aspect-[3/4] w-[78vw] max-w-[340px] shrink-0 snap-start flex-col justify-end overflow-hidden rounded-[20px] bg-ink-3 p-6 lg:w-auto lg:max-w-none" style={`transition-delay:${i * 50}ms`}>
+          <li class="keep-dark reveal relative isolate flex aspect-[3/4] w-[78vw] max-w-[340px] shrink-0 snap-start flex-col justify-end overflow-hidden rounded-[20px] bg-ink-3 p-6 lg:w-auto lg:max-w-none" style={`transition-delay:${i * 50}ms`}>
             <Image
               src={photos.people[i].src} alt={es ? photos.people[i].altEs : photos.people[i].alt}
               widths={[360, 540, 720]} sizes="(max-width: 1024px) 340px, 25vw" format="webp" quality={70} loading="lazy"
@@ -269,7 +269,7 @@ const jsonLd = [{ '@context': 'https://schema.org', '@type': 'SoftwareApplicatio
     </section>
 
     <!-- Final call: second photograph, one action. -->
-    <section class="relative isolate overflow-hidden" id="download" aria-labelledby="final-title">
+    <section class="keep-dark relative isolate overflow-hidden" id="download" aria-labelledby="final-title">
       <Image
         src={photos.final.src} alt={es ? photos.final.altEs : photos.final.alt}
         widths={[640, 960, 1440, 1920]} sizes="100vw" format="webp" quality={68} loading="lazy"

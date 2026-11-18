@@ -27,7 +27,7 @@ const p = Astro.props as Props;
 const money = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 ---
 
-<section class="ticket relative overflow-hidden rounded-[28px] border border-bone/10 bg-[linear-gradient(180deg,#1d2119_0%,#161913_100%)]" aria-label={`${p.title} at a glance`}>
+<section class="ticket relative overflow-hidden rounded-[28px] border border-bone/10 bg-[linear-gradient(180deg,var(--color-ink-3)_0%,var(--color-ink-2)_100%)]" aria-label={`${p.title} at a glance`}>
   <div class="grid lg:grid-cols-[minmax(0,1fr)_300px]">
     <!-- Main panel -->
     <div class="min-w-0 p-6 sm:p-9">
@@ -65,7 +65,7 @@ const money = (n: number) => n.toLocaleString('en-US', { style: 'currency', curr
       <div class="mt-8 grid border-t border-bone/10 pt-7 sm:grid-cols-3 sm:divide-x sm:divide-bone/10">
         <div class="pb-6 sm:pb-0 sm:pr-6">
           <p class="stamp text-bone-3">Pay grade</p>
-          <p class="mt-2 text-[64px] font-extrabold leading-none tracking-[-0.03em] text-[#efe4d2] [font-stretch:112%] tabular-nums sm:text-[76px]">{p.grade}</p>
+          <p class="mt-2 text-[64px] font-extrabold leading-none tracking-[-0.03em] text-[var(--color-figure)] [font-stretch:112%] tabular-nums sm:text-[76px]">{p.grade}</p>
           <p class="mt-3 text-[14px] text-bone-3">Same pay in every branch</p>
         </div>
         <div class="pb-6 sm:px-6 sm:pb-0">

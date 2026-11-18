@@ -23,6 +23,7 @@
   --color-accent-hi: #3b82f0;
   --color-accent-text: #7fb0ff;
   --color-accent-ink: #1a55b4;
+  --color-figure: #efe4d2;
 
   --font-sans: 'Archivo Variable', 'Archivo', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
@@ -137,12 +138,12 @@
   .prose-g ol { list-style: decimal; }
   .prose-g li + li { margin-top: 8px; }
   .prose-g li::marker { color: var(--color-bone-3); }
-  .prose-g .table-wrap { overflow-x: auto; border: 1px solid rgb(238 240 232 / 0.1); border-radius: 12px; }
+  .prose-g .table-wrap { overflow-x: auto; border: 1px solid color-mix(in srgb, var(--color-bone) 10%, transparent); border-radius: 12px; }
   .prose-g table { width: 100%; border-collapse: collapse; font-size: 15px; line-height: 1.5; }
-  .prose-g caption { caption-side: bottom; padding: 12px 16px; text-align: left; font-size: 13px; color: var(--color-bone-3); border-top: 1px solid rgb(238 240 232 / 0.1); }
+  .prose-g caption { caption-side: bottom; padding: 12px 16px; text-align: left; font-size: 13px; color: var(--color-bone-3); border-top: 1px solid color-mix(in srgb, var(--color-bone) 10%, transparent); }
   .prose-g th { text-align: left; font-weight: 600; color: var(--color-bone); background: var(--color-ink-3); white-space: nowrap; }
   .prose-g th, .prose-g td { padding: 12px 16px; vertical-align: top; }
-  .prose-g tbody tr + tr td { border-top: 1px solid rgb(238 240 232 / 0.08); }
+  .prose-g tbody tr + tr td { border-top: 1px solid color-mix(in srgb, var(--color-bone) 8%, transparent); }
   .prose-g td:first-child { color: var(--color-bone); }
   /* Score charts and data tables on /tools/, /reference/ and /heritage/. */
   .chart { border-collapse: collapse; }
@@ -150,13 +151,13 @@
   .chart thead th { position: sticky; top: 0; background: var(--color-ink-3); color: var(--color-bone); font-weight: 600; font-size: 13px; }
   .chart tbody th { color: var(--color-bone); font-weight: 600; }
   .chart td { color: var(--color-bone-2); }
-  .chart tbody tr + tr > * { border-top: 1px solid rgb(238 240 232 / 0.07); }
-  .chart tbody tr:hover > * { background: rgb(238 240 232 / 0.03); }
+  .chart tbody tr + tr > * { border-top: 1px solid color-mix(in srgb, var(--color-bone) 7%, transparent); }
+  .chart tbody tr:hover > * { background: color-mix(in srgb, var(--color-bone) 3%, transparent); }
   summary::-webkit-details-marker { display: none; }
   .prose-g code { font-family: var(--font-mono); font-size: 14px; color: var(--color-bone); background: var(--color-ink-3); padding: 2px 6px; border-radius: 6px; }
   .prose-g .callout, .prose-g .note {
     padding: 16px 20px; border-radius: 12px; font-size: 15px;
-    background: var(--color-ink-2); border: 1px solid rgb(238 240 232 / 0.1);
+    background: var(--color-ink-2); border: 1px solid color-mix(in srgb, var(--color-bone) 10%, transparent);
   }
 
   /* Legacy class names used inside the legal, support and join page bodies. */
@@ -164,7 +165,7 @@
   .prose-g .button {
     display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0 20px;
     border-radius: 999px; font-size: 15px; font-weight: 600; text-decoration: none; color: var(--color-bone);
-    background: var(--color-ink-3); border: 1px solid rgb(238 240 232 / 0.12);
+    background: var(--color-ink-3); border: 1px solid color-mix(in srgb, var(--color-bone) 12%, transparent);
     transition: background-color 150ms var(--ease-out), border-color 150ms var(--ease-out);
   }
   .prose-g .button:hover { background: var(--color-ink-4); color: var(--color-bone); }
@@ -173,14 +174,14 @@
   .prose-g .button-ghost { background: transparent; }
   .support-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
   @media (max-width: 720px) { .support-grid { grid-template-columns: 1fr; } }
-  .support-card { display: grid; gap: 8px; align-content: start; padding: 24px; border-radius: 16px; background: var(--color-ink-2); border: 1px solid rgb(238 240 232 / 0.1); font-size: 15px; }
+  .support-card { display: grid; gap: 8px; align-content: start; padding: 24px; border-radius: 16px; background: var(--color-ink-2); border: 1px solid color-mix(in srgb, var(--color-bone) 10%, transparent); font-size: 15px; }
   .support-card strong { font-size: 17px; }
   .pricing-micro { font-family: var(--font-mono); font-size: 12px; line-height: 16px; color: var(--color-bone-3); letter-spacing: 0.04em; }
 }
 
 @layer components {
   /* Phone frame around a real app capture. */
-  .phone { padding: 8px; border-radius: 40px; background: #050505; border: 1px solid rgb(238 240 232 / 0.16); box-shadow: 0 24px 60px rgb(0 0 0 / 0.5); }
+  .phone { padding: 8px; border-radius: 40px; background: #050505; border: 1px solid color-mix(in srgb, var(--color-bone) 16%, transparent); box-shadow: 0 24px 60px rgb(0 0 0 / 0.5); }
   .phone img { display: block; width: 100%; height: auto; border-radius: 32px; }
   .on-paper .phone { box-shadow: 0 24px 48px rgb(17 20 15 / 0.22); }
 
@@ -206,4 +207,59 @@
 
   /* FAQ on the paper section: accent hover needs the darker ink to keep contrast. */
   .faq-paper button:hover { color: var(--color-accent-ink); }
+}
+
+/*
+  Light theme. The dark palette above is the default; light applies when the visitor
+  picks it with the header switch (data-theme="light", saved by /theme.js) or, with no
+  saved choice, when their system prefers light. Sections laid over photographs carry
+  .keep-dark and keep the dark tokens in both themes.
+*/
+:root[data-theme='light'] {
+  color-scheme: light;
+  --color-ink: #f3f3ee;
+  --color-ink-2: #ffffff;
+  --color-ink-3: #ebebe4;
+  --color-ink-4: #dedfd6;
+  --color-bone: #12140f;
+  --color-bone-2: #45493f;
+  --color-bone-3: #62665b;
+  --color-accent-text: #1a55b4;
+  --color-figure: #6b4f22;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    color-scheme: light;
+    --color-ink: #f3f3ee;
+    --color-ink-2: #ffffff;
+    --color-ink-3: #ebebe4;
+    --color-ink-4: #dedfd6;
+    --color-bone: #12140f;
+    --color-bone-2: #45493f;
+    --color-bone-3: #62665b;
+    --color-accent-text: #1a55b4;
+    --color-figure: #6b4f22;
+  }
+}
+.keep-dark {
+  color-scheme: dark;
+  --color-ink: #0b0c0a;
+  --color-ink-2: #121410;
+  --color-ink-3: #1a1d17;
+  --color-ink-4: #252920;
+  --color-bone: #eef0e8;
+  --color-bone-2: #a9ad9f;
+  --color-bone-3: #868a7c;
+  --color-accent-text: #7fb0ff;
+  --color-figure: #efe4d2;
+  color: var(--color-bone);
+}
+
+/* Header switch: show the sun while dark (tap for light), the moon while light. */
+.theme-toggle .i-moon { display: none; }
+:root[data-theme='light'] .theme-toggle .i-sun { display: none; }
+:root[data-theme='light'] .theme-toggle .i-moon { display: block; }
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .theme-toggle .i-sun { display: none; }
+  :root:not([data-theme='dark']) .theme-toggle .i-moon { display: block; }
 }

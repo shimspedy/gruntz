@@ -51,7 +51,7 @@ export function catalog(): CatalogItem[] {
     const live = t.kind === 'fitness'
       ? Object.values(fitness[`./fitness/${t.branch}.ts`] ?? {}).some((v) => isTest(v) && v.id === t.testId)
       : Object.values(body[`./body-comp/${t.branch}.ts`] ?? {}).some(isStandard);
-    if (live) items.push({ group: t.kind === 'fitness' ? 'Fitness tests' : 'Body composition', branch: t.branch, name: t.name, href: toolPath(t), blurb: t.lede.split('. ')[0] + '.' });
+    if (live) items.push({ group: t.kind === 'fitness' ? 'Fitness tests' : 'Body composition', branch: t.branch, name: t.name, href: toolPath(t), blurb: `${t.lede.split('. ')[0].replace(/\.$/, '')}.` });
   }
   for (const b of BRANCHES) {
     for (const page of careerPages.filter((c) => c.branch === b.id && has(career, `./career/${b.id}.ts`, c.dataKey))) {

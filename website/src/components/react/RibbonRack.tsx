@@ -167,7 +167,7 @@ export default function RibbonRack({ awards, branch, total }: Props) {
               ))}
             </div>
           </div>
-          <div className="mt-5 grid min-h-[120px] place-items-center rounded-xl bg-[#26301f] p-5">
+          <div className="keep-dark mt-5 grid min-h-[120px] place-items-center rounded-xl bg-[#26301f] p-5">
             {rows.length ? (
               <svg viewBox={`0 0 ${rack.width} ${rack.height}`} width={rackWidthPx} style={{ maxWidth: '100%', height: 'auto' }} role="img" aria-label={`Ribbon rack with ${chosen.length} ribbons`}>
                 {rows.map((row, r) => {

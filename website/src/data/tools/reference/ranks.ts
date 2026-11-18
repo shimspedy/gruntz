@@ -133,7 +133,7 @@ const airForce: Rank[] = [
   fE('E-8', 'Senior Master Sergeant', 'SMSgt', 'Five stripes below a star, two stripes above'),
   fE('E-9', 'Chief Master Sergeant', 'CMSgt', 'Five stripes below a star, three stripes above'),
   fE('E-9', 'Command Chief Master Sergeant', 'CCM', 'Chief stripes with a wreathed star in the center', 'Senior enlisted leader of a wing or higher command'),
-  fE('E-9', 'Chief Master Sergeant of the Air Force', 'CMSAF', 'Chief stripes with the Air Force coat of arms in a wreath', 'Senior enlisted advisor billet: one Airman, advises the Chief of Staff; flat basic pay'),
+  fE('E-9', 'Chief Master Sergeant of the Air Force', 'CMSAF', 'Chief stripes with the Great Seal of the United States in a wreath', 'Senior enlisted advisor billet: one Airman, advises the Chief of Staff; flat basic pay'),
   fW('W-1', 'Warrant Officer 1', 'WO1', 'Warrant officer bar (Air Force design)', 'Reintroduced in 2024 for cyber and IT career fields (17W, 17Y)'),
   fW('W-2', 'Chief Warrant Officer 2', 'CWO2', 'Warrant officer bar (Air Force design)', 'Reintroduced in 2024 for cyber and IT career fields'),
   fW('W-3', 'Chief Warrant Officer 3', 'CWO3', 'Warrant officer bar (Air Force design)', 'Authorized by policy; not yet reached by the first cohort'),

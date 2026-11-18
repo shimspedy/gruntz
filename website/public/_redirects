@@ -4,3 +4,6 @@
 /terms/ /terms-of-use 301
 /legal/privacy /privacy-policy 301
 /legal/terms /terms-of-use 301
+
+# Astro writes sitemap-index.xml; many tools and people try /sitemap.xml first.
+/sitemap.xml  /sitemap-index.xml  301
