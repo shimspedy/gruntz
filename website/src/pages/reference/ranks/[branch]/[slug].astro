@@ -83,8 +83,18 @@ const metaTitle = `${r.title} (${r.abbr}): ${branch.short} Rank Explained`.lengt
         <Fragment>
           <h2 id="equivalents">Equivalent ranks in other services</h2>
           <div class="table-wrap"><table>
-            <thead><tr><th>Branch</th><th>Rank</th></tr></thead>
-            <tbody>{equivalents.map(({ b, x }) => <tr><td>{b.short}</td><td><a href={pageOf(x)}>{x.title} ({x.abbr})</a></td></tr>)}</tbody>
+            <thead><tr><th><span class="sr-only">Insignia</span></th><th>Branch</th><th>Rank</th></tr></thead>
+            <tbody>{equivalents.map(({ b, x }) => {
+              const img = insigniaImage(x.branch, x.abbr);
+              const svg = img ? null : insigniaSvg(x);
+              return (
+                <tr>
+                  <td class="w-16">{img ? <img src={img} alt={`${b.short} ${x.title} insignia`} width="40" height="40" loading="lazy" decoding="async" class="h-10 w-10 object-contain" /> : svg ? <span class="block h-9 w-9 [&_svg]:h-full [&_svg]:w-full" set:html={svg} /> : null}</td>
+                  <td>{b.short}</td>
+                  <td><a href={pageOf(x)}>{x.title} ({x.abbr})</a></td>
+                </tr>
+              );
+            })}</tbody>
           </table></div>
         </Fragment>
       ) : null}
