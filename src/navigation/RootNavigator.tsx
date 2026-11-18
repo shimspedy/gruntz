@@ -35,7 +35,8 @@ import ProgramSelectScreen from '../screens/ProgramSelectScreen';
 import RanksScreen from '../screens/RanksScreen';
 import FeedScreen from '../screens/FeedScreen';
 import PostDetailScreen from '../screens/PostDetailScreen';
-import AthletePostsScreen from '../screens/AthletePostsScreen';
+import AthleteProfileScreen from '../screens/AthleteProfileScreen';
+import ActivityScreen from '../screens/ActivityScreen';
 import ComposePostScreen from '../screens/ComposePostScreen';
 import RunTrackerScreen from '../screens/RunTrackerScreen';
 import ActivityHistoryScreen from '../screens/ActivityHistoryScreen';
@@ -166,6 +167,8 @@ const linking = {
       // Still `gruntz://ranks`, as it was when Ranks was a tab.
       Ranks: 'ranks',
       PostDetail: 'post/:postId',
+      AthleteProfile: 'athlete/:userId',
+      Activity: 'activity',
     },
   },
 };
@@ -274,7 +277,8 @@ function AppStack() {
       <Stack.Screen name="Athletes" component={AthletesScreen} />
       <Stack.Screen name="Ranks" component={RanksScreen} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} />
-      <Stack.Screen name="AthletePosts" component={AthletePostsScreen} />
+      <Stack.Screen name="AthleteProfile" component={AthleteProfileScreen} />
+      <Stack.Screen name="Activity" component={ActivityScreen} />
       <Stack.Screen name="ComposePost" component={ComposePostScreen} options={{ presentation: 'modal' }} />
       <Stack.Screen
         name="Sheet"

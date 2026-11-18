@@ -3,18 +3,22 @@ import { FlatList, RefreshControl, StyleSheet, View, type ViewToken } from 'reac
 import { useFocusEffect, useNavigation, useScrollToTop } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PostCard } from '../components/feed/PostCard';
-import { applyPostChange, usePostActions, withReaction } from '../hooks/usePostActions';
+import { applyPostChange, followAuthor, usePostActions, withReaction } from '../hooks/usePostActions';
 import { useSignedIn } from '../hooks/useSignedIn';
 import { useTabChromeInset } from '../navigation/TabBar';
-import { FEED_FAILURE, PAGE_SIZE, feedChangeStamp, fetchFeed, hasDemoFeed, markSeen, setReaction, type FeedPost, type ReactionKey } from '../services/feed';
+import { FEED_FAILURE, PAGE_SIZE, feedChangeStamp, fetchFeed, hasDemoFeed, markSeen, setReaction, type FeedMode, type FeedPost, type ReactionKey } from '../services/feed';
+import { Segmented } from '../ui/Segmented';
+import { unreadActivityCount } from '../services/activity';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { IconButton } from '../ui/Layout';
 import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
 import { toast } from '../ui/Toast';
-import { color, radius, space } from '../ui/tokens';
+import { color, font, radius, space } from '../ui/tokens';
 import { useContentSize } from '../ui/useContentSize';
+
+const MODES: { value: FeedMode; label: string }[] = [{ value: 'for-you', label: 'For you' }, { value: 'following', label: 'Following' }];
 
 /** Posts older than this on screen are reloaded when the tab comes back into view. */
 const STALE_MS = 3 * 60 * 1000;
@@ -32,6 +36,8 @@ export default function FeedScreen() {
   const [failed, setFailed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [more, setMore] = useState<'idle' | 'loading' | 'done'>('idle');
+  const [mode, setMode] = useState<FeedMode>('for-you');
+  const [unread, setUnread] = useState(0);
   const list = useRef<FlatList<FeedPost>>(null);
   useScrollToTop(list);
   const alive = useRef(true);
@@ -48,14 +54,14 @@ export default function FeedScreen() {
 
   const load = useCallback(async () => {
     const mine = ++ticket.current;
-    const result = await fetchFeed(0);
+    const result = await fetchFeed(mode, []);
     // Only the newest request may write.
     if (!alive.current || mine !== ticket.current) return;
     loadedAt.current = Date.now();
     stamp.current = feedChangeStamp();
     if (result.ok) { setPosts(result.value); setFailed(false); setMore(result.value.length < PAGE_SIZE ? 'done' : 'idle'); }
     else { setFailed(true); }
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
     alive.current = true;
@@ -66,8 +72,20 @@ export default function FeedScreen() {
     if (signedIn !== true) return undefined;
     // Back from posting, deleting or blocking, or after a while away: show what is true now.
     if (stamp.current !== feedChangeStamp() || Date.now() - loadedAt.current > STALE_MS) void load();
+    // The badge is checked every time the tab comes back, including back from Activity.
+    void unreadActivityCount().then((n) => { if (alive.current) setUnread(n); });
     return flushSeen;
   }, [signedIn, load, flushSeen]));
+
+  // Switching between For you and Following starts that list from the top.
+  const firstMode = useRef(true);
+  useEffect(() => {
+    if (firstMode.current) { firstMode.current = false; return; }
+    if (signedIn !== true) return;
+    setPosts(null); setFailed(false); setMore('idle');
+    list.current?.scrollToOffset({ offset: 0, animated: false });
+    void load();
+  }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     // Another account's feed must never stay on screen.
@@ -78,7 +96,7 @@ export default function FeedScreen() {
     if (more !== 'idle' || !posts?.length) return;
     setMore('loading');
     const mine = ticket.current;
-    const result = await fetchFeed(posts.length);
+    const result = await fetchFeed(mode, posts);
     if (!alive.current || mine !== ticket.current) return;
     if (!result.ok) { setMore('idle'); return; }
     const known = new Set(posts.map((item) => item.id));
@@ -98,7 +116,8 @@ export default function FeedScreen() {
   }, []);
 
   const options = usePostActions((change) => setPosts((current) => applyPostChange(current ?? [], change)));
-  const author = useCallback((post: FeedPost) => navigation.navigate('AthletePosts', { userId: post.userId, name: post.displayName }), [navigation]);
+  const follow = useCallback((post: FeedPost) => followAuthor(post, (change) => setPosts((current) => applyPostChange(current ?? [], change))), []);
+  const author = useCallback((post: FeedPost) => navigation.navigate('AthleteProfile', { userId: post.userId, name: post.displayName }), [navigation]);
   const open = useCallback((post: FeedPost) => navigation.navigate('PostDetail', { postId: post.id }), [navigation]);
 
   const onViewable = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
@@ -112,6 +131,15 @@ export default function FeedScreen() {
       {signedIn ? (
         <>
           <IconButton icon="search" onPress={() => navigation.navigate('Athletes')} label="Find athletes" />
+          <View>
+            <IconButton icon="bell" onPress={() => { setUnread(0); navigation.navigate('Activity'); }} label={unread ? `Activity, ${unread} new` : 'Activity'} />
+            {unread ? (
+              <View style={styles.badge} pointerEvents="none">
+                <Text variant="caption" tabular style={styles.badgeText}>{unread > 9 ? '9+' : unread}</Text>
+              </View>
+            ) : null}
+          </View>
+          <IconButton icon="person" onPress={() => navigation.navigate('AthleteProfile')} label="Your profile" />
           <Button title="Post" size="sm" variant="accent" onPress={() => navigation.navigate('ComposePost')} />
         </>
       ) : null}
@@ -140,11 +168,12 @@ export default function FeedScreen() {
   return (
     <View style={styles.screen}>
       {header}
+      <Segmented options={MODES} value={mode} onChange={setMode} style={styles.modes} />
       <FlatList
         ref={list}
         data={posts ?? []}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <PostCard post={item} width={cardWidth} onReact={react} onOpen={open} onOptions={options} onAuthor={author} />}
+        renderItem={({ item }) => <PostCard post={item} width={cardWidth} onReact={react} onOpen={open} onOptions={options} onAuthor={author} onFollow={follow} />}
         contentContainerStyle={{ paddingHorizontal: space.md, paddingBottom: bottom }}
         showsVerticalScrollIndicator={false}
         onEndReachedThreshold={0.6}
@@ -161,6 +190,13 @@ export default function FeedScreen() {
           </View>
         ) : posts === null ? (
           <Text variant="callout" tone="secondary" align="center" style={{ marginTop: space.xxl }}>Loading…</Text>
+        ) : mode === 'following' ? (
+          <View style={styles.empty}>
+            <Icon name="people" size={22} color={color.textSecondary} />
+            <Text variant="headline" style={{ marginTop: space.sm }}>Nothing from your people yet</Text>
+            <Text variant="subhead" tone="secondary" align="center" style={{ marginTop: 4 }}>Follow athletes you train with or look up to, and their workouts land here, newest first.</Text>
+            <Button title="Find athletes" variant="accent" size="md" onPress={() => navigation.navigate('Athletes', { tab: 'find' })} style={{ marginTop: space.md }} />
+          </View>
         ) : (
           <View style={styles.empty}>
             <Icon name="dumbbell" size={22} color={color.textSecondary} />
@@ -179,6 +215,9 @@ export default function FeedScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: color.bg },
+  badge: { position: 'absolute', top: -4, right: -6, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: color.accent, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: color.bg },
+  badgeText: { color: '#FFFFFF', fontFamily: font.semibold, fontSize: 10, lineHeight: 12 },
+  modes: { marginHorizontal: space.md, marginBottom: space.sm },
   header: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.md, paddingBottom: space.sm },
   gate: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.lg, gap: space.sm },
   gateIcon: { width: 60, height: 60, borderRadius: 30, backgroundColor: color.surface, alignItems: 'center', justifyContent: 'center', marginBottom: space.sm },

@@ -1,7 +1,8 @@
 import { memo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { REACTIONS, reactionEmoji, type FeedPost, type ReactionKey } from '../../services/feed';
 import { relativeTime } from '../../utils/relativeTime';
 import { Icon } from '../../ui/Icon';
@@ -49,15 +50,31 @@ type Props = {
   onReact: (post: FeedPost, reaction: ReactionKey | null) => void;
   onOpen?: (post: FeedPost) => void;
   onOptions: (post: FeedPost) => void;
-  /** Tapping the name or photo opens that athlete's posts. */
+  /** Tapping the name or photo opens that athlete's profile. */
   onAuthor?: (post: FeedPost) => void;
+  /** Shown as a Follow button beside the name when the author can be followed. */
+  onFollow?: (post: FeedPost) => void;
   /** On the post's own screen the whole body is shown and tapping it does nothing. */
   expanded?: boolean;
 };
 
 /** One post: who, what they did, and the two things you can do about it. */
-export const PostCard = memo(function PostCard({ post, width, onReact, onOpen, onOptions, onAuthor, expanded }: Props) {
+export const PostCard = memo(function PostCard({ post, width, onReact, onOpen, onOptions, onAuthor, onFollow, expanded }: Props) {
   const [picking, setPicking] = useState(false);
+  // Double tap anywhere on the post gives it a Strong, the way a double tap likes a photo.
+  // It only ever adds: a second double tap never takes the reaction back.
+  const burst = useSharedValue(0);
+  const burstStyle = useAnimatedStyle(() => ({ opacity: burst.get() > 0 ? Math.min(1, burst.get() * 1.4) : 0, transform: [{ scale: 0.6 + 0.4 * Math.min(1, burst.get()) }] }));
+  const strong = () => {
+    haptic.light();
+    burst.set(withSequence(withSpring(1, { damping: 12, stiffness: 260 }), withTiming(1, { duration: 280 }), withTiming(0, { duration: 180 })));
+    if (!post.myReaction) onReact(post, 'strong');
+  };
+  const tap = Gesture.Exclusive(
+    Gesture.Tap().numberOfTaps(2).maxDelay(260).runOnJS(true).onEnd((_event, success) => { if (success) strong(); }),
+    Gesture.Tap().runOnJS(true).onEnd((_event, success) => { if (success && onOpen && !expanded) onOpen(post); }),
+  );
+  const showFollow = !!onFollow && !post.isMine && !post.isFollowing && post.authorFollowable;
   const counts = REACTIONS.map((r) => ({ ...r, n: post.reactions[r.key] ?? 0 })).filter((r) => r.n > 0).sort((a, b) => b.n - a.n);
   const total = counts.reduce((sum, r) => sum + r.n, 0);
   const choose = (key: ReactionKey) => {
@@ -92,14 +109,34 @@ export const PostCard = memo(function PostCard({ post, width, onReact, onOpen, o
             </Text>
           </View>
         </Tap>
+        {showFollow ? (
+          <Tap feedback="opacity" hitSlop={8} onPress={() => { haptic.selection(); onFollow?.(post); }} style={styles.follow} accessibilityRole="button" accessibilityLabel={`Follow ${post.displayName}`}>
+            <Text variant="footnote" style={{ color: color.accent, fontFamily: font.semibold }}>Follow</Text>
+          </Tap>
+        ) : null}
         <Tap feedback="opacity" hitSlop={10} onPress={() => onOptions(post)} style={styles.more} accessibilityRole="button" accessibilityLabel={`Options for ${post.displayName}'s post`}>
           <Icon name="more" size={20} color={color.textSecondary} />
         </Tap>
       </View>
 
-      {onOpen && !expanded ? (
-        <Tap feedback="opacity" onPress={() => onOpen(post)} accessibilityRole="button" accessibilityLabel={`Open ${post.displayName}'s post`}>{body}</Tap>
-      ) : body}
+      <GestureDetector gesture={tap}>
+        <View
+          collapsable={false}
+          accessible={!!onOpen && !expanded}
+          accessibilityRole={onOpen && !expanded ? 'button' : undefined}
+          accessibilityLabel={onOpen && !expanded ? `Open ${post.displayName}'s post` : undefined}
+          accessibilityActions={[{ name: 'activate' }, { name: 'strong', label: 'React Strong' }]}
+          onAccessibilityAction={(event) => {
+            if (event.nativeEvent.actionName === 'strong') strong();
+            else if (onOpen && !expanded) onOpen(post);
+          }}
+        >
+          {body}
+          <Animated.View pointerEvents="none" style={[styles.burst, burstStyle]}>
+            <View style={styles.burstDisc}><Text style={styles.burstEmoji}>{reactionEmoji('strong')}</Text></View>
+          </Animated.View>
+        </View>
+      </GestureDetector>
 
       {picking ? (
         <Animated.View entering={FadeIn.duration(120)} exiting={FadeOut.duration(100)} style={styles.picker} accessibilityRole="menu">
@@ -151,6 +188,10 @@ const styles = StyleSheet.create({
   author: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.sm },
   avatar: { backgroundColor: color.surfaceHigh, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   initial: { fontFamily: font.bold, color: color.text },
+  follow: { height: 32, paddingHorizontal: space.sm, borderRadius: 16, backgroundColor: color.accentSoft, alignItems: 'center', justifyContent: 'center' },
+  burst: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' },
+  burstDisc: { width: 88, height: 88, borderRadius: 44, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center' },
+  burstEmoji: { fontSize: 44, lineHeight: 52 },
   more: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   body: { marginBottom: space.sm, lineHeight: 23 },
   workout: { flexDirection: 'row', alignItems: 'center', gap: space.sm, padding: space.sm, borderRadius: radius.md, borderCurve: 'continuous', backgroundColor: color.surfaceHigh, marginBottom: space.sm },

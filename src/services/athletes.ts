@@ -23,13 +23,18 @@ export type Athlete = {
   avatarUrl: string | null;
   isFollowing: boolean;
   followsMe: boolean;
+  /** Only on suggestions: why this athlete is shown. */
+  reason?: SuggestionReason;
 };
+export type SuggestionReason = 'follows-you' | 'teammate' | 'active' | 'new';
+const REASONS = new Set<string>(['follows-you', 'teammate', 'active', 'new']);
 export type AthleteFailure = 'signed-out' | 'unavailable' | 'not-found' | 'too-many' | 'rate-limited' | 'error';
 export type AthleteResult<T> = { ok: true; value: T } | { ok: false; reason: AthleteFailure };
 
 type Row = {
   user_id: string; display_name: string; level: number; rank: string; sessions: number; streak: number;
   week_sessions: number; last_trained_at: string | null; avatar_version: number; is_following: boolean; follows_me: boolean;
+  reason?: string;
 };
 
 const fail = (reason: AthleteFailure): { ok: false; reason: AthleteFailure } => ({ ok: false, reason });
@@ -44,7 +49,7 @@ function failureFor(message: string): AthleteFailure {
 const AVATAR_BUCKET = 'team-avatars';
 const AVATAR_LINK_SECONDS = 60 * 60;
 
-async function cards(fn: 'search_athletes' | 'list_following' | 'list_followers', args?: Record<string, unknown>): Promise<AthleteResult<Athlete[]>> {
+async function cards(fn: 'search_athletes' | 'list_following' | 'list_followers' | 'suggested_athletes', args?: Record<string, unknown>): Promise<AthleteResult<Athlete[]>> {
   const supabase = getSupabase();
   if (!supabase) return fail('unavailable');
   try {
@@ -66,6 +71,7 @@ async function cards(fn: 'search_athletes' | 'list_following' | 'list_followers'
         userId: row.user_id, displayName: row.display_name, level: row.level, rank: row.rank, sessions: row.sessions, streak: row.streak,
         weekSessions: row.week_sessions, lastTrainedAt: row.last_trained_at, avatarUrl: links.get(`${row.user_id}.jpg`) ?? null,
         isFollowing: row.is_following, followsMe: row.follows_me,
+        ...(row.reason && REASONS.has(row.reason) ? { reason: row.reason as SuggestionReason } : {}),
       })),
     };
   } catch {
@@ -85,6 +91,8 @@ async function call(fn: string, args: Record<string, unknown>): Promise<AthleteR
 }
 
 export const searchAthletes = (query: string) => cards('search_athletes', { p_query: query.trim().slice(0, 40) });
+/** Findable athletes worth following, with why each one is suggested. */
+export const suggestedAthletes = () => cards('suggested_athletes');
 export const listFollowing = () => cards('list_following');
 export const listFollowers = () => cards('list_followers');
 
@@ -158,4 +166,95 @@ export async function reconcileAthleteSettings(): Promise<void> {
   const prefs = useReadinessStore.getState();
   if (prefs.discoverable !== discoverable) prefs.setFieldPreference('discoverable', discoverable);
   if (prefs.followsAthletes !== following) prefs.setFieldPreference('followsAthletes', following);
+}
+
+// ─── Profiles ───────────────────────────────────────────────────────────────
+/**
+ * One athlete's profile as the server lets this viewer see it. Training numbers and
+ * counts are null for an athlete who is not findable and has no follow with the viewer.
+ */
+export type AthleteProfile = {
+  userId: string;
+  displayName: string;
+  level: number;
+  rank: string;
+  bio: string;
+  avatarUrl: string | null;
+  sessions: number | null;
+  streak: number | null;
+  weekSessions: number | null;
+  lastTrainedAt: string | null;
+  postCount: number;
+  followerCount: number | null;
+  followingCount: number | null;
+  isMe: boolean;
+  isFollowing: boolean;
+  followsMe: boolean;
+  /** Findable, so a Follow button can work. */
+  followable: boolean;
+  discoverable: boolean;
+};
+
+type ProfileRow = {
+  user_id: string; display_name: string; level: number; rank: string; bio: string | null; avatar_version: number;
+  sessions: number | null; streak: number | null; week_sessions: number | null; last_trained_at: string | null;
+  post_count: number; follower_count: number | null; following_count: number | null;
+  is_me: boolean; is_following: boolean; follows_me: boolean; followable: boolean; discoverable: boolean;
+};
+
+const count = (n: unknown): number | null => (typeof n === 'number' && Number.isFinite(n) ? Math.max(0, Math.round(n)) : null);
+
+/** Dev only: a stand-in profile for screenshots, set alongside the demo feed. */
+let demoProfiles: Record<string, AthleteProfile> | null = null;
+export function setDemoProfiles(profiles: typeof demoProfiles): void { demoProfiles = profiles; }
+
+/** `null` is the signed-in athlete's own profile. */
+export async function fetchAthleteProfile(userId: string | null): Promise<AthleteResult<AthleteProfile>> {
+  if (__DEV__ && demoProfiles) {
+    const demo = demoProfiles[userId ?? 'me'];
+    return demo ? { ok: true, value: demo } : fail('not-found');
+  }
+  const supabase = getSupabase();
+  if (!supabase) return fail('unavailable');
+  try {
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) return fail('signed-out');
+    let { data, error } = await supabase.rpc('athlete_profile', { p_user_id: userId });
+    // Your own page needs a card; make one the first time and ask again.
+    if (error && userId === null && error.message.includes('NOT_FOUND')) {
+      const card = await syncAthleteProfile(true);
+      if (!card.ok) return card;
+      ({ data, error } = await supabase.rpc('athlete_profile', { p_user_id: null }));
+    }
+    if (error) return fail(failureFor(error.message));
+    const row = (Array.isArray(data) ? data[0] : data) as ProfileRow | undefined;
+    if (!row) return fail('not-found');
+    let avatarUrl: string | null = null;
+    if (row.avatar_version > 0) {
+      const signed = await supabase.storage.from(AVATAR_BUCKET).createSignedUrl(`${row.user_id}.jpg`, AVATAR_LINK_SECONDS).catch(() => null);
+      avatarUrl = signed?.data?.signedUrl ?? null;
+    }
+    return {
+      ok: true,
+      value: {
+        userId: row.user_id, displayName: row.display_name, level: row.level, rank: row.rank, bio: row.bio ?? '', avatarUrl,
+        sessions: count(row.sessions), streak: count(row.streak), weekSessions: count(row.week_sessions), lastTrainedAt: row.last_trained_at,
+        postCount: count(row.post_count) ?? 0, followerCount: count(row.follower_count), followingCount: count(row.following_count),
+        isMe: row.is_me === true, isFollowing: row.is_following === true, followsMe: row.follows_me === true,
+        followable: row.followable === true, discoverable: row.discoverable === true,
+      },
+    };
+  } catch {
+    return fail('error');
+  }
+}
+
+export const BIO_MAX = 150;
+
+/** Saves the caller's bio and returns it as the server stored it. */
+export async function setAthleteBio(bio: string): Promise<AthleteResult<string>> {
+  const card = await syncAthleteProfile(true);
+  if (!card.ok) return card;
+  const result = await call('set_athlete_bio', { p_bio: bio.slice(0, BIO_MAX) });
+  return result.ok ? { ok: true, value: typeof result.value === 'string' ? result.value : '' } : result;
 }

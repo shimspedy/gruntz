@@ -9,6 +9,8 @@ import { getLevelForXP, getRank } from '../utils/xp';
 import { setDemoPublicTeams, setDemoTeams } from '../services/teams';
 import { setDemoMessages } from '../services/teamChat';
 import { setDemoFeed, type FeedComment, type FeedPost } from '../services/feed';
+import { setDemoProfiles, type AthleteProfile } from '../services/athletes';
+import { setDemoActivity } from '../services/activity';
 import { saveRoute } from '../store/activityRoutes';
 import { useRoutineStore } from '../store/useRoutineStore';
 import type { RoutePoint } from '../types/activity';
@@ -199,7 +201,7 @@ export function seedDemo() {
   ]);
   const post = (id: string, name: string, level: number, rank: string, minutes: number, extra: Partial<FeedPost>): FeedPost => ({
     id, userId: `demo-${name}`, displayName: name, level, rank, avatarUrl: null, kind: 'text', body: '', audience: 'everyone', workout: null,
-    photoUrl: null, createdAt: minutesAgo(minutes), reactions: {}, myReaction: null, commentCount: 0, isMine: false, isFollowing: false, ...extra,
+    photoUrl: null, createdAt: minutesAgo(minutes), reactions: {}, myReaction: null, commentCount: 0, isMine: false, isFollowing: false, authorFollowable: true, ...extra,
   });
   const comment = (id: string, name: string, minutes: number, body: string, parentId: string | null = null): FeedComment => ({
     id, parentId, userId: `demo-${name}`, displayName: name, avatarUrl: null, body, createdAt: minutesAgo(minutes), isMine: false,
@@ -217,4 +219,24 @@ export function seedDemo() {
       f2: [comment('c4', 'Priya', 60, 'In. I can hold 15s.')],
     },
   });
+  const profile = (name: string, level: number, rank: string, extra: Partial<AthleteProfile>): AthleteProfile => ({
+    userId: `demo-${name}`, displayName: name, level, rank, bio: '', avatarUrl: null, sessions: 40, streak: 6, weekSessions: 3,
+    lastTrainedAt: minutesAgo(30), postCount: 1, followerCount: 24, followingCount: 31, isMe: false, isFollowing: false, followsMe: false,
+    followable: true, discoverable: true, ...extra,
+  });
+  const profiles: Record<string, AthleteProfile> = {
+    me: profile('Alex', 12, 'Operator', { bio: 'Early lifts, weekend rucks. Working toward a 300 PFT.', isMe: true, followable: false, sessions: 86, streak: 12, followerCount: 18, followingCount: 27 }),
+    'demo-Brooks': profile('Brooks', 14, 'Operator', { bio: 'Squats, sleep, repeat. Ruck crew lead, Saturdays 0600.', isFollowing: true, followsMe: true, sessions: 152, streak: 21, followerCount: 212, followingCount: 88 }),
+    'demo-Dana R.': profile('Dana R.', 9, 'Cadet', { bio: 'Training for my first 12-miler.', sessions: 44, streak: 9 }),
+    'demo-Ortiz': profile('Ortiz', 11, 'Operator', { sessions: 39, streak: 14, followsMe: true }),
+    'demo-Priya': profile('Priya', 22, 'Veteran', { bio: 'Thirty days and counting. Kit out the night before.', isFollowing: true, sessions: 301, streak: 30, followerCount: 1204, followingCount: 140 }),
+  };
+  setDemoProfiles(profiles);
+  const base = { avatarUrl: null, commentId: null, reaction: null, body: '', postPreview: '', postKind: null, isFollowing: false, actorFollowable: true, unread: false } as const;
+  setDemoActivity([
+    { ...base, key: 'a1', kind: 'follow', actorId: 'demo-Ortiz', displayName: 'Ortiz', createdAt: minutesAgo(12), postId: null, unread: true },
+    { ...base, key: 'a2', kind: 'reaction', actorId: 'demo-Brooks', displayName: 'Brooks', createdAt: minutesAgo(40), postId: 'f5', reaction: 'strong', postPreview: 'Core and Mobility', postKind: 'workout', isFollowing: true, unread: true },
+    { ...base, key: 'a3', kind: 'comment', actorId: 'demo-Dana R.', displayName: 'Dana R.', createdAt: minutesAgo(180), postId: 'f5', body: 'Short and sharp. Same routine tomorrow?', postPreview: 'Core and Mobility', postKind: 'workout' },
+    { ...base, key: 'a4', kind: 'follow', actorId: 'demo-Priya', displayName: 'Priya', createdAt: minutesAgo(1500), postId: null, isFollowing: true },
+  ]);
 }

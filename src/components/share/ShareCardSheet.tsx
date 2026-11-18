@@ -14,6 +14,7 @@ import { useContentSize } from '../../ui/useContentSize';
 import { activityCaptureSize } from '../../utils/activityCapture';
 import { SHARE_CARD_RATIO, ShareCard } from './ShareCard';
 import { useCoversToasts } from '../../ui/Toast';
+import { canShareToInstagramStory, shareToInstagramStory } from '../../../modules/gruntz-story-share';
 
 /** Room the header, caption and Share button take around the card. */
 const CHROME = 210;
@@ -29,25 +30,33 @@ export function ShareCardSheet({ model, visible, onClose, source }: {
   const insets = useSafeAreaInsets();
   // Measured on every render: the window can be resized (fold, mirroring) while open.
   const { width, height } = useContentSize();
-  const cardWidth = Math.max(240, Math.floor(Math.min(width - space.xl * 2, (height - insets.top - insets.bottom - CHROME) / SHARE_CARD_RATIO, MAX_CARD)));
   const cardView = useRef<View>(null);
   const layout = useRef({ width: 0, height: 0 });
-  const [sharing, setSharing] = useState(false);
+  const [sharing, setSharing] = useState<false | 'sheet' | 'story'>(false);
+  // Checked when the sheet opens: Instagram can be installed or removed while the app runs.
+  const storyReady = useMemo(() => visible && canShareToInstagramStory(), [visible]);
+  // A second button under the card when Instagram can take a story.
+  const chrome = CHROME + (storyReady ? 56 : 0);
+  const cardWidth = Math.max(240, Math.floor(Math.min(width - space.xl * 2, (height - insets.top - insets.bottom - chrome) / SHARE_CARD_RATIO, MAX_CARD)));
   const date = useMemo(() => cardDate(), [visible]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const share = async () => {
+  const share = async (to: 'sheet' | 'story') => {
     if (!model || sharing) return;
-    setSharing(true);
+    setSharing(to);
     let file: string | undefined;
     try {
-      if (!(await Sharing.isAvailableAsync())) throw new Error('Sharing isn’t available on this device.');
       file = await captureRef(cardView, {
         format: 'png',
         result: 'tmpfile',
         ...activityCaptureSize(layout.current.width, layout.current.height, Platform.OS, PixelRatio.get()),
       });
       haptic.light();
-      await Sharing.shareAsync(file, { mimeType: 'image/png', UTI: 'public.png', dialogTitle: 'Share your Gruntz card' });
+      // Straight into Instagram's story composer when it can take it; the system sheet otherwise.
+      const storied = to === 'story' && (await shareToInstagramStory(file, '#050607', '#1C1C1E'));
+      if (!storied) {
+        if (!(await Sharing.isAvailableAsync())) throw new Error('Sharing isn’t available on this device.');
+        await Sharing.shareAsync(file, { mimeType: 'image/png', UTI: 'public.png', dialogTitle: 'Share your Gruntz card' });
+      }
       trackRetentionEvent('share_card_shared', { source, kind: model.kind });
     } catch (error) {
       Alert.alert('Couldn’t share the card', error instanceof Error ? error.message : 'Please try again.');
@@ -78,7 +87,14 @@ export function ShareCardSheet({ model, visible, onClose, source }: {
               <Text variant="footnote" tone="secondary" align="center" style={styles.caption}>
                 Post it to your story or send it to your unit.
               </Text>
-              <Button title="Share" icon="share" onPress={() => void share()} loading={sharing} />
+              {storyReady ? (
+                <>
+                  <Button title="Instagram story" icon="camera" onPress={() => void share('story')} loading={sharing === 'story'} disabled={!!sharing} />
+                  <Button title="More options" variant="secondary" icon="share" onPress={() => void share('sheet')} loading={sharing === 'sheet'} disabled={!!sharing} style={{ marginTop: space.xs }} />
+                </>
+              ) : (
+                <Button title="Share" icon="share" onPress={() => void share('sheet')} loading={sharing === 'sheet'} />
+              )}
             </View>
           </>
         ) : null}

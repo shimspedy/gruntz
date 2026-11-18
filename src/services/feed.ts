@@ -41,6 +41,8 @@ export type FeedPost = {
   commentCount: number;
   isMine: boolean;
   isFollowing: boolean;
+  /** The author is findable, so the post can offer a Follow button. */
+  authorFollowable: boolean;
 };
 
 export type FeedComment = {
@@ -102,6 +104,7 @@ type PostRow = {
   kind: string; body: string; audience: string; workout_title: string | null; workout_minutes: number | null;
   workout_sets: number | null; workout_records: number | null; photo_path: string | null; created_at: string;
   reactions: unknown; my_reaction: string | null; comment_count: number; is_mine: boolean; is_following: boolean;
+  author_followable?: boolean;
 };
 
 /** Links that expire, for private photos. A failure only costs the pictures. */
@@ -154,6 +157,7 @@ async function toPosts(rows: PostRow[]): Promise<FeedPost[]> {
     commentCount: Math.max(0, Number(row.comment_count) || 0),
     isMine: row.is_mine === true,
     isFollowing: row.is_following === true,
+    authorFollowable: row.author_followable === true,
   }));
 }
 
@@ -197,20 +201,34 @@ export function setDemoFeed(demo: typeof demoFeed): void {
 }
 export const hasDemoFeed = (): boolean => __DEV__ && !!demoFeed;
 
-/** One page of the ranked feed. `offset` is how many posts are already on screen. */
-export async function fetchFeed(offset: number): Promise<FeedResult<FeedPost[]>> {
-  if (__DEV__ && demoFeed) return { ok: true, value: offset === 0 ? demoFeed.posts : [] };
-  const result = await call('feed_page', { p_offset: Math.max(0, Math.round(offset)), p_limit: PAGE_SIZE });
+export type FeedMode = 'for-you' | 'following';
+
+/**
+ * One page of the feed. For you is ranked and pages by how many posts are on screen;
+ * Following is newest first and pages by the oldest post already on screen.
+ */
+export async function fetchFeed(mode: FeedMode, onScreen: FeedPost[]): Promise<FeedResult<FeedPost[]>> {
+  if (__DEV__ && demoFeed) {
+    if (onScreen.length) return { ok: true, value: [] };
+    return { ok: true, value: mode === 'following' ? demoFeed.posts.filter((post) => post.isFollowing || post.isMine) : demoFeed.posts };
+  }
+  const result = mode === 'following'
+    ? await call('feed_following_page', { p_before: oldest(onScreen), p_limit: PAGE_SIZE })
+    : await call('feed_page', { p_offset: onScreen.length, p_limit: PAGE_SIZE });
   if (!result.ok) return result;
   const posts = await toPosts((result.value ?? []) as PostRow[]);
   cachePosts(posts);
   return { ok: true, value: posts };
 }
 
-/** One athlete's posts, newest first. */
-export async function fetchAthletePosts(userId: string): Promise<FeedResult<FeedPost[]>> {
-  if (__DEV__ && demoFeed) return { ok: true, value: demoFeed.posts.filter((post) => post.userId === userId) };
-  const result = await call('feed_by_athlete', { p_user_id: userId });
+const oldest = (posts: FeedPost[]): string | null => (posts.length ? posts.reduce((min, post) => (post.createdAt < min ? post.createdAt : min), posts[0].createdAt) : null);
+
+export const ATHLETE_PAGE_SIZE = 30;
+
+/** One athlete's posts, newest first; pass what is already on screen for the next page. */
+export async function fetchAthletePosts(userId: string, onScreen: FeedPost[] = []): Promise<FeedResult<FeedPost[]>> {
+  if (__DEV__ && demoFeed) return { ok: true, value: onScreen.length ? [] : demoFeed.posts.filter((post) => post.userId === userId || (userId === 'me' && post.isMine)) };
+  const result = await call('feed_by_athlete', { p_user_id: userId, p_before: oldest(onScreen) });
   if (!result.ok) return result;
   const posts = await toPosts((result.value ?? []) as PostRow[]);
   cachePosts(posts);

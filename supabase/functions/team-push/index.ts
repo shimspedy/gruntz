@@ -129,7 +129,8 @@ Deno.serve(async (req) => {
     recipients = [targetId];
     title = 'New follower';
     body = clip(`${me.display_name} started following you.`, 160);
-    data = { url: 'gruntz://athletes', type: 'athlete-follow' };
+    // `profileUrl` opens the follower's profile; older builds ignore it and use `url`.
+    data = { url: 'gruntz://athletes', profileUrl: `gruntz://athlete/${userId}`, type: 'athlete-follow' };
   } else if (input.kind === 'comment') {
     const commentId = id(input.commentId);
     if (!commentId) return json({ error: 'bad-request' }, 400);

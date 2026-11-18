@@ -61,12 +61,15 @@ export type RootStackParamList = {
   TrainingPreferences: undefined;
   /** `code` comes from an invite link and is typed into the join sheet for the athlete. */
   LeaderTools: { code?: string } | undefined;
-  Athletes: undefined;
+  Athletes: { tab?: 'following' | 'followers' | 'find' } | undefined;
   /** Rank, skills and trophies. Was a tab until the feed took its slot. */
   Ranks: undefined;
   PostDetail: { postId: string };
   ComposePost: undefined;
-  AthletePosts: { userId: string; name?: string };
+  /** No `userId` is the signed-in athlete's own profile. */
+  AthleteProfile: { userId?: string; name?: string } | undefined;
+  /** New followers, reactions, comments and replies. */
+  Activity: undefined;
   Team: { teamId: string; tab?: 'chat' | 'leaderboard' | 'members' };
   Communities: undefined;
   /** The route behind every `<Sheet>`; `id` names the content its owner published. */

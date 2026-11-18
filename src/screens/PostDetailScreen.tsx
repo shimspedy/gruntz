@@ -3,7 +3,7 @@ import { ActionSheetIOS, Alert, KeyboardAvoidingView, Platform, ScrollView, Styl
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar, PostCard } from '../components/feed/PostCard';
-import { usePostActions, withReaction } from '../hooks/usePostActions';
+import { followAuthor, usePostActions, withReaction } from '../hooks/usePostActions';
 import { useSignedIn } from '../hooks/useSignedIn';
 import {
   FEED_FAILURE, addComment, cachePosts, cachedPost, deleteComment, fetchComments, hasDemoFeed, reportComment, setReaction,
@@ -145,7 +145,7 @@ export default function PostDetailScreen() {
       <NavHeader title="Post" />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <ScrollView contentContainerStyle={{ paddingHorizontal: space.md, paddingBottom: space.lg }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" showsVerticalScrollIndicator={false}>
-          <PostCard post={post} width={width - space.md * 4} onReact={react} onOptions={options} onAuthor={(item) => navigation.navigate('AthletePosts', { userId: item.userId, name: item.displayName })} expanded />
+          <PostCard post={post} width={width - space.md * 4} onReact={react} onOptions={options} onAuthor={(item) => navigation.navigate('AthleteProfile', { userId: item.userId, name: item.displayName })} onFollow={(item) => followAuthor(item, (change) => { if (change.kind === 'following') update({ ...item, isFollowing: change.on }); })} expanded />
           {failed ? (
             <Text variant="callout" tone="secondary" align="center" style={{ marginTop: space.lg }}>Couldn’t load comments. Pull back and open the post again.</Text>
           ) : comments === null ? (

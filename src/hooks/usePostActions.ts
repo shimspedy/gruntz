@@ -11,6 +11,8 @@ type Change = { kind: 'removed'; post: FeedPost } | { kind: 'author-removed'; us
  * followed or unfollowed, reported, or its author blocked. Nothing destructive is one tap
  * from the feed.
  */
+export type PostChange = Change;
+
 export function usePostActions(onChange: (change: Change) => void) {
   return (post: FeedPost) => {
     haptic.light();
@@ -27,12 +29,17 @@ export function usePostActions(onChange: (change: Change) => void) {
       { text: 'Cancel', style: 'cancel' },
       { text: 'Block', style: 'destructive', onPress: () => { void blockAthlete(post.userId).then((r) => { if (r.ok) { noteFeedChanged(); toast(`${post.displayName} blocked`); onChange({ kind: 'author-removed', userId: post.userId }); } else failed('error'); }); } },
     ]);
-    const follow = () => { void followAthlete(post.userId).then((r) => { if (r.ok) { haptic.success(); toast(`Following ${post.displayName}`); onChange({ kind: 'following', userId: post.userId, on: true }); } else failed(r.reason === 'not-found' ? 'error' : r.reason); }); };
+    const follow = () => { void followAthlete(post.userId).then((r) => { if (r.ok) { haptic.success(); toast(`Following ${post.displayName}`); onChange({ kind: 'following', userId: post.userId, on: true }); } else if (r.reason === 'not-found') { haptic.warning(); toast('This athlete can’t be followed right now.', { tone: 'error', icon: 'alert' }); } else failed(r.reason); }); };
     const unfollow = () => { void unfollowAthlete(post.userId).then((r) => { if (r.ok) { toast(`Unfollowed ${post.displayName}`); onChange({ kind: 'following', userId: post.userId, on: false }); } else failed('error'); }); };
 
     const actions: { label: string; run: () => void; destructive?: boolean }[] = post.isMine
       ? [{ label: 'Delete post', run: remove, destructive: true }]
-      : [post.isFollowing ? { label: 'Unfollow', run: unfollow } : { label: `Follow ${post.displayName}`, run: follow }, { label: 'Report', run: report }, { label: 'Block', run: block, destructive: true }];
+      : [
+        // Only offer Follow when it can work: an author who isn't findable can't be followed.
+        ...(post.isFollowing ? [{ label: 'Unfollow', run: unfollow }] : post.authorFollowable ? [{ label: `Follow ${post.displayName}`, run: follow }] : []),
+        { label: 'Report', run: report },
+        { label: 'Block', run: block, destructive: true },
+      ];
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         { options: [...actions.map((a) => a.label), 'Cancel'], destructiveButtonIndex: actions.length - 1, cancelButtonIndex: actions.length, userInterfaceStyle: 'dark' },
@@ -60,4 +67,18 @@ export function withReaction(post: FeedPost, next: FeedPost['myReaction']): Feed
   if (post.myReaction) reactions[post.myReaction] = Math.max(0, (reactions[post.myReaction] ?? 1) - 1);
   if (next) reactions[next] = (reactions[next] ?? 0) + 1;
   return { ...post, reactions, myReaction: next };
+}
+
+/**
+ * The Follow button on a post: shown as followed at once on every post by that author,
+ * put back if the server says no.
+ */
+export function followAuthor(post: FeedPost, apply: (change: Change) => void): void {
+  apply({ kind: 'following', userId: post.userId, on: true });
+  void followAthlete(post.userId).then((r) => {
+    if (r.ok) { haptic.success(); noteFeedChanged(); return; }
+    haptic.warning();
+    toast(r.reason === 'too-many' ? 'You are following as many athletes as the app allows.' : r.reason === 'rate-limited' ? FEED_FAILURE['rate-limited'] : r.reason === 'not-found' ? 'This athlete can’t be followed right now.' : FEED_FAILURE.error, { tone: 'error', icon: 'alert' });
+    apply({ kind: 'following', userId: post.userId, on: false });
+  });
 }

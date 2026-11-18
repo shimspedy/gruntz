@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActionSheetIOS, Alert, Platform, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import { Image } from 'expo-image';
 import {
-  blockAthlete, followAthlete, listFollowers, listFollowing, reportAthlete, searchAthletes, setDiscoverable, unfollowAthlete,
-  type Athlete, type AthleteFailure, type AthleteResult,
+  blockAthlete, followAthlete, listFollowers, listFollowing, reportAthlete, searchAthletes, setDiscoverable, suggestedAthletes, unfollowAthlete,
+  type Athlete, type SuggestionReason, type AthleteFailure, type AthleteResult,
 } from '../services/athletes';
 import { useReadinessStore } from '../store/useReadinessStore';
+import type { RootStackParamList } from '../types/navigation';
 import { getLocalDateKey } from '../utils/dateKey';
 import { relativeTime } from '../utils/relativeTime';
 import { Button } from '../ui/Button';
@@ -20,6 +22,13 @@ import { toast } from '../ui/Toast';
 import { color, font, radius, space } from '../ui/tokens';
 
 type Tab = 'following' | 'followers' | 'find';
+
+const REASON: Record<SuggestionReason, string> = {
+  'follows-you': 'Follows you',
+  teammate: 'On your team',
+  active: 'Trained this week',
+  new: 'On Gruntz',
+};
 const TABS: { value: Tab; label: string }[] = [{ value: 'following', label: 'Following' }, { value: 'followers', label: 'Followers' }, { value: 'find', label: 'Find' }];
 
 const FAILURE: Record<AthleteFailure, string> = {
@@ -34,8 +43,10 @@ const FAILURE: Record<AthleteFailure, string> = {
 /** Follow other athletes without a team or a code: find them by name, one tap to follow. */
 export default function AthletesScreen() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
+  const initialTab = useRoute<RouteProp<RootStackParamList, 'Athletes'>>().params?.tab;
   const discoverable = useReadinessStore((s) => s.discoverable);
-  const [tab, setTab] = useState<Tab>('following');
+  const [tab, setTab] = useState<Tab>(initialTab ?? 'following');
   const [query, setQuery] = useState('');
   const [athletes, setAthletes] = useState<Athlete[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -47,7 +58,7 @@ export default function AthletesScreen() {
   const load = useCallback(async (which: Tab, q: string) => {
     const ticket = ++latest.current;
     const result = which === 'following' ? await listFollowing() : which === 'followers' ? await listFollowers()
-      : q.trim().length >= 2 ? await searchAthletes(q) : ({ ok: true, value: [] } as AthleteResult<Athlete[]>);
+      : q.trim().length >= 2 ? await searchAthletes(q) : await suggestedAthletes();
     // Only the newest request may write: a slow answer for another tab must not land here.
     if (!alive.current || ticket !== latest.current) return;
     if (result.ok) { setAthletes(result.value); setFailed(false); } else { setFailed(true); }
@@ -114,7 +125,8 @@ export default function AthletesScreen() {
     ? { title: 'You are not following anyone yet', body: 'Open Find, search a name and follow in one tap. No code needed.' }
     : tab === 'followers'
       ? { title: 'No followers yet', body: discoverable ? 'Athletes who follow you show up here.' : 'Turn on “Let athletes find me” so others can follow you.' }
-      : { title: query.trim().length >= 2 ? 'Nobody by that name' : 'Find an athlete', body: query.trim().length >= 2 ? 'Only athletes who chose to be findable appear here.' : 'Type at least two letters of their name.' };
+      : { title: query.trim().length >= 2 ? 'Nobody by that name' : 'No suggestions yet', body: query.trim().length >= 2 ? 'Only athletes who chose to be findable appear here.' : 'Search a name above. Suggestions show up as more athletes turn on findability.' };
+  const suggesting = tab === 'find' && query.trim().length < 2;
 
   return (
     <View style={styles.screen}>
@@ -173,6 +185,8 @@ export default function AthletesScreen() {
             <Text variant="subhead" tone="secondary" align="center" style={{ marginTop: 4 }}>{empty.body}</Text>
           </View>
         ) : (
+          <View>
+          {suggesting ? <Text variant="subhead" tone="secondary" style={styles.listLabel}>Suggested for you</Text> : null}
           <View style={styles.list}>
             {athletes.map((athlete, index) => {
               const trainedToday = !!athlete.lastTrainedAt && getLocalDateKey(new Date(athlete.lastTrainedAt)) === today;
@@ -185,11 +199,11 @@ export default function AthletesScreen() {
                   </View>
                   <Tap
                     feedback="opacity"
-                    onPress={() => options(athlete)}
+                    onPress={() => navigation.navigate('AthleteProfile', { userId: athlete.userId, name: athlete.displayName })}
                     style={{ flex: 1 }}
                     accessibilityRole="button"
-                    accessibilityLabel={`${athlete.displayName}, level ${athlete.level} ${athlete.rank}, ${athlete.streak} day streak${trainedToday ? ', trained today' : ''}`}
-                    accessibilityHint="Opens options"
+                    accessibilityLabel={`${athlete.displayName}, level ${athlete.level} ${athlete.rank}, ${athlete.streak} day streak${trainedToday ? ', trained today' : ''}${athlete.reason ? `, ${REASON[athlete.reason]}` : ''}`}
+                    accessibilityHint="Opens their profile"
                   >
                     <View style={styles.nameLine}>
                       <Text variant="headline" numberOfLines={1} style={{ flexShrink: 1 }}>{athlete.displayName}</Text>
@@ -199,9 +213,13 @@ export default function AthletesScreen() {
                       Level {athlete.level} · {athlete.rank} · {athlete.streak} day streak
                     </Text>
                     <Text variant="footnote" tone="tertiary" numberOfLines={1} style={{ marginTop: 2 }}>
+                      {athlete.reason ? `${REASON[athlete.reason]} · ` : ''}
                       {trainedToday ? 'Trained today' : athlete.lastTrainedAt ? `Last trained ${relativeTime(athlete.lastTrainedAt)}` : `${athlete.sessions} sessions`}
                       {athlete.weekSessions > 0 ? ` · ${athlete.weekSessions} this week` : ''}
                     </Text>
+                  </Tap>
+                  <Tap feedback="opacity" hitSlop={8} onPress={() => options(athlete)} style={styles.more} accessibilityRole="button" accessibilityLabel={`Options for ${athlete.displayName}`}>
+                    <Icon name="more" size={18} color={color.textSecondary} />
                   </Tap>
                   {athlete.isFollowing ? (
                     <View style={styles.following}><Text variant="footnote" style={{ color: color.accent, fontFamily: font.semibold }}>Following</Text></View>
@@ -211,6 +229,7 @@ export default function AthletesScreen() {
                 </View>
               );
             })}
+          </View>
           </View>
         )}
       </ScrollView>
@@ -231,6 +250,8 @@ const styles = StyleSheet.create({
   photo: { width: 40, height: 40, borderRadius: 20, backgroundColor: color.surfaceHigh, alignItems: 'center', justifyContent: 'center' },
   photoImage: { width: 40, height: 40, borderRadius: 20 },
   initial: { fontFamily: font.bold, fontSize: 17, color: color.text },
+  more: { width: 28, height: 32, alignItems: 'center', justifyContent: 'center', marginLeft: -space.xs },
+  listLabel: { marginBottom: space.xs, marginLeft: space.xxs },
   following: { paddingHorizontal: 12, height: 32, borderRadius: 16, backgroundColor: color.accentSoft, alignItems: 'center', justifyContent: 'center' },
   empty: { alignItems: 'center', padding: space.lg, marginTop: space.lg, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: color.surface },
 });

@@ -2,6 +2,10 @@ import { getLocalDateKey } from '../utils/dateKey';
 
 /** A recap belongs to the delivered week even if it is opened after Monday. */
 export function resolveNotificationLink(data: Record<string, unknown> | undefined, deliveredAt: number | undefined): string | null {
+  // A follow names the new follower's profile in `profileUrl`; `url` stays the athlete list
+  // so builds from before profiles existed still land somewhere they know.
+  const profile = data?.profileUrl;
+  if (typeof profile === 'string' && /^gruntz:\/\/athlete\/[0-9a-f-]{36}$/i.test(profile)) return profile;
   const url = data?.url;
   // Only the app's own links are routed, whatever a notification payload carries.
   if (typeof url !== 'string' || !url.startsWith('gruntz://')) return null;
