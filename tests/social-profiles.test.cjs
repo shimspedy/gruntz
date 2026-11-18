@@ -130,3 +130,13 @@ test('Instagram stories are offered only through the allow-listed scheme', () =>
   assert.match(swift, /file\.isFileURL/, 'only a local file is read');
   assert.match(swift, /expirationDate/, 'the pasteboard item expires');
 });
+
+test('audit run-11: blocking someone never changes counts the viewer can read', () => {
+  const fix = fs.readFileSync(path.join(root, 'supabase/migrations/20261118140000_audit_run11_block_count_oracle.sql'), 'utf8');
+  const tally = fix.slice(fix.indexOf('function public.feed_reaction_tally'), fix.indexOf('$$;', fix.indexOf('function public.feed_reaction_tally')));
+  assert.doesNotMatch(tally, /athletes_blocked/, 'reaction tallies count every reactor');
+  const profile = fix.slice(fix.indexOf('function public.athlete_profile'));
+  assert.match(profile, /\(select count\(\*\) from public\.athlete_follows f where f\.followee_id = target\)::integer/);
+  assert.match(profile, /\(select count\(\*\) from public\.athlete_follows f where f\.follower_id = target\)::integer/);
+  assert.doesNotMatch(profile.slice(profile.indexOf('Every follow row counts')), /athletes_blocked\(caller, f\./);
+});
