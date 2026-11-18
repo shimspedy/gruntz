@@ -172,3 +172,22 @@ test('every ribbon stripe colour is a plain hex value', () => {
     assert.ok(Math.abs(p.stripes.reduce((n, [, w]) => n + w, 0) - 44) < 1e-6, `${name} is 44 units wide`);
   }
 });
+
+test('Medal of Honor entries join to a real rank, at most five per rank, short stories', () => {
+  const dir = path.join(site, 'reference', 'honorees');
+  if (!fs.existsSync(dir)) return;
+  const { ranks } = load('website/src/data/tools/reference/ranks.ts');
+  for (const file of fs.readdirSync(dir).filter((f) => f.endsWith('.ts'))) {
+    const { honorees } = load(`website/src/data/tools/reference/honorees/${file}`);
+    const perRank = {};
+    for (const h of honorees) {
+      assert.ok(ranks.some((r) => r.branch === h.branch && r.abbr === h.abbr), `${file}: ${h.name} rank ${h.abbr} exists`);
+      perRank[h.abbr] = (perRank[h.abbr] ?? 0) + 1;
+      assert.match(h.source.url, /^https:\/\//, `${h.name} source is https`);
+      const words = h.story.trim().split(/\s+/).length;
+      assert.ok(words >= 15 && words <= 90, `${h.name}: story is ${words} words`);
+      assert.ok(h.year >= 1861 && h.year <= 2026, `${h.name}: year ${h.year}`);
+    }
+    for (const [abbr, n] of Object.entries(perRank)) assert.ok(n <= 5, `${file}: ${abbr} has ${n}`);
+  }
+});
