@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActionSheetIOS, Alert, FlatList, Platform, RefreshControl, StyleSheet, TextInput, View } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
 import { Avatar, PostCard } from '../components/feed/PostCard';
 import { applyPostChange, usePostActions, withReaction } from '../hooks/usePostActions';
 import { useSignedIn } from '../hooks/useSignedIn';
@@ -21,7 +20,6 @@ import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { IconButton, NavHeader } from '../ui/Layout';
 import { Tap } from '../ui/Pressable';
-import { Segmented } from '../ui/Segmented';
 import { Sheet } from '../ui/Sheet';
 import { Text } from '../ui/Text';
 import { haptic } from '../ui/haptics';
@@ -37,10 +35,6 @@ const FAILURE: Record<AthleteFailure, string> = {
   'rate-limited': 'Too many in a row. Wait a while, then try again.',
   error: 'Couldn’t reach Gruntz. Check your connection and try again.',
 };
-
-type View_ = 'grid' | 'posts';
-const VIEWS: { value: View_; label: string }[] = [{ value: 'grid', label: 'Grid' }, { value: 'posts', label: 'Posts' }];
-const GAP = 2;
 
 const compact = (n: number): string => (n >= 10000 ? `${Math.floor(n / 1000)}k` : n >= 1000 ? `${(n / 1000).toFixed(1).replace(/\.0$/, '')}k` : String(n));
 
@@ -61,7 +55,6 @@ export default function AthleteProfileScreen() {
   const [more, setMore] = useState<'idle' | 'loading' | 'done'>('idle');
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [mode, setMode] = useState<View_>('grid');
   const [editing, setEditing] = useState<string | null>(null);
   const alive = useRef(true);
   const ticket = useRef(0);
@@ -203,8 +196,6 @@ export default function AthleteProfileScreen() {
     setEditing(null);
   };
 
-  const cols = width >= 600 ? 4 : 3;
-  const tile = Math.floor((width - space.md * 2 - GAP * (cols - 1)) / cols);
   const open = (post: FeedPost) => navigation.navigate('PostDetail', { postId: post.id });
 
   if (failed && !profile) {
@@ -230,8 +221,6 @@ export default function AthleteProfileScreen() {
       onFind={() => navigation.navigate('Athletes')}
       onList={(tab) => navigation.navigate('Athletes', { tab })}
       onCompose={() => navigation.navigate('ComposePost')}
-      mode={mode}
-      onMode={setMode}
       hasPosts={!!posts?.length}
     />
   ) : null;
@@ -265,26 +254,12 @@ export default function AthleteProfileScreen() {
         title={profile?.displayName ?? params?.name?.trim() ?? (requested ? 'Athlete' : 'Your profile')}
         right={profile && !profile.isMe ? <IconButton icon="more" onPress={options} label={`Options for ${profile.displayName}`} size={22} /> : null}
       />
-      {mode === 'grid' ? (
-        <FlatList
-          key={`grid-${cols}`}
-          data={posts ?? []}
-          numColumns={cols}
-          keyExtractor={(item) => item.id}
-          columnWrapperStyle={{ gap: GAP }}
-          ItemSeparatorComponent={() => <View style={{ height: GAP }} />}
-          renderItem={({ item }) => <Tile post={item} size={tile} onPress={open} />}
-          {...common}
-        />
-      ) : (
-        <FlatList
-          key="posts"
-          data={posts ?? []}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <PostCard post={item} width={width - space.md * 4} onReact={react} onOpen={open} onOptions={postOptions} />}
-          {...common}
-        />
-      )}
+      <FlatList
+        data={posts ?? []}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <PostCard post={item} width={width - space.md * 4} onReact={react} onOpen={open} onOptions={postOptions} />}
+        {...common}
+      />
 
       <Sheet visible={editing !== null} onClose={() => setEditing(null)} title="Bio" avoidKeyboard>
         <View style={styles.sheetBody}>
@@ -319,8 +294,6 @@ type HeaderProps = {
   onFind: () => void;
   onList: (tab: 'following' | 'followers') => void;
   onCompose: () => void;
-  mode: View_;
-  onMode: (mode: View_) => void;
   hasPosts: boolean;
 };
 
@@ -338,7 +311,7 @@ function Count({ value, label, onPress }: { value: number | null; label: string;
   );
 }
 
-function ProfileHeader({ profile: p, busy, onFollow, onFollowing, onEditBio, onFind, onList, onCompose, mode, onMode, hasPosts }: HeaderProps) {
+function ProfileHeader({ profile: p, busy, onFollow, onFollowing, onEditBio, onFind, onList, onCompose, hasPosts }: HeaderProps) {
   const trainedToday = !!p.lastTrainedAt && getLocalDateKey(new Date(p.lastTrainedAt)) === getLocalDateKey();
   const showRecord = p.sessions !== null;
   return (
@@ -399,7 +372,7 @@ function ProfileHeader({ profile: p, busy, onFollow, onFollowing, onEditBio, onF
 
       {hasPosts ? (
         <View style={styles.modeRow}>
-          <Segmented options={VIEWS} value={mode} onChange={onMode} style={{ flex: 1 }} />
+          <Text variant="headline" style={{ flex: 1 }}>Posts</Text>
           {p.isMe ? <IconButton icon="plus" onPress={onCompose} label="Write a post" style={styles.compose} /> : null}
         </View>
       ) : null}
@@ -417,33 +390,6 @@ function RecordCell({ icon, value, label }: { icon: 'flame' | 'dumbbell' | 'cale
   );
 }
 
-/** One square of the grid: the photo itself, or the workout or words in its place. */
-function Tile({ post, size, onPress }: { post: FeedPost; size: number; onPress: (post: FeedPost) => void }) {
-  const label = post.photoUrl ? `Photo post${post.body ? `: ${post.body}` : ''}` : post.workout ? `Workout: ${post.workout.title}` : `Post: ${post.body}`;
-  return (
-    <Tap feedback="opacity" onPress={() => onPress(post)} style={[styles.tile, { width: size, height: size }]} accessibilityRole="button" accessibilityLabel={label}>
-      {post.photoUrl ? (
-        <Image source={{ uri: post.photoUrl }} style={{ width: size, height: size }} contentFit="cover" transition={150} accessibilityIgnoresInvertColors />
-      ) : post.workout ? (
-        <View style={styles.tileBody}>
-          <Icon name="dumbbellFill" size={16} color={color.textSecondary} />
-          <Text variant="subhead" numberOfLines={3} style={{ marginTop: space.xxs }}>{post.workout.title}</Text>
-          <View style={{ flex: 1 }} />
-          <Text variant="caption" tone="tertiary" tabular numberOfLines={1}>
-            {[post.workout.minutes > 0 ? `${post.workout.minutes} min` : '', post.workout.sets > 0 ? `${post.workout.sets} sets` : ''].filter(Boolean).join(' · ')}
-          </Text>
-          {post.workout.records > 0 ? <Text variant="caption" tone="accent" tabular numberOfLines={1}>{post.workout.records} {post.workout.records === 1 ? 'record' : 'records'}</Text> : null}
-        </View>
-      ) : (
-        <View style={styles.tileBody}>
-          <Text variant="footnote" numberOfLines={size > 120 ? 6 : 4}>{post.body}</Text>
-        </View>
-      )}
-      {post.audience === 'followers' ? <View style={styles.tileBadge}><Icon name="people" size={11} color={color.text} /></View> : null}
-    </Tap>
-  );
-}
-
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: color.bg },
   header: { paddingBottom: space.md },
@@ -458,10 +404,7 @@ const styles = StyleSheet.create({
   recordRule: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: color.line },
   recordValue: { fontFamily: font.semibold, fontSize: 20, lineHeight: 26, color: color.text },
   modeRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs, marginTop: space.md },
-  compose: { width: 48, height: 48, borderRadius: 24, backgroundColor: color.surface, alignItems: 'center', justifyContent: 'center' },
-  tile: { backgroundColor: color.surface, overflow: 'hidden' },
-  tileBody: { flex: 1, padding: space.xs },
-  tileBadge: { position: 'absolute', top: 6, right: 6, width: 20, height: 20, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center' },
+  compose: { width: 40, height: 40, borderRadius: 20, backgroundColor: color.surface, alignItems: 'center', justifyContent: 'center' },
   empty: { alignItems: 'center', padding: space.lg, marginTop: space.xs, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: color.surface },
   missing: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.lg },
   sheetBody: { paddingHorizontal: space.md, paddingBottom: space.lg },
