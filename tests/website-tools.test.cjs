@@ -138,3 +138,37 @@ test('every rank has an insignia drawing, except the entry grades that wear none
     }
   }
 });
+
+// ─── Hardening from audit run-12 ───────────────────────────────────────────────
+const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(dir, e.name)) : e.name.endsWith('.ts') ? [path.join(dir, e.name)] : []));
+
+test('every source, citation and provenance link in the tools data is https', () => {
+  // URLs render as href without a scheme check, so the data must never carry javascript: or http:.
+  // Checks the loaded values, so template-built URLs are checked as they really render.
+  const urls = [];
+  const collect = (v, where) => {
+    if (Array.isArray(v)) v.forEach((x) => collect(x, where));
+    else if (v && typeof v === 'object') for (const [k, x] of Object.entries(v)) { if (k === 'url' && typeof x === 'string') urls.push([where, x]); else collect(x, where); }
+  };
+  for (const file of walk(site)) {
+    const rel = path.relative(path.join(__dirname, '..'), file);
+    if (/catalog|registry|insignia(-images)?\.ts$|score\.ts$/.test(rel)) continue;
+    collect(load(rel), rel);
+  }
+  assert.ok(urls.length > 100, `found ${urls.length} links`);
+  for (const [where, url] of urls) assert.match(url, /^https:\/\//, `${where}: ${url}`);
+});
+
+test('every ribbon stripe colour is a plain hex value', () => {
+  // Colours go straight into an SVG fill attribute.
+  const file = path.join(site, 'reference', 'ribbons.ts');
+  if (!fs.existsSync(file)) return;
+  const { ribbonPatterns } = load('website/src/data/tools/reference/ribbons.ts');
+  for (const [name, p] of Object.entries(ribbonPatterns)) {
+    for (const [color, width] of p.stripes) {
+      assert.match(color, /^#[0-9a-fA-F]{6}$/, `${name}: ${color}`);
+      assert.ok(Number.isFinite(width) && width > 0, `${name}: width ${width}`);
+    }
+    assert.ok(Math.abs(p.stripes.reduce((n, [, w]) => n + w, 0) - 44) < 1e-6, `${name} is 44 units wide`);
+  }
+});

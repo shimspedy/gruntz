@@ -28,7 +28,9 @@ const registry: Record<string, () => Promise<{ default: ComponentType<any> }>> =
 };
 
 document.querySelectorAll<HTMLElement>('[data-island]').forEach(async (el) => {
-  const load = registry[el.dataset.island ?? ''];
+  // Own keys only: an attribute value like 'constructor' must not reach Object.prototype.
+  const key = el.dataset.island ?? '';
+  const load = Object.hasOwn(registry, key) ? registry[key] : undefined;
   if (!load) return;
   try {
     const props = JSON.parse(el.dataset.props ?? '{}');
