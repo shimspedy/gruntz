@@ -1,144 +1,293 @@
 ---
+import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from './Header.astro';
 import Footer from './Footer.astro';
 import ComicGallery from './ComicGallery.astro';
-import { Image } from 'astro:assets';
-import fieldPhoto from '../assets/photos/p39.jpg';
+import GuideCard from './GuideCard.astro';
+import Faq from './react/Faq';
+import FeatureTabs from './react/FeatureTabs';
+import { buttonVariants } from './ui/button';
+import { Marquee } from './ui/marquee';
 import { site } from '../data/site';
 import { content, type Lang } from '../i18n/content';
+import { testGuides, trainingGuides, guidePath } from '../data/guides';
+import { inline } from '../data/guides/types';
+import { photos } from '../data/photos';
+
 interface Props { lang: Lang; }
 const { lang } = Astro.props as Props;
 const t = content[lang];
 const es = lang === 'es';
+
 const c = es ? {
-  issue: 'TU PLAN DIARIO', intro: 'Una app de fitness militar para el trabajo de cada día.',
-  more: 'Explora la app', comic: 'Lee los cómics', proof: 'Creada por un exmarine de EE. UU.',
-  plan: 'UN PLAN. UN REGISTRO. TU PROGRESO.', field: 'DENTRO DE GRUNTZ',
-  appTitle: 'Tu plan y tu registro de entrenamiento.', appSub: 'Elige una función para ver la pantalla real de la app.',
-  screen: 'Captura real de Gruntz', branches: 'Tu rama. Tu entrenamiento.',
-  branchesSub: 'Para quienes empiezan, siguen en servicio o simplemente siguen entrenando.',
-  founderTitle: 'Creada por un exmarine de EE. UU.', aboutBody: 'Soy exmarine. Creé Gruntz para ayudarme a mí y a otros Marines a mantener la motivación y dejar de adivinar qué entrenar. Elige un programa o crea una sesión, y Gruntz guarda cada serie completada, resultado de prueba y punto de XP en tu historial.',
-  note: 'SOBRE GRUNTZ', question: 'Antes de empezar.', faqIntro: 'Lo que necesitas saber para tu próxima sesión.',
-  start: 'DESCARGA GRUNTZ', startTitle: 'Elige tu plan en Gruntz.',
-  startSub: 'Sigue un programa o crea tu propia rutina. Tu próxima sesión empieza en la app.',
-  store: 'Descargar Gruntz', price: `${site.trialDays} días de acceso completo incluidos. Después se requiere una suscripción. Consulta los precios actuales en el App Store.`,
+  stamp: '0500 · La misión de hoy',
+  h1: ['Tu misión diaria', 'está lista'],
+  store: 'Descargar Gruntz', more: 'Explora la app',
+  proof: 'Creada por un exmarine de EE. UU.',
+  heroAlt: 'Militar entrenando al amanecer',
+  ticker: 'Pruebas físicas de las seis ramas',
+  peopleKicker: 'Militar o no', peopleTitle: 'El plan es el mismo',
+  peopleSub: 'Gruntz tiene perfiles para las seis ramas y planes de entrenamiento general para quien nunca ha servido.',
+  appKicker: 'Dentro de Gruntz', appTitle: 'Tu plan y tu registro',
+  appSub: 'Elige una función para ver la pantalla real de la app.',
   testNote: 'Las estimaciones de preparación usan tus eventos registrados y objetivos personales. No son puntuaciones oficiales ni garantizan aprobar.',
-  quick: ['Planes estructurados', 'Series, repeticiones y descanso', 'XP, rangos y rachas'],
+  fieldKicker: 'Manual de campo', fieldTitle: 'Conoce tu prueba',
+  fieldSub: 'Guías de las pruebas físicas de cada rama: eventos, puntuación y cómo entrenar, con enlaces a las tablas oficiales. En inglés.',
+  fieldAll: 'Todas las pruebas', trainTitle: 'Planes de entrenamiento', trainAll: 'Todas las guías',
+  founderKicker: 'Sobre Gruntz', founderTitle: 'Creada por un exmarine de EE. UU.',
+  aboutBody: 'Soy exmarine. Creé Gruntz para ayudarme a mí y a otros Marines a mantener la motivación y dejar de adivinar qué entrenar. Elige un programa o crea una sesión, y Gruntz guarda cada serie completada, resultado de prueba y punto de XP en tu historial.',
+  independent: 'App de fitness independiente',
+  faqTitle: 'Antes de empezar', faqIntro: 'Lo que necesitas saber para tu próxima sesión.',
+  finalTitle: 'Elige tu plan en Gruntz',
+  finalSub: 'Sigue un programa o crea tu propia rutina. Tu próxima sesión empieza en la app.',
+  price: `${site.trialDays} días de acceso completo incluidos. Después se requiere una suscripción. Consulta los precios actuales en el App Store.`,
+  appLine: 'Fitness militar y registro de entrenamientos',
 } : {
-  issue: 'YOUR DAILY PLAN', intro: 'Military fitness for the work you put in every day.',
-  more: 'Explore the app', comic: 'Read the comics', proof: 'Built by a former U.S. Marine',
-  plan: 'A PLAN. A LOG. YOUR PROGRESS.', field: 'INSIDE GRUNTZ',
-  appTitle: 'Your plan and workout log.', appSub: 'Choose a feature to see the actual app screen.',
-  screen: 'Actual Gruntz app screen', branches: 'Your branch. Your training.',
-  branchesSub: 'For the people getting started, still serving, or simply still showing up.',
-  founderTitle: 'Built by a former U.S. Marine.', aboutBody: 'I’m a former Marine. I built Gruntz to help me and other Marines stay motivated and stop guessing what to train. Pick a program or build a workout, and Gruntz keeps every completed set, test-event result, and XP point in your history.',
-  note: 'ABOUT GRUNTZ', question: 'Before you get after it.', faqIntro: 'A few things to know before your first session.',
-  start: 'GET GRUNTZ', startTitle: 'Choose your plan in Gruntz.',
-  startSub: 'Follow a program or build your own. Your next session starts in the app.',
-  store: 'Download Gruntz', price: `${site.trialDays} days of full access included. Subscription required afterward. See the App Store for current pricing.`,
+  stamp: '0500 · Today’s mission',
+  h1: ['Your daily mission', 'is ready'],
+  store: 'Download Gruntz', more: 'Explore the app',
+  proof: 'Built by a former U.S. Marine',
+  heroAlt: 'Service member training at first light',
+  ticker: 'Fitness tests for all six branches',
+  peopleKicker: 'Military or not', peopleTitle: 'The plan works the same',
+  peopleSub: 'Gruntz has profiles for all six branches, plus general training plans for people who never served.',
+  appKicker: 'Inside Gruntz', appTitle: 'Your plan and workout log',
+  appSub: 'Choose a feature to see the actual app screen.',
   testNote: 'Preparation estimates use your logged events and personal targets. They are not official scores or a guarantee of passing.',
-  quick: ['Structured training plans', 'Sets, reps & rest', 'XP, ranks & streaks'],
+  fieldKicker: 'Field manual', fieldTitle: 'Know your test',
+  fieldSub: 'A guide to every branch fitness test: the events, how it is scored and how to train for it, with links to the official charts.',
+  fieldAll: 'All six branches compared', trainTitle: 'Training plans', trainAll: 'All training guides',
+  founderKicker: 'About Gruntz', founderTitle: 'Built by a former U.S. Marine',
+  aboutBody: 'I’m a former Marine. I built Gruntz to help me and other Marines stay motivated and stop guessing what to train. Pick a program or build a workout, and Gruntz keeps every completed set, test-event result, and XP point in your history.',
+  independent: 'Independent fitness app',
+  faqTitle: 'Before you get after it', faqIntro: 'A few things to know before your first session.',
+  finalTitle: 'Choose your plan in Gruntz',
+  finalSub: 'Follow a program or build your own. Your next session starts in the app.',
+  price: `${site.trialDays} days of full access included. Subscription required afterward. See the App Store for current pricing.`,
+  appLine: 'Military fitness & workout log',
 };
-const people = es ? {
-  title: 'Militar o no, el plan es el mismo.',
-  sub: 'Gruntz tiene perfiles para las seis ramas y planes de entrenamiento general para quien nunca ha servido.',
-  cards: [
-    { chip: 'Reclutas y aspirantes', title: 'Construye tu base antes del entrenamiento básico', copy: 'Sesiones estructuradas para el entrenamiento básico, la escuela de oficiales o una selección, con un registro de tu progreso.', photo: '/photos/p08-900.webp', alt: 'Reclutas sentados en fila haciendo abdominales en la playa', pos: '50% 35%' },
-    { chip: 'Militares en servicio', title: 'Ten presente tu próxima prueba física', copy: 'Guarda resultados de tus pruebas, compara controles de progreso e identifica la mayor diferencia respecto a tu objetivo.', photo: '/photos/p01-900.webp', alt: 'Hombre con pantalón de camuflaje junto a una barra con pesas al aire libre', pos: '50% 50%' },
-    { chip: 'Veteranos', title: 'Sigue entrenando después de salir', copy: 'Sigue un programa o crea tus propias sesiones. Tu historial, tus rachas y tu rango siguen contigo.', photo: '/photos/p84-900.webp', alt: 'Atleta haciendo dominadas en un gimnasio oscuro', pos: '50% 30%' },
-    { chip: 'Civiles', title: 'Sin servicio previo', copy: 'Elige un plan para tu equipo y tu horario. Los planes de entrenamiento general no requieren experiencia militar.', photo: '/photos/p68-900.webp', alt: 'Atleta en posición de salida de sprint en un parque', pos: '50% 40%' },
-  ],
-} : {
-  title: 'Military or not, the plan works the same.',
-  sub: 'Gruntz has profiles for all six branches, plus general training plans for people who never served.',
-  cards: [
-    { chip: 'Recruits & candidates', title: 'Build your base before boot camp', copy: 'Structured sessions for basic training, OCS, or selection prep, with a record of every workout.', photo: '/photos/p08-900.webp', alt: 'Recruits sitting in a line doing sit-ups on a beach', pos: '50% 35%' },
-    { chip: 'Service members', title: 'Keep your next PT test in view', copy: 'Save test-event results, compare progress checks, and see your biggest logged gap to a target.', photo: '/photos/p01-900.webp', alt: 'Man in camouflage pants beside a loaded barbell outdoors', pos: '50% 50%' },
-    { chip: 'Veterans', title: 'Keep training after you get out', copy: 'Follow a program or build your own workouts. Your history, streaks, and rank stay with you.', photo: '/photos/p84-900.webp', alt: 'Athlete doing pull-ups in a dark gym', pos: '50% 30%' },
-    { chip: 'Civilians', title: 'No service required', copy: 'Pick a plan for your equipment and schedule. General training plans need no military background.', photo: '/photos/p68-900.webp', alt: 'Athlete in a sprint start position in a park', pos: '50% 40%' },
-  ],
+
+const people = es ? [
+  { chip: 'Reclutas y aspirantes', title: 'Construye tu base antes del entrenamiento básico', copy: 'Sesiones estructuradas para el entrenamiento básico, la escuela de oficiales o una selección, con un registro de tu progreso.' },
+  { chip: 'Militares en servicio', title: 'Ten presente tu próxima prueba física', copy: 'Guarda resultados de tus pruebas, compara controles de progreso e identifica la mayor diferencia respecto a tu objetivo.' },
+  { chip: 'Veteranos', title: 'Sigue entrenando después de salir', copy: 'Sigue un programa o crea tus propias sesiones. Tu historial, tus rachas y tu rango siguen contigo.' },
+  { chip: 'Civiles', title: 'Sin servicio previo', copy: 'Elige un plan para tu equipo y tu horario. Los planes de entrenamiento general no requieren experiencia militar.' },
+] : [
+  { chip: 'Recruits & candidates', title: 'Build your base before boot camp', copy: 'Structured sessions for basic training, OCS, or selection prep, with a record of every workout.' },
+  { chip: 'Service members', title: 'Keep your next PT test in view', copy: 'Save test-event results, compare progress checks, and see your biggest logged gap to a target.' },
+  { chip: 'Veterans', title: 'Keep training after you get out', copy: 'Follow a program or build your own workouts. Your history, streaks, and rank stay with you.' },
+  { chip: 'Civilians', title: 'No service required', copy: 'Pick a plan for your equipment and schedule. General training plans need no military background.' },
+];
+
+const featureProps = {
+  features: t.features.map((f) => ({ name: f.name, short: f.short, headline: f.headline, copy: f.copy, screen: f.screen })),
+  label: t.featuresHead.tablistLabel,
+  screenAlt: t.featuresHead.screenAlt,
+  note: c.testNote,
 };
-const branches = ['Army', 'Marine Corps', 'Navy', 'Air Force', 'Space Force', 'Coast Guard'];
-const featureData = { features: t.features.map(f => ({name:f.name,headline:f.headline,copy:f.copy,screen:f.screen})), counter:t.featuresHead.counter, screenAlt:t.featuresHead.screenAlt };
-const jsonLd = { '@context':'https://schema.org', '@type':'SoftwareApplication', name:'Gruntz: Military Fitness & PT', operatingSystem:'iOS', applicationCategory:'HealthApplication', inLanguage:lang, description:t.meta.description, url:site.url, downloadUrl:site.appStoreUrl, isAccessibleForFree:false };
+const faqItems = t.faq.map((f) => ({ q: f.q, a: inline(f.a) }));
+const jsonLd = [{ '@context': 'https://schema.org', '@type': 'SoftwareApplication', name: 'Gruntz: Military Fitness & PT', operatingSystem: 'iOS', applicationCategory: 'HealthApplication', inLanguage: lang, description: t.meta.description, url: site.url, downloadUrl: site.appStoreUrl, isAccessibleForFree: false }];
 ---
-<BaseLayout lang={lang} title={t.meta.title} description={t.meta.description} ogLocale={t.meta.ogLocale}>
-  <script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />
+<BaseLayout lang={lang} title={t.meta.title} description={t.meta.description} ogLocale={t.meta.ogLocale} jsonLd={jsonLd}>
   <Header lang={lang} />
   <main id="main">
-    <section class="hero" aria-labelledby="hero-title">
-      <div class="site-shell hero-grid">
-        <div class="hero-copy">
-          <p class="eyebrow"><span class="status-dot"></span>{t.hero.eyebrow}</p>
-          <h1 id="hero-title">{es ? 'Tu misión diaria ' : 'Your daily mission '}<span>{es ? 'está lista.' : 'is ready.'}</span></h1>
-          <p class="hero-lede">{t.hero.lede}</p>
-          <div class="hero-actions">
-            <a class="button button-primary" href={site.appStoreUrl} target="_blank" rel="noopener" data-cta="hero">{c.store}<span aria-hidden="true">↗</span></a>
-            <a class="text-link" href="#features">{c.more}<span aria-hidden="true">↓</span></a>
+    <!-- Hero: one photograph edge to edge, headline on its calm side. -->
+    <section class="relative isolate overflow-hidden" aria-labelledby="hero-title">
+      <Image
+        src={photos.hero.src} alt={es ? photos.hero.altEs : photos.hero.alt}
+        widths={[640, 960, 1440, 1920, 2400]} sizes="100vw" format="webp" quality={70}
+        loading="eager" fetchpriority="high"
+        class="absolute inset-0 -z-20 size-full object-cover"
+        style={`object-position:${photos.hero.pos}`}
+      />
+      <div class="hero-scrim absolute inset-0 -z-10" aria-hidden="true"></div>
+      <div class="shell flex min-h-[calc(100svh-64px)] max-h-[960px] flex-col justify-end pb-28 pt-24 md:min-h-[720px] md:justify-center md:pb-32">
+        <div class="max-w-[640px] animate-rise">
+          <p class="stamp text-bone-2">{c.stamp}</p>
+          <h1 id="hero-title" class="display mt-5 text-[40px] sm:text-[56px] lg:text-[76px]">
+            {c.h1[0]} <span class="block">{c.h1[1]}</span>
+          </h1>
+          <p class="mt-6 max-w-[52ch] text-lg leading-relaxed text-bone/85 md:text-xl">{t.hero.lede}</p>
+          <div class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+            <a class={buttonVariants({ size: 'lg' })} href={site.appStoreUrl} target="_blank" rel="noopener" data-cta="hero">{c.store}</a>
+            <a href="#features" class="inline-flex min-h-11 items-center gap-2 text-base font-semibold text-bone transition-colors duration-150 ease-out hover:text-accent-text">
+              {c.more}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14m-6-6 6 6 6-6" /></svg>
+            </a>
           </div>
-          <p class="access-note">{t.hero.priceNote}</p>
-          <div class="founder-proof"><img class="proof-mark" src="/brand/gruntz-icon.png" width="32" height="32" alt="" /><span>{c.proof}</span></div>
+          <p class="mt-6 max-w-[52ch] text-sm leading-relaxed text-bone-2">{t.hero.priceNote} {c.proof}.</p>
         </div>
-        <div class="hero-visual">
+      </div>
 
-          <div class="hero-comic" aria-hidden="true">
-            <div class="comic-paper-label"><span>GRUNTZ COMICS</span><span>ARMY</span></div>
-            <img src="/comics/army-1600.webp" width="1600" height="728" alt="" fetchpriority="high" />
-            <div class="paper-punchline">{es ? '¿Cuál es el plan?' : 'WHAT’S THE PLAN?'}</div>
-          </div>
-          <div class="hero-phone phone"><div class="phone-screen"><img src="/app/train-current.webp" width="402" height="874" alt={es ? 'Pantalla real del plan de entrenamiento de Gruntz' : 'Genuine Gruntz daily training plan screen'} loading="eager" /></div></div>
-          <a class="comic-teaser" href="#comics"><svg class="teaser-icon" width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 5h20v14H11l-5 4v-4H4z"/><path d="M8 10h12M8 14h8"/></svg><span>{c.comic}<small>{es ? 'Una tira para cada rama' : 'One strip for each branch'}</small></span><span aria-hidden="true">↓</span></a>
-        </div>
+      <!-- Signature ticker: the seven tests Gruntz tracks, as mission stamps. -->
+      <div class="absolute inset-x-0 bottom-0 border-t border-bone/10 bg-ink/80 py-4">
+        <p class="sr-only">{c.ticker}: {testGuides.map((g) => g.name).join(', ')}</p>
+        <Marquee pauseOnHover aria-hidden="true" className="[--duration:48s] [--gap:2.5rem]">
+          {testGuides.map((g) => (
+            <span class="flex items-center gap-10 font-mono text-[13px] uppercase tracking-[0.06em] text-bone-2">
+              {g.name}
+              <span class="size-1 rounded-full bg-accent-text"></span>
+            </span>
+          ))}
+        </Marquee>
       </div>
     </section>
 
-    <section class="branch-band" aria-label={es ? 'Seis ramas militares de EE. UU.' : 'Six U.S. military branches'}>
-      <div class="site-shell branch-inner"><span class="branch-intro">{es ? 'PARA LAS SEIS RAMAS' : 'FOR ALL SIX BRANCHES'}</span><ul>{branches.map(branch=><li>{branch}</li>)}</ul></div>
-    </section>
-
-
-    <section class="people section" id="who" aria-labelledby="people-title">
-      <div class="site-shell">
-        <div class="people-head"><h2 id="people-title">{people.title}</h2><p>{people.sub}</p></div>
-        <ul class="people-grid">
-          {people.cards.map(p => <li class="people-card"><div class="people-photo"><img src={p.photo} alt={p.alt} width="900" height="600" loading="lazy" decoding="async" style={`object-position:${p.pos}`} /><span class="people-chip">{p.chip}</span></div><h3>{p.title}</h3><p>{p.copy}</p></li>)}
-        </ul>
-      </div>
-    </section>
-
-    <section class="app-section section" id="features" aria-labelledby="app-title">
-      <div class="site-shell">
-        <div class="section-top"><div><h2 id="app-title">{c.appTitle}</h2></div><p>{c.appSub}</p></div>
-        <div class="app-grid">
-          <div class="feature-list"><div role="tablist" aria-label={t.featuresHead.tablistLabel} aria-orientation="vertical" id="feature-tabs" data-features={JSON.stringify(featureData)}>
-            {t.features.map((f,i)=><button class="feature-tab" role="tab" id={`tab-${i}`} aria-selected={i===0?'true':'false'} aria-controls="feature-panel" tabindex={i===0?0:-1}><span class="feature-number">{String(i+1).padStart(2,'0')}</span><span><strong>{f.name}</strong><small>{f.short}</small></span></button>)}
-          </div></div>
-          <div class="feature-stage" id="feature-panel" role="tabpanel" aria-labelledby="tab-0" tabindex="0">
-
-            <div class="feature-copy"><span class="eyebrow" id="feature-count">{t.featuresHead.counter} 01</span><h3 id="feature-headline">{t.features[0].headline}</h3><p id="feature-text">{t.features[0].copy}</p></div>
-            <div class="phone feature-phone"><div class="phone-screen"><img id="feature-screen" src={t.features[0].screen} alt={`${t.features[0].name} ${t.featuresHead.screenAlt}`} width="402" height="874" loading="lazy" /></div></div>
-          </div>
+    <!-- Who it is for: four tall portraits. -->
+    <section class="py-20 md:py-28" id="who" aria-labelledby="people-title">
+      <div class="shell">
+        <div class="grid items-end gap-6 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] md:gap-16">
+          <h2 id="people-title" class="display text-[36px] md:text-[56px]">
+            <span class="display-kicker mb-2 text-[20px] text-bone-2 md:text-[26px]">{c.peopleKicker}</span>
+            {c.peopleTitle}
+          </h2>
+          <p class="max-w-[46ch] text-lg leading-relaxed text-bone-2 md:justify-self-end">{c.peopleSub}</p>
         </div>
-        <p class="test-note">{c.testNote}</p>
+      </div>
+      <ul class="people-rail mt-12">
+        {people.map((p, i) => (
+          <li class="reveal relative isolate flex aspect-[3/4] w-[78vw] max-w-[340px] shrink-0 snap-start flex-col justify-end overflow-hidden rounded-[20px] bg-ink-3 p-6 lg:w-auto lg:max-w-none" style={`transition-delay:${i * 50}ms`}>
+            <Image
+              src={photos.people[i].src} alt={es ? photos.people[i].altEs : photos.people[i].alt}
+              widths={[360, 540, 720]} sizes="(max-width: 1024px) 340px, 25vw" format="webp" quality={70} loading="lazy"
+              class="absolute inset-0 -z-20 size-full object-cover" style={`object-position:${photos.people[i].pos}`}
+            />
+            <div class="card-scrim absolute inset-0 -z-10" aria-hidden="true"></div>
+            <p class="stamp text-bone-2">{p.chip}</p>
+            <h3 class="mt-2 text-[22px] font-bold leading-[1.15] [font-stretch:112%]">{p.title}</h3>
+            <p class="mt-3 text-[15px] leading-relaxed text-bone/80">{p.copy}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <!-- The app: feature picker beside one large real screen. -->
+    <section class="border-y border-bone/10 bg-ink-2 py-20 md:py-28" id="features" aria-labelledby="app-title">
+      <div class="shell">
+        <div class="grid items-end gap-6 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] md:gap-16">
+          <h2 id="app-title" class="display text-[36px] md:text-[56px]">
+            <span class="display-kicker mb-2 text-[20px] text-bone-2 md:text-[26px]">{c.appKicker}</span>
+            {c.appTitle}
+          </h2>
+          <p class="max-w-[46ch] text-lg leading-relaxed text-bone-2 md:justify-self-end">{c.appSub}</p>
+        </div>
+        <div class="mt-12" data-island="features" data-props={JSON.stringify(featureProps)}>
+          <FeatureTabs {...featureProps} />
+        </div>
       </div>
     </section>
 
     <ComicGallery lang={lang} />
 
-    <section class="field-note section" id="about">
-      <div class="site-shell field-grid">
-        <div class="field-photo"><Image src={fieldPhoto} alt={es ? 'Entrenamiento al aire libre con una mochila' : 'Outdoor training with a rucksack'} width={800} height={1000} widths={[400, 800, 1200]} sizes="(max-width: 650px) calc(100vw - 40px), 50vw" format="webp" quality={80} loading="lazy" /></div>
-        <div class="field-copy"><h2>{c.founderTitle}</h2><p>{c.aboutBody}</p><div class="founder-signature"><img src="/brand/gruntz-icon.png" width="44" height="44" alt="" /><div><strong>{es ? 'App de fitness independiente' : 'Independent fitness app'}</strong><span>{t.founder.note}</span></div></div></div>
+    <!-- Field manual: links into the fitness-test and training guides. -->
+    <section class="py-20 md:py-28" id="guides" aria-labelledby="field-title">
+      <div class="shell">
+        <div class="grid items-end gap-6 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] md:gap-16">
+          <h2 id="field-title" class="display text-[36px] md:text-[56px]">
+            <span class="display-kicker mb-2 text-[20px] text-bone-2 md:text-[26px]">{c.fieldKicker}</span>
+            {c.fieldTitle}
+          </h2>
+          <p class="max-w-[46ch] text-lg leading-relaxed text-bone-2 md:justify-self-end">{c.fieldSub}</p>
+        </div>
+
+        <ul class="mt-12 grid gap-px overflow-hidden rounded-[20px] border border-bone/10 bg-bone/10 sm:grid-cols-2 lg:grid-cols-4" lang="en">
+          {testGuides.map((g) => (
+            <li class="reveal">
+              <a href={guidePath(g)} hreflang="en" class="group flex h-full min-h-[168px] flex-col justify-between gap-6 bg-ink p-6 transition-colors duration-150 ease-out hover:bg-ink-3">
+                <span class="stamp">{g.branch}</span>
+                <span>
+                  <span class="display block text-[22px] leading-[1.05]">{g.name}</span>
+                  <span class="mt-2 block text-sm leading-relaxed text-bone-2">{g.summary}</span>
+                </span>
+              </a>
+            </li>
+          ))}
+          <li class="reveal">
+            <a href="/fitness-tests/" hreflang="en" class="group flex h-full min-h-[168px] flex-col justify-between gap-6 bg-accent p-6 text-white transition-colors duration-150 ease-out hover:bg-accent-hi">
+              <span class="font-mono text-xs tracking-[0.04em] text-white/80">2026</span>
+              <span class="flex items-end justify-between gap-4">
+                <span class="display text-[22px] leading-[1.05]">{c.fieldAll}</span>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="shrink-0 transition-transform duration-150 ease-out group-hover:translate-x-1"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>
+              </span>
+            </a>
+          </li>
+        </ul>
+
+        <div class="mt-16 flex flex-wrap items-end justify-between gap-4">
+          <h3 class="display text-[24px] md:text-[32px]">{c.trainTitle}</h3>
+          <a href="/training/" hreflang="en" class="inline-flex min-h-11 items-center text-[15px] font-semibold text-accent-text hover:text-bone">{c.trainAll}</a>
+        </div>
+        <ul class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" lang="en">
+          {trainingGuides.map((g) => <li class="reveal"><GuideCard guide={g} /></li>)}
+        </ul>
       </div>
     </section>
 
-    <section class="faq-section section" id="faq">
-      <div class="site-shell faq-grid"><div><p class="eyebrow">FAQ</p><h2>{c.question}</h2><p class="faq-intro">{c.faqIntro}</p><a class="text-link" href="/support">{t.nav.support}<span aria-hidden="true">→</span></a></div><div class="faq">{t.faq.map(f=><details><summary>{f.q}<span aria-hidden="true">+</span></summary><p>{f.a}</p></details>)}</div></div>
+    <!-- Founder: photograph bleeds to the left edge. -->
+    <section class="border-t border-bone/10 bg-ink-2" id="about" aria-labelledby="about-title">
+      <div class="grid lg:grid-cols-2">
+        <div class="relative min-h-[360px] lg:min-h-[640px]">
+          <Image
+            src={photos.founder.src} alt={es ? photos.founder.altEs : photos.founder.alt}
+            widths={[640, 960, 1280]} sizes="(max-width: 1024px) 100vw, 50vw" format="webp" quality={70} loading="lazy"
+            class="absolute inset-0 size-full object-cover" style={`object-position:${photos.founder.pos}`}
+          />
+        </div>
+        <div class="flex items-center px-6 py-16 sm:px-12 lg:py-24 xl:px-20">
+          <div class="max-w-[520px]">
+            <p class="stamp">{c.founderKicker}</p>
+            <h2 id="about-title" class="display mt-4 text-[32px] md:text-[44px]">{c.founderTitle}</h2>
+            <p class="mt-6 text-lg leading-relaxed text-bone-2">{c.aboutBody}</p>
+            <div class="mt-8 flex items-start gap-4 border-t border-bone/10 pt-6">
+              <img src="/brand/gruntz-icon.png" width="44" height="44" alt="" class="size-11 rounded-xl" loading="lazy" />
+              <div>
+                <p class="font-semibold">{c.independent}</p>
+                <p class="mt-1 text-sm leading-relaxed text-bone-3">{t.founder.note}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <section class="final-cta" id="download"><div class="site-shell final-grid"><div><h2>{c.startTitle}</h2><p>{c.startSub}</p></div><div class="download-panel"><div class="download-app"><img src="/brand/gruntz-icon.png" width="58" height="58" alt="" /><div><strong>Gruntz</strong><span>{es ? 'Fitness militar y registro de entrenamientos' : 'Military fitness & workout log'}</span></div></div><a class="store-badge" href={site.appStoreUrl} target="_blank" rel="noopener" data-cta="footer"><img src="/brand/app-store-badge.svg" alt={t.hero.badgeAlt} width="162" height="54" /></a><small>{c.price}</small></div></div></section>
+    <!-- FAQ on paper, the light counterpart to the comic section. -->
+    <section class="on-paper bg-paper py-20 text-coal md:py-28" id="faq" aria-labelledby="faq-title">
+      <div class="shell grid gap-10 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16">
+        <div>
+          <h2 id="faq-title" class="display text-[36px] md:text-[48px]">{c.faqTitle}</h2>
+          <p class="mt-5 max-w-[36ch] text-lg leading-relaxed text-coal-2">{c.faqIntro}</p>
+          <a href="/support" class="mt-6 inline-flex min-h-11 items-center gap-2 text-[15px] font-semibold text-accent-ink hover:text-coal">
+            {t.nav.support}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>
+          </a>
+        </div>
+        <div data-island="faq" data-props={JSON.stringify({ items: faqItems })} class="faq-paper">
+          <Faq items={faqItems} />
+        </div>
+      </div>
+    </section>
+
+    <!-- Final call: second photograph, one action. -->
+    <section class="relative isolate overflow-hidden" id="download" aria-labelledby="final-title">
+      <Image
+        src={photos.final.src} alt={es ? photos.final.altEs : photos.final.alt}
+        widths={[640, 960, 1440, 1920]} sizes="100vw" format="webp" quality={68} loading="lazy"
+        class="absolute inset-0 -z-20 size-full object-cover" style={`object-position:${photos.final.pos}`}
+      />
+      <div class="final-scrim absolute inset-0 -z-10" aria-hidden="true"></div>
+      <div class="shell py-24 md:py-36">
+        <h2 id="final-title" class="display max-w-[14ch] text-[40px] sm:text-[56px] lg:text-[72px]">{c.finalTitle}</h2>
+        <p class="mt-6 max-w-[46ch] text-lg leading-relaxed text-bone/85 md:text-xl">{c.finalSub}</p>
+        <div class="mt-8 flex flex-wrap items-center gap-4">
+          <a class={buttonVariants({ size: 'lg' })} href={site.appStoreUrl} target="_blank" rel="noopener" data-cta="footer">{c.store}</a>
+          <a class="inline-flex" href={site.appStoreUrl} target="_blank" rel="noopener" data-cta="footer-badge">
+            <img src="/brand/app-store-badge.svg" alt={t.hero.badgeAlt} width="144" height="48" loading="lazy" />
+          </a>
+        </div>
+        <p class="mt-6 max-w-[52ch] text-sm leading-relaxed text-bone-2">{c.price}</p>
+      </div>
+    </section>
   </main>
   <Footer lang={lang} />
-  <script src="../scripts/home.ts"></script>
 </BaseLayout>

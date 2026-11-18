@@ -7,16 +7,19 @@ configuration live inside `website/`.
 
 ## Routes
 
-- `/` marketing homepage
+- `/` marketing homepage (`/es/` in Spanish)
+- `/fitness-tests/` hub and one guide per branch test
+- `/training/` hub and six training guides
 - `/privacy-policy`
 - `/terms-of-use`
 - `/support`
 
 ## Stack
 
-- Astro
-- Accessible feature tabs and a six-branch comic reader
-- DM Sans, Gruntz blue, cream paper, and dark app-preview panels
+- Astro, with React and Tailwind CSS v4 for components
+- shadcn/ui pieces restyled to the site tokens (`src/components/ui`), Radix tabs and accordion, a Vaul drawer for the phone menu, and the Magic UI marquee
+- Archivo (wide and heavy for headlines) and JetBrains Mono, Gruntz blue on an olive-black ramp, paper for the comic and FAQ sections
+- Interactive pieces are mounted by `src/scripts/islands.tsx`, not `client:*` directives: the Content-Security-Policy allows scripts from this origin only, and Astro's island bootstrap is inline
 
 ## Local Development
 
@@ -49,7 +52,7 @@ security headers in `public/_headers`.
 
 Most site constants live in `src/data/site.ts`.
 
-Homepage content lives in `src/i18n/content.ts` and `src/components/Home.astro`; the original comic reader is `src/components/ComicGallery.astro`. See `DESIGN-NOTES.md` for the marketing guidance, real screenshot sources, responsive checks, and deployment notes.
+Homepage content lives in `src/i18n/content.ts` and `src/components/Home.astro`. Guide content lives in `src/data/guides/` (`tests.ts`, `training.ts`), and photos with their credits in `src/data/photos.ts`; the original comic reader is `src/components/ComicGallery.astro`. See `DESIGN-NOTES.md` for the marketing guidance, real screenshot sources, responsive checks, and deployment notes.
 
 Update that file if you want to change:
 

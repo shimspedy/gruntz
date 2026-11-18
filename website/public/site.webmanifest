@@ -3,8 +3,8 @@
   "short_name": "Gruntz",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#080b14",
-  "theme_color": "#080b14",
+  "background_color": "#0b0c0a",
+  "theme_color": "#0b0c0a",
   "icons": [
     {
       "src": "/brand/gruntz-icon.png",

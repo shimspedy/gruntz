@@ -1,0 +1,24 @@
+---
+import { inline, type Block } from '../data/guides/types';
+interface Props { blocks: Block[]; }
+const { blocks } = Astro.props as Props;
+---
+{blocks.map((block) => {
+  if (block.type === 'p') return <p set:html={inline(block.text)} />;
+  if (block.type === 'note') return <p class="note" set:html={inline(block.text)} />;
+  if (block.type === 'list') {
+    const items = block.items.map((item) => <li set:html={inline(item)} />);
+    return block.ordered ? <ol>{items}</ol> : <ul>{items}</ul>;
+  }
+  return (
+    <div class="table-wrap">
+      <table>
+        {block.caption ? <caption set:html={inline(block.caption)} /> : null}
+        <thead><tr>{block.head.map((cell) => <th scope="col">{cell}</th>)}</tr></thead>
+        <tbody>
+          {block.rows.map((row) => <tr>{row.map((cell) => <td set:html={inline(cell)} />)}</tr>)}
+        </tbody>
+      </table>
+    </div>
+  );
+})}

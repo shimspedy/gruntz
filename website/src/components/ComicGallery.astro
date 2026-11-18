@@ -9,11 +9,11 @@ const { lang = 'en' } = Astro.props;
 const isSpanish = lang === 'es';
 const labels = isSpanish
   ? {
-      eyebrow: 'EL LADO DIVERTIDO DE PRESENTARSE',
-      title: 'Un poco de humor militar.',
+      eyebrow: 'El lado divertido de presentarse',
+      title: 'Un poco de humor militar',
       intro: 'Una tira de dos viñetas para cada rama. Elige la tuya.',
       tabs: 'Elige una rama militar',
-      series: 'LOS CÓMICS DE GRUNTZ',
+      series: 'Los cómics de Gruntz',
       previous: 'Cómic anterior',
       next: 'Siguiente cómic',
       transcript: 'Leer el diálogo',
@@ -25,11 +25,11 @@ const labels = isSpanish
       withoutScript: 'También puedes abrir cada ilustración y leer su diálogo aquí.',
     }
   : {
-      eyebrow: 'THE FUNNY SIDE OF SHOWING UP',
-      title: 'A little service humor.',
+      eyebrow: 'The funny side of showing up',
+      title: 'A little service humor',
       intro: 'One two-panel strip for each branch. Pick yours.',
       tabs: 'Choose a military branch',
-      series: 'THE GRUNTZ COMICS',
+      series: 'The Gruntz comics',
       previous: 'Previous comic',
       next: 'Next comic',
       transcript: 'Read the dialogue',
@@ -116,7 +116,7 @@ const comics = [
           data-comic-tab
           data-comic-index={index}
         >
-          <span class="comic-tab-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+          <span class="comic-tab-number" aria-hidden="true">{index + 1}</span>
           {comic.branch}
         </button>
       ))}
@@ -270,33 +270,33 @@ const comics = [
 
 <style>
   .comic-gallery {
-    --comic-paper: #f5f2e9;
+    --comic-paper: #f3f2ec;
     --comic-ink: #101511;
     --comic-muted: #596157;
     --comic-blue: #2d8cff;
     --comic-rule: #cecfc2;
-    padding: clamp(64px, 8vw, 112px) 0;
+    padding: clamp(80px, 8vw, 112px) 0;
     background: var(--comic-paper);
     color: var(--comic-ink);
     color-scheme: light;
     scroll-margin-top: 110px;
   }
-  .comic-shell { width: min(1120px, calc(100% - 48px)); margin: 0 auto; }
+  .comic-shell { width: min(1280px, calc(100% - 48px)); margin: 0 auto; }
   .comic-section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; margin-bottom: 34px; }
-  .comic-eyebrow { margin: 0 0 16px; color: var(--comic-muted); font-size: 11px; font-weight: 800; letter-spacing: .14em; line-height: 1.4; }
-  .comic-section-head h2 { max-width: 700px; margin: 0; font-size: clamp(38px, 5vw, 65px); font-weight: 800; letter-spacing: -.055em; line-height: 1.02; }
-  .comic-intro { max-width: 260px; margin: 0 0 4px; color: var(--comic-muted); font-size: 16px; line-height: 1.6; }
+  .comic-eyebrow { margin: 0 0 8px; color: var(--comic-muted); font-size: clamp(20px, 2.2vw, 26px); font-weight: 700; font-stretch: 112%; text-transform: uppercase; line-height: 1.1; }
+  .comic-section-head h2 { max-width: 760px; margin: 0; font-size: clamp(36px, 4.4vw, 56px); font-weight: 800; font-stretch: 125%; text-transform: uppercase; letter-spacing: -.01em; line-height: .98; text-wrap: balance; }
+  .comic-intro { max-width: 300px; margin: 0 0 4px; color: var(--comic-muted); font-size: 18px; line-height: 1.6; }
   .comic-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
-  .comic-tab { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 46px; margin: 0; padding: 11px 17px; border: 1px solid var(--comic-rule); border-radius: 4px; background: transparent; color: var(--comic-ink); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s, border-color .15s; }
+  .comic-tab { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 46px; margin: 0; padding: 11px 17px; border: 1px solid var(--comic-rule); border-radius: 999px; background: transparent; color: var(--comic-ink); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .15s, border-color .15s; }
   .comic-tab:hover { border-color: var(--comic-ink); }
   .comic-tab[aria-selected='true'] { border-color: var(--comic-ink); background: var(--comic-ink); color: var(--comic-paper); }
-  .comic-tab-number { color: #777f71; font-size: 10px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .comic-tab-number { color: #696e62; font-family: var(--font-mono); font-size: 12px; font-weight: 400; font-variant-numeric: tabular-nums; }
   .comic-tab[aria-selected='true'] .comic-tab-number { color: #b8c2ad; }
-  .comic-reader { container: comic-reader / inline-size; border: 1px solid var(--comic-rule); background: #fbf9f3; }
+  .comic-reader { container: comic-reader / inline-size; overflow: hidden; border: 1px solid var(--comic-rule); border-radius: 20px; background: #fbf9f3; }
   .comic-panel[hidden] { display: none; }
   .comic-panel:focus-visible { outline-offset: -4px; }
   .comic-title-row { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 23px 26px; }
-  .comic-edition { flex: 0 0 auto; color: var(--comic-muted); font-size: 10px; font-weight: 700; letter-spacing: .1em; line-height: 1.4; }
+  .comic-edition { flex: 0 0 auto; color: var(--comic-muted); font-family: var(--font-mono); font-size: 12px; letter-spacing: .04em; line-height: 16px; }
   .comic-edition span { margin: 0 9px; color: #93998d; }
   .comic-title-row h3 { margin: 0; font-size: 21px; font-weight: 800; line-height: 1.2; letter-spacing: -.025em; text-align: right; }
   .comic-figure { margin: 0; }

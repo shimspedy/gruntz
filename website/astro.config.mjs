@@ -1,6 +1,8 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
+import react from '@astrojs/react';
+import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath } from 'node:url';
 
 // https://astro.build/config
@@ -9,13 +11,14 @@ export default defineConfig({
   // Preserve the site's Astro 6 whitespace behavior across the security upgrade.
   compressHTML: true,
   // The admin page is not for search engines.
-  integrations: [sitemap({ filter: (page) => !page.includes('/admin') })],
+  integrations: [react(), sitemap({ filter: (page) => !page.includes('/admin') })],
   build: {
     format: 'directory',
   },
   // Never inline scripts into the HTML: the Content-Security-Policy (public/_headers)
   // allows scripts from this origin only, so an inlined one is silently blocked.
   vite: {
+    plugins: [tailwindcss()],
     // Vite 8 can otherwise inspect the parent mobile-app tsconfig during a
     // website-only CI install, where Expo dependencies are intentionally absent.
     tsconfig: fileURLToPath(new URL('./tsconfig.json', import.meta.url)),

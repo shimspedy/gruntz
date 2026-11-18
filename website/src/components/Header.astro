@@ -1,6 +1,8 @@
 ---
 import { site } from '../data/site';
 import { content, languages, localePath, type Lang } from '../i18n/content';
+import MobileNav from './react/MobileNav';
+import { buttonVariants } from './ui/button';
 
 interface Props {
   lang?: Lang;
@@ -8,53 +10,78 @@ interface Props {
 
 const { lang = 'en' } = Astro.props as Props;
 const t = content[lang].nav;
+const es = lang === 'es';
 
 // Build output uses directory URLs (/support/), so compare without the trailing slash.
 const path = Astro.url.pathname.replace(/(.)\/$/, '$1');
-const home = localePath(lang, '/').replace(/(.)\/$/, '$1');
 
-// Legal pages are English-only, so they stay unprefixed in both languages.
+// Guides and legal pages are English-only, so they stay unprefixed in both languages.
 const links = [
   { label: t.features, href: localePath(lang, '/#features') },
-  { label: lang === 'es' ? 'Cómics' : 'Comics', href: localePath(lang, '/#comics') },
-  { label: t.faq, href: localePath(lang, '/#faq') },
+  { label: es ? 'Pruebas físicas' : 'Fitness tests', href: '/fitness-tests/' },
+  { label: es ? 'Entrenamiento' : 'Training', href: '/training/' },
+  { label: es ? 'Cómics' : 'Comics', href: localePath(lang, '/#comics') },
   { label: t.support, href: '/support' },
 ];
+const isCurrent = (href: string) => {
+  const target = href.replace(/(.)\/$/, '$1');
+  return !target.includes('#') && (path === target || path.startsWith(`${target}/`));
+};
 
 // The language switch always lands on the matching homepage.
-const switchTo = (l: Lang) => localePath(l, '/');
+const langs = (Object.keys(languages) as Lang[]).map((l) => ({
+  code: l,
+  label: languages[l],
+  href: localePath(l, '/'),
+  current: l === lang,
+}));
+const navProps = {
+  links,
+  cta: { label: es ? 'Descargar Gruntz' : 'Download Gruntz', href: site.appStoreUrl },
+  langs,
+  labels: es
+    ? { open: 'Abrir menú', close: 'Cerrar menú', title: 'Menú', language: t.language }
+    : { open: 'Open menu', close: 'Close menu', title: 'Menu', language: t.language },
+};
 ---
 
-<header class="site-header">
-  <div class="header-inner">
-    <a class="brand-lockup" href={localePath(lang, '/')} aria-label="Gruntz">
-      <img src="/brand/gruntz-icon.png" alt="" width="32" height="32" />
-      <span>Gruntz</span>
+<header class="sticky top-0 z-40 border-b border-bone/10 bg-ink/95">
+  <div class="shell flex h-16 items-center justify-between gap-6">
+    <a class="flex items-center gap-2.5" href={localePath(lang, '/')} aria-label="Gruntz">
+      <img src="/brand/gruntz-icon.png" alt="" width="32" height="32" class="size-8 rounded-lg" />
+      <span class="display text-lg">Gruntz</span>
     </a>
 
-    <nav class="site-nav" aria-label="Primary">
-      {links.map((link) => {
-        const target = link.href.replace(/(.)\/$/, '$1');
-        const current = target === path || (target === home && path === home);
-        return (
-          <a href={link.href} aria-current={current ? 'page' : undefined}>
-            {link.label}
-          </a>
-        );
-      })}
+    <nav class="hidden items-center gap-7 lg:flex" aria-label="Primary">
+      {links.map((link) => (
+        <a
+          href={link.href}
+          aria-current={isCurrent(link.href) ? 'page' : undefined}
+          class="whitespace-nowrap text-[15px] font-medium text-bone-2 transition-colors duration-150 ease-out hover:text-bone aria-[current=page]:text-bone"
+        >
+          {link.label}
+        </a>
+      ))}
     </nav>
 
-    <div class="header-actions">
-      <div class="lang-switch" role="group" aria-label={t.language}>
-        {(Object.keys(languages) as Lang[]).map((l) => (
-          <a href={switchTo(l)} hreflang={l} lang={l} aria-current={l === lang ? 'true' : undefined}>
-            {languages[l]}
+    <div class="flex items-center gap-3">
+      <div class="hidden items-center lg:flex" role="group" aria-label={t.language}>
+        {langs.map((l) => (
+          <a
+            href={l.href}
+            hreflang={l.code}
+            lang={l.code}
+            aria-current={l.current ? 'true' : undefined}
+            class="stamp inline-flex h-9 min-w-9 items-center justify-center rounded-full px-2 transition-colors duration-150 ease-out hover:text-bone aria-[current=true]:text-bone"
+          >
+            {l.label}
           </a>
         ))}
       </div>
-      <a class="button button-primary header-cta" href={site.appStoreUrl} target="_blank" rel="noopener">
-        {t.download}
-      </a>
+      <a class={`${buttonVariants({ size: 'sm' })} max-lg:hidden`} href={site.appStoreUrl} target="_blank" rel="noopener" data-cta="header">{t.download}</a>
+      <div data-island="nav" data-props={JSON.stringify(navProps)} class="lg:hidden">
+        <MobileNav {...navProps} />
+      </div>
     </div>
   </div>
 </header>

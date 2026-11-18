@@ -1,0 +1,122 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import Blocks from '../../components/Blocks.astro';
+import GuideCard from '../../components/GuideCard.astro';
+import DownloadCta from '../../components/DownloadCta.astro';
+import Faq from '../../components/react/Faq';
+import { site } from '../../data/site';
+import { testGuides, trainingGuides } from '../../data/guides';
+import { comparison, hubFaq } from '../../data/guides/tests';
+import { inline, plain } from '../../data/guides/types';
+
+const title = 'Military Fitness Tests 2026: All Six Branches Compared';
+const description = 'Events, scoring basics and 2026 changes for the Army AFT, Marine PFT and CFT, Navy PRT, Air Force PFRA, Space Force HPA and Coast Guard PFT.';
+const url = new URL('/fitness-tests/', site.url).toString();
+const faqItems = hubFaq.map((f) => ({ q: f.q, a: inline(f.a) }));
+const shared = trainingGuides.filter((g) => ['plank-training', '2-mile-run-training-plan', 'hand-release-push-ups', 'how-to-do-more-pull-ups'].includes(g.slug));
+
+const changes = [
+  { branch: 'Army', text: 'The AFT replaced the ACFT on June 1, 2025. A 350-point combat standard took effect in 2026, and a separate Combat Field Test is being phased in.', href: '/fitness-tests/army-aft/' },
+  { branch: 'Marine Corps', text: 'From January 1, 2026, combat arms Marines are scored on the male age-normed PFT tables and expected to reach 210 points.', href: '/fitness-tests/marine-corps-pft/' },
+  { branch: 'Navy', text: 'Two PFA cycles for 2026, with changes to how past failures count and to the body composition assessment.', href: '/fitness-tests/navy-prt/' },
+  { branch: 'Air Force', text: 'A new four-component assessment with a 2-mile run or HAMR. Scored testing began July 1, 2026.', href: '/fitness-tests/air-force-pfra/' },
+  { branch: 'Space Force', text: 'Two Human Performance Assessments a year for every Guardian from January 1, 2026.', href: '/fitness-tests/space-force-hpa/' },
+  { branch: 'Coast Guard', text: 'The first service-wide fitness test became a requirement on July 1, 2026.', href: '/fitness-tests/coast-guard-pft/' },
+];
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org', '@type': 'CollectionPage', name: title, description, url, inLanguage: 'en',
+    hasPart: testGuides.map((g) => ({ '@type': 'Article', headline: g.h1, url: new URL(`/fitness-tests/${g.slug}/`, site.url).toString() })),
+  },
+  {
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: site.url },
+      { '@type': 'ListItem', position: 2, name: 'Fitness tests', item: url },
+    ],
+  },
+  {
+    '@context': 'https://schema.org', '@type': 'FAQPage',
+    mainEntity: hubFaq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: plain(f.a) } })),
+  },
+];
+---
+
+<BaseLayout title={title} description={description} jsonLd={jsonLd}>
+  <Header />
+  <main id="main">
+    <section class="border-b border-bone/10">
+      <div class="shell py-16 md:py-24">
+        <p class="stamp">Fitness tests · Last verified November 17, 2026</p>
+        <h1 class="display mt-5 max-w-[18ch] text-[36px] sm:text-[48px] lg:text-[72px]">Military fitness tests in 2026, branch by branch</h1>
+        <p class="mt-6 max-w-[60ch] text-lg leading-relaxed text-bone-2">
+          Every branch changed its fitness test in 2025 or 2026, and a lot of what ranks in search is out of date. These guides cover the events, how each test is scored and how to train for it, with links to the official charts.
+        </p>
+      </div>
+    </section>
+
+    <section class="shell py-16 md:py-20" aria-labelledby="tests-title">
+      <h2 id="tests-title" class="display text-[28px] md:text-[36px]">Pick your test</h2>
+      <ul class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {testGuides.map((g) => <li><GuideCard guide={g} /></li>)}
+      </ul>
+    </section>
+
+    <section class="border-t border-bone/10 bg-ink-2" aria-labelledby="compare-title">
+      <div class="shell py-16 md:py-20">
+        <h2 id="compare-title" class="display text-[28px] md:text-[36px]">The tests side by side</h2>
+        <div class="prose-g mt-8">
+          <Blocks blocks={[{ type: 'table', head: comparison.head, rows: comparison.rows, caption: 'Events and frequency only. Scores vary by age and sex, so each guide links to the official chart.' }]} />
+        </div>
+      </div>
+    </section>
+
+    <section class="shell py-16 md:py-20" aria-labelledby="changes-title">
+      <h2 id="changes-title" class="display text-[28px] md:text-[36px]">What changed in 2025 and 2026</h2>
+      <ul class="mt-8 grid gap-x-12 md:grid-cols-2">
+        {changes.map((c) => (
+          <li class="border-t border-bone/10 py-6">
+            <p class="stamp">{c.branch}</p>
+            <p class="mt-2 max-w-[52ch] text-[17px] leading-relaxed text-bone-2">{c.text}</p>
+            <a href={c.href} class="mt-3 inline-flex min-h-8 items-center text-sm font-semibold text-accent-text hover:text-bone">Read the {c.branch} guide</a>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="border-t border-bone/10 bg-ink-2" aria-labelledby="shared-title">
+      <div class="shell py-16 md:py-20">
+        <h2 id="shared-title" class="display text-[28px] md:text-[36px]">Events the tests share</h2>
+        <p class="mt-5 max-w-[60ch] text-lg leading-relaxed text-bone-2">
+          Planks, push-ups and a timed run show up almost everywhere. Train these and you are most of the way to any of the tests.
+        </p>
+        <ul class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {shared.map((g) => <li><GuideCard guide={g} /></li>)}
+        </ul>
+        <a href="/training/" class="mt-8 inline-flex min-h-11 items-center text-[15px] font-semibold text-accent-text hover:text-bone">All training guides</a>
+      </div>
+    </section>
+
+    <section class="shell py-16 md:py-20" aria-labelledby="hub-faq-title">
+      <div class="grid gap-10 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16">
+        <h2 id="hub-faq-title" class="display text-[28px] md:text-[36px]">Questions</h2>
+        <div data-island="faq" data-props={JSON.stringify({ items: faqItems })} class="prose-faq">
+          <Faq items={faqItems} />
+        </div>
+      </div>
+      <p class="mt-12 max-w-[80ch] text-sm leading-relaxed text-bone-3">
+        Gruntz is an independent training app built by a former U.S. Marine. It is not affiliated with or endorsed by the U.S. Department of Defense or any military branch. Standards change: your command and the official publications are the authority.
+      </p>
+    </section>
+
+    <DownloadCta
+      placement="tests-hub"
+      title="Log your test events in Gruntz"
+      sub="Pick your branch, save each event result, and see which event sits furthest from your own target. A preparation benchmark, not an official score."
+    />
+  </main>
+  <Footer />
+</BaseLayout>

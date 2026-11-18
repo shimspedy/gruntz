@@ -9,6 +9,9 @@ interface Props {
   image?: string;
   lang?: Lang;
   ogLocale?: string;
+  ogType?: 'website' | 'article';
+  /** Structured data objects, each emitted as its own JSON-LD block. */
+  jsonLd?: Record<string, unknown>[];
 }
 
 const {
@@ -17,12 +20,14 @@ const {
   description = content[lang].meta.description,
   image = '/og/gruntz-home.png',
   ogLocale = content[lang].meta.ogLocale,
+  ogType = 'website',
+  jsonLd = [],
 } = Astro.props as Props;
 
 const canonical = new URL(Astro.url.pathname, site.url).toString();
 const ogImage = new URL(image, site.url).toString();
 
-// Only the homepage exists in every language; legal pages are English-only.
+// Only the homepage exists in every language; guides and legal pages are English-only.
 const path = Astro.url.pathname;
 const isHome = (Object.keys(languages) as Lang[]).some((l) => localePath(l, '/') === path);
 const alternates = isHome
@@ -34,11 +39,11 @@ const alternates = isHome
 <html lang={lang}>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#f5f3ed" />
+    <meta name="theme-color" content="#0b0c0a" />
     {/* A file, not inline: the Content-Security-Policy blocks inline scripts. */}
     <script is:inline src="/js-flag.js"></script>
     <link rel="canonical" href={canonical} />
@@ -47,7 +52,7 @@ const alternates = isHome
     <link rel="icon" type="image/png" href="/brand/gruntz-favicon.png" />
     <link rel="apple-touch-icon" href="/brand/gruntz-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
@@ -58,9 +63,15 @@ const alternates = isHome
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
+    {jsonLd.map((data) => (
+      <script type="application/ld+json" set:html={JSON.stringify(data).replace(/</g, '\\u003c')} />
+    ))}
   </head>
   <body>
     <a class="skip-link" href="#main">{lang === 'es' ? 'Saltar al contenido' : 'Skip to content'}</a>
     <slot />
+    <script>
+      import '../scripts/islands.tsx';
+    </script>
   </body>
 </html>

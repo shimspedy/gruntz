@@ -17,21 +17,18 @@ const { title, description, kicker = 'Legal', updated = site.updated } = Astro.p
 <BaseLayout title={`${title} | ${site.name}`} description={description}>
   <Header />
   <main id="main">
-    <section class="legal-hero">
-      <div class="site-shell">
-        <p class="eyebrow">{kicker}</p>
-        <h1>{title}</h1>
-        <p class="legal-meta">Last updated {updated}</p>
-        <p class="legal-summary">{description}</p>
+    <section class="border-b border-bone/10">
+      <div class="shell py-16 md:py-24">
+        <p class="stamp">{kicker} · Last updated {updated}</p>
+        <h1 class="display mt-4 max-w-[18ch] text-[40px] md:text-[64px]">{title}</h1>
+        <p class="mt-6 max-w-[62ch] text-lg leading-relaxed text-bone-2">{description}</p>
       </div>
     </section>
 
-    <section class="section legal-section">
-      <div class="site-shell">
-        <article class="legal-sheet">
-          <slot />
-        </article>
-      </div>
+    <section class="shell py-16">
+      <article class="prose-g max-w-[72ch]">
+        <slot />
+      </article>
     </section>
   </main>
   <Footer />

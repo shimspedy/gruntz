@@ -207,7 +207,7 @@ const en = {
     privacy: 'Privacy Policy',
     terms: 'Terms of Use',
     contact: 'Contact',
-    photos: 'Photos: Unsplash',
+    photos: 'Photos: U.S. Army, U.S. Marine Corps and U.S. Coast Guard; Sven Mieke, Will Haddock, Rodrigo Rodrigues and others on Unsplash. The appearance of U.S. Department of Defense (DoD) visual information does not imply or constitute DoD endorsement.',
   },
 };
 
@@ -401,7 +401,7 @@ const es: Content = {
     privacy: 'Privacidad (inglés)',
     terms: 'Términos de uso (inglés)',
     contact: 'Contacto',
-    photos: 'Fotos: Unsplash',
+    photos: 'Fotos: Ejército, Cuerpo de Marines y Guardia Costera de EE. UU.; Sven Mieke, Will Haddock, Rodrigo Rodrigues y otros en Unsplash. La aparición de información visual del Departamento de Defensa de EE. UU. (DoD) no implica ni constituye su respaldo.',
   },
 };
 
