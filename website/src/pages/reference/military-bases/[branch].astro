@@ -1,0 +1,23 @@
+---
+import ToolPage from '../../../components/ToolPage.astro';
+import BaseList from '../../../components/BaseList.astro';
+import { BRANCHES, type Branch } from '../../../data/tools/types';
+import { installations, provenance } from '../../../data/tools/reference/installations';
+export function getStaticPaths() {
+  return BRANCHES.filter((b) => installations.some((i) => i.branch === b.id)).map((b) => ({ params: { branch: b.id } }));
+}
+const id = Astro.params.branch as Branch;
+const branch = BRANCHES.find((b) => b.id === id)!;
+const list = installations.filter((i) => i.branch === id);
+---
+<ToolPage
+  metaTitle={`${branch.short} Bases List: Every Major Installation`.slice(0, 60)}
+  description={`List of ${list.length} major ${branch.name} installations in the U.S. and overseas, by state and country, with what each one is home to.`.slice(0, 155)}
+  h1={`${branch.short} bases`}
+  lede={`Major ${branch.name} installations at home and overseas, grouped by state and country.`}
+  crumbs={[{ name: 'Reference', href: '/tools/' }, { name: 'Military bases', href: '/reference/military-bases/' }, { name: branch.short, href: `/reference/military-bases/${id}/` }]}
+  provenance={provenance}
+  related={[{ name: 'All military bases', href: '/reference/military-bases/' }, ...BRANCHES.filter((b) => b.id !== id && installations.some((i) => i.branch === b.id)).map((b) => ({ name: `${b.short} bases`, href: `/reference/military-bases/${b.id}/` }))]}
+>
+  <BaseList list={list} showBranch={false} />
+</ToolPage>

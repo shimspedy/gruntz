@@ -1,0 +1,46 @@
+---
+import ToolPage from '../../../components/ToolPage.astro';
+import MarineRifleCalculator from '../../../components/react/MarineRifleCalculator';
+import { rifleQualification as R } from '../../../data/tools/career/marine-corps';
+const table = (stages: typeof R.evaluation) => stages;
+---
+<ToolPage
+  metaTitle="USMC Rifle Qualification Calculator (ARQ Score)"
+  description="Free Marine Corps Annual Rifle Qualification calculator. Enter your destroys and drills passed to see Expert, Sharpshooter or Marksman, plus the full course."
+  h1="Marine Corps rifle qualification calculator"
+  lede="Find your Annual Rifle Qualification badge from your destroys and the drill types you passed, using the scorecard matrix. The full course of fire is below."
+  eyebrow="U.S. Marine Corps · Free calculator"
+  crumbs={[{ name: 'Tools', href: '/tools/' }, { name: 'Marine Corps', href: '/tools/marine-corps/' }, { name: 'Rifle qualification', href: '/tools/marine-corps/rifle-qualification-calculator/' }]}
+  provenance={R.provenance}
+  app={{ name: 'Marine Corps rifle qualification calculator' }}
+  faq={[
+    { q: 'How is the Marine Corps rifle qualification scored?', a: `You count Destroys across the scored stages, out of ${R.maxDestroys}, and pass or fail each of the drill types. Your badge comes from where the two meet on the scorecard matrix.` },
+    { q: 'What are the drill types?', a: `${R.drillTypes.join(', ')}. Each is scored pass or fail.` },
+    { q: 'Is this my official qualification?', a: 'No. It is an estimate from the published matrix. Only the score recorded at your range counts.' },
+  ]}
+  related={[{ name: 'Marine Corps PFT calculator', href: '/tools/marine-corps/pft-calculator/' }, { name: 'JEPES calculator', href: '/tools/marine-corps/jepes-calculator/' }, { name: 'Marine Corps MOS list', href: '/reference/jobs/marine-corps/' }, { name: 'Marine Corps ranks', href: '/reference/ranks/marine-corps/' }]}
+>
+  <section aria-label="Calculator" data-island="marine-rifle" data-props="{}"><MarineRifleCalculator /></section>
+
+  <section class="mt-16" aria-labelledby="matrix">
+    <h2 id="matrix" class="text-[28px] font-bold leading-tight [font-stretch:112%]">Qualification matrix</h2>
+    <p class="mt-3 max-w-[62ch] text-bone-2">Find your Destroys down the side, then read across to the number of drill types you passed.</p>
+    <div class="mt-5 max-w-[720px] overflow-x-auto rounded-2xl border border-bone/10 bg-ink-2">
+      <table class="chart w-full text-[14px] tabular-nums">
+        <thead><tr><th scope="col">Destroys</th>{[0, 1, 2, 3].map((d) => <th scope="col">{d} drills</th>)}</tr></thead>
+        <tbody>{R.classification.map((r) => <tr><th scope="row">{r.destroysMin === r.destroysMax ? r.destroysMin : `${r.destroysMin}–${r.destroysMax}`}</th>{r.byDrillsPassed.map((c) => <td>{c}</td>)}</tr>)}</tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="mt-16" aria-labelledby="course">
+    <h2 id="course" class="text-[28px] font-bold leading-tight [font-stretch:112%]">The course of fire</h2>
+    <div class="mt-5 overflow-x-auto rounded-2xl border border-bone/10 bg-ink-2">
+      <table class="chart w-full min-w-[720px] text-[14px]">
+        <thead><tr><th scope="col">Yards</th><th scope="col">Stage</th><th scope="col">Positions</th><th scope="col">Rounds</th><th scope="col">Time</th><th scope="col">Counts as</th></tr></thead>
+        <tbody>{table(R.evaluation).map((s) => <tr><th scope="row">{s.yards}</th><td class="whitespace-normal">{s.stage}</td><td class="whitespace-normal">{s.positions}</td><td class="tabular-nums">{s.rounds}</td><td class="tabular-nums">{s.seconds}s</td><td>{s.kind === 'destroy' ? 'Destroys' : s.kind === 'drill' ? 'Drill' : s.kind === 'hold' ? 'Hold' : 'Zero'}</td></tr>)}</tbody>
+      </table>
+    </div>
+    <ul class="prose-g mt-8 max-w-[72ch]">{R.rules.map((r) => <li>{r}</li>)}</ul>
+  </section>
+</ToolPage>

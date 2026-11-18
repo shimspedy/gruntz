@@ -1,0 +1,63 @@
+---
+import ToolPage from '../../../components/ToolPage.astro';
+import RibbonRack, { RibbonSvg } from '../../../components/react/RibbonRack';
+import { BRANCHES, type Award, type Branch, type Provenance } from '../../../data/tools/types';
+
+const modules = import.meta.glob<{ awards: Award[]; provenance: Provenance }>('../../../data/tools/reference/awards/*.ts', { eager: true });
+export function getStaticPaths() {
+  const mods = import.meta.glob<{ awards?: unknown }>('../../../data/tools/reference/awards/*.ts', { eager: true });
+  return BRANCHES.filter((b) => { const a = mods[`../../../data/tools/reference/awards/${b.id}.ts`]?.awards; return Array.isArray(a) && a.length > 0; }).map((b) => ({ params: { branch: b.id } }));
+}
+const id = Astro.params.branch as Branch;
+const branch = BRANCHES.find((b) => b.id === id)!;
+const { awards: listed, provenance } = modules[`../../../data/tools/reference/awards/${id}.ts`];
+// Stripe patterns live in one shared file keyed by award name; join them on here.
+const patternFiles = import.meta.glob<{ ribbonPatterns?: Record<string, { stripes: [string, number][] }> }>('../../../data/tools/reference/ribbons.ts', { eager: true });
+const patterns = Object.values(patternFiles)[0]?.ribbonPatterns ?? {};
+const awards = listed.map((a) => (a.stripes?.length ? a : patterns[a.name] ? { ...a, stripes: patterns[a.name].stripes } : a));
+const sorted = [...awards].sort((a, b) => a.order - b.order);
+const drawable = sorted.filter((a) => a.stripes?.length).map(({ name, order, type, stripes }) => ({ name, order, type, stripes }));
+const typeLabel: Record<Award['type'], string> = { decoration: 'Personal decoration', unit: 'Unit award', campaign: 'Campaign', service: 'Service', training: 'Training', foreign: 'Foreign', marksmanship: 'Marksmanship' };
+const top = sorted[0];
+// Describe only what the list actually holds.
+const present = [...new Set(sorted.map((a) => a.type))];
+const words: Record<Award['type'], string> = { decoration: 'personal decorations', unit: 'unit awards', campaign: 'campaign medals', service: 'service medals', training: 'training ribbons', foreign: 'foreign awards', marksmanship: 'marksmanship awards' };
+const kinds = present.length === 1 ? words[present[0]] : `${present.slice(0, -1).map((t) => words[t]).join(', ')} and ${words[present[present.length - 1]]}`;
+---
+
+<ToolPage
+  metaTitle={`${branch.short} Medals and Ribbons: Order of Precedence`.slice(0, 60)}
+  description={`${branch.name} medals and ribbons in order of precedence, from the ${top?.name ?? 'highest award'} down.`.slice(0, 155)}
+  h1={`${branch.short} ribbons and order of precedence`}
+  lede={`${sorted.length} ${branch.name} ${kinds} in the order they are worn${drawable.length ? ', and a builder that lays out your rack' : ''}.`}
+  crumbs={[{ name: 'Reference', href: '/tools/' }, { name: `${branch.short} ribbons`, href: `/reference/awards/${id}/` }]}
+  provenance={provenance}
+  faq={[
+    { q: 'How are ribbons arranged on a rack?', a: 'Highest precedence goes at the top, on the wearer’s right. Rows are filled from the bottom up with the same number per row, and any short row sits at the top, centred.' },
+    ...(top ? [{ q: `What is the highest ${branch.short} award?`, a: `The ${top.name}.` }] : []),
+  ]}
+  related={BRANCHES.filter((b) => b.id !== id).map((b) => ({ name: `${b.short} ribbons`, href: `/reference/awards/${b.id}/` }))}
+>
+  {drawable.length ? (
+    <section aria-label="Ribbon rack builder" data-island="ribbons" data-props={JSON.stringify({ awards: drawable, branch: id, total: sorted.length })}>
+      <RibbonRack awards={drawable} branch={id} total={sorted.length} />
+    </section>
+  ) : null}
+
+  <section class="mt-14" aria-labelledby="precedence">
+    <h2 id="precedence" class="text-[28px] font-bold leading-tight [font-stretch:112%]">Order of precedence</h2>
+    <div class="mt-5 overflow-x-auto rounded-2xl border border-bone/10 bg-ink-2">
+      <table class="chart w-full text-[15px]">
+        <thead><tr><th scope="col">#</th><th scope="col">Ribbon</th><th scope="col">Award</th><th scope="col">Type</th></tr></thead>
+        <tbody>{sorted.map((a) => (
+          <tr>
+            <th scope="row" class="tabular-nums">{a.order}</th>
+            <td>{a.stripes?.length ? <RibbonSvg stripes={a.stripes} title={a.name} width={56} /> : <span class="text-bone-3">–</span>}</td>
+            <td class="whitespace-normal text-bone">{a.name}</td>
+            <td>{typeLabel[a.type]}</td>
+          </tr>
+        ))}</tbody>
+      </table>
+    </div>
+  </section>
+</ToolPage>

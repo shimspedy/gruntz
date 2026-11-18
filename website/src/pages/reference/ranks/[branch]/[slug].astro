@@ -1,0 +1,111 @@
+---
+import ToolPage from '../../../../components/ToolPage.astro';
+import { BRANCHES, type Branch, type PayTable, type Rank, type RankDetail } from '../../../../data/tools/types';
+import { insigniaSvg } from '../../../../data/tools/insignia';
+import { insigniaCredit, insigniaImage } from '../../../../data/tools/insignia-images';
+import * as rankData from '../../../../data/tools/reference/ranks';
+import * as payData from '../../../../data/tools/reference/pay';
+
+/**
+ * One page per rank: what it is, what the holder does, how to get there, its history,
+ * pay and the same grade in every other branch. Built only where a detail entry exists.
+ */
+export function getStaticPaths() {
+  const mods = import.meta.glob<{ rankDetails?: RankDetail[] }>('../../../../data/tools/reference/rank-details/*.ts', { eager: true });
+  const details = Object.values(mods).flatMap((m) => m.rankDetails ?? []);
+  return details
+    .map((d) => ({ d, r: rankData.ranks.find((r) => r.branch === d.branch && r.abbr === d.abbr) }))
+    .filter((x): x is { d: RankDetail; r: Rank } => !!x.r)
+    .map(({ d, r }) => ({ params: { branch: d.branch, slug: d.slug }, props: { detail: d, rank: r, all: details } }));
+}
+
+interface Props { detail: RankDetail; rank: Rank; all: RankDetail[] }
+const { detail: d, rank: r, all } = Astro.props as Props;
+const branch = BRANCHES.find((b) => b.id === r.branch)!;
+const id = r.branch as Branch;
+
+const photo = insigniaImage(r.branch, r.abbr);
+const art = photo ? null : insigniaSvg(r);
+
+// Basic pay range for this grade (warrants and officers have one row per grade; O-11 has none).
+const table = Object.values(payData).find((v): v is PayTable => !!v && typeof v === 'object' && 'rows' in v && 'year' in v);
+const payRow = table?.rows.find((row) => row.grade === r.grade);
+const amounts = payRow ? Object.values(payRow.pay).filter((n): n is number => typeof n === 'number') : [];
+const money = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+const payRange = amounts.length ? `${money(Math.min(...amounts))} – ${money(Math.max(...amounts))}` : null;
+
+const order = (x: Rank) => ({ enlisted: 0, warrant: 1, officer: 2 })[x.category] * 100 + Number(x.grade.split('-')[1]);
+const ladder = rankData.ranks.filter((x) => x.branch === id).sort((a, b) => order(a) - order(b));
+const slugOf = (x: Rank) => all.find((e) => e.branch === x.branch && e.abbr === x.abbr)?.slug;
+const pageOf = (x: Rank) => (slugOf(x) ? `/reference/ranks/${x.branch}/${slugOf(x)}/` : `/reference/ranks/${x.branch}/`);
+const idx = ladder.findIndex((x) => x.abbr === r.abbr);
+const prev = idx > 0 ? ladder[idx - 1] : null;
+const next = idx < ladder.length - 1 ? ladder[idx + 1] : null;
+
+const isBillet = (x: Rank) => x.grade === 'O-11' || /advisor billet|historical|five-star/i.test(x.note ?? '');
+const equivalents = isBillet(r) ? [] : BRANCHES.filter((b) => b.id !== id).flatMap((b) => rankData.ranks.filter((x) => x.branch === b.id && x.grade === r.grade && !isBillet(x)).map((x) => ({ b, x })));
+
+const category = { enlisted: 'Enlisted', warrant: 'Warrant officer', officer: 'Officer' }[r.category];
+const provenance = { verified: rankData.provenance.verified, sources: d.sources, unverified: d.unverified };
+const metaTitle = `${r.title} (${r.abbr}): ${branch.short} Rank Explained`.length <= 60
+  ? `${r.title} (${r.abbr}): ${branch.short} Rank Explained`
+  : `${r.title}: ${branch.short} ${r.grade} Rank`.slice(0, 60);
+---
+
+<ToolPage
+  metaTitle={metaTitle}
+  description={`${d.summary.split('. ')[0]}.`.slice(0, 155)}
+  h1={`${branch.short} ${r.title}`}
+  lede={d.summary}
+  eyebrow={`${branch.name} · ${r.grade} · ${r.abbr}`}
+  crumbs={[{ name: 'Reference', href: '/tools/' }, { name: 'Military ranks', href: '/reference/ranks/' }, { name: branch.short, href: `/reference/ranks/${id}/` }, { name: r.title, href: `/reference/ranks/${id}/${d.slug}/` }]}
+  provenance={provenance}
+  faq={d.faq}
+  related={[
+    ...(prev ? [{ name: `Previous: ${prev.title}`, href: pageOf(prev), note: prev.grade }] : []),
+    ...(next ? [{ name: `Next: ${next.title}`, href: pageOf(next), note: next.grade }] : []),
+    { name: `All ${branch.short} ranks`, href: `/reference/ranks/${id}/` },
+    { name: 'Military pay chart', href: '/reference/military-pay-chart/' },
+  ]}
+>
+  <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <article class="prose-g min-w-0 max-w-[72ch]">
+      <h2 id="role" class="!mt-0">What a {r.title.toLowerCase()} does</h2>
+      <ul>{d.role.map((x) => <li>{x}</li>)}</ul>
+
+      <h2 id="promotion">How to become a {r.title.toLowerCase()}</h2>
+      <p>{d.promotion}</p>
+
+      <h2 id="history">History of the rank</h2>
+      {d.history.map((p) => <p>{p}</p>)}
+
+      {equivalents.length ? (
+        <Fragment>
+          <h2 id="equivalents">Equivalent ranks in other services</h2>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Branch</th><th>Rank</th></tr></thead>
+            <tbody>{equivalents.map(({ b, x }) => <tr><td>{b.short}</td><td><a href={pageOf(x)}>{x.title} ({x.abbr})</a></td></tr>)}</tbody>
+          </table></div>
+        </Fragment>
+      ) : null}
+    </article>
+
+    <aside class="lg:sticky lg:top-24 lg:self-start">
+      <div class="rounded-2xl border border-bone/10 bg-ink-2 p-6">
+        <div class="mx-auto grid h-[180px] w-[180px] place-items-center rounded-2xl bg-ink-3 p-4">
+          {photo ? <img src={photo} alt={`${branch.short} ${r.title} insignia`} width="148" height="148" loading="eager" decoding="async" class="h-[148px] w-[148px] object-contain" />
+            : art ? <div class="h-[148px] w-[148px] [&_svg]:h-full [&_svg]:w-full" set:html={art} /> : <span class="text-sm text-bone-3">No insignia</span>}
+        </div>
+        <p class="mt-4 text-center text-[14px] text-bone-2">{r.insignia}</p>
+        <dl class="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-bone/10 bg-bone/10 text-[14px]">
+          <div class="bg-ink-2 p-3"><dt class="text-bone-3">Pay grade</dt><dd class="mt-0.5 font-semibold">{r.grade}</dd></div>
+          <div class="bg-ink-2 p-3"><dt class="text-bone-3">Abbreviation</dt><dd class="mt-0.5 font-semibold">{r.abbr}</dd></div>
+          <div class="bg-ink-2 p-3"><dt class="text-bone-3">Category</dt><dd class="mt-0.5 font-semibold">{category}</dd></div>
+          <div class="bg-ink-2 p-3"><dt class="text-bone-3">Branch</dt><dd class="mt-0.5 font-semibold">{branch.short}</dd></div>
+          {payRange ? <div class="col-span-2 bg-ink-2 p-3"><dt class="text-bone-3">{table?.year} basic pay a month</dt><dd class="mt-0.5 font-semibold tabular-nums">{payRange}</dd></div> : null}
+        </dl>
+        {photo ? <p class="mt-4 text-[12px] leading-4 text-bone-3"><a class="underline decoration-1 underline-offset-2 hover:text-bone" href={insigniaCredit.url} target="_blank" rel="noopener">{insigniaCredit.label}</a></p> : null}
+      </div>
+    </aside>
+  </div>
+</ToolPage>

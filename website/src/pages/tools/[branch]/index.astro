@@ -1,0 +1,49 @@
+---
+import ToolPage from '../../../components/ToolPage.astro';
+import { catalog, GROUPS } from '../../../data/tools/catalog';
+import { BRANCHES, type Branch } from '../../../data/tools/types';
+
+export function getStaticPaths() {
+  const items = catalog();
+  return BRANCHES.filter((b) => items.some((i) => i.branch === b.id)).map((b) => ({ params: { branch: b.id } }));
+}
+
+const id = Astro.params.branch as Branch;
+const branch = BRANCHES.find((b) => b.id === id)!;
+const all = catalog();
+const mine = all.filter((i) => i.branch === id);
+const shared = all.filter((i) => i.branch === 'all');
+const groups = GROUPS.map((g) => ({ name: g, items: mine.filter((i) => i.group === g) })).filter((g) => g.items.length);
+---
+
+<ToolPage
+  metaTitle={`${branch.short} Tools: Calculators and Standards`.slice(0, 60)}
+  description={`Free ${branch.name} tools: fitness test calculator, height and weight standards, ${id === 'navy' || id === 'coast-guard' ? 'ratings' : 'jobs'}, ribbons and history.`.slice(0, 155)}
+  h1={`${branch.name} tools`}
+  lede={`Calculators and reference for ${branch.member}s, built from the official ${branch.short} charts and orders.`}
+  crumbs={[{ name: 'Tools', href: '/tools/' }, { name: branch.short, href: `/tools/${id}/` }]}
+>
+  {groups.map((g) => (
+    <section class="mt-2 mb-12" aria-labelledby={`g-${g.name}`}>
+      <h2 id={`g-${g.name}`} class="text-[26px] font-bold leading-tight [font-stretch:112%]">{g.name}</h2>
+      <ul class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {g.items.map((i) => (
+          <li>
+            <a href={i.href} class="flex h-full flex-col gap-2 rounded-2xl border border-bone/10 bg-ink-2 p-5 transition-colors duration-150 ease-out hover:border-bone/25 hover:bg-ink-3">
+              <span class="text-[18px] font-semibold leading-snug [font-stretch:112%]">{i.name}</span>
+              <span class="text-[15px] leading-relaxed text-bone-2">{i.blurb}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+  {shared.length ? (
+    <section aria-labelledby="shared">
+      <h2 id="shared" class="text-[26px] font-bold leading-tight [font-stretch:112%]">For every branch</h2>
+      <ul class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {shared.map((i) => <li><a href={i.href} class="flex h-full flex-col gap-2 rounded-2xl border border-bone/10 bg-ink-2 p-5 transition-colors duration-150 ease-out hover:border-bone/25 hover:bg-ink-3"><span class="text-[17px] font-semibold">{i.name}</span><span class="text-[14px] text-bone-2">{i.blurb}</span></a></li>)}
+      </ul>
+    </section>
+  ) : null}
+</ToolPage>

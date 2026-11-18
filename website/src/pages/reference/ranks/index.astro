@@ -1,0 +1,63 @@
+---
+import ToolPage from '../../../components/ToolPage.astro';
+import { BRANCHES } from '../../../data/tools/types';
+import * as data from '../../../data/tools/reference/ranks';
+import { insigniaSvg } from '../../../data/tools/insignia';
+import { insigniaCredit, insigniaImage } from '../../../data/tools/insignia-images';
+
+const { ranks, provenance } = data;
+const grades = ['E-1','E-2','E-3','E-4','E-5','E-6','E-7','E-8','E-9','W-1','W-2','W-3','W-4','W-5','O-1','O-2','O-3','O-4','O-5','O-6','O-7','O-8','O-9','O-10'];
+const isBillet = (r: (typeof ranks)[number]) => r.grade === 'O-11' || /advisor billet|historical|five-star/i.test(r.note ?? '');
+const cells = (branch: string, grade: string) => ranks.filter((r) => r.branch === branch && r.grade === grade && !isBillet(r));
+const anchor = (grade: string, abbr: string) => `${grade}-${abbr}`.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+const used = grades.filter((g) => ranks.some((r) => r.grade === g));
+---
+
+<ToolPage
+  metaTitle="Military Ranks: All Six Branches by Pay Grade"
+  description="Every U.S. military rank side by side: Army, Marine Corps, Navy, Air Force, Space Force and Coast Guard, enlisted, warrant and officer, by pay grade."
+  h1="Military ranks by pay grade"
+  lede="Every enlisted, warrant officer and officer rank in all six branches, lined up by pay grade so you can compare them at a glance."
+  crumbs={[{ name: 'Reference', href: '/tools/' }, { name: 'Military ranks', href: '/reference/ranks/' }]}
+  provenance={provenance}
+  faq={[
+    { q: 'What is a pay grade?', a: 'A pay grade (E-1 to E-9 for enlisted, W-1 to W-5 for warrant officers, O-1 to O-10 for officers) sets basic pay and is the same across branches. Rank titles differ by branch.' },
+    { q: 'Why are some grades blank for a branch?', a: 'Not every branch uses every grade. A dash means that branch has no rank at that pay grade. Open a branch’s own page for its full list.' },
+    { q: 'Which rank is higher, a Navy captain or an Army captain?', a: 'A Navy captain is an O-6, the same grade as an Army colonel. An Army captain is an O-3, the same as a Navy lieutenant.' },
+  ]}
+  related={BRANCHES.map((b) => ({ name: `${b.short} ranks`, href: `/reference/ranks/${b.id}/`, note: 'Insignia and titles' }))}
+>
+  <div class="overflow-x-auto rounded-2xl border border-bone/10 bg-ink-2">
+    <table class="chart w-full min-w-[880px] text-[14px]">
+      <caption class="sr-only">Rank abbreviations by pay grade for each branch</caption>
+      <thead><tr><th scope="col">Grade</th>{BRANCHES.map((b) => <th scope="col"><a class="hover:text-accent-text" href={`/reference/ranks/${b.id}/`}>{b.short}</a></th>)}</tr></thead>
+      <tbody>{used.map((g) => (
+        <tr>
+          <th scope="row" class="tabular-nums">{g}</th>
+          {BRANCHES.map((b) => {
+            const list = cells(b.id, g);
+            return (
+              <td>
+                {list.length ? (
+                  <div class="flex flex-col gap-1.5">
+                    {list.map((r) => {
+                      const photo = insigniaImage(r.branch, r.abbr);
+                      const art = photo ? null : insigniaSvg(r);
+                      return (
+                        <a href={`/reference/ranks/${b.id}/#${anchor(r.grade, r.abbr)}`} class="inline-flex items-center gap-2 hover:text-bone" title={r.title}>
+                          <span class="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-ink-3">{photo ? <img src={photo} alt="" width="28" height="28" loading="lazy" decoding="async" class="h-7 w-7 object-contain" /> : art ? <span class="block h-6 w-6 [&_svg]:h-full [&_svg]:w-full" set:html={art} /> : null}</span>
+                          {r.abbr}
+                        </a>
+                      );
+                    })}
+                  </div>
+                ) : <span class="text-bone-3">–</span>}
+              </td>
+            );
+          })}
+        </tr>
+      ))}</tbody>
+    </table>
+  </div>
+  <p class="mt-6 max-w-[72ch] text-sm leading-relaxed text-bone-3"><a href={insigniaCredit.url} target="_blank" rel="noopener" class="underline decoration-1 underline-offset-[3px] hover:text-bone">{insigniaCredit.label}</a>. Use of these images does not imply endorsement by the Department or any military branch.</p>
+</ToolPage>

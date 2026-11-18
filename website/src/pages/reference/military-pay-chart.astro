@@ -1,0 +1,47 @@
+---
+import ToolPage from '../../components/ToolPage.astro';
+import type { PayTable } from '../../data/tools/types';
+import * as data from '../../data/tools/reference/pay';
+
+const table = Object.values(data).find((v): v is PayTable => !!v && typeof v === 'object' && 'rows' in v && 'year' in v)!;
+const cols = Object.keys(table.rows[0].pay);
+const colLabel = (k: string) => (k === 'under2' ? '<2' : k === 'over40' ? '>40' : k);
+const money = (n: number | null) => (n == null ? '–' : n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }));
+const sections = [
+  { id: 'officer', title: 'Commissioned officers', rows: table.rows.filter((r) => /^O-\d+$/.test(r.grade)) },
+  { id: 'officer-e', title: 'Officers with more than 4 years enlisted or warrant service', rows: table.rows.filter((r) => /^O-\dE$/.test(r.grade)) },
+  { id: 'warrant', title: 'Warrant officers', rows: table.rows.filter((r) => r.grade.startsWith('W-')) },
+  { id: 'enlisted', title: 'Enlisted', rows: table.rows.filter((r) => r.grade.startsWith('E-')) },
+].filter((s) => s.rows.length);
+const e1 = table.rows.find((r) => r.grade === 'E-1');
+const firstPay = e1 ? Object.values(e1.pay).find((v) => v != null) : null;
+---
+
+<ToolPage
+  metaTitle={`${table.year} Military Pay Chart: Monthly Basic Pay`}
+  description={`The ${table.year} military basic pay chart for every enlisted, warrant and officer grade, by years of service. Monthly pay as published by DFAS.`}
+  h1={`${table.year} military pay chart`}
+  lede={`Monthly basic pay for every pay grade by years of service, effective ${table.effective}. Basic pay is the same in every branch.`}
+  crumbs={[{ name: 'Reference', href: '/tools/' }, { name: 'Military pay chart', href: '/reference/military-pay-chart/' }]}
+  provenance={table.provenance}
+  faq={[
+    { q: 'Is basic pay the same in every branch?', a: 'Yes. Basic pay depends only on pay grade and years of service, so an Army E-4 and a Navy E-4 with the same service time earn the same basic pay.' },
+    ...(firstPay ? [{ q: `How much does an E-1 make in ${table.year}?`, a: `The ${table.year} chart lists ${money(firstPay as number)} a month in basic pay for an E-1. Allowances such as housing (BAH) and food (BAS) are paid on top and are not shown here.` }] : []),
+    { q: 'Does this include housing and food allowances?', a: 'No. This is basic pay only. BAH depends on location, rank and dependents, and BAS is a flat monthly amount.' },
+  ]}
+  related={[{ name: 'Military ranks', href: '/reference/ranks/' }]}
+>
+  {sections.map((s) => (
+    <section class="mb-12" aria-labelledby={s.id}>
+      <h2 id={s.id} class="text-[24px] font-bold leading-tight [font-stretch:112%]">{s.title}</h2>
+      <div class="mt-5 overflow-x-auto rounded-2xl border border-bone/10 bg-ink-2">
+        <table class="chart w-full min-w-[1100px] text-[13px] tabular-nums">
+          <caption class="sr-only">{table.year} monthly basic pay, {s.title.toLowerCase()}, by years of service</caption>
+          <thead><tr><th scope="col">Grade</th>{cols.map((c) => <th scope="col">{colLabel(c)}</th>)}</tr></thead>
+          <tbody>{s.rows.map((r) => <tr><th scope="row">{r.grade}</th>{cols.map((c) => <td>{money(r.pay[c] ?? null)}</td>)}</tr>)}</tbody>
+        </table>
+      </div>
+      <p class="mt-2 text-[13px] text-bone-3">Columns are years of service. Scroll sideways on a small screen.</p>
+    </section>
+  ))}
+</ToolPage>

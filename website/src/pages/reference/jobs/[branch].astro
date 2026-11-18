@@ -1,0 +1,64 @@
+---
+import ToolPage from '../../../components/ToolPage.astro';
+import { BRANCHES, type Branch, type Job, type Provenance } from '../../../data/tools/types';
+import { jobWord } from '../../../data/tools/catalog';
+
+const modules = import.meta.glob<{ jobs: Job[]; provenance: Provenance }>('../../../data/tools/reference/jobs/*.ts', { eager: true });
+
+export function getStaticPaths() {
+  const mods = import.meta.glob<{ jobs?: unknown }>('../../../data/tools/reference/jobs/*.ts', { eager: true });
+  return BRANCHES.filter((b) => Array.isArray(mods[`../../../data/tools/reference/jobs/${b.id}.ts`]?.jobs)).map((b) => ({ params: { branch: b.id } }));
+}
+const id = Astro.params.branch as Branch;
+const branch = BRANCHES.find((b) => b.id === id)!;
+const { jobs, provenance } = modules[`../../../data/tools/reference/jobs/${id}.ts`];
+const word = jobWord[id];
+const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const byCategory = (['enlisted', 'warrant', 'officer'] as const).map((c) => {
+  const list = jobs.filter((j) => j.category === c);
+  const fields = [...new Set(list.map((j) => j.field))].sort();
+  return { c, fields: fields.map((f) => ({ field: f, jobs: list.filter((j) => j.field === f).sort((a, b) => a.code.localeCompare(b.code, 'en', { numeric: true })) })) };
+}).filter((g) => g.fields.length);
+const label = { enlisted: 'Enlisted', warrant: 'Warrant officer', officer: 'Officer' };
+const enlistedCount = jobs.filter((j) => j.category === 'enlisted').length;
+---
+
+<ToolPage
+  metaTitle={`${word.plural}: Every ${word.short} by Career Field`.slice(0, 60)}
+  description={`The complete ${word.plural.toLowerCase()} for ${new Date().getFullYear()}: every ${word.long} code and title, grouped by career field.`.slice(0, 155)}
+  h1={word.plural}
+  lede={`Every current ${branch.name} ${word.long} with its code and title, grouped by career field.`}
+  crumbs={[{ name: 'Reference', href: '/tools/' }, { name: word.plural, href: `/reference/jobs/${id}/` }]}
+  provenance={provenance}
+  faq={[
+    { q: `How many ${word.short === 'Rating' ? 'enlisted ratings' : `enlisted ${word.short}s`} does the ${branch.short} have?`, a: `${enlistedCount} are listed on this page. Codes are added, merged and retired over time, so check the current manual before you choose.` },
+    { q: `Can I change my ${word.short} later?`, a: `Usually, through your branch's retraining or lateral move process, depending on your record and the needs of the service. Ask your career counselor.` },
+  ]}
+  related={[{ name: 'Military ranks', href: `/reference/ranks/${id}/` }, ...BRANCHES.filter((b) => b.id !== id).map((b) => ({ name: jobWord[b.id].plural, href: `/reference/jobs/${b.id}/` }))].slice(0, 6)}
+>
+  <nav aria-label="Career fields" class="max-w-[72ch]">
+    <p class="stamp">Jump to a field</p>
+    <ul class="mt-3 flex flex-wrap gap-2">
+      {byCategory.flatMap((g) => g.fields.map((f) => (
+        <li><a href={`#${g.c}-${slug(f.field)}`} class="inline-block rounded-full border border-bone/15 px-3 py-1.5 text-[13px] text-bone-2 transition-colors duration-150 hover:border-bone/40 hover:text-bone">{f.field}</a></li>
+      )))}
+    </ul>
+  </nav>
+
+  {byCategory.map((g) => (
+    <section class="mt-14" aria-labelledby={g.c}>
+      <h2 id={g.c} class="text-[28px] font-bold leading-tight [font-stretch:112%]">{label[g.c]} {word.short === 'Rating' && g.c === 'enlisted' ? 'ratings' : `${word.short}s`}</h2>
+      {g.fields.map((f) => (
+        <div class="mt-8" id={`${g.c}-${slug(f.field)}`}>
+          <h3 class="text-[19px] font-semibold">{f.field}</h3>
+          <div class="mt-3 overflow-x-auto rounded-2xl border border-bone/10 bg-ink-2">
+            <table class="chart w-full text-[15px]">
+              <thead><tr><th scope="col" class="w-32">{word.short}</th><th scope="col">Title</th></tr></thead>
+              <tbody>{f.jobs.map((j) => <tr><th scope="row" class="font-mono tabular-nums">{j.code}</th><td class="whitespace-normal text-bone">{j.title}</td></tr>)}</tbody>
+            </table>
+          </div>
+        </div>
+      ))}
+    </section>
+  ))}
+</ToolPage>

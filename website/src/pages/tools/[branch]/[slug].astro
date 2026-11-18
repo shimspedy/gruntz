@@ -1,0 +1,212 @@
+---
+import ToolPage from '../../../components/ToolPage.astro';
+import FitnessCalculator from '../../../components/react/FitnessCalculator';
+import BodyCompCalculator from '../../../components/react/BodyCompCalculator';
+import { tools, toolPath, type ToolEntry } from '../../../data/tools/registry';
+import { BRANCHES, type BodyCompStandard, type FitnessEvent, type FitnessTest, type Sex } from '../../../data/tools/types';
+import { formatTime } from '../../../data/tools/score';
+
+const fitnessModules = import.meta.glob<Record<string, unknown>>('../../../data/tools/fitness/*.ts', { eager: true });
+const bodyModules = import.meta.glob<Record<string, unknown>>('../../../data/tools/body-comp/*.ts', { eager: true });
+
+const isTest = (v: unknown): v is FitnessTest => !!v && typeof v === 'object' && 'slots' in v && 'ageGroups' in v;
+const isStandard = (v: unknown): v is BodyCompStandard => !!v && typeof v === 'object' && 'heightWeight' in v && 'method' in v;
+
+export function getStaticPaths() {
+  const fitness = import.meta.glob<Record<string, unknown>>('../../../data/tools/fitness/*.ts', { eager: true });
+  const body = import.meta.glob<Record<string, unknown>>('../../../data/tools/body-comp/*.ts', { eager: true });
+  const hasTest = (branch: string, id?: string) => Object.values(fitness[`../../../data/tools/fitness/${branch}.ts`] ?? {})
+    .some((v) => !!v && typeof v === 'object' && 'slots' in v && (v as { id?: string }).id === id);
+  const hasStandard = (branch: string) => Object.values(body[`../../../data/tools/body-comp/${branch}.ts`] ?? {})
+    .some((v) => !!v && typeof v === 'object' && 'heightWeight' in v);
+  return tools
+    .filter((t) => (t.kind === 'fitness' ? hasTest(t.branch, t.testId) : hasStandard(t.branch)))
+    .map((t) => ({ params: { branch: t.branch, slug: t.slug }, props: { tool: t } }));
+}
+
+interface Props { tool: ToolEntry }
+const { tool } = Astro.props as Props;
+const branch = BRANCHES.find((b) => b.id === tool.branch)!;
+
+const test = tool.kind === 'fitness'
+  ? Object.values(fitnessModules[`../../../data/tools/fitness/${tool.branch}.ts`] ?? {}).find((v): v is FitnessTest => isTest(v) && v.id === tool.testId)
+  : undefined;
+const standard = tool.kind === 'bodycomp'
+  ? Object.values(bodyModules[`../../../data/tools/body-comp/${tool.branch}.ts`] ?? {}).find(isStandard)
+  : undefined;
+const provenance = test?.provenance ?? standard?.provenance;
+
+/** Live tools a person on this page is likely to want next. */
+const live = getLiveTools();
+function getLiveTools() {
+  return tools.filter((t) => {
+    if (t.kind === 'fitness') return Object.values(fitnessModules[`../../../data/tools/fitness/${t.branch}.ts`] ?? {}).some((v) => isTest(v) && v.id === t.testId);
+    return Object.values(bodyModules[`../../../data/tools/body-comp/${t.branch}.ts`] ?? {}).some(isStandard);
+  });
+}
+const related = [
+  ...live.filter((t) => t.branch === tool.branch && t.slug !== tool.slug),
+  ...live.filter((t) => t.branch !== tool.branch && t.kind === tool.kind),
+].slice(0, 8).map((t) => ({ name: t.name, href: toolPath(t), note: BRANCHES.find((b) => b.id === t.branch)?.name }));
+
+// ─── Chart helpers ───────────────────────────────────────────────────────────────
+const show = (event: FitnessEvent, v: number) => (event.unit === 'seconds' ? formatTime(v) : event.unit === 'ratio' ? v.toFixed(2) : String(v));
+const sexes: (Sex | 'any')[] = test?.bySex ? ['male', 'female'] : ['any'];
+
+/** Rows: points high to low. Columns: age groups. Cell: performance that earns those points. */
+function chart(event: FitnessEvent, sex: Sex | 'any') {
+  const brackets = test!.ageGroups.map((g) => event.brackets.find((b) => (b.sex === sex || b.sex === 'any' || sex === 'any') && b.ageMin <= g.ageMin && b.ageMax >= g.ageMax));
+  const points = [...new Set(brackets.flatMap((b) => b?.points.map(([, p]) => p) ?? []))].sort((a, b) => b - a);
+  const cell = (b: (typeof brackets)[number], p: number) => {
+    const rows = b?.points.filter(([, pts]) => pts === p).map(([v]) => v) ?? [];
+    if (!rows.length) return '';
+    return show(event, event.better === 'higher' ? Math.min(...rows) : Math.max(...rows));
+  };
+  return { points, rows: points.map((p) => [String(p), ...brackets.map((b) => cell(b, p))]) };
+}
+
+function hwTable(sex: Sex) {
+  const tables = standard!.heightWeight.filter((t) => t.sex === sex);
+  const heights = [...new Set(tables.flatMap((t) => t.rows.map((r) => r.heightIn)))].sort((a, b) => a - b);
+  const cols = tables.map((t) => (tables.length > 1 ? `Max lb, age ${t.ageMin}${t.ageMax >= 99 ? '+' : `–${t.ageMax}`}` : 'Max lb'));
+  const hasMin = tables.some((t) => t.rows.some((r) => r.minLb != null));
+  const rows = heights.map((h) => {
+    const first = tables[0].rows.find((r) => r.heightIn === h);
+    return [`${Math.floor(h / 12)}′ ${h % 12}″ (${h} in)`, ...(hasMin ? [first?.minLb != null ? String(first.minLb) : '–'] : []), ...tables.map((t) => String(t.rows.find((r) => r.heightIn === h)?.maxLb ?? '–'))];
+  });
+  return { head: ['Height', ...(hasMin ? ['Min lb'] : []), ...cols], rows };
+}
+const sexLabel = (s: Sex | 'any') => (s === 'male' ? 'Men' : s === 'female' ? 'Women' : 'All');
+---
+
+<ToolPage
+  metaTitle={tool.metaTitle}
+  description={tool.description}
+  h1={tool.h1}
+  lede={tool.lede}
+  eyebrow={`${branch.name} · Free calculator`}
+  crumbs={[{ name: 'Tools', href: '/tools/' }, { name: branch.short, href: `/tools/${branch.id}/` }, { name: tool.name, href: toolPath(tool) }]}
+  provenance={provenance}
+  faq={tool.faq}
+  related={related}
+  app={{ name: tool.name }}
+  cta={{ title: `Train for your ${test ? test.short : 'next weigh-in'} in Gruntz`, sub: 'A daily military-style plan, a set-by-set log and progress checks for every test event. A preparation benchmark, not an official score.' }}
+>
+  {test ? (
+    <Fragment>
+      <section aria-label="Calculator" data-island="fitness" data-props={JSON.stringify({ branch: tool.branch, testId: test.id })}>
+        <FitnessCalculator branch={tool.branch} testId={test.id} />
+      </section>
+
+      <section class="prose-g mt-16 max-w-[72ch]" aria-labelledby="how">
+        <h2 id="how">How the {test.short} is scored</h2>
+        <p>The {test.name} has {test.slots.length} scored events, for a maximum of {test.maxPoints} points. Points come from a chart{test.bySex ? ' that differs by sex and age group' : ' by age group'}.</p>
+        <ul>
+          {test.slots.map((slot) => (
+            <li>
+              <strong>{slot.label}</strong>: {slot.options.map((o) => o.name).join(' or ')}
+              {slot.minimumPoints != null ? `, minimum ${slot.minimumPoints} points` : ''}
+            </li>
+          ))}
+        </ul>
+        {test.classes?.length ? (
+          <Fragment>
+            <h3>Score classes</h3>
+            <div class="table-wrap"><table>
+              <thead><tr><th>Class</th><th>Total points</th></tr></thead>
+              <tbody>{test.classes.map((c) => <tr><td>{c.label}</td><td>{c.min}+</td></tr>)}</tbody>
+            </table></div>
+          </Fragment>
+        ) : null}
+      </section>
+
+      <section class="mt-16" aria-labelledby="chart">
+        <h2 id="chart" class="text-[28px] font-bold leading-tight [font-stretch:112%]">{test.short} score chart</h2>
+        <p class="mt-3 max-w-[62ch] text-bone-2">Points down the side, age groups across the top. Each cell is the result you need for those points.</p>
+        <div class="mt-6 grid gap-3">
+          {test.slots.flatMap((slot) => slot.options).map((event) => sexes.map((sex) => {
+            const c = chart(event, sex);
+            return c.points.length ? (
+              <details class="group rounded-2xl border border-bone/10 bg-ink-2">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-[17px] font-semibold">
+                  <span>{event.name}{test.bySex ? ` · ${sexLabel(sex)}` : ''}</span>
+                  <span class="stamp transition-transform duration-150 group-open:rotate-45" aria-hidden="true">+</span>
+                </summary>
+                <div class="overflow-x-auto px-5 pb-5">
+                  <table class="chart w-full min-w-[560px] text-[14px] tabular-nums">
+                    <caption class="sr-only">{event.name} points{test.bySex ? ` for ${sexLabel(sex).toLowerCase()}` : ''} by age group</caption>
+                    <thead><tr><th scope="col">Points</th>{test.ageGroups.map((g) => <th scope="col">{g.label}</th>)}</tr></thead>
+                    <tbody>{c.rows.map((r) => <tr>{r.map((cell, i) => (i === 0 ? <th scope="row">{cell}</th> : <td>{cell}</td>))}</tr>)}</tbody>
+                  </table>
+                </div>
+              </details>
+            ) : null;
+          }))}
+        </div>
+      </section>
+    </Fragment>
+  ) : null}
+
+  {standard ? (
+    <Fragment>
+      <section aria-label="Calculator" data-island="bodycomp" data-props={JSON.stringify({ branch: tool.branch })}>
+        <BodyCompCalculator branch={tool.branch} />
+      </section>
+
+      <section class="prose-g mt-16 max-w-[72ch]" aria-labelledby="method">
+        <h2 id="method">How the {branch.short} checks body composition</h2>
+        <p>
+          {standard.method === 'waist-to-height'
+            ? `Your waist is divided by your height.${standard.waistToHeightMax != null ? (standard.waistToHeightRule?.strictlyBelow ? ` The ratio must be below ${standard.waistToHeightMax}.` : ` A ratio of ${standard.waistToHeightMax} or lower meets the standard.`) : ''}`
+            : 'Everyone is weighed and measured for height first. If you are over the screening weight for your height, your body fat is estimated from tape measurements and compared with the maximum for your age and sex.'}
+        </p>
+        {standard.formula.length ? (
+          <ul>{standard.formula.map((f) => <li><strong>{f.sex === 'male' ? 'Men' : 'Women'}</strong>: <code>{f.expression}</code></li>)}</ul>
+        ) : null}
+        {standard.notes.length ? <ul>{standard.notes.map((n) => <li>{n}</li>)}</ul> : null}
+
+        {standard.bodyFatMax.length ? (
+          <Fragment>
+            <h3>Body fat maximums</h3>
+            <div class="table-wrap"><table>
+              <thead><tr><th>Age</th><th>Men</th><th>Women</th></tr></thead>
+              <tbody>
+                {[...new Set(standard.bodyFatMax.map((b) => `${b.ageMin}-${b.ageMax}`))].map((range) => {
+                  const [min, max] = range.split('-').map(Number);
+                  const pick = (s: Sex) => standard.bodyFatMax.find((b) => b.sex === s && b.ageMin === min && b.ageMax === max)?.maxPct;
+                  return <tr><td>{max >= 99 ? `${min}+` : `${min}–${max}`}</td><td>{pick('male') != null ? `${pick('male')}%` : '–'}</td><td>{pick('female') != null ? `${pick('female')}%` : '–'}</td></tr>;
+                })}
+              </tbody>
+            </table></div>
+          </Fragment>
+        ) : null}
+      </section>
+
+      {standard.heightWeight.length ? (
+        <section class="mt-16" aria-labelledby="hw">
+          <h2 id="hw" class="text-[28px] font-bold leading-tight [font-stretch:112%]">{branch.short} height and weight chart</h2>
+          <div class="mt-6 grid gap-3">
+            {(['male', 'female'] as Sex[]).filter((s) => standard.heightWeight.some((t) => t.sex === s)).map((sex) => {
+              const t = hwTable(sex);
+              return (
+                <details class="group rounded-2xl border border-bone/10 bg-ink-2" open={sex === 'male'}>
+                  <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-[17px] font-semibold">
+                    <span>{sexLabel(sex)}</span>
+                    <span class="stamp transition-transform duration-150 group-open:rotate-45" aria-hidden="true">+</span>
+                  </summary>
+                  <div class="overflow-x-auto px-5 pb-5">
+                    <table class="chart w-full min-w-[420px] text-[14px] tabular-nums">
+                      <caption class="sr-only">{branch.short} height and weight standards for {sexLabel(sex).toLowerCase()}</caption>
+                      <thead><tr>{t.head.map((h) => <th scope="col">{h}</th>)}</tr></thead>
+                      <tbody>{t.rows.map((r) => <tr>{r.map((cell, i) => (i === 0 ? <th scope="row">{cell}</th> : <td>{cell}</td>))}</tr>)}</tbody>
+                    </table>
+                  </div>
+                </details>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+    </Fragment>
+  ) : null}
+</ToolPage>

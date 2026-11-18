@@ -1,0 +1,55 @@
+---
+import ToolPage from '../../../components/ToolPage.astro';
+import ArmyPromotionCalculator from '../../../components/react/ArmyPromotionCalculator';
+import { promotionPoints as P } from '../../../data/tools/career/army';
+const aftTop = P.aftPoints[0];
+---
+
+<ToolPage
+  metaTitle="Army Promotion Points Calculator: SGT and SSG"
+  description="Free Army promotion points calculator for SGT and SSG. Estimate points from weapons qualification, AFT, military and civilian education and awards."
+  h1="Army promotion points calculator"
+  lede="Estimate your semi-centralized promotion points for sergeant or staff sergeant from your weapons score, AFT, education and awards, using the current point tables."
+  eyebrow="U.S. Army · Free calculator"
+  crumbs={[{ name: 'Tools', href: '/tools/' }, { name: 'Army', href: '/tools/army/' }, { name: 'Promotion points', href: '/tools/army/promotion-points-calculator/' }]}
+  provenance={P.provenance}
+  app={{ name: 'Army promotion points calculator' }}
+  faq={[
+    { q: 'How many promotion points can I earn?', a: `Up to ${P.maxTotal.SGT} for SGT and ${P.maxTotal.SSG} for SSG across the four categories, plus any bonus points outside the ceilings.` },
+    { q: 'How does my AFT turn into promotion points?', a: `Your last record AFT total is converted with a table: ${aftTop[0]} earns ${aftTop[2]} points, and lower totals earn fewer. You must pass every event to earn any.` },
+    { q: 'Where do I find the cutoff score for my MOS?', a: 'HRC publishes SGT and SSG cutoff scores by MOS every month. Compare your total from your record, not this estimate.' },
+    { q: 'Is this my official point total?', a: 'No. HRC calculates your official total from your personnel record each month. This is an estimate.' },
+  ]}
+  related={[{ name: 'Army AFT calculator', href: '/tools/army/aft-calculator/' }, { name: 'Army body composition', href: '/tools/army/body-fat-calculator/' }, { name: 'Army MOS list', href: '/reference/jobs/army/' }, { name: 'Army ranks', href: '/reference/ranks/army/' }]}
+  cta={{ title: 'Raise your AFT points in Gruntz', sub: 'A daily plan built around the AFT events, a set-by-set log and progress checks. A preparation benchmark, not an official score.' }}
+>
+  <section aria-label="Calculator" data-island="army-promotion" data-props="{}">
+    <ArmyPromotionCalculator />
+  </section>
+
+  <section class="prose-g mt-16 max-w-[72ch]" aria-labelledby="categories">
+    <h2 id="categories">Point categories and ceilings</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Category</th><th>SGT</th><th>SSG</th></tr></thead>
+      <tbody>{P.categories.map((c) => <tr><td>{c.name}</td><td>{c.max.SGT}</td><td>{c.max.SSG}</td></tr>)}</tbody>
+    </table></div>
+    {P.categories.map((c) => (
+      <Fragment>
+        <h3>{c.name}</h3>
+        <ul>{c.parts.map((p) => <li><strong>{p.name}</strong> (up to {p.max.SGT} for SGT, {p.max.SSG} for SSG): {p.rule}</li>)}</ul>
+      </Fragment>
+    ))}
+    <h3>Rules worth knowing</h3>
+    <ul>{P.rules.map((r) => <li>{r}</li>)}</ul>
+  </section>
+
+  <section class="mt-16" aria-labelledby="aft-table">
+    <h2 id="aft-table" class="text-[28px] font-bold leading-tight [font-stretch:112%]">AFT to promotion points</h2>
+    <div class="mt-5 max-w-[520px] overflow-x-auto rounded-2xl border border-bone/10 bg-ink-2">
+      <table class="chart w-full text-[14px] tabular-nums">
+        <thead><tr><th scope="col">AFT total</th><th scope="col">Points</th></tr></thead>
+        <tbody>{P.aftPoints.map(([lo, hi, pts]) => <tr><th scope="row">{lo === hi ? lo : `${lo}–${hi}`}</th><td>{pts}</td></tr>)}</tbody>
+      </table>
+    </div>
+  </section>
+</ToolPage>

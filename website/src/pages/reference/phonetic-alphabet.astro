@@ -1,0 +1,59 @@
+---
+import ToolPage from '../../components/ToolPage.astro';
+import PhoneticSpeller from '../../components/react/PhoneticSpeller';
+import { phonetic } from '../../data/tools/reference/phonetic';
+
+const { letters, digits, numberWords, prowords, provenance } = phonetic;
+const speller = { letters: letters.map(({ letter, word }) => ({ letter, word })), digits: digits.map(({ digit, word }) => ({ digit, word })) };
+---
+
+<ToolPage
+  metaTitle="Military Phonetic Alphabet: Alpha to Zulu + Numbers"
+  description="The military and NATO phonetic alphabet from Alpha to Zulu, how to say each word, radio numbers like Niner, common prowords, and a spell-it-out tool."
+  h1="Military phonetic alphabet"
+  lede="The 26 code words the military, NATO and aviation use to spell over the radio, with pronunciation, the radio numbers and the prowords you will hear."
+  crumbs={[{ name: 'Reference', href: '/tools/' }, { name: 'Phonetic alphabet', href: '/reference/phonetic-alphabet/' }]}
+  provenance={provenance}
+  faq={[
+    { q: 'Why is it Alfa and Juliett, not Alpha and Juliet?', a: 'The official spellings Alfa and Juliett make sure speakers of other languages pronounce them correctly. Alpha and Juliet are common informal spellings.' },
+    { q: 'Why do people say Niner instead of nine?', a: 'Nine can be confused with the German “nein” and with five over a poor radio link. Niner keeps them apart.' },
+    { q: 'Is the military alphabet the same as the NATO alphabet?', a: 'Yes. U.S. forces use the same ICAO and NATO spelling alphabet as civil aviation and allied militaries.' },
+  ]}
+  related={[{ name: 'Military ranks', href: '/reference/ranks/' }, { name: 'Military bases', href: '/reference/military-bases/' }]}
+>
+  <section aria-label="Spell it out" data-island="phonetic" data-props={JSON.stringify(speller)}>
+    <PhoneticSpeller {...speller} />
+  </section>
+
+  <section class="mt-14" aria-labelledby="letters">
+    <h2 id="letters" class="text-[28px] font-bold leading-tight [font-stretch:112%]">Letters</h2>
+    <ul class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+      {letters.map((l) => (
+        <li class="rounded-2xl border border-bone/10 bg-ink-2 p-4">
+          <p class="font-mono text-[28px] font-semibold leading-none text-accent-text">{l.letter}</p>
+          <p class="mt-3 text-[19px] font-semibold">{l.word}</p>
+          <p class="mt-1 text-[14px] text-bone-3">{l.say}</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="mt-14" aria-labelledby="numbers">
+    <h2 id="numbers" class="text-[28px] font-bold leading-tight [font-stretch:112%]">Numbers</h2>
+    <div class="mt-6 max-w-[640px] overflow-x-auto rounded-2xl border border-bone/10 bg-ink-2">
+      <table class="chart w-full text-[15px]">
+        <thead><tr><th scope="col">Figure</th><th scope="col">Word</th><th scope="col">Say it</th></tr></thead>
+        <tbody>{[...digits, ...numberWords].map((d) => <tr><th scope="row" class="font-mono">{d.digit}</th><td class="text-bone">{d.word}</td><td>{d.say}</td></tr>)}</tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="mt-14" aria-labelledby="prowords">
+    <h2 id="prowords" class="text-[28px] font-bold leading-tight [font-stretch:112%]">Common prowords</h2>
+    <dl class="mt-6 grid max-w-[880px] gap-px overflow-hidden rounded-2xl border border-bone/10 bg-bone/10 sm:grid-cols-2">
+      {prowords.map((p) => (
+        <div class="bg-ink-2 p-5"><dt class="text-[17px] font-semibold">{p.word}</dt><dd class="mt-1 text-[15px] leading-relaxed text-bone-2">{p.meaning}</dd></div>
+      ))}
+    </dl>
+  </section>
+</ToolPage>

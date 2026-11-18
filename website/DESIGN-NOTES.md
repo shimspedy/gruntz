@@ -21,6 +21,16 @@ Listed with credits in `src/data/photos.ts`. Rule: U.S. Department of Defense ph
 
 Fact rules for the test guides, also at the top of `src/data/guides/tests.ts`: no age or sex score tables are reproduced, anything not confirmed from an official release points to the official chart instead of stating a number, and Gruntz is never described as giving an official score. Most .mil pages refuse automated fetches, so a person should open the linked official charts and confirm each guide before it is promoted.
 
+## Free tools, reference and heritage (November 18, 2026)
+
+`/tools/` (calculators and hubs), `/reference/` (ranks, pay chart, phonetic alphabet, bases, jobs, ribbons) and `/heritage/` (history, leaders, notable members, equipment) for all six branches.
+
+- **Rule change, tools only:** the founder decided on November 18 that `/tools/` may reproduce the official score and standards tables. Every result is labelled an unofficial estimate, each page lists its official sources and a last-checked date, and anything not yet confirmed sits in the data file's `provenance.unverified` (the page stamp then says "Some values awaiting confirmation"). The guides and the app keep the old rule.
+- **Data:** `src/data/tools/` (types and fact rules in `types.ts`). Pages exist only where data exists (`catalog.ts`), so nothing is linked before it is filled.
+- **Original work:** built to cover what Marine-focused reference sites offer, written fresh from official sources. Nothing is copied from those sites.
+- **Search:** each page has its own title (60 characters max) and description (155 max), BreadcrumbList, FAQPage, and WebApplication data on calculators; charts are real HTML tables so they can be indexed. Checked by `tests/website-tools.test.cjs`.
+- **Interactive parts** are React islands mounted by `src/scripts/islands.tsx` (fitness, body composition, phonetic speller, ribbon rack); each loads only its own chart.
+
 ## Earlier notes (October 30, 2026)
 
 The homepage connects the six-branch comic campaign to Gruntz's daily training plans, workout log, test-event progress, and XP/ranks. The visual direction uses cream editorial paper, dark training panels, the existing Gruntz blue, original comics, and genuine app captures.

@@ -1,0 +1,144 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from './Header.astro';
+import Footer from './Footer.astro';
+import DownloadCta from './DownloadCta.astro';
+import Faq from './react/Faq';
+import { site } from '../data/site';
+import { inline, plain } from '../data/guides/types';
+import type { Provenance } from '../data/tools/types';
+import { livePaths } from '../data/tools/catalog';
+
+/**
+ * Shared shell for every /tools/, /reference/ and /heritage/ page: breadcrumb, H1,
+ * lede, last-verified stamp, the page body (slot), questions, official sources, the
+ * non-affiliation line and related links. Emits BreadcrumbList and FAQPage data, plus
+ * WebApplication when the page is a calculator.
+ */
+interface Props {
+  metaTitle: string;
+  description: string;
+  h1: string;
+  lede: string;
+  /** Trail after Home, last item is this page. */
+  crumbs: { name: string; href: string }[];
+  provenance?: Provenance;
+  faq?: { q: string; a: string }[];
+  related?: { name: string; href: string; note?: string }[];
+  /** Set for calculators: emits WebApplication structured data. */
+  app?: { name: string };
+  /** Small stamp above the H1, e.g. 'U.S. Marine Corps · Calculator'. */
+  eyebrow?: string;
+  cta?: { title: string; sub: string };
+}
+
+const { metaTitle, description, h1, lede, crumbs, provenance, faq = [], related: wanted = [], app, eyebrow, cta } = Astro.props as Props;
+// Only link pages that exist: a related page appears once its data is in place.
+const live = livePaths();
+const related = wanted.filter((r) => !/^\/(tools|reference|heritage)\//.test(r.href) || live.has(r.href));
+const url = new URL(Astro.url.pathname, site.url).toString();
+const verified = provenance?.verified
+  ? new Date(`${provenance.verified}T12:00:00Z`).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })
+  : null;
+const faqItems = faq.map((f) => ({ q: f.q, a: inline(f.a) }));
+const pending = (provenance?.unverified.length ?? 0) > 0;
+
+const jsonLd: Record<string, unknown>[] = [
+  {
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: [{ name: 'Home', href: '/' }, ...crumbs].map((c, i) => ({
+      '@type': 'ListItem', position: i + 1, name: c.name, item: new URL(c.href, site.url).toString(),
+    })),
+  },
+];
+if (faq.length) {
+  jsonLd.push({
+    '@context': 'https://schema.org', '@type': 'FAQPage',
+    mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: plain(f.a) } })),
+  });
+}
+if (app) {
+  jsonLd.push({
+    '@context': 'https://schema.org', '@type': 'WebApplication', name: app.name, url, description,
+    applicationCategory: 'HealthApplication', operatingSystem: 'Any', isAccessibleForFree: true,
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    publisher: { '@type': 'Organization', name: site.name, url: site.url },
+    ...(provenance?.verified ? { dateModified: provenance.verified } : {}),
+  });
+}
+---
+
+<BaseLayout title={metaTitle} description={description} jsonLd={jsonLd}>
+  <Header />
+  <main id="main">
+    <header class="border-b border-bone/10">
+      <div class="shell py-10 md:py-14">
+        <nav aria-label="Breadcrumb" class="stamp">
+          <ol class="flex flex-wrap gap-x-2">
+            <li><a class="hover:text-bone" href="/">Home</a> <span aria-hidden="true">/</span></li>
+            {crumbs.map((c, i) => i < crumbs.length - 1
+              ? <li><a class="hover:text-bone" href={c.href}>{c.name}</a> <span aria-hidden="true">/</span></li>
+              : <li aria-current="page" class="text-bone-2">{c.name}</li>)}
+          </ol>
+        </nav>
+        {eyebrow ? <p class="stamp mt-8 text-accent-text">{eyebrow}</p> : null}
+        <h1 class={`display ${eyebrow ? 'mt-3' : 'mt-6'} max-w-[22ch] text-[32px] sm:text-[42px] lg:text-[52px]`}>{h1}</h1>
+        <p class="mt-5 max-w-[62ch] text-lg leading-relaxed text-bone-2">{lede}</p>
+        {verified ? (
+          <p class="stamp mt-5">Last checked {verified}{pending ? ' · Some values awaiting confirmation' : ''} · Unofficial</p>
+        ) : null}
+      </div>
+    </header>
+
+    <div class="shell py-10 md:py-14">
+      <slot />
+
+      {faq.length ? (
+        <section id="faq" class="mt-16 max-w-[72ch] scroll-mt-24" aria-labelledby="faq-title">
+          <h2 id="faq-title" class="text-[28px] font-bold leading-tight [font-stretch:112%]">Questions</h2>
+          <div class="prose-faq mt-6" data-island="faq" data-props={JSON.stringify({ items: faqItems })}>
+            <Faq items={faqItems} />
+          </div>
+        </section>
+      ) : null}
+
+      {provenance?.sources.length ? (
+        <section class="mt-16 max-w-[72ch] rounded-2xl border border-bone/10 bg-ink-2 p-6" aria-labelledby="sources-title">
+          <h2 id="sources-title" class="text-lg font-semibold">Official sources</h2>
+          <ul class="mt-4 grid gap-3">
+            {provenance.sources.map((s) => (
+              <li><a href={s.url} target="_blank" rel="noopener" class="text-[15px] text-accent-text underline decoration-1 underline-offset-[3px] hover:text-bone">{s.label}</a></li>
+            ))}
+          </ul>
+          {provenance.notes ? <p class="mt-5 text-sm leading-relaxed text-bone-2">{provenance.notes}</p> : null}
+          <p class="mt-4 text-sm leading-relaxed text-bone-3">Standards change. Your command and the official publications above are the authority, not this page.</p>
+        </section>
+      ) : null}
+
+      <p class="mt-8 max-w-[72ch] text-sm leading-relaxed text-bone-3">
+        Gruntz is an independent training app built by a former U.S. Marine. It is not affiliated with or endorsed by the U.S. Department of Defense or any military branch.
+      </p>
+    </div>
+
+    {related.length ? (
+      <section class="border-t border-bone/10" aria-labelledby="related-title">
+        <div class="shell py-14 md:py-16">
+          <h2 id="related-title" class="display text-[26px] md:text-[32px]">Related tools</h2>
+          <ul class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {related.map((r) => (
+              <li>
+                <a href={r.href} class="group flex h-full flex-col justify-between gap-4 rounded-2xl border border-bone/10 bg-ink-2 p-5 transition-colors duration-150 ease-out hover:border-bone/25 hover:bg-ink-3">
+                  <span class="text-[17px] font-semibold leading-snug [font-stretch:112%]">{r.name}</span>
+                  {r.note ? <span class="text-sm text-bone-2">{r.note}</span> : null}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    ) : null}
+
+    {cta ? <DownloadCta placement="tool" title={cta.title} sub={cta.sub} /> : null}
+  </main>
+  <Footer />
+</BaseLayout>

@@ -1,0 +1,53 @@
+---
+import ToolPage from '../../../components/ToolPage.astro';
+import JepesCalculator from '../../../components/react/JepesCalculator';
+import { jepes as J, juniorPromotion as P } from '../../../data/tools/career/marine-corps';
+const provenance = { ...J.provenance, sources: [...J.provenance.sources, ...P.provenance.sources.filter((s) => !J.provenance.sources.some((x) => x.url === s.url))], unverified: [...J.provenance.unverified, ...P.provenance.unverified] };
+---
+<ToolPage
+  metaTitle="USMC JEPES Calculator: PES Score and Cutting Scores"
+  description="Free Marine Corps JEPES calculator. Estimate your PES score out of 1,000 for promotion to Cpl or Sgt, and learn how monthly cutting scores work."
+  h1="Marine Corps JEPES calculator"
+  lede="Estimate your Junior Enlisted Performance Evaluation System score, the number that ranks you against the monthly cutting score for corporal and sergeant."
+  eyebrow="U.S. Marine Corps · Free calculator"
+  crumbs={[{ name: 'Tools', href: '/tools/' }, { name: 'Marine Corps', href: '/tools/marine-corps/' }, { name: 'JEPES calculator', href: '/tools/marine-corps/jepes-calculator/' }]}
+  provenance={provenance}
+  app={{ name: 'Marine Corps JEPES calculator' }}
+  faq={[
+    { q: 'What replaced the composite score?', a: P.method },
+    { q: 'Where do I find this month’s cutting score?', a: `${P.cuttingScores.where} The monthly promotion message is published as a MARADMIN.` },
+    { q: 'Why does the calculator ask for percentiles?', a: 'Rifle, PFT and CFT scores enter JEPES as percentiles against your peers, from HQMC tables that change every year. Use the percentiles shown in your record.' },
+    { q: 'Is this my official score?', a: 'No. MCTFS calculates your official PES score. This is an estimate.' },
+  ]}
+  related={[{ name: 'Marine Corps PFT calculator', href: '/tools/marine-corps/pft-calculator/' }, { name: 'Marine Corps CFT calculator', href: '/tools/marine-corps/cft-calculator/' }, { name: 'Rifle qualification calculator', href: '/tools/marine-corps/rifle-qualification-calculator/' }, { name: 'Marine Corps ranks', href: '/reference/ranks/marine-corps/' }]}
+  cta={{ title: 'Raise your PFT and CFT in Gruntz', sub: 'Two of the five JEPES pillars come from your fitness tests. Train every event with a daily plan and progress checks.' }}
+>
+  <section aria-label="Calculator" data-island="jepes" data-props="{}"><JepesCalculator /></section>
+
+  <section class="prose-g mt-16 max-w-[72ch]" aria-labelledby="pillars">
+    <h2 id="pillars">How the JEPES score is built</h2>
+    <p>{J.appliesTo}. The score runs from 0 to {J.maxScore}.</p>
+    {J.pillars.map((p) => (
+      <Fragment>
+        <h3>{p.name} (up to {p.max})</h3>
+        <p>{p.scale}</p>
+        <ul>{p.parts.map((x) => <li><strong>{x.name}</strong>: {x.rule}</li>)}</ul>
+      </Fragment>
+    ))}
+    <h3>Rules worth knowing</h3>
+    <ul>{J.rules.map((r) => <li>{r}</li>)}</ul>
+  </section>
+
+  <section class="prose-g mt-16 max-w-[72ch]" aria-labelledby="cutting">
+    <h2 id="cutting">Cutting scores and promotion to Cpl and Sgt</h2>
+    <p>{P.method}</p>
+    <p>{P.cuttingScores.schedule}</p>
+    <p>A cutting score of {P.cuttingScores.closedValue} means that MOS is closed for the month. Find the monthly message in <a href={P.cuttingScores.publishedAt.url} target="_blank" rel="noopener">{P.cuttingScores.publishedAt.label}</a>.</p>
+    <h3>Minimum time in grade and service</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Promotion to</th><th>Time in grade</th><th>Time in service</th></tr></thead>
+      <tbody>{P.minimums.map((m) => <tr><td>{m.to}{m.note ? ` (${m.note})` : ''}</td><td>{m.tigMonths} months</td><td>{m.tisMonths} months</td></tr>)}</tbody>
+    </table></div>
+    <ul>{P.rules.map((r) => <li>{r}</li>)}</ul>
+  </section>
+</ToolPage>

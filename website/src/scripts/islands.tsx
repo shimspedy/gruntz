@@ -18,6 +18,13 @@ const registry: Record<string, () => Promise<{ default: ComponentType<any> }>> =
   faq: () => import('../components/react/Faq'),
   features: () => import('../components/react/FeatureTabs'),
   nav: () => import('../components/react/MobileNav'),
+  fitness: () => import('../components/react/FitnessCalculator'),
+  bodycomp: () => import('../components/react/BodyCompCalculator'),
+  phonetic: () => import('../components/react/PhoneticSpeller'),
+  ribbons: () => import('../components/react/RibbonRack'),
+  'army-promotion': () => import('../components/react/ArmyPromotionCalculator'),
+  'marine-rifle': () => import('../components/react/MarineRifleCalculator'),
+  jepes: () => import('../components/react/JepesCalculator'),
 };
 
 document.querySelectorAll<HTMLElement>('[data-island]').forEach(async (el) => {

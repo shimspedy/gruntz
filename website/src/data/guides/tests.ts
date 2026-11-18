@@ -623,7 +623,7 @@ export const testGuides: Guide[] = [
         id: 'scoring',
         title: 'How the HPA is scored',
         blocks: [
-          { type: 'p', text: 'Point weights and score categories are set in the Space Force manual, SPFMAN 36-2905, which was updated in late 2025. Published descriptions of the weights disagree with each other, so we do not print them. Ask your unit for the current scoring chart, and read the [Space Force guidance](https://www.spaceforce.mil/News/Article-Display/Article/4371955/space-force-publishes-further-guidance-on-physical-fitness/) for the policy itself.' },
+          { type: 'p', text: 'Under [SPFMAN 36-2905](https://static.e-publishing.af.mil/production/1/sf_s1/publication/spfman36-2905/spfman36-2905.pdf) (Change 3, April 2026), cardio is worth 60 points, strength 20 and core endurance 20, and a Guardian needs the minimum in each component and a composite of 75 or more out of 100. The point charts themselves sit in the myFitness app rather than in a public document, so get the current chart from your unit, and read the [Space Force guidance](https://www.spaceforce.mil/News/Article-Display/Article/4371955/space-force-publishes-further-guidance-on-physical-fitness/) for the policy itself.' },
           { type: 'p', text: 'HPA results are now recorded on performance reports.' },
         ],
       },
@@ -727,7 +727,7 @@ export const testGuides: Guide[] = [
         id: 'scoring',
         title: 'How it is scored, and where the standards live',
         blocks: [
-          { type: 'p', text: 'Each event is graded on tables normed by age and sex. The instruction and its score charts sit on a Coast Guard site that needs a CAC to open, so there is no public official chart to link to. Get the current chart from your unit, and be careful with numbers printed on third-party sites.' },
+          { type: 'p', text: 'Each event is graded on tables normed by age and sex. The score charts are in [COMDTINST 6100.1](https://media.defense.gov/2026/Jun/16/2003949424/-1/-1/0/CI_6100_1.PDF), which is public. For a quick estimate, use the [Coast Guard PFT calculator](/tools/coast-guard/pft-calculator/), and confirm the current chart with your unit.' },
           { type: 'note', text: 'The public announcements are [ALCOAST 168/26](https://content.govdelivery.com/accounts/USDHSCG/bulletins/41b3aea) and [ALCOAST 174/26](https://content.govdelivery.com/accounts/USDHSCG/bulletins/41c58e1). They cover the timeline and policy, not the score tables.' },
         ],
       },
@@ -754,7 +754,7 @@ export const testGuides: Guide[] = [
       { q: 'When did it become mandatory?', a: 'July 1, 2026. Assessments before that date carried no administrative consequences.' },
       { q: 'Can I swim or row instead of running?', a: 'Row and swim alternatives to the 1.5-mile run have been announced. Confirm the exact options and distances with your unit.' },
       { q: 'How often is the test?', a: 'Twice a year. Some communities can substitute one with their own community fitness test.' },
-      { q: 'Where is the official score chart?', a: 'On a Coast Guard site that requires a CAC, so it is not public. Ask your unit for the current chart.' },
+      { q: 'Where is the official score chart?', a: 'In COMDTINST 6100.1, published on media.defense.gov. The [Coast Guard PFT calculator](/tools/coast-guard/pft-calculator/) uses those charts for an unofficial estimate.' },
       { q: 'Does Gruntz give me an official Coast Guard score?', a: 'No. Gruntz records the results you enter and compares them with your own targets. Official scoring comes from the Coast Guard.' },
     ],
     sources: [SOURCE.uscg168, SOURCE.uscg174],

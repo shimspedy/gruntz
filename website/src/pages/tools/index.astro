@@ -1,0 +1,45 @@
+---
+import ToolPage from '../../components/ToolPage.astro';
+import { catalog, GROUPS, branchName } from '../../data/tools/catalog';
+import { BRANCHES } from '../../data/tools/types';
+
+const items = catalog();
+const groups = GROUPS.map((g) => ({ name: g, items: items.filter((i) => i.group === g) })).filter((g) => g.items.length);
+const liveBranches = BRANCHES.filter((b) => items.some((i) => i.branch === b.id));
+---
+
+<ToolPage
+  metaTitle="Free Military Tools: PT Calculators, Ranks, Pay Chart"
+  description="Free tools for all six U.S. branches: PFT, CFT, AFT, PRT and PFA calculators, body fat standards, ranks, pay chart, MOS lists and more."
+  h1="Free military tools"
+  lede="Score calculators, standards and reference for the Army, Marine Corps, Navy, Air Force, Space Force and Coast Guard. Built from the official charts and orders, and free to use."
+  crumbs={[{ name: 'Tools', href: '/tools/' }]}
+  faq={[
+    { q: 'Are these calculators official?', a: 'No. They use the published charts and orders, listed on each page, to give an unofficial estimate. Your command’s recorded result is the only official one.' },
+    { q: 'How current are the charts?', a: 'Each page shows the date its data was last checked against the official source. When a service publishes a change, the page is updated and re-checked.' },
+    { q: 'Do I need an account?', a: 'No. Every tool on this page is free and works in your browser without signing up.' },
+  ]}
+>
+  <nav aria-label="Branches" class="flex flex-wrap gap-2">
+    {liveBranches.map((b) => (
+      <a href={`/tools/${b.id}/`} class="rounded-full border border-bone/15 px-4 py-2 text-[15px] text-bone-2 transition-colors duration-150 hover:border-bone/40 hover:text-bone">{b.short}</a>
+    ))}
+  </nav>
+
+  {groups.map((g) => (
+    <section class="mt-14" aria-labelledby={`g-${g.name}`}>
+      <h2 id={`g-${g.name}`} class="text-[26px] font-bold leading-tight [font-stretch:112%]">{g.name}</h2>
+      <ul class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {g.items.map((i) => (
+          <li>
+            <a href={i.href} class="group flex h-full flex-col gap-3 rounded-2xl border border-bone/10 bg-ink-2 p-5 transition-colors duration-150 ease-out hover:border-bone/25 hover:bg-ink-3">
+              <span class="stamp">{branchName(i.branch)}</span>
+              <span class="text-[18px] font-semibold leading-snug [font-stretch:112%]">{i.name}</span>
+              <span class="text-[15px] leading-relaxed text-bone-2">{i.blurb}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+</ToolPage>
