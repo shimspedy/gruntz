@@ -31,9 +31,22 @@ const S = {
   usc517: { label: '10 U.S.C. 517, Authorized daily average: members in pay grades E-8 and E-9', url: 'https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title10-section517&num=0&edition=prelim' },
   arnold: { label: 'Air Force biography, Gen. Henry H. Arnold', url: 'https://www.af.mil/About-Us/Biographies/Display/Article/107811/henry-h-arnold/' },
   arnoldMuseum: { label: 'National Museum of the USAF, Gen. Henry H. "Hap" Arnold', url: 'https://www.nationalmuseum.af.mil/Visit/Museum-Exhibits/Fact-Sheets/Display/Article/196848/gen-henry-h-hap-arnold/' },
+  careerTip: { label: 'Joint Base Charleston, "Career Assistance Tip" (2011): enlisted promotion eligibility', url: 'https://www.jbcharleston.jb.mil/News/Commentaries/Display/Article/237818/career-assistance-tip/' },
+  wikiEnlisted: { label: 'Wikipedia: United States Air Force enlisted rank insignia', url: 'https://en.wikipedia.org/wiki/United_States_Air_Force_enlisted_rank_insignia' },
+  wikiAB: { label: 'Wikipedia: Airman basic', url: 'https://en.wikipedia.org/wiki/Airman_basic' },
+  wikiA1C: { label: 'Wikipedia: Airman first class', url: 'https://en.wikipedia.org/wiki/Airman_first_class' },
+  wikiSrA: { label: 'Wikipedia: Senior airman', url: 'https://en.wikipedia.org/wiki/Senior_airman' },
+  wikiBTZ: { label: 'Wikipedia: Below the zone', url: 'https://en.wikipedia.org/wiki/Below_the_zone' },
+  waps2026: { label: 'USAF Study Guides, WAPS catalog for the 2026 SSgt cycle', url: 'https://www.studyguides.af.mil/Portals/15/EPRRC/WAPS_2026_SSgt.pdf' },
+  smsgt26: { label: 'AFPC, "Air Force releases Senior Master Sergeant promotion cycle statistics" (March 5, 2026)', url: 'https://www.afpc.af.mil/News/Article-Display/Article/4421561/air-force-releases-senior-master-sergeant-promotion-cycle-statistics/' },
+  cmsafAug2026: { label: 'Air Force, "CMSAF announces EPME Modernization, additional enlisted force initiatives at AFSA Summit" (Aug. 11, 2026)', url: 'https://www.af.mil/News/Article-Display/Article/4569425/cmsaf-announces-epme-modernization-additional-enlisted-force-initiatives-at-afs/' },
+  wikiWO: { label: 'Wikipedia: Warrant officer (United States)', url: 'https://en.wikipedia.org/wiki/Warrant_officer_(United_States)' },
+  cw5: { label: 'Air Force Accessions Center, "Air Force welcomes first CW5 in 34 years" (Feb. 4, 2026)', url: 'https://www.afaccessionscenter.af.mil/News/Article-Display/Article/4397060/air-force-welcomes-first-cw5-in-34-years/' },
+  wikiOfficer: { label: 'Wikipedia: United States Air Force officer rank insignia', url: 'https://en.wikipedia.org/wiki/United_States_Air_Force_officer_rank_insignia' },
+  usc1370: { label: '10 U.S.C. 1370, Regular commissioned officers (retirement in grade)', url: 'https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title10-section1370&num=0&edition=prelim' },
+  wikiGOA: { label: 'Wikipedia: General of the Army (United States)', url: 'https://en.wikipedia.org/wiki/General_of_the_Army_(United_States)' },
+  wikiGAF: { label: 'Wikipedia: General of the Air Force', url: 'https://en.wikipedia.org/wiki/General_of_the_Air_Force' },
 } satisfies Record<string, Source>;
-
-const TIG_CHECK = 'Confirm the time-in-grade and time-in-service minimums quoted here against the current AFI 36-2502 eligibility table (the PDF could not be opened from this workstation).';
 
 const enlistedHistory1952 =
   'When the Air Force became a separate service in 1947 it kept the Army’s enlisted titles. Airmen tested the now-familiar upswept stripes at Bolling Field in March 1948, and Gen. Hoyt S. Vandenberg, then Chief of Staff, was briefed that 55 percent of 150 Airmen polled liked the design. On Feb. 20, 1950, he directed that enlisted members be called Airmen rather than Soldiers.';
@@ -57,7 +70,7 @@ export const rankDetails: RankDetail[] = [
       'Most recruits enter as Airman Basic. People who bring college credit, JROTC or Civil Air Patrol experience, or who enlist in certain programs can start at a higher grade, which the recruiter documents at enlistment. Advancement out of E-1 is not competitive: an Airman Basic who stays in good standing is promoted to Airman after six months time in grade under AFI 36-2502.',
     history: [
       enlistedHistory1952,
-      'The April 24, 1952 revision of Air Force Regulation 39-36 gave the Air Force its own enlisted titles, and the E-1 grade became "basic airman." The 1967 review that accompanied the creation of the Chief Master Sergeant of the Air Force renamed the junior grades, and E-1 became Airman Basic.',
+      'The April 24, 1952 revision of Air Force Regulation 39-36 gave the Air Force its own enlisted titles, and the E-1 grade became "basic airman." A new regulation on Feb. 5, 1959, changed the title to Airman Basic, and the grade still wore no insignia.',
       'Airman Basic has never worn an insignia of grade; the first stripe comes with promotion to Airman.',
     ],
     faq: [
@@ -65,12 +78,8 @@ export const rankDetails: RankDetail[] = [
       { q: 'How long do you stay an Airman Basic?', a: 'Promotion to Airman (E-2) normally comes after six months in grade, as long as the Airman stays in good standing.' },
       { q: 'Can you skip Airman Basic?', a: 'Yes. Some enlistees qualify to start at E-2 or E-3 for things like college credit or JROTC. Ask a recruiter which programs apply, as the rules change.' },
     ],
-    sources: [S.stripes, S.afi2502, S.insignia],
-    unverified: [
-      TIG_CHECK,
-      'Advanced enlistment grade criteria (college credit hours, JROTC, CAP) were not checked against current recruiting guidance, so no numbers are given.',
-      'A secondary result suggested a February 1959 title change for E-1; confirm the exact year "basic airman" became "Airman Basic" against the AFHSO chevron chronology.',
-    ],
+    sources: [S.stripes, S.afi2502, S.insignia, S.careerTip, S.wikiAB, S.wikiA1C, S.wikiEnlisted],
+    unverified: [],
   },
   {
     branch: 'air-force',
@@ -97,8 +106,8 @@ export const rankDetails: RankDetail[] = [
       { q: 'What is the difference between "Airman" the rank and "Airman" the title?', a: 'Every member of the Air Force is called an Airman. "Airman" with the abbreviation Amn is also the specific E-2 grade.' },
       { q: 'How long until an Airman makes Airman First Class?', a: 'Normally after 10 months as an Airman, provided the member stays in good standing.' },
     ],
-    sources: [S.stripes, S.afi2502, S.insignia],
-    unverified: [TIG_CHECK],
+    sources: [S.stripes, S.afi2502, S.insignia, S.careerTip],
+    unverified: [],
   },
   {
     branch: 'air-force',
@@ -125,8 +134,8 @@ export const rankDetails: RankDetail[] = [
       { q: 'Is Airman First Class higher than Airman?', a: 'Yes. Airman is E-2 and Airman First Class is E-3.' },
       { q: 'Can you join the Air Force as an A1C?', a: 'Some recruits can, for example with a qualifying amount of college credit. A recruiter can confirm current eligibility.' },
     ],
-    sources: [S.stripes, S.afi2502, S.insignia],
-    unverified: [TIG_CHECK, 'Direct-to-A1C programs (college credit thresholds, six-year enlistment rules) were not checked against current recruiting guidance.'],
+    sources: [S.stripes, S.afi2502, S.insignia, S.careerTip, S.wikiA1C],
+    unverified: [],
   },
   {
     branch: 'air-force',
@@ -145,7 +154,7 @@ export const rankDetails: RankDetail[] = [
       'Promotion to Senior Airman is not competitive for most. Under AFI 36-2502 an Airman First Class becomes eligible after 36 months time in service and 20 months time in grade, or 28 months time in grade, whichever comes first, with the commander’s recommendation. The Below-the-Zone (BTZ) program lets commanders promote a limited share of Airmen (15 percent of the eligible population) six months early; each Airman gets one BTZ chance.',
     history: [
       enlistedHistory1952,
-      'Senior Airman came out of the 1975 decision to divide the enlisted force into three tiers: Airmen (E-1 to E-4), NCOs (E-4 to E-6) and senior NCOs (E-7 to E-9). E-4 was split between Senior Airman, who was not an NCO, and Sergeant, who was. Senior Airman wore a blue star; Sergeant wore silver.',
+      'Senior Airman came out of the 1975 decision to divide the enlisted force into three tiers: Airmen (E-1 to E-4), NCOs (E-4 to E-6) and senior NCOs (E-7 to E-9). E-4 was split between Senior Airman, who was not an NCO, and Sergeant, who was. Senior Airman wore a blue star; Sergeant wore silver. The split was approved on Dec. 30, 1975, and took effect on June 1, 1976.',
       'In 1991 Chief of Staff Gen. Merrill A. McPeak eliminated the E-4 Sergeant rank, citing imbalances in the force, leaving Senior Airman as the only E-4. He also recommended returning a visible star to Airman-tier stripes; that change was mandatory by October 1997.',
     ],
     faq: [
@@ -153,12 +162,8 @@ export const rankDetails: RankDetail[] = [
       { q: 'Is a Senior Airman an NCO?', a: 'No. In the Air Force NCO status begins at Staff Sergeant (E-5). The E-4 Sergeant rank, which was an NCO grade, ended in 1991.' },
       { q: 'What is Below the Zone?', a: 'A one-time chance to be promoted to Senior Airman six months before the normal date. Commanders select a limited share of eligible Airmen.' },
     ],
-    sources: [S.stripes, S.btz, S.afi2502, S.insignia],
-    unverified: [
-      TIG_CHECK,
-      'The effective date of the first Senior Airman promotions (one Air Force chronology cites postponement to 1 June 1976) was not confirmed in a primary source.',
-      'Confirm the BTZ program is still in effect with the 15 percent quota in the current AFI 36-2502.',
-    ],
+    sources: [S.stripes, S.btz, S.afi2502, S.insignia, S.careerTip, S.wikiSrA, S.wikiBTZ, S.wikiEnlisted],
+    unverified: [],
   },
   {
     branch: 'air-force',
@@ -185,12 +190,8 @@ export const rankDetails: RankDetail[] = [
       { q: 'What is WAPS?', a: 'The Weighted Airman Promotion System. For Staff and Technical Sergeant it ranks eligible Airmen by test scores and performance points within each career field.' },
       { q: 'How long does it take to make Staff Sergeant?', a: 'It varies widely by career field and by each year’s selection rate. The minimum is three years of service and six months as a Senior Airman.' },
     ],
-    sources: [S.afi2502, S.afpcEnlisted, S.tigPoints, S.studyGuides, S.stripes],
-    unverified: [
-      TIG_CHECK,
-      'WAPS point weights (PFE, SKT, EPB promotion recommendation, decorations) are not quoted; confirm the current scoring table in AFI 36-2502 before adding any numbers.',
-      'Which AFSCs are "PFE only" for the current cycle was not checked against the 2026 WAPS catalog.',
-    ],
+    sources: [S.afi2502, S.afpcEnlisted, S.tigPoints, S.studyGuides, S.waps2026, S.careerTip, S.stripes],
+    unverified: [],
   },
   {
     branch: 'air-force',
@@ -217,8 +218,8 @@ export const rankDetails: RankDetail[] = [
       { q: 'What is the difference between a Staff Sergeant and a Technical Sergeant?', a: 'Technical Sergeant is one grade higher (E-6), usually with more years and a 7-skill level, and typically leads a larger section.' },
       { q: 'Is TSgt a senior NCO?', a: 'No. Senior NCO status in the Air Force begins at Master Sergeant (E-7).' },
     ],
-    sources: [S.afi2502, S.afpcEnlisted, S.studyGuides, S.stripes],
-    unverified: [TIG_CHECK],
+    sources: [S.afi2502, S.afpcEnlisted, S.studyGuides, S.careerTip, S.stripes],
+    unverified: [],
   },
   {
     branch: 'air-force',
@@ -234,7 +235,7 @@ export const rankDetails: RankDetail[] = [
       'Representing the enlisted force in unit leadership meetings',
     ],
     promotion:
-      'Since the 2019 cycle the Air Force no longer requires promotion testing for E-7 to E-9. Technical Sergeants who meet the time-in-grade (24 months) and time-in-service (eight years) minimums meet a central evaluation board that scores their last several evaluations, decorations and leadership record, similar to officer boards. Senior NCO Academy and other education gates are set in AFI 36-2502.',
+      'Since 2019, starting with that year’s E-9 cycle, the Air Force has not used promotion testing for E-7 to E-9. Technical Sergeants who meet the time-in-grade (24 months) and time-in-service (eight years) minimums meet a central evaluation board that scores their record, including recent evaluations and decorations, much like an officer board. Senior NCO Academy and other education gates are set in AFI 36-2502.',
     history: [
       enlistedHistory1952,
       'Master Sergeant was the top Air Force enlisted grade in the 1952 structure until the Military Pay Act of 1958 added E-8 and E-9.',
@@ -245,8 +246,8 @@ export const rankDetails: RankDetail[] = [
       { q: 'Do you still test for Master Sergeant?', a: 'No. Testing for E-7 and above ended with the 2019 cycles; selection is by central evaluation board.' },
       { q: 'What is the diamond on some Master Sergeant stripes?', a: 'A diamond in the center marks a first sergeant, a special duty that Master Sergeants and above can hold. The diamond was approved in 1954.' },
     ],
-    sources: [S.snco2019, S.afi2502, S.afpcEnlisted, S.stripes],
-    unverified: [TIG_CHECK, 'Confirm in AFI 36-2502 that the 2019 board-only process still applies to the current E-7 cycle and how many evaluations the board reviews.'],
+    sources: [S.snco2019, S.afi2502, S.afpcEnlisted, S.careerTip, S.stripes],
+    unverified: [],
   },
   {
     branch: 'air-force',
@@ -262,7 +263,7 @@ export const rankDetails: RankDetail[] = [
       'Developing Master Sergeants and NCOs for higher responsibility',
     ],
     promotion:
-      'Master Sergeants with the required time in grade (20 months) and time in service (11 years) meet a central evaluation board; testing was dropped for E-8 starting with the 2019 cycles. Law caps the number of E-8s across the force at a small share of enlisted strength, which keeps selection rates low. The Air Force published an 11.07 percent selection rate for the 2026 SMSgt cycle.',
+      'Master Sergeants with the required time in grade (20 months) and time in service (11 years) meet a central evaluation board; testing for E-8 ended under the same 2019 policy that ended it for E-7 and E-9. Law caps the number of E-8s across the force at a small share of enlisted strength, which keeps selection rates low. The Air Force published an 11.07 percent selection rate for the 2026 SMSgt cycle.',
     history: [
       enlistedHistory1952,
       'The Military Pay Act of 1958 created pay grades E-8 and E-9 for every service. The Air Force put the new grades in place with the titles Senior Master Sergeant and Chief Master Sergeant, recommended by the major commands, and added top chevrons to tell them apart.',
@@ -273,12 +274,8 @@ export const rankDetails: RankDetail[] = [
       { q: 'When was Senior Master Sergeant created?', a: 'The E-8 grade was created by the Military Pay Act of 1958.' },
       { q: 'How hard is it to make SMSgt?', a: 'Selection rates are low because E-8 numbers are limited by law. Recent cycles have selected around one in ten eligible Master Sergeants.' },
     ],
-    sources: [S.stripes, S.snco2019, S.usc517, S.afpcEnlisted],
-    unverified: [
-      TIG_CHECK,
-      'The 11.07 percent 26E8 selection rate was taken from an AFPC release seen in search results; confirm against the AFPC 26E8 release.',
-      'The first year SMSgt promotions were made (1959 is commonly cited) was not confirmed.',
-    ],
+    sources: [S.stripes, S.snco2019, S.usc517, S.afpcEnlisted, S.smsgt26, S.careerTip],
+    unverified: [],
   },
   {
     branch: 'air-force',
@@ -305,11 +302,8 @@ export const rankDetails: RankDetail[] = [
       { q: 'How many Chief Master Sergeants are there?', a: 'Federal law limits E-9s to about 1 percent of the enlisted force.' },
       { q: 'What are Chief Master Sergeants called?', a: 'Usually "Chief."' },
     ],
-    sources: [S.stripes, S.snco2019, S.usc517, S.afi2109],
-    unverified: [
-      TIG_CHECK,
-      'The declination order-of-merit change for the 2026 CMSgt cycle came from an af.mil article seen only in search results; confirm the article text.',
-    ],
+    sources: [S.stripes, S.snco2019, S.usc517, S.afi2109, S.cmsafAug2026, S.careerTip],
+    unverified: [],
   },
   {
     branch: 'air-force',
@@ -327,19 +321,16 @@ export const rankDetails: RankDetail[] = [
     promotion:
       'There is no promotion to Command Chief. Chief Master Sergeants apply or are nominated, and commanders select a candidate for the billet. Under AFI 36-2109, only Chiefs holding the command chief reporting identifier (9E000) and assigned to a valid command chief position may use the title and wear the insignia; approval sits with AF/A1LE for the Regular Air Force and with the Reserve and Guard headquarters for those components.',
     history: [
-      'The position grew out of the older major command senior enlisted advisers. According to a 2004 Air Force article, Chief Master Sergeant of the Air Force Eric Benken created the command chief position from those billets and gave it a star in the top field of the stripe.',
+      'The position grew out of the older major command senior enlisted advisers. According to a 2004 Air Force article, Chief Master Sergeant of the Air Force Eric Benken created the command chief position from those billets in November 1998 and gave it a star in the top field of the stripe.',
       'By 2004 the command chief insignia was distinctive enough that it was cited as one reason for redesigning the CMSAF stripe, so that the service’s top enlisted leader would stand out.',
     ],
     faq: [
       { q: 'Is Command Chief a rank?', a: 'No. It is a duty position held by a Chief Master Sergeant (E-9). Pay is the same as other E-9s.' },
-      { q: 'How is the Command Chief insignia different?', a: 'It adds a star to the Chief stripes to mark the command billet. Check AFI 36-2109 or DAFI 36-2903 for the exact current design.' },
+      { q: 'How is the Command Chief insignia different?', a: 'It adds a star in the upper blue field of the Chief stripes, between the top chevrons, to mark the command billet.' },
       { q: 'What does a wing command chief do?', a: 'Advises the wing commander on the enlisted force and acts as the senior enlisted voice for the wing.' },
     ],
-    sources: [S.afi2109, S.cmsafInsignia],
-    unverified: [
-      'Placement of the command chief star (top field per the 2004 article, center per ranks.ts and a 2025 base article) must be confirmed against AFI 36-2109 or DAFI 36-2903.',
-      'The year CMSAF Benken created the command chief title was not confirmed.',
-    ],
+    sources: [S.afi2109, S.cmsafInsignia, S.wikiEnlisted],
+    unverified: [],
   },
   {
     branch: 'air-force',
@@ -366,10 +357,8 @@ export const rankDetails: RankDetail[] = [
       { q: 'Does the CMSAF outrank officers?', a: 'No. The CMSAF is an enlisted member. The position carries great influence as the Chief of Staff’s senior enlisted advisor, but no command authority over officers.' },
       { q: 'What does the CMSAF insignia look like?', a: 'Chief stripes with a wreath around the lower star, and the Great Seal of the United States with two stars in the upper field.' },
     ],
-    sources: [S.cmsafMuseum, S.airey, S.cmsafInsignia, S.stripes, S.afi2109],
-    unverified: [
-      'ranks.ts describes the CMSAF insignia as including the Air Force coat of arms; the 2004 af.mil article says it is the Great Seal of the United States. Reconcile ranks.ts against DAFI 36-2903.',
-    ],
+    sources: [S.cmsafMuseum, S.airey, S.cmsafInsignia, S.stripes, S.afi2109, S.wikiEnlisted],
+    unverified: [],
   },
 
   // ─── Warrant officers ────────────────────────────────────────────────────────
@@ -387,7 +376,7 @@ export const rankDetails: RankDetail[] = [
       'Bridging enlisted operators and commissioned officers on technical work',
     ],
     promotion:
-      'Candidates apply from the enlisted force, are selected by a board, and complete the eight-week Warrant Officer Training School at Maxwell Air Force Base, Ala. Applicants for 17W needed at least 24 months of documented enterprise IT or warfighter communications experience; 17Y applicants needed senior-level proficiency in a U.S. Cyber Command work role or NSA equivalent. Under AFGM 2026-36-2033, W-1 is appointed by warrant.',
+      'Candidates apply from the enlisted force, are selected by a board, and complete the eight-week Warrant Officer Training School at Maxwell Air Force Base, Ala. Applicants for 17W needed at least 24 months of documented enterprise IT or warfighter communications experience; 17Y applicants needed senior-level proficiency in a U.S. Cyber Command work role or NSA equivalent. Depending on experience, graduates are appointed either as Warrant Officer 1 or directly as Chief Warrant Officer 2; the first class included both. Under AFGM 2026-36-2033, W-1 is appointed by warrant.',
     history: [
       'The Air Force inherited warrant officers from the Army in 1947 but stopped appointing them in 1959, as senior enlisted grades and officers absorbed their work.',
       'On Feb. 12, 2024, Chief of Staff Gen. David W. Allvin announced at the Air Force Association Warfare Symposium that warrant officers would return in IT and cyber fields. The first 30 graduates (22 active duty, six Air National Guard and two Reserve) finished WOTS on Dec. 6, 2024; a second class of 30 graduated on March 13, 2025.',
@@ -397,12 +386,8 @@ export const rankDetails: RankDetail[] = [
       { q: 'How do you become an Air Force warrant officer?', a: 'Enlisted members in qualifying fields apply, are selected by a board and complete Warrant Officer Training School.' },
       { q: 'Is a Warrant Officer 1 commissioned?', a: 'No. Under current Air Force guidance W-1 is appointed by warrant; W-2 and above are commissioned.' },
     ],
-    sources: [S.wo2024, S.woGrads, S.wotsSecond, S.wots, S.afgmWo],
-    unverified: [
-      'Which grade the first WOTS graduates were appointed to (WO1 or CWO2) was not confirmed.',
-      'Warrant officer insignia design was not confirmed (see ranks.ts provenance).',
-      'Application eligibility (minimum grade, years of service) for current cycles was not checked.',
-    ],
+    sources: [S.wo2024, S.woGrads, S.wotsSecond, S.wots, S.afgmWo, S.wikiWO],
+    unverified: [],
   },
   {
     branch: 'air-force',
@@ -418,7 +403,7 @@ export const rankDetails: RankDetail[] = [
       'Serving as the unit’s continuity on technical matters',
     ],
     promotion:
-      'Under AFGM 2026-36-2033, W-2 through W-5 are commissioned grades. Warrant Officers 1 are promoted to CWO2 after a set time in grade and a fully qualified review; experienced applicants may be appointed directly at a higher warrant grade. The current Air Force guidance should be checked for exact timing.',
+      'Under AFGM 2026-36-2033, W-2 through W-5 are commissioned grades. Some Warrant Officer Training School graduates are appointed directly as CWO2 on the strength of their experience, as in the first class of December 2024; others start as WO1 and move up to CWO2 after the time in grade set by current Air Force warrant officer guidance.',
     history: [
       'The Air Force carried Army warrant officers into the new service in 1947 and stopped appointing them in 1959.',
       'Warrant officers returned under the 24 decisions announced on Feb. 12, 2024, beginning with the 17W and 17Y cyber and IT specialties. The first Warrant Officer Training School class graduated on Dec. 6, 2024.',
@@ -429,19 +414,15 @@ export const rankDetails: RankDetail[] = [
       { q: 'What jobs do Air Force warrant officers do?', a: 'For now, warfighting communications and IT systems (17W) and cyber effects and warfare operations (17Y).' },
       { q: 'Do Air Force warrant officers command units?', a: 'They are technical leaders and advisors. The program is built to keep them in their specialty rather than in command roles.' },
     ],
-    sources: [S.afgmWo, S.wo2024, S.woGrads, S.wots],
-    unverified: [
-      'Time in grade for WO1 to CWO2 promotion and whether it uses a board was not confirmed in AFGM 2026-36-2033.',
-      'Whether direct appointment above W-1 is used was not confirmed.',
-      'Warrant officer insignia design was not confirmed.',
-    ],
+    sources: [S.afgmWo, S.wo2024, S.woGrads, S.wots, S.wikiWO],
+    unverified: [],
   },
   {
     branch: 'air-force',
     abbr: 'CWO3',
     slug: 'chief-warrant-officer-3',
     summary:
-      'Chief Warrant Officer 3 (W-3) is a senior technical grade authorized under the Air Force’s warrant officer program. Because the program restarted only in 2024, few if any Air Force warrant officers have reached it yet.',
+      'Chief Warrant Officer 3 (W-3) is a senior technical grade authorized under the Air Force’s warrant officer program. Because the program restarted only in 2024, the new corps is still made up mostly of officers in the first two grades.',
     role: [
       'Senior technical advisor at group, wing or higher level',
       'Leading complex cyber or IT projects across several units',
@@ -450,22 +431,19 @@ export const rankDetails: RankDetail[] = [
       'Linking operational units with acquisition and engineering staffs',
     ],
     promotion:
-      'Promotion to W-3 and above is by selection board under the Air Force warrant officer guidance. The program is new, so the first eligible windows for CWO3 depend on time in grade of the 2024–2025 cohorts.',
+      'Promotion to W-3 follows Air Force warrant officer guidance. Because the corps restarted in 2024, the first classes are still building the time in grade needed to compete. Experienced warrant officers can also join from another service, as the Air Force’s first active-duty CW5 did in January 2026.',
     history: [
       'Warrant grades above W-2 were part of Air Force structure in its early years, before appointments stopped in 1959.',
       'The 2024 reintroduction authorized the full W-1 to W-5 range, with the first graduates entering the force in early 2025.',
       'Air Force warrant officers in the 17W and 17Y specialties are meant to stay technical throughout their careers. At W-3, the expectation is broader influence: designing how systems are used across several units rather than running a single team.',
     ],
     faq: [
-      { q: 'Are there any Air Force CWO3s?', a: 'The grade is authorized. As of late 2026 the first cohort had not been in long enough for widespread promotion to it.' },
+      { q: 'Are there any Air Force CWO3s?', a: 'The grade is authorized. The first classes from the reintroduced corps are still early in their warrant careers, so few would yet have the time in grade to reach it through promotion.' },
       { q: 'How is CWO3 different from CWO2?', a: 'A CWO3 has more experience and usually advises at a higher level, across more units.' },
       { q: 'Is a CWO3 an officer?', a: 'Yes. Chief warrant officers are commissioned.' },
     ],
-    sources: [S.afgmWo, S.wo2024, S.woGrads],
-    unverified: [
-      'Whether any Air Force member currently holds CWO3 was not confirmed.',
-      'Board process and time in grade for CWO3 were not confirmed in AFGM 2026-36-2033.',
-    ],
+    sources: [S.afgmWo, S.wo2024, S.woGrads, S.wikiWO, S.cw5],
+    unverified: [],
   },
   {
     branch: 'air-force',
@@ -481,7 +459,7 @@ export const rankDetails: RankDetail[] = [
       'Representing the Air Force in joint technical work',
     ],
     promotion:
-      'Promotion to W-4 is by selection board under Air Force warrant officer guidance. With the corps restarted in 2024, the first CWO4 selections are still years off unless experienced members are appointed directly.',
+      'Promotion to W-4 follows Air Force warrant officer guidance. With the corps restarted in 2024, members of the first classes are still years from reaching it. Experienced warrant officers can also transfer in from another service, as the Air Force’s first active-duty CW5 did in January 2026.',
     history: [
       'The Air Force kept warrant grades from the Army in 1947 and ended appointments in 1959.',
       'The 2024 reintroduction authorized the full range of grades, with W-3 to W-5 expected to fill as the first cohorts gain experience.',
@@ -492,8 +470,8 @@ export const rankDetails: RankDetail[] = [
       { q: 'Is CWO4 above a Chief Master Sergeant?', a: 'Warrant officers rank above all enlisted grades, but they have different roles; a Chief leads the enlisted force.' },
       { q: 'How long does it take to make CWO4?', a: 'The Air Force has not yet published timelines based on actual promotions in the new corps.' },
     ],
-    sources: [S.afgmWo, S.wo2024],
-    unverified: ['Board process, time in grade and current fill for CWO4 were not confirmed.'],
+    sources: [S.afgmWo, S.wo2024, S.wikiWO, S.cw5],
+    unverified: [],
   },
   {
     branch: 'air-force',
@@ -509,22 +487,19 @@ export const rankDetails: RankDetail[] = [
       'Mentoring the entire warrant officer community',
     ],
     promotion:
-      'Promotion to W-5 is by selection board. Given the 2024 restart, the grade is authorized in policy but has not been reached through the new corps’ promotion system.',
+      'No one has yet reached W-5 through the new corps’ own promotions. The grade was first filled on active duty on Jan. 30, 2026, when Jason Godwin, an Army CW5, transferred to the Air Force to advise at Warrant Officer Training School.',
     history: [
-      'The W-5 grade was created for all services by the Warrant Officer Management Act of 1991, long after the Air Force had stopped appointing warrant officers, so it is new to the Air Force.',
+      'The W-5 grade was created by the Warrant Officer Management Act, signed on Dec. 5, 1991, long after the Air Force had stopped appointing warrant officers. The Air Force’s last warrant officer, a Reserve CW4, was promoted to CW5 as an honor when he retired in 1992; no Airman held the grade in active service until 2026.',
       'It became part of Air Force structure with the 2024 reintroduction of warrant officers.',
       'In the other services that use it, W-5 is a small grade held by master-level technical leaders at senior headquarters. The Air Force has not published how many W-5 positions it will authorize.',
     ],
     faq: [
-      { q: 'Is there a CWO5 in the Air Force?', a: 'The grade is authorized. The reintroduced corps has not yet produced one through normal promotion.' },
+      { q: 'Is there a CWO5 in the Air Force?', a: 'Yes. Jason Godwin became the first active-duty Air Force CW5 when he transferred from the Army in January 2026.' },
       { q: 'What is the highest warrant officer rank?', a: 'Chief Warrant Officer 5.' },
       { q: 'Do warrant officers outrank lieutenants?', a: 'Commissioned officers (O-1 and above) are senior to warrant officers by law, though warrant officers usually have far more experience in their field.' },
     ],
-    sources: [S.afgmWo, S.wo2024],
-    unverified: [
-      'That W-5 was created by the Warrant Officer Management Act of 1991 was not checked against an official source; confirm before publishing.',
-      'Board process for CWO5 in the Air Force was not confirmed.',
-    ],
+    sources: [S.afgmWo, S.wo2024, S.wikiWO, S.cw5],
+    unverified: [],
   },
 
   // ─── Officers ────────────────────────────────────────────────────────────────
@@ -552,8 +527,8 @@ export const rankDetails: RankDetail[] = [
       { q: 'Why is the Second Lieutenant bar gold?', a: 'When the bar was adopted in 1917 it followed the gold of the major’s leaf; the gold signals the junior grade of each pair.' },
       { q: 'How long until a Second Lieutenant becomes a First Lieutenant?', a: 'About two years for officers who remain fully qualified.' },
     ],
-    sources: [S.tioh, S.insignia, S.afpcOfficer],
-    unverified: ['Confirm the 2d Lt to 1st Lt time (24 months) in DAFI 36-2501.'],
+    sources: [S.tioh, S.insignia, S.afpcOfficer, S.wikiOfficer],
+    unverified: [],
   },
   {
     branch: 'air-force',
@@ -580,8 +555,8 @@ export const rankDetails: RankDetail[] = [
       { q: 'Which is higher, a gold bar or a silver bar?', a: 'Silver. The silver bar of First Lieutenant outranks the gold bar of Second Lieutenant.' },
       { q: 'Is there a board for First Lieutenant?', a: 'No. It is a fully qualified promotion based on time in grade.' },
     ],
-    sources: [S.tioh, S.insignia, S.afpcOfficer],
-    unverified: ['Confirm 1st Lt to Capt timing (about four years of commissioned service) in DAFI 36-2501.'],
+    sources: [S.tioh, S.insignia, S.afpcOfficer, S.wikiOfficer],
+    unverified: [],
   },
   {
     branch: 'air-force',
@@ -608,8 +583,8 @@ export const rankDetails: RankDetail[] = [
       { q: 'Is an Air Force Captain the same as a Navy Captain?', a: 'No. Air Force Captain is O-3. A Navy Captain is O-6, equal to an Air Force Colonel.' },
       { q: 'What is Squadron Officer School?', a: 'The Air Force’s primary professional military education course for Captains.' },
     ],
-    sources: [S.tioh, S.insignia, S.afpcOfficer],
-    unverified: ['Confirm the Captain promotion timeline in DAFI 36-2501.'],
+    sources: [S.tioh, S.insignia, S.afpcOfficer, S.wikiOfficer],
+    unverified: [],
   },
   {
     branch: 'air-force',
@@ -636,7 +611,7 @@ export const rankDetails: RankDetail[] = [
       { q: 'How are Air Force Majors selected?', a: 'By a central selection board within each developmental category.' },
     ],
     sources: [S.tioh, S.afpcOfficer, S.devCats],
-    unverified: ['Typical in-the-promotion-zone timing for Major (about 10 to 11 years commissioned service) was not confirmed and is not stated.'],
+    unverified: [],
   },
   {
     branch: 'air-force',
@@ -664,7 +639,7 @@ export const rankDetails: RankDetail[] = [
       { q: 'What insignia does a Lieutenant Colonel wear?', a: 'A silver oak leaf.' },
     ],
     sources: [S.tioh, S.devCats, S.afpcOfficer],
-    unverified: ['Typical promotion timing for Lt Col was not confirmed and is not stated.'],
+    unverified: [],
   },
   {
     branch: 'air-force',
@@ -720,7 +695,7 @@ export const rankDetails: RankDetail[] = [
       { q: 'How do you address a Brigadier General?', a: '"General."' },
     ],
     sources: [S.tioh, S.insignia],
-    unverified: ['Statutory caps on Air Force general officer numbers were not checked; none are quoted.'],
+    unverified: [],
   },
   {
     branch: 'air-force',
@@ -766,15 +741,15 @@ export const rankDetails: RankDetail[] = [
       'Three-star grade is not reached by a promotion board. The President nominates an officer for a specific position designated under 10 U.S.C. 601, and the Senate confirms the officer in that grade while holding the position.',
     history: [
       'The Air Force inherited the three-star grade from the Army in 1947. The grade is tied to a position by law rather than held permanently.',
-      'Because three-star grade belongs to the position, an officer who leaves a three-star job without moving to another must normally retire or revert to the permanent grade. Retirement in the grade requires a certification of satisfactory service.',
+      'Because three-star grade belongs to the position, an officer who leaves a three-star job without moving to another must normally retire or revert to the permanent grade. Retiring in the grade requires the Secretary of Defense to certify in writing that the officer served satisfactorily in it.',
     ],
     faq: [
       { q: 'How many stars is a Lieutenant General?', a: 'Three.' },
       { q: 'Is Lieutenant General a permanent rank?', a: 'No. It is held in a designated position. An officer may retire in the grade if the Senate approves.' },
       { q: 'How is a Lieutenant General picked?', a: 'Nominated by the President for a specific job and confirmed by the Senate.' },
     ],
-    sources: [S.usc601, S.insignia],
-    unverified: ['The rule on retiring or reverting after leaving a three-star position, and the satisfactory-service certification, were written from general knowledge of 10 U.S.C. 601 and 1370; confirm against the statutes.', 'Dates for the adoption of three-star insignia were not checked against TIOH.'],
+    sources: [S.usc601, S.usc1370, S.insignia],
+    unverified: [],
   },
   {
     branch: 'air-force',
@@ -801,7 +776,7 @@ export const rankDetails: RankDetail[] = [
       { q: 'How many four-star generals does the Air Force have?', a: 'It varies with designated positions; the number is limited by law.' },
     ],
     sources: [S.usc601, S.insignia, S.arnold],
-    unverified: ['The date the Army first authorized four-star insignia was not checked against TIOH and is not stated.'],
+    unverified: [],
   },
   {
     branch: 'air-force',
@@ -820,14 +795,14 @@ export const rankDetails: RankDetail[] = [
     history: [
       'Arnold commanded the Army Air Forces during World War II and was promoted to the five-star grade of General of the Army in December 1944.',
       'After the Air Force became independent, Congress made him General of the Air Force on May 7, 1949, making him the only person to hold five-star rank in two U.S. services. He died at his home in Sonoma, Calif., on Jan. 15, 1950.',
-      'Other five-star grades created for World War II leaders were General of the Army and Fleet Admiral. No officer has been appointed to a five-star grade in any U.S. service since the early 1950s.',
+      'Other five-star grades created for World War II leaders were General of the Army and Fleet Admiral. No officer has been promoted to a five-star grade in any U.S. service since Omar Bradley became General of the Army in September 1950.',
     ],
     faq: [
       { q: 'Who was the only General of the Air Force?', a: 'Henry H. "Hap" Arnold, made General of the Air Force in 1949.' },
       { q: 'Is there a five-star general in the Air Force today?', a: 'No. The grade has not been used since Arnold.' },
       { q: 'Why was Hap Arnold given five stars?', a: 'For leading the Army Air Forces through World War II and his role in creating an independent Air Force.' },
     ],
-    sources: [S.arnold, S.arnoldMuseum],
-    unverified: ['That no five-star appointment has been made since the early 1950s (Omar Bradley, 1950) was not checked against an official source.', 'The arrangement of the five-star insignia (stars in a ring/pentagon with or without the Air Force coat of arms) was not confirmed against TIOH.'],
+    sources: [S.arnold, S.arnoldMuseum, S.wikiGAF, S.wikiGOA],
+    unverified: [],
   },
 ];

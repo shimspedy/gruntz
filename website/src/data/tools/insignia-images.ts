@@ -134,7 +134,7 @@ export const insigniaImages: Record<string, string> = {
   "navy|VADM": "/insignia/navy/O9-vice-admiral.webp",
   "navy|WO1": "/insignia/officers/navywo1.webp",
   "space-force|1st Lt": "/insignia/air-force/O-2-first-lieutenant.webp",
-  "space-force|2nd Lt": "/insignia/air-force/O-1-second-lieutenant.webp",
+  "space-force|2d Lt": "/insignia/air-force/O-1-second-lieutenant.webp",
   "space-force|Brig Gen": "/insignia/air-force/O-7-Brigadier-General.webp",
   "space-force|CMSSF": "/insignia/space-force/E-9-chief-master-sergeant-of-the-space-force.webp",
   "space-force|CMSgt": "/insignia/space-force/E-9-chief-master-sergeant.webp",

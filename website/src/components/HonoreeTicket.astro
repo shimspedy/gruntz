@@ -1,0 +1,48 @@
+---
+/**
+ * One Medal of Honor recipient as a small ticket: the story on the left, a perforated
+ * stub on the right holding the portrait (or the rank insignia when no public-domain
+ * portrait is available), the year and the citation link.
+ */
+interface Props {
+  name: string;
+  rankAtAction: string;
+  conflict: string;
+  year: number;
+  story: string;
+  posthumous: boolean;
+  citation: string;
+  photo: { src: string; credit: string; creditUrl: string } | null;
+  fallbackImg: string | null;
+  serial?: string;
+}
+const p = Astro.props as Props;
+---
+
+<article class="relative overflow-hidden rounded-[20px] border border-bone/10 bg-ink-2">
+  <div class="grid sm:grid-cols-[minmax(0,1fr)_180px]">
+    <div class="min-w-0 p-5 sm:p-7">
+      <p class="stamp text-bone-3">{p.conflict} · {p.year}</p>
+      <h3 class="mt-2 text-[22px] font-semibold leading-tight">{p.name}</h3>
+      <p class="mt-1 text-[14px] text-bone-3">{p.rankAtAction}{p.posthumous ? ' · Posthumous' : ''}</p>
+      <p class="mt-4 text-[16px] leading-relaxed text-bone-2">{p.story}</p>
+      <p class="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px]">
+        <a href={p.citation} target="_blank" rel="noopener" class="font-medium text-accent-text hover:text-bone">Read the citation ↗</a>
+        {p.photo ? <a href={p.photo.creditUrl} target="_blank" rel="noopener" class="text-bone-3 hover:text-bone">Photo: {p.photo.credit}</a> : null}
+      </p>
+    </div>
+
+    <div class="relative order-first border-b border-dashed border-bone/20 sm:order-none sm:border-b-0 sm:border-l">
+      <span aria-hidden="true" class="absolute -left-[10px] -top-[10px] z-10 hidden h-5 w-5 rounded-full border border-bone/10 bg-ink sm:block"></span>
+      <span aria-hidden="true" class="absolute -bottom-[10px] -left-[10px] z-10 hidden h-5 w-5 rounded-full border border-bone/10 bg-ink sm:block"></span>
+      {p.photo ? (
+        <img src={p.photo.src} alt={`Portrait of ${p.name}`} width="180" height="225" loading="lazy" decoding="async"
+          class="h-56 w-full object-cover object-[50%_20%] sm:absolute sm:inset-0 sm:h-full" />
+      ) : (
+        <div class="grid h-28 w-full place-items-center bg-ink-3 sm:absolute sm:inset-0 sm:h-full">
+          {p.fallbackImg ? <img src={p.fallbackImg} alt="" width="64" height="64" loading="lazy" class="h-16 w-16 object-contain" /> : null}
+        </div>
+      )}
+    </div>
+  </div>
+</article>

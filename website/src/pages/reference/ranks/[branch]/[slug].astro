@@ -1,6 +1,8 @@
 ---
 import ToolPage from '../../../../components/ToolPage.astro';
 import RankTicket from '../../../../components/RankTicket.astro';
+import HonoreeTicket from '../../../../components/HonoreeTicket.astro';
+import { honoreePhoto } from '../../../../data/tools/honoree-photos';
 import { BRANCHES, type Branch, type Honoree, type PayTable, type Rank, type RankDetail } from '../../../../data/tools/types';
 import { insigniaSvg } from '../../../../data/tools/insignia';
 import { insigniaCredit, insigniaImage } from '../../../../data/tools/insignia-images';
@@ -120,19 +122,22 @@ const metaTitle = `${r.title} (${r.abbr}): ${branch.short} Rank Explained`.lengt
         <Fragment>
           <h2 id="medal-of-honor">Medal of Honor recipients who held this rank</h2>
           <p>{branch.member}s who earned the nation’s highest award for valor while serving as a {r.title.toLowerCase()}.</p>
-          <ul class="not-prose !mt-6 !list-none grid gap-3 !pl-0">
+          <div class="not-prose !mt-6 grid gap-4">
             {honorees.map((h) => (
-              <li class="!mt-0 rounded-2xl border border-bone/10 bg-ink-2 p-5">
-                <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                  <p class="text-[18px] font-semibold text-bone">{h.name}</p>
-                  <p class="font-mono text-[13px] text-accent-text tabular-nums">{h.conflict} · {h.year}</p>
-                </div>
-                <p class="mt-1 text-[13px] text-bone-3">{h.rankAtAction}{h.posthumous ? ' · Posthumous' : ''}</p>
-                <p class="mt-3 text-[16px] leading-relaxed text-bone-2">{h.story}</p>
-                <a href={h.source.url} target="_blank" rel="noopener" class="mt-3 inline-block text-[14px]">Read the citation</a>
-              </li>
+              <HonoreeTicket
+                name={h.name}
+                rankAtAction={h.rankAtAction}
+                conflict={h.conflict}
+                year={h.year}
+                story={h.story}
+                posthumous={h.posthumous}
+                citation={h.source.url}
+                photo={honoreePhoto(h.branch, h.name)}
+                fallbackImg={photo}
+                serial={`MOH · ${h.year}`}
+              />
             ))}
-          </ul>
+          </div>
         </Fragment>
       ) : null}
 

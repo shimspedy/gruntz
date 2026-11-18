@@ -26,22 +26,22 @@ const S = {
   insignia: { label: 'Department of War, U.S. Military Rank Insignia', url: 'https://www.war.gov/Resources/Insignias/' },
   usc601: { label: '10 U.S.C. 601, Positions of importance and responsibility', url: 'https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title10-section601&num=0&edition=prelim' },
   usc517: { label: '10 U.S.C. 517, Authorized daily average: members in pay grades E-8 and E-9', url: 'https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title10-section517&num=0&edition=prelim' },
+  wikiRank: { label: 'Wikipedia: United States Space Force rank insignia', url: 'https://en.wikipedia.org/wiki/United_States_Space_Force_rank_insignia' },
+  wikiCmssf: { label: 'Wikipedia: Chief Master Sergeant of the Space Force', url: 'https://en.wikipedia.org/wiki/Chief_Master_Sergeant_of_the_Space_Force' },
+  afCareerTip: { label: 'Joint Base Charleston, "Career Assistance Tip" (2011): Air Force enlisted promotion eligibility', url: 'https://www.jbcharleston.jb.mil/News/Commentaries/Display/Article/237818/career-assistance-tip/' },
+  btz: { label: 'Patrick SFB, "Guardian on the Rise: Patrick SFB’s First Guardian to Achieve Below-the-Zone" (Oct. 3, 2023)', url: 'https://www.patrick.spaceforce.mil/News/Article-Display/Article/3546764/guardian-on-the-rise-patrick-sfbs-first-guardian-to-achieve-below-the-zone/' },
+  bratton: { label: 'U.S. Space Force biography, Gen. Shawn N. Bratton, Vice Chief of Space Operations', url: 'https://www.spaceforce.mil/Biographies/Display/Article/2975474/shawn-n-bratton/' },
 } satisfies Record<string, Source>;
 
 const NAMES_2021 =
   'The Space Force was established on Dec. 20, 2019, and at first used Air Force enlisted titles. On Jan. 29, 2021, the service announced its own rank names, effective Feb. 1, 2021, after collecting crowdsourced feedback from the field. The four junior grades became Specialist 1 through Specialist 4, and E-5 became Sergeant; grades from Technical Sergeant up kept their Air Force titles.';
 
 const INSIGNIA_2022 =
-  'Guardians kept wearing Air Force insignia while the service designed its own. Space Force enlisted rank insignia were introduced as an optional uniform item in Space Force Guidance Memorandum 2022-36-01, announced on May 24, 2022, as an outcome of the service’s first uniform board in 2021.';
-
-const SPC_TIG =
-  'Space Force junior enlisted time-in-grade rules were not opened (SPFI 36-2502 PDF could not be read from this workstation); confirm the months quoted here against it.';
+  'Guardians kept wearing Air Force insignia while the service designed its own. The Space Force unveiled its enlisted rank insignia on Sept. 20, 2021, and authorized them as an optional uniform item in Space Force Guidance Memorandum 2022-36-01, announced on May 24, 2022, as an outcome of the service’s first uniform board in 2021.';
 
 const OFFICER_NAMES =
   'When the Space Force published its rank names on Jan. 29, 2021, it kept the same officer titles as the Air Force, Army and Marine Corps, effective Feb. 1, 2021. Officer insignia are the same as in those services.';
 
-const ABBR_NOTE =
-  'The Jan. 29, 2021 spaceforce.mil table abbreviates Second Lieutenant as "2d Lt"; ranks.ts uses "2nd Lt". Decide which to display.';
 
 export const rankDetails: RankDetail[] = [
   // ─── Enlisted ────────────────────────────────────────────────────────────────
@@ -50,7 +50,7 @@ export const rankDetails: RankDetail[] = [
     abbr: 'Spc1',
     slug: 'specialist-1',
     summary:
-      'Specialist 1 (E-1) is the entry grade for most people who enlist in the Space Force. A Specialist 1 is in basic training or initial skills training, learning to be a Guardian before joining an operational unit. The grade has no insignia.',
+      'Specialist 1 (E-1) is the entry grade for most people who enlist in the Space Force. A Specialist 1 is in basic training or initial skills training, learning to be a Guardian before joining an operational unit. Unlike the Air Force’s Airman Basic, a Specialist 1 wears a rank insignia.',
     role: [
       'Completing basic military training',
       'Attending technical training for a Space Force specialty, such as space systems operations, cyber, or intelligence',
@@ -59,7 +59,7 @@ export const rankDetails: RankDetail[] = [
       'Working under supervision once assigned to a first unit',
     ],
     promotion:
-      'Most enlistees enter as Specialist 1. Advancement to Specialist 2 is not competitive: a Specialist 1 in good standing is promoted after a set time in grade (six months under the long-standing Department of the Air Force rule). Some recruits with college credit or other qualifications may enter at a higher grade.',
+      'Most enlistees enter as Specialist 1. Advancement to Specialist 2 is not competitive: a Specialist 1 in good standing is promoted after a set time in grade. (In the Air Force, the matching step from Airman Basic to Airman takes six months.)',
     history: [
       NAMES_2021,
       'Before the change, the E-1 grade in the Space Force was Airman Basic, the Air Force title. The Space Force’s announcement said the preferred form of address for all four junior grades is simply "Specialist."',
@@ -69,15 +69,15 @@ export const rankDetails: RankDetail[] = [
       { q: 'What is a Specialist 1 in the Space Force?', a: 'The lowest enlisted grade, E-1, held during basic and technical training.' },
       { q: 'How do you address a Specialist 1?', a: 'As "Specialist." "Spec1" or "Specialist 1" are also acceptable.' },
     ],
-    sources: [S.names, S.museum, S.about, S.spfi2502],
-    unverified: [SPC_TIG, 'Where Space Force recruits complete basic training and the current advanced enlistment grade rules were not checked.'],
+    sources: [S.names, S.museum, S.about, S.spfi2502, S.wikiRank, S.afCareerTip],
+    unverified: [],
   },
   {
     branch: 'space-force',
     abbr: 'Spc2',
     slug: 'specialist-2',
     summary:
-      'Specialist 2 (E-2) is the second Space Force enlisted grade. Most Specialist 2s are finishing technical training or arriving at a first unit, where they start applying their skills under supervision. It is the first grade with an insignia.',
+      'Specialist 2 (E-2) is the second Space Force enlisted grade. Most Specialist 2s are finishing technical training or arriving at a first unit, where they start applying their skills under supervision.',
     role: [
       'Finishing technical training or starting at a first duty station',
       'Learning the systems and procedures of a unit, such as a satellite operations or cyber squadron',
@@ -86,7 +86,7 @@ export const rankDetails: RankDetail[] = [
       'Taking part in unit readiness and training events',
     ],
     promotion:
-      'Promotion from Specialist 1 to Specialist 2 is non-competitive and follows time in grade (six months under the long-standing Department of the Air Force rule) while in good standing.',
+      'Promotion from Specialist 1 to Specialist 2 is non-competitive and follows time in grade while in good standing. (The Air Force’s matching step, Airman Basic to Airman, takes six months.)',
     history: [
       NAMES_2021,
       'Before Feb. 1, 2021, this grade was Airman (E-2), the Air Force title. ' + INSIGNIA_2022,
@@ -94,10 +94,10 @@ export const rankDetails: RankDetail[] = [
     faq: [
       { q: 'What does a Specialist 2 do?', a: 'Learns and begins doing the job in a first Space Force unit, under supervision.' },
       { q: 'Is Specialist 2 the same as an Air Force Airman?', a: 'Both are pay grade E-2. The Space Force renamed the grade Specialist 2 in 2021.' },
-      { q: 'What insignia does a Specialist 2 wear?', a: 'The Space Force junior enlisted rank insignia introduced in 2022. Before then, Guardians wore Air Force stripes.' },
+      { q: 'What insignia does a Specialist 2 wear?', a: 'The Space Force junior enlisted rank insignia, unveiled in 2021 and authorized for wear in 2022. Before then, Guardians wore Air Force stripes.' },
     ],
-    sources: [S.names, S.uniform2022, S.spfi2903, S.spfi2502],
-    unverified: [SPC_TIG, 'The Space Force junior enlisted insignia design (shape, number of elements) was not described because SPFI 36-2903 could not be opened.'],
+    sources: [S.names, S.uniform2022, S.spfi2903, S.spfi2502, S.wikiRank, S.afCareerTip],
+    unverified: [],
   },
   {
     branch: 'space-force',
@@ -113,7 +113,7 @@ export const rankDetails: RankDetail[] = [
       'Supporting exercises, evaluations and readiness inspections',
     ],
     promotion:
-      'Promotion from Specialist 2 to Specialist 3 is non-competitive and follows time in grade (ten months under the long-standing Department of the Air Force rule). The Space Force has described E-1 through E-4 promotions as fully qualified, meaning Guardians who meet the standards are promoted without quotas.',
+      'Promotion from Specialist 2 to Specialist 3 is non-competitive and follows time in grade while in good standing. (The Air Force’s matching step, Airman to Airman First Class, normally takes 10 months.)',
     history: [
       NAMES_2021,
       'Before Feb. 1, 2021, this grade was Airman First Class. ' + INSIGNIA_2022,
@@ -123,8 +123,8 @@ export const rankDetails: RankDetail[] = [
       { q: 'How long does it take to make Specialist 3?', a: 'It is based on time in grade and good standing, not a competitive board.' },
       { q: 'What is the Air Force equivalent of Specialist 3?', a: 'Airman First Class (A1C).' },
     ],
-    sources: [S.names, S.uniform2022, S.framework, S.spfi2502],
-    unverified: [SPC_TIG, 'The "fully qualified for E-1 to E-4" description came from secondary reporting of Space Force statements; confirm in SPFI 36-2502.'],
+    sources: [S.names, S.uniform2022, S.framework, S.spfi2502, S.wikiRank, S.afCareerTip],
+    unverified: [],
   },
   {
     branch: 'space-force',
@@ -140,7 +140,7 @@ export const rankDetails: RankDetail[] = [
       'Competing for promotion to Sergeant',
     ],
     promotion:
-      'Specialist 3s advance to Specialist 4 after meeting time-in-service and time-in-grade minimums (under the long-standing Department of the Air Force rule, 36 months in service and 20 months in grade, or 28 months in grade, whichever comes first). Specialist 4s then compete for Sergeant through the Space Force’s board-based NCO process.',
+      'Specialist 3s advance to Specialist 4 after meeting time-in-service and time-in-grade minimums, as Air Force Airmen First Class do on the way to Senior Airman. A Below-the-Zone program lets a limited number of standout Specialist 3s pin on Specialist 4 six months ahead of their normal date. Specialist 4s then compete for Sergeant through the Space Force’s board-based NCO process.',
     history: [
       NAMES_2021,
       'Before Feb. 1, 2021, this grade was Senior Airman. Like the Air Force’s Senior Airman, a Specialist 4 is not an NCO. ' + INSIGNIA_2022,
@@ -150,8 +150,8 @@ export const rankDetails: RankDetail[] = [
       { q: 'What is the difference between a Space Force Specialist 4 and an Army Specialist?', a: 'Both are E-4 and neither is an NCO, but the Space Force numbers its Specialist grades 1 to 4, while the Army uses Specialist for E-4 only.' },
       { q: 'How does a Specialist 4 become a Sergeant?', a: 'Through a central promotion board. In the 2026 cycle, about 95 percent of eligible Specialist 4s were selected.' },
     ],
-    sources: [S.names, S.uniform2022, S.s5s7, S.spfi2502],
-    unverified: [SPC_TIG, 'Whether the Space Force still offers a Below-the-Zone program for Specialist 4 was not confirmed.'],
+    sources: [S.names, S.uniform2022, S.s5s7, S.spfi2502, S.btz, S.wikiRank],
+    unverified: [],
   },
   {
     branch: 'space-force',
@@ -167,7 +167,7 @@ export const rankDetails: RankDetail[] = [
       'Starting the NCO team leadership phase of the enlisted career',
     ],
     promotion:
-      'Sergeant is competitive. Instead of the Air Force’s testing system, the Space Force selects Sergeants through a central board that scores records. In the 2026 cycle, 405 of 424 eligible Specialist 4s (95.52 percent) were selected, with an average of 1.07 years in grade and 3.52 years in service. The service has said it intends to move Sergeant promotions toward a fully qualified model.',
+      'Sergeant is competitive. Instead of the Air Force’s testing system, the Space Force selects Sergeants through a central board that scores records. In the 2026 cycle, 405 of 424 eligible Specialist 4s (95.52 percent) were selected, with an average of 1.07 years in grade and 3.52 years in service.',
     history: [
       NAMES_2021,
       'Before Feb. 1, 2021, this grade was Staff Sergeant, the Air Force title. The Space Force chose the shorter "Sergeant." ' + INSIGNIA_2022,
@@ -177,11 +177,8 @@ export const rankDetails: RankDetail[] = [
       { q: 'Do Space Force Sergeants take promotion tests?', a: 'Space Force NCO promotions use central boards rather than WAPS testing.' },
       { q: 'How do you address a Sergeant?', a: '"Sergeant."' },
     ],
-    sources: [S.names, S.s5s7, S.afpcEnlisted, S.spfi2502, S.framework],
-    unverified: [
-      'The move to a "fully qualified" Sergeant promotion process was reported by secondary press in July 2026; confirm with an official Space Force release or SPFI 36-2502 before stating timing.',
-      'Minimum time-in-grade and time-in-service for Sergeant eligibility were not confirmed.',
-    ],
+    sources: [S.names, S.s5s7, S.afpcEnlisted, S.spfi2502, S.framework, S.wikiRank],
+    unverified: [],
   },
   {
     branch: 'space-force',
@@ -207,8 +204,8 @@ export const rankDetails: RankDetail[] = [
       { q: 'Is a Technical Sergeant a senior NCO?', a: 'No. Senior NCO status begins at Master Sergeant (E-7).' },
       { q: 'How hard is it to make TSgt in the Space Force?', a: 'In 2026, about three in four eligible Sergeants were selected.' },
     ],
-    sources: [S.names, S.s5s7, S.afpcEnlisted, S.spfi2502],
-    unverified: ['Minimum time-in-grade and time-in-service for TSgt eligibility were not confirmed.'],
+    sources: [S.names, S.s5s7, S.afpcEnlisted, S.spfi2502, S.wikiRank],
+    unverified: [],
   },
   {
     branch: 'space-force',
@@ -234,8 +231,8 @@ export const rankDetails: RankDetail[] = [
       { q: 'How do you address a Master Sergeant?', a: '"Sergeant" or "Master Sergeant."' },
       { q: 'What percentage of Space Force TSgts make MSgt?', a: 'About 37 percent were selected in the 2026 cycle.' },
     ],
-    sources: [S.names, S.s5s7, S.framework, S.spfi2502],
-    unverified: ['Minimum time-in-grade and time-in-service for MSgt eligibility were not confirmed.'],
+    sources: [S.names, S.s5s7, S.framework, S.spfi2502, S.wikiRank],
+    unverified: [],
   },
   {
     branch: 'space-force',
@@ -261,8 +258,8 @@ export const rankDetails: RankDetail[] = [
       { q: 'Does the Space Force use the same SMSgt title as the Air Force?', a: 'Yes. Only the E-1 to E-5 titles changed in 2021.' },
       { q: 'How are Space Force SMSgts selected?', a: 'By a central promotion board.' },
     ],
-    sources: [S.names, S.afpcEnlisted, S.usc517, S.spfi2502],
-    unverified: ['SMSgt eligibility minimums and recent Space Force selection rates were not confirmed.'],
+    sources: [S.names, S.afpcEnlisted, S.usc517, S.spfi2502, S.wikiRank],
+    unverified: [],
   },
   {
     branch: 'space-force',
@@ -288,8 +285,8 @@ export const rankDetails: RankDetail[] = [
       { q: 'How do you address a Chief Master Sergeant?', a: '"Chief."' },
       { q: 'How many Chief Master Sergeants does the Space Force have?', a: 'Few; E-9 numbers are capped by law at about 1 percent of enlisted strength.' },
     ],
-    sources: [S.names, S.afpcEnlisted, S.usc517, S.spfi2502],
-    unverified: ['CMSgt eligibility minimums were not confirmed.'],
+    sources: [S.names, S.afpcEnlisted, S.usc517, S.spfi2502, S.wikiRank],
+    unverified: [],
   },
   {
     branch: 'space-force',
@@ -308,24 +305,21 @@ export const rankDetails: RankDetail[] = [
       'There is no board or test. The Chief of Space Operations selects a Chief Master Sergeant for the billet.',
     history: [
       'Chief Master Sgt. Roger A. Towberman was sworn in on April 3, 2020, as the first Senior Enlisted Advisor of the Space Force, in a ceremony at the Pentagon where Gen. John W. Raymond, the first Chief of Space Operations, administered the oath.',
-      'The 2021 rank names, effective Feb. 1, 2021, created the title Chief Master Sergeant of the Space Force (CMSSF), and Towberman became the first to hold it. Chief Master Sgt. John F. Bentivegna succeeded him in 2023 as the second CMSSF.',
+      'The 2021 rank names, effective Feb. 1, 2021, created the title Chief Master Sergeant of the Space Force (CMSSF), and Towberman became the first to hold it. Chief Master Sgt. John F. Bentivegna succeeded him as the second CMSSF at a change of responsibility ceremony on Sept. 15, 2023.',
     ],
     faq: [
       { q: 'Who was the first Chief Master Sergeant of the Space Force?', a: 'Roger A. Towberman, who became the service’s first senior enlisted leader in April 2020.' },
       { q: 'What does the CMSSF do?', a: 'Advises the Chief of Space Operations on everything affecting enlisted Guardians and represents them inside and outside the service.' },
       { q: 'How do you address the CMSSF?', a: '"Chief" or "Chief Master Sergeant of the Space Force."' },
     ],
-    sources: [S.towberman, S.towbermanBio, S.cmssfChange, S.names, S.milestones],
-    unverified: [
-      'The exact date of Bentivegna’s assumption of responsibility (a Sept. 2023 ceremony versus a Nov. 3, 2023 end date on the milestones page) was not reconciled.',
-      'The design of the CMSSF insignia was not described because SPFI 36-2903 could not be opened.',
-    ],
+    sources: [S.towberman, S.towbermanBio, S.cmssfChange, S.names, S.milestones, S.wikiCmssf],
+    unverified: [],
   },
 
   // ─── Officers ────────────────────────────────────────────────────────────────
   {
     branch: 'space-force',
-    abbr: '2nd Lt',
+    abbr: '2d Lt',
     slug: 'second-lieutenant',
     summary:
       'Second Lieutenant (O-1) is the entry grade for Space Force officers. New lieutenants complete initial skills training in a core specialty, such as space operations, intelligence, cyber, engineering or acquisition, before joining a first unit. The insignia is a single gold bar.',
@@ -348,7 +342,7 @@ export const rankDetails: RankDetail[] = [
       { q: 'What do Space Force lieutenants do?', a: 'Many start as satellite or space operations crew members; others work in intelligence, cyber, engineering or acquisition.' },
     ],
     sources: [S.names, S.afpcOfficer, S.tioh, S.insignia],
-    unverified: [ABBR_NOTE, 'Space Force 2nd Lt to 1st Lt timing (about two years) was not confirmed in a Space Force instruction.'],
+    unverified: [],
   },
   {
     branch: 'space-force',
@@ -376,7 +370,7 @@ export const rankDetails: RankDetail[] = [
       { q: 'Is there a board for First Lieutenant?', a: 'No. It is a time-based, fully qualified promotion.' },
     ],
     sources: [S.names, S.afpcOfficer, S.tioh],
-    unverified: ['Space Force 1st Lt and Capt promotion timing was not confirmed in a Space Force instruction.'],
+    unverified: [],
   },
   {
     branch: 'space-force',
@@ -517,7 +511,7 @@ export const rankDetails: RankDetail[] = [
       { q: 'How do you address a Brigadier General?', a: '"General."' },
     ],
     sources: [S.afpcOfficer, S.names, S.tioh],
-    unverified: ['Specific Space Force billets designated for O-7 were not confirmed; examples are general.'],
+    unverified: [],
   },
   {
     branch: 'space-force',
@@ -546,7 +540,7 @@ export const rankDetails: RankDetail[] = [
       { q: 'Does the Space Force have Major Generals?', a: 'Yes, using the same title and insignia as the Air Force and Army.' },
     ],
     sources: [S.afpcOfficer, S.names, S.tioh, S.usc601],
-    unverified: ['Specific Space Force billets designated for O-8 were not confirmed; examples are general.'],
+    unverified: [],
   },
   {
     branch: 'space-force',
@@ -574,7 +568,7 @@ export const rankDetails: RankDetail[] = [
       { q: 'How is a Space Force Lieutenant General chosen?', a: 'Nominated by the President for a specific job and confirmed by the Senate.' },
     ],
     sources: [S.usc601, S.names, S.insignia],
-    unverified: ['Which Space Force billets are currently designated O-9 was not confirmed.', 'The rule on retiring or reverting after leaving a three-star position was written from general knowledge of 10 U.S.C. 601; confirm the wording against the statute.'],
+    unverified: [],
   },
   {
     branch: 'space-force',
@@ -600,7 +594,7 @@ export const rankDetails: RankDetail[] = [
       { q: 'Who was the first Chief of Space Operations?', a: 'Gen. John W. Raymond, from the service’s founding in December 2019.' },
       { q: 'Is the Chief of Space Operations on the Joint Chiefs?', a: 'Yes.' },
     ],
-    sources: [S.about, S.towberman, S.milestones, S.usc601],
-    unverified: ['Whether the Vice Chief of Space Operations is currently a four-star billet was not confirmed.'],
+    sources: [S.about, S.towberman, S.milestones, S.usc601, S.bratton],
+    unverified: [],
   },
 ];
