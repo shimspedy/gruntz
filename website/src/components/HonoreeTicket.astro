@@ -37,7 +37,7 @@ const p = Astro.props as Props;
       <span aria-hidden="true" class="absolute -bottom-[10px] -left-[10px] z-10 hidden h-5 w-5 rounded-full border border-bone/10 bg-ink sm:block"></span>
       {p.photo ? (
         <img src={p.photo.src} alt={`Portrait of ${p.name}`} width="180" height="225" loading="lazy" decoding="async"
-          class="h-56 w-full object-cover object-[50%_20%] sm:absolute sm:inset-0 sm:h-full" />
+          class="aspect-[4/3] w-full object-cover object-[50%_28%] sm:absolute sm:inset-0 sm:aspect-auto sm:h-full sm:object-[50%_20%]" />
       ) : (
         <div class="grid h-28 w-full place-items-center bg-ink-3 sm:absolute sm:inset-0 sm:h-full">
           {p.fallbackImg ? <img src={p.fallbackImg} alt="" width="64" height="64" loading="lazy" class="h-16 w-16 object-contain" /> : null}
