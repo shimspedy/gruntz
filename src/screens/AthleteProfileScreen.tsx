@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActionSheetIOS, Alert, FlatList, Platform, RefreshControl, StyleSheet, TextInput, View } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Image } from 'expo-image';
 import { Avatar, PostCard } from '../components/feed/PostCard';
 import { applyPostChange, usePostActions, withReaction } from '../hooks/usePostActions';
 import { useSignedIn } from '../hooks/useSignedIn';
@@ -36,6 +37,10 @@ const FAILURE: Record<AthleteFailure, string> = {
   error: 'Couldn’t reach Gruntz. Check your connection and try again.',
 };
 
+type Mode = 'grid' | 'posts';
+/** Gallery hairline between tiles, edge to edge like a photo roll. */
+const GAP = 1;
+
 const compact = (n: number): string => (n >= 10000 ? `${Math.floor(n / 1000)}k` : n >= 1000 ? `${(n / 1000).toFixed(1).replace(/\.0$/, '')}k` : String(n));
 
 /**
@@ -56,6 +61,7 @@ export default function AthleteProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
+  const [mode, setMode] = useState<Mode>('grid');
   const alive = useRef(true);
   const ticket = useRef(0);
   const stamp = useRef(-1);
@@ -197,6 +203,9 @@ export default function AthleteProfileScreen() {
   };
 
   const open = (post: FeedPost) => navigation.navigate('PostDetail', { postId: post.id });
+  // Recomputed every render from the current width, so fold/unfold and resizing reflow the gallery.
+  const cols = width >= 600 ? 4 : 3;
+  const tile = (width - GAP * (cols - 1)) / cols;
 
   if (failed && !profile) {
     return (
@@ -220,7 +229,8 @@ export default function AthleteProfileScreen() {
       onEditBio={() => setEditing(profile.bio)}
       onFind={() => navigation.navigate('Athletes')}
       onList={(tab) => navigation.navigate('Athletes', { tab })}
-      onCompose={() => navigation.navigate('ComposePost')}
+      mode={mode}
+      onMode={setMode}
       hasPosts={!!posts?.length}
     />
   ) : null;
@@ -239,7 +249,7 @@ export default function AthleteProfileScreen() {
   );
 
   const common = {
-    contentContainerStyle: { paddingHorizontal: space.md, paddingBottom: insets.bottom + space.xxl },
+    contentContainerStyle: { paddingBottom: insets.bottom + space.xxl },
     showsVerticalScrollIndicator: false,
     ListHeaderComponent: header,
     ListEmptyComponent: empty,
@@ -252,14 +262,34 @@ export default function AthleteProfileScreen() {
     <View style={styles.screen}>
       <NavHeader
         title={profile?.displayName ?? params?.name?.trim() ?? (requested ? 'Athlete' : 'Your profile')}
-        right={profile && !profile.isMe ? <IconButton icon="more" onPress={options} label={`Options for ${profile.displayName}`} size={22} /> : null}
+        right={profile ? (profile.isMe
+          ? <IconButton icon="plus" onPress={() => navigation.navigate('ComposePost')} label="Write a post" size={22} />
+          : <IconButton icon="more" onPress={options} label={`Options for ${profile.displayName}`} size={22} />) : null}
       />
-      <FlatList
-        data={posts ?? []}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <PostCard post={item} width={width - space.md * 4} onReact={react} onOpen={open} onOptions={postOptions} />}
-        {...common}
-      />
+      {mode === 'grid' ? (
+        <FlatList
+          key={`grid-${cols}`}
+          data={posts ?? []}
+          numColumns={cols}
+          keyExtractor={(item) => item.id}
+          columnWrapperStyle={{ gap: GAP }}
+          ItemSeparatorComponent={GridGap}
+          renderItem={({ item }) => <Tile post={item} width={tile} onPress={open} />}
+          {...common}
+        />
+      ) : (
+        <FlatList
+          key="posts"
+          data={posts ?? []}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item, index }) => (
+            <View style={[styles.postRow, index === 0 && { paddingTop: space.sm }]}>
+              <PostCard post={item} width={width - space.md * 4} onReact={react} onOpen={open} onOptions={postOptions} />
+            </View>
+          )}
+          {...common}
+        />
+      )}
 
       <Sheet visible={editing !== null} onClose={() => setEditing(null)} title="Bio" avoidKeyboard>
         <View style={styles.sheetBody}>
@@ -293,7 +323,8 @@ type HeaderProps = {
   onEditBio: () => void;
   onFind: () => void;
   onList: (tab: 'following' | 'followers') => void;
-  onCompose: () => void;
+  mode: Mode;
+  onMode: (mode: Mode) => void;
   hasPosts: boolean;
 };
 
@@ -311,7 +342,7 @@ function Count({ value, label, onPress }: { value: number | null; label: string;
   );
 }
 
-function ProfileHeader({ profile: p, busy, onFollow, onFollowing, onEditBio, onFind, onList, onCompose, hasPosts }: HeaderProps) {
+function ProfileHeader({ profile: p, busy, onFollow, onFollowing, onEditBio, onFind, onList, mode, onMode, hasPosts }: HeaderProps) {
   const trainedToday = !!p.lastTrainedAt && getLocalDateKey(new Date(p.lastTrainedAt)) === getLocalDateKey();
   const showRecord = p.sessions !== null;
   return (
@@ -371,11 +402,75 @@ function ProfileHeader({ profile: p, busy, onFollow, onFollowing, onEditBio, onF
       ) : null}
 
       {hasPosts ? (
-        <View style={styles.modeRow}>
-          <Text variant="headline" style={{ flex: 1 }}>Posts</Text>
-          {p.isMe ? <IconButton icon="plus" onPress={onCompose} label="Write a post" style={styles.compose} /> : null}
+        <View style={styles.tabs} accessibilityRole="tablist">
+          <ModeTab icon="gallery" label="Grid" active={mode === 'grid'} onPress={() => onMode('grid')} />
+          <ModeTab icon="cards" label="Posts" active={mode === 'posts'} onPress={() => onMode('posts')} />
         </View>
       ) : null}
+    </View>
+  );
+}
+
+/** Icon tabs over the gallery: the active one in full text color with a line under it. */
+function ModeTab({ icon, label, active, onPress }: { icon: 'gallery' | 'cards'; label: string; active: boolean; onPress: () => void }) {
+  return (
+    <Tap
+      feedback="opacity"
+      onPress={() => { if (!active) { haptic.light(); onPress(); } }}
+      style={styles.tab}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: active }}
+      accessibilityLabel={label}
+    >
+      <Icon name={icon} size={22} color={active ? color.text : color.textTertiary} />
+      <View style={[styles.tabLine, { backgroundColor: active ? color.text : 'transparent' }]} />
+    </Tap>
+  );
+}
+
+function GridGap() {
+  return <View style={{ height: GAP }} />;
+}
+
+/** One cell of the gallery, portrait 3:4: the photo itself, or the workout or words in its place. */
+function Tile({ post, width, onPress }: { post: FeedPost; width: number; onPress: (post: FeedPost) => void }) {
+  const height = Math.round((width * 4) / 3);
+  const label = post.photoUrl ? `Photo post${post.body ? `: ${post.body}` : ''}` : post.workout ? `Workout: ${post.workout.title}` : `Post: ${post.body}`;
+  return (
+    <Tap feedback="opacity" onPress={() => onPress(post)} style={[styles.tile, { width, height }]} accessibilityRole="button" accessibilityLabel={label}>
+      {post.photoUrl ? (
+        <Image source={{ uri: post.photoUrl }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} recyclingKey={post.id} accessibilityIgnoresInvertColors />
+      ) : post.workout ? (
+        <View style={styles.tileBody}>
+          <Icon name="dumbbell" size={16} color={color.textSecondary} />
+          <Text variant="subhead" numberOfLines={3} style={{ marginTop: space.xxs }}>{post.workout.title}</Text>
+          <View style={{ flex: 1 }} />
+          <Text variant="caption" tone="tertiary" tabular numberOfLines={1}>
+            {[post.workout.minutes > 0 ? `${post.workout.minutes} min` : '', post.workout.sets > 0 ? `${post.workout.sets} sets` : ''].filter(Boolean).join(' · ')}
+          </Text>
+          {post.workout.records > 0 ? <Text variant="caption" tone="accent" tabular numberOfLines={1}>{post.workout.records} {post.workout.records === 1 ? 'record' : 'records'}</Text> : null}
+        </View>
+      ) : (
+        <View style={styles.tileBody}>
+          <Text variant="footnote" numberOfLines={height > 180 ? 7 : 5}>{post.body}</Text>
+        </View>
+      )}
+      <TileMarks photo={!!post.photoUrl} workout={!!post.photoUrl && !!post.workout} followers={post.audience === 'followers'} />
+    </Tap>
+  );
+}
+
+/**
+ * Corner marks, the way a photo roll shows them: plain glyphs, no chips. Over a photo they
+ * are white with a soft shadow so they read on any picture; on a plain tile they go quiet.
+ */
+function TileMarks({ photo, workout, followers }: { photo: boolean; workout: boolean; followers: boolean }) {
+  if (!workout && !followers) return null;
+  const tint = photo ? '#fff' : color.textTertiary;
+  return (
+    <View style={[styles.marks, photo && styles.marksOnPhoto]} pointerEvents="none">
+      {workout ? <Icon name="dumbbell" size={14} color={tint} /> : null}
+      {followers ? <Icon name="people" size={14} color={tint} /> : null}
     </View>
   );
 }
@@ -392,7 +487,7 @@ function RecordCell({ icon, value, label }: { icon: 'flame' | 'dumbbell' | 'cale
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: color.bg },
-  header: { paddingBottom: space.md },
+  header: { paddingHorizontal: space.md, paddingBottom: space.xxs },
   top: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   counts: { flex: 1, flexDirection: 'row', justifyContent: 'space-around' },
   count: { alignItems: 'center', minWidth: 64, paddingVertical: space.xxs },
@@ -403,9 +498,15 @@ const styles = StyleSheet.create({
   recordCell: { flex: 1, alignItems: 'center', gap: 2 },
   recordRule: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: color.line },
   recordValue: { fontFamily: font.semibold, fontSize: 20, lineHeight: 26, color: color.text },
-  modeRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs, marginTop: space.md },
-  compose: { width: 40, height: 40, borderRadius: 20, backgroundColor: color.surface, alignItems: 'center', justifyContent: 'center' },
-  empty: { alignItems: 'center', padding: space.lg, marginTop: space.xs, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: color.surface },
+  tabs: { flexDirection: 'row', marginTop: space.md, marginHorizontal: -space.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: color.line },
+  tab: { flex: 1, height: 48, alignItems: 'center', justifyContent: 'center' },
+  tabLine: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 1 },
+  tile: { backgroundColor: color.surface, overflow: 'hidden' },
+  tileBody: { flex: 1, padding: space.xs },
+  marks: { position: 'absolute', top: space.xs, right: space.xs, flexDirection: 'row', gap: space.xxs },
+  marksOnPhoto: { shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 3, shadowOffset: { width: 0, height: 0 } },
+  postRow: { paddingHorizontal: space.md },
+  empty: { alignItems: 'center', padding: space.lg, marginTop: space.md, marginHorizontal: space.md, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: color.surface },
   missing: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.lg },
   sheetBody: { paddingHorizontal: space.md, paddingBottom: space.lg },
   input: { marginTop: space.md, minHeight: 96, padding: space.sm, borderRadius: radius.sm, borderCurve: 'continuous', backgroundColor: color.surfaceHigh, color: color.text, fontFamily: font.regular, fontSize: 16, lineHeight: 22, textAlignVertical: 'top' },

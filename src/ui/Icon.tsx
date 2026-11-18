@@ -84,6 +84,8 @@ const icons = {
   peopleFill: ['person.2.fill', 'people'],
   grid: ['square.grid.2x2', 'grid-outline'],
   list: ['list.bullet', 'list-outline'],
+  gallery: ['square.grid.3x3', 'grid-outline'],
+  cards: ['rectangle.grid.1x2', 'albums-outline'],
   flag: ['flag', 'flag-outline'],
   scope: ['scope', 'locate-outline'],
   gift: ['gift', 'gift-outline'],
